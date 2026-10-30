@@ -74,7 +74,7 @@ func _scare(a: Vector2, b: Vector2) -> void:
 		if not e.alive or scared.has(e):
 			continue
 		var p := Geometry2D.get_closest_point_to_segment(e.global_position, a, b)
-		if p.distance_to(e.global_position) < 20.0:
+		if p.distance_to(e.global_position) < 55.0:
 			scared.append(e)
 			e.near_miss(shooter.global_position)
 
@@ -83,7 +83,7 @@ func _scare_impact(p: Vector2) -> void:
 	if not shooter.is_player:
 		return
 	for e in game.enemies:
-		if e.alive and not scared.has(e) and e.global_position.distance_to(p) < 30.0:
+		if e.alive and not scared.has(e) and e.global_position.distance_to(p) < 70.0:
 			e.near_miss(shooter.global_position)
 
 

@@ -21,6 +21,7 @@ const CADENCE_MULT := 1.8
 const SPOT_LINES := ["¡Allí está!", "There he is!", "¡El gringo!", "Over there!", "¡Mátalo!"]
 const SCARE_LINES := ["¡Ay, Dios!", "Whoa!", "¡Cuidado!", "Get down!"]
 const COWER_LINES := ["¡Madre de Dios!", "Don't shoot!", "¡No, no, no!"]
+const FLEE_LINES := ["¡Vámonos!", "I'm getting out!", "¡Corre!", "He's the devil!"]
 const VIEW := 200.0
 const NEAR := 95.0
 const FOV := deg_to_rad(70.0)
@@ -68,6 +69,15 @@ var threat := Vector2.ZERO
 var pending := ""
 var pending_t := 0.0
 var fear_cd := 0.0
+var shaken := 0.0      # rises with every scare and every comrade lost
+var retreat_dir := Vector2.ZERO
+# Fighting position: a spot behind cover he ducks behind and pops up from.
+var fight_pos := Vector2.INF
+var at_cover := false
+var fight_repick := 0.0
+var duck_t := 0.0
+var peek_t := 0.0
+var aim_t := 0.0
 var shout := ""
 var shout_t := 0.0
 var flank := 0.0
@@ -256,44 +266,73 @@ func _say(s: String) -> void:
 	shout_t = 1.8
 
 
-## A bullet cracked past or kicked up dirt next to him, or a comrade dropped.
+## A bullet cracked past or kicked up dirt near him.
 func near_miss(from: Vector2) -> void:
 	if not alive:
 		return
+	shaken = min(1.0, shaken + 0.15)
+	_engage(from)
+	queue_reaction(from, true)
+
+
+## A comrade dropped near him: shakes him badly, and he always reacts.
+func witness_death(at: Vector2, killer: Vector2) -> void:
+	if not alive:
+		return
+	shaken = min(1.0, shaken + 0.35 * (1.0 - nerve * 0.5))
+	_engage(killer)
+	if reaction in ["flee", "cower"]:
+		return
+	fear_cd = 0.0
+	pending = ""
+	queue_reaction(killer, true, true)
+
+
+func _engage(from: Vector2) -> void:
 	if st != St.COMBAT:
 		enter_combat(from, false, true)
 	else:
 		last_known = from
 		lost_t = 0.0
-	queue_reaction(from, true)
 
 
-## Roll how he reacts to gunfire, from his nerve, and start it after a short,
-## personal delay so a group doesn't react in unison.
-func queue_reaction(from: Vector2, scary: bool) -> void:
-	if not alive or fear_cd > 0.0 or pending != "":
+## Fear grows as the fight goes badly: his nerve, minus how shaken he is.
+func fear() -> float:
+	return clamp(1.0 - nerve + shaken, 0.0, 1.0)
+
+
+## Roll how he reacts to gunfire and start it after a short, personal delay so a
+## group never reacts in unison.
+func queue_reaction(from: Vector2, scary: bool, forced := false) -> void:
+	if not alive or pending != "" or (fear_cd > 0.0 and not forced):
 		return
-	if reaction != "" and reaction != "point":
+	if reaction != "" and reaction != "point" and reaction != "backoff":
 		return
-	fear_cd = 3.0
+	fear_cd = 2.0
 	threat = from
-	var r := _pick_reaction(scary)
+	var r := _pick_reaction(scary, forced)
 	if r == "":
-		react += 0.3 * (1.0 - nerve)
+		react += 0.4 * fear()
 		return
 	pending = r
-	pending_t = randf_range(0.05, 0.5) * reflex
+	pending_t = randf_range(0.05, 0.45) * reflex
 
 
-func _pick_reaction(scary: bool) -> String:
-	var fear := 1.0 - nerve
+func _pick_reaction(scary: bool, forced: bool) -> String:
+	var f := fear()
 	var w := {
-		"point": 0.12 if scary else 0.35,
-		"flinch": (0.25 + 0.2 * fear) if scary else 0.1,
-		"cower": 0.7 * fear * fear * (1.0 if scary else 0.3),
-		"dash": 0.45 * fear * (1.0 if scary else 0.5),
-		"": 0.45 * nerve,
+		"point": 0.15 if scary else 0.35,
+		"flinch": (0.3 + 0.25 * f) if scary else 0.12,
+		"cower": 0.7 * f * f * (1.0 if scary else 0.3),
+		"dash": 0.45 * f + 0.1,
+		"backoff": 0.35 if scary else 0.2,
+		"flee": 0.6 * f * f * f * (1.5 if forced else 1.0),
+		"": 0.0 if forced else 0.2 * (1.0 - f),
 	}
+	return _weighted(w)
+
+
+func _weighted(w: Dictionary) -> String:
 	var total := 0.0
 	for k in w:
 		total += w[k]
@@ -312,26 +351,36 @@ func start_reaction(r: String) -> void:
 	path = PackedVector2Array()
 	match r:
 		"point":
-			reaction_t = clamp(randf_range(1.5, 3.0) * reflex, 1.5, 4.5)
+			reaction_t = clamp(randf_range(1.8, 3.2) * reflex, 1.5, 5.0)
 			_say(SPOT_LINES.pick_random())
 		"flinch":
-			reaction_t = randf_range(1.0, 1.6)
+			reaction_t = randf_range(1.2, 2.0)
 		"cower":
-			reaction_t = randf_range(2.0, 4.0)
+			reaction_t = randf_range(2.5, 4.5)
 			_say(COWER_LINES.pick_random())
+		"backoff":
+			# step back out of the line of fire, gun still up, not shooting
+			reaction_t = randf_range(2.0, 3.5)
+			retreat_dir = ((global_position - threat).normalized() +
+				(global_position - threat).orthogonal().normalized() * [-0.8, 0.8].pick_random()).normalized()
+		"flee":
+			reaction_t = randf_range(8.0, 12.0)
+			path_to(game.point_away(global_position, threat, 220.0))
+			_say(FLEE_LINES.pick_random())
 		"dash", "hide":
 			cover_pos = game.find_cover(global_position, threat)
 			if cover_pos != Vector2.INF:
 				path_to(cover_pos)
 				reaction_t = 6.0   # give up if cover takes longer than this to reach
 			else:
-				reaction_t = randf_range(1.5, 2.5)   # nowhere to hide: back away
+				reaction_t = randf_range(2.0, 3.0)   # nowhere to hide: back away
 			if r == "dash":
 				_say(SCARE_LINES.pick_random())
 	if r == "point" or r == "cower":
 		shout_t = reaction_t   # the line hangs for as long as he holds the pose
-	if game._args.has("bot"):
-		print("%.1fs  %s #%d: %s for %.1fs" % [(Time.get_ticks_msec() - game.start_time) / 1000.0, kind, game.enemies.find(self), r, reaction_t])
+	if game._args.has("bot") or game._args.has("rattle"):
+		print("%.1fs  %s #%d: %s for %.1fs (fear %.2f)" % [(Time.get_ticks_msec() - game.start_time) / 1000.0,
+			kind, game.enemies.find(self), r, reaction_t, fear()])
 
 
 func _do_reaction(delta: float) -> void:
@@ -343,11 +392,21 @@ func _do_reaction(delta: float) -> void:
 			desired = (threat - global_position).normalized()
 		"flinch":
 			pose = "flinch"
+			if reaction_t <= 0.0 and randf() < 0.3 + fear() * 0.5:
+				start_reaction(_weighted({"backoff": 1.0, "dash": 1.0 + fear(), "flee": fear() * fear()}))
+				return
 		"cower":
 			pose = "cower"
 			if reaction_t <= 0.0:
-				start_reaction("hide")   # then he scrambles off to cover
+				start_reaction("flee" if randf() < fear() * 0.6 else "hide")   # then off he goes
 				return
+		"backoff":
+			velocity = retreat_dir * WALK
+			desired = (threat - global_position).normalized()
+		"flee":
+			if follow_path(RUN * 1.15):
+				crouched = true   # out of sight, catching his breath
+				desired = (threat - global_position).normalized()
 		"dash", "hide":
 			if hiding:
 				crouched = true
@@ -357,13 +416,14 @@ func _do_reaction(delta: float) -> void:
 			elif follow_path(RUN * (1.25 if reaction == "dash" else 0.9)):
 				hiding = true
 				crouched = true
-				reaction_t = randf_range(1.5, 3.0)
+				reaction_t = randf_range(2.0, 4.0)
 	if reaction_t <= 0.0:
 		reaction = ""
 		hiding = false
 		crouched = false
 		cover_pos = Vector2.INF
-		react = max(react, 0.4 * reflex)
+		fight_pos = Vector2.INF
+		react = max(react, 0.5 * reflex)
 
 
 # ------------------------------------------------------------------ movement
@@ -403,6 +463,7 @@ func _physics_process(delta: float) -> void:
 		return
 	weapon.update(delta)
 	fear_cd = max(0.0, fear_cd - delta)
+	shaken = max(0.0, shaken - 0.02 * delta)
 	shout_t = max(0.0, shout_t - delta)
 	if game.state == "play":
 		_perceive(delta)
@@ -423,7 +484,7 @@ func _physics_process(delta: float) -> void:
 		_run_state(delta)
 	if st != St.GUARD:
 		_separate()
-	var fleeing := reaction in ["dash", "hide"] and not hiding
+	var fleeing := (reaction in ["dash", "hide"] and not hiding) or (reaction == "flee" and path_i < path.size())
 	if velocity.length() > 1.0 and (fleeing or not (st == St.COMBAT and sees_player)):
 		desired = velocity.normalized()
 	var turn := 4.5 if st == St.COMBAT else 2.0
@@ -552,29 +613,12 @@ func _combat(delta: float) -> void:
 	crouched = false
 	cover_pos = Vector2.INF
 
-	if sees_player:
-		desired = to.normalized()
-		react -= delta
-		shot_cd -= delta
-		sidestep_t -= delta
-		if sidestep_t > 0.0:
-			velocity = to.orthogonal().normalized() * strafe_dir * RUN * 0.7
-		else:
-			_move_to_slot(delta, p.global_position, dist, spec["keep"])
-		var in_range: bool = dist < weapon.d["range"] * 0.85
-		if react <= 0.0 and shot_cd <= 0.0 and in_range and abs(facing.angle_to(to)) < 0.2:
-			if game.ally_in_line(self, global_position, p.global_position):
-				# a comrade is in the way: hold fire and step out of line
-				if sidestep_t <= 0.0:
-					sidestep_t = randf_range(0.5, 0.9)
-					strafe_dir = [-1.0, 1.0][randi() % 2]
-			elif weapon.can_fire():
-				weapon.trigger()
-				shot_cd = randf_range(spec["cadence"].x, spec["cadence"].y) * CADENCE_MULT
-			elif weapon.state == Weapon.S.READY:
-				weapon.trigger()
+	if sees_player or (at_cover and fight_pos != Vector2.INF and lost_t < 4.0):
+		_fight(delta, p, to, dist, spec)
 	else:
 		react = max(react, 0.3)
+		fight_pos = Vector2.INF
+		at_cover = false
 		if lost_t > 9.0:
 			st = St.SEARCH
 			search_t = 10.0
@@ -592,28 +636,93 @@ func _combat(delta: float) -> void:
 				desired = Vector2.from_angle(randf() * TAU)
 
 
-## Each bandit holds his own spot around the stranger: same side he came from,
-## rotated by his flank angle, at his weapon's preferred range. They fan out
-## instead of filing in behind each other.
-func _move_to_slot(delta: float, target: Vector2, dist: float, keep: Vector2) -> void:
-	var want := (keep.x + keep.y) * 0.5
-	var slot := target + flank_dir * want
-	if not game.is_free(slot):
-		slot = game.free_point_near(slot, 30.0)
-	if global_position.distance_to(slot) > 14.0 and dist > keep.x * 0.7:
-		repath_t -= delta
-		if repath_t <= 0.0 or path_i >= path.size():
-			path_to(slot)
-			repath_t = 1.0
-		follow_path(RUN * 0.75)
-	elif dist < keep.x:
-		velocity = (global_position - target).normalized() * WALK
+## The firefight itself. He picks a fighting position: cover near his own flank
+## slot that hides him crouched but lets him shoot standing, or the bare slot if
+## there's none. He ducks behind cover and pops up to shoot, never fires on the
+## move (bar a shotgunner up close), takes a moment to aim, and sidesteps instead
+## of advancing.
+func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary) -> void:
+	desired = to.normalized()
+	react -= delta
+	shot_cd -= delta
+	sidestep_t -= delta
+	fight_repick -= delta
+	var keep: Vector2 = spec["keep"]
+	if fight_pos == Vector2.INF or fight_repick <= 0.0:
+		_pick_fight_pos(p.global_position, keep)
+
+	var close_shotgun := weapon.kind == "coach" and dist < keep.y
+	if sidestep_t > 0.0:
+		velocity = to.orthogonal().normalized() * strafe_dir * WALK
+		crouched = false
+		aim_t = 0.0
+		return
+	if global_position.distance_to(fight_pos) > 8.0:
+		crouched = false
+		aim_t = 0.0
+		if path_i >= path.size():
+			path_to(fight_pos)
+		follow_path(RUN * 0.8)
+		if not close_shotgun:
+			return
 	else:
-		strafe_t -= delta
-		if strafe_t <= 0.0:
-			strafe_t = randf_range(0.8, 1.8)
-			strafe_dir = [-1.0, 0.0, 0.0, 1.0][randi() % 4]
-		velocity = (target - global_position).orthogonal().normalized() * strafe_dir * WALK * 0.7
+		velocity = Vector2.ZERO
+		if dist < keep.x * 0.8 and not at_cover:
+			velocity = -to.normalized() * WALK   # too close: give ground
+
+	if at_cover and velocity == Vector2.ZERO:
+		if peek_t > 0.0:
+			peek_t -= delta
+			crouched = false
+			if peek_t <= 0.0:
+				duck_t = randf_range(1.2, 2.6) * (1.0 + fear())
+		else:
+			crouched = true
+			aim_t = 0.0
+			duck_t -= delta
+			if duck_t <= 0.0:
+				peek_t = randf_range(1.8, 3.0)
+			return
+	if not sees_player:
+		return
+
+	if velocity.length() < 1.0:
+		aim_t += delta
+	var aimed := aim_t >= 0.5 * reflex or (close_shotgun and dist < 70.0)
+	var in_range: bool = dist < weapon.d["range"] * 0.85
+	if react <= 0.0 and shot_cd <= 0.0 and in_range and aimed and abs(facing.angle_to(to)) < 0.2:
+		if game.ally_in_line(self, global_position, p.global_position):
+			_sidestep()   # a comrade is in the way: hold fire and step out of line
+		elif weapon.can_fire():
+			weapon.trigger()
+			shot_cd = randf_range(spec["cadence"].x, spec["cadence"].y) * CADENCE_MULT
+			if at_cover:
+				if randf() < 0.5:
+					peek_t = min(peek_t, 0.35)   # fire and duck
+			elif randf() < 0.45:
+				_sidestep()
+		elif weapon.state == Weapon.S.READY:
+			weapon.trigger()
+
+
+func _pick_fight_pos(target: Vector2, keep: Vector2) -> void:
+	fight_repick = randf_range(7.0, 12.0)
+	var slot := target + flank_dir * (keep.x + keep.y) * 0.5
+	var c: Vector2 = game.find_fighting_cover(global_position, target, slot, keep, game.taken_positions(self))
+	at_cover = c != Vector2.INF
+	if at_cover:
+		fight_pos = c
+	else:
+		fight_pos = slot if game.is_free(slot) else game.free_point_near(slot, 30.0)
+	path_to(fight_pos)
+	duck_t = 0.0
+	peek_t = 0.0
+
+
+func _sidestep() -> void:
+	sidestep_t = randf_range(0.6, 1.1)
+	strafe_dir = [-1.0, 1.0].pick_random()
+	fight_pos = Vector2.INF   # find a new spot once the step is done
 
 
 ## Push away from comrades who are too close, so they never move as a clump.
@@ -650,7 +759,8 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 	super(dmg, from_dir, shooter)
 	if alive:
 		on_hurt_alert(shooter)
-		queue_reaction(shooter.global_position, true)
+		shaken = min(1.0, shaken + 0.3)
+		queue_reaction(shooter.global_position, true, true)
 		if st == St.COMBAT:
 			last_known = shooter.global_position
 			lost_t = 0.0

@@ -520,6 +520,53 @@ func ally_in_line(shooter: Enemy, a: Vector2, b: Vector2) -> bool:
 	return false
 
 
+## A reachable spot about `dist` away from the threat, for a bandit running off.
+func point_away(from: Vector2, threat: Vector2, dist: float) -> Vector2:
+	var away := (from - threat).normalized()
+	if away == Vector2.ZERO:
+		away = Vector2.from_angle(randf() * TAU)
+	for a in [0.0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5]:
+		var p := from + away.rotated(a + randf_range(-0.2, 0.2)) * dist
+		var g := Iso.to_grid(p)
+		if g.x > 1.0 and g.y > 1.0 and g.x < size - 1.0 and g.y < size - 1.0 and is_free(p):
+			return p
+	return free_point_near(from, dist * 0.5)
+
+
+## A cover point near `near` that hides a crouching man from `threat` but lets
+## him shoot standing up: the place to duck behind and pop up from.
+func find_fighting_cover(me: Vector2, threat: Vector2, near: Vector2, keep: Vector2, taken: Array) -> Vector2:
+	var best := Vector2.INF
+	var bd := 1e9
+	for c in cover_points:
+		var dt := c.distance_to(threat)
+		if dt < keep.x * 0.8 or dt > keep.y * 1.2:
+			continue
+		var score := c.distance_to(near) + c.distance_to(me) * 0.5
+		if score > 220.0 or score >= bd:
+			continue
+		var clash := false
+		for o in taken:
+			if o.distance_to(c) < 24.0:
+				clash = true
+				break
+		if clash:
+			continue
+		if line_of_sight(threat, c, true) or not line_of_sight(c, threat, false):
+			continue
+		bd = score
+		best = c
+	return best
+
+
+func taken_positions(except: Enemy) -> Array:
+	var out := []
+	for e in enemies:
+		if e != except and e.alive and e.fight_pos != Vector2.INF:
+			out.append(e.fight_pos)
+	return out
+
+
 func is_free(p: Vector2) -> bool:
 	return not astar.is_point_solid(_cell(p))
 
@@ -556,8 +603,8 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 
 func _on_enemy_died(e: Actor) -> void:
 	for o in enemies:
-		if o.alive and o.global_position.distance_to(e.global_position) < 90.0 and randf() < 0.6:
-			o.near_miss(player.global_position)
+		if o.alive and o.global_position.distance_to(e.global_position) < 180.0:
+			o.witness_death(e.global_position, player.global_position)
 	if _args.has("bot"):
 		print("%.1fs  %s down, %d left" % [(Time.get_ticks_msec() - start_time) / 1000.0, e.kind, alive_enemies()])
 	var p := Pickup.new()

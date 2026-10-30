@@ -2,7 +2,7 @@ extends SceneTree
 ## Rattles every bandit with near misses and checks that their reactions are held
 ## long enough to be seen:  godot --headless --path . -s tests/test_reactions.gd
 
-const MIN_HOLD := {"point": 1.5, "flinch": 1.0, "cower": 2.0}
+const MIN_HOLD := {"point": 1.5, "flinch": 1.2, "cower": 2.5, "backoff": 2.0}
 
 var game: Node
 var frame := 0
@@ -35,13 +35,31 @@ func _process(delta: float) -> bool:
 		if r != prev[0]:
 			if prev[0] != "":
 				var d: float = now - prev[1]
-				held[prev[0]] = min(held.get(prev[0], 99.0), d)
-				if prev[0] == "cower" and r == "hide":
+				# a fresh scare may cut a point or backoff short on purpose; time only full runs
+				var interrupted: bool = r != "" and prev[0] in ["point", "backoff"]
+				if not interrupted:
+					held[prev[0]] = min(held.get(prev[0], 99.0), d)
+				if prev[0] == "cower" and r in ["hide", "flee"]:
 					cower_then_hide += 1
 			if r != "":
 				counts[r] = counts.get(r, 0) + 1
 			current[e] = [r, now]
-	if frame < 1100:
+	if frame == 700:
+		# a death in their midst: everyone near must react
+		var victim: Enemy = game.enemies[1]
+		var near := 0
+		for e in game.enemies:
+			if e != victim and e.alive and e.global_position.distance_to(victim.global_position) < 180.0:
+				near += 1
+		victim.take_hit(99, Vector2.RIGHT, game.player)
+		var reacting := 0
+		for e in game.enemies:
+			if e != victim and e.alive and e.global_position.distance_to(victim.global_position) < 180.0 and (e.pending != "" or e.reaction != ""):
+				reacting += 1
+		if reacting < near:
+			failures += 1
+			print("FAIL: only %d of %d bandits reacted to a comrade's death" % [reacting, near])
+	if frame < 1500:
 		return false
 	print("reactions: ", counts)
 	print("shortest holds: ", held)
@@ -54,7 +72,7 @@ func _process(delta: float) -> bool:
 		print("FAIL: expected a mix of reactions")
 	if counts.has("cower") and cower_then_hide == 0:
 		failures += 1
-		print("FAIL: cowering bandits never went for cover")
+		print("FAIL: cowering bandits never retreated")
 	print("reactions test: ", "OK" if failures == 0 else "%d failures" % failures)
 	Engine.time_scale = 1.0
 	return true

@@ -85,17 +85,27 @@ carried, which you collect by walking over them.
 - Each bandit has a personality: his own reflexes (reaction times vary about
   threefold between bandits) and nerve. On spotting the stranger he sometimes stops
   to point him out ("¡Allí está!").
-- **Reactions** (the cinematic beats). Gunfire nearby, a round cracking past, dirt
-  kicked up at his feet, a wound or a comrade dropping beside him makes each bandit
-  roll a reaction from his nerve, each after his own short delay so a group never
-  reacts in unison:
-  - *point* and shout ("¡Allí está!"), held 1.5–4.5 s;
-  - *flinch*, at least 1 s;
-  - *cower* with hands on the hat for 2–4 s, then scramble to cover and hide;
-  - *dash* for cover, crouch there 1.5–3 s (or back away if there is none);
-  - or keep fighting (steady bandits mostly; El Jefe almost always).
-  A wounded bandit staggers for almost a second. `tests/test_reactions.gd` checks the
-  hold times.
+- **Reactions** (the cinematic beats). Rounds passing within ~55 px, dirt kicked up
+  within ~70 px, a wound, or a comrade dropping within ~180 px make a bandit react,
+  each after his own short delay so a group never reacts in unison:
+  - *point* and shout ("¡Allí está!"), held 1.5–5 s;
+  - *flinch* with arms up, 1.2–2 s, often followed by backing off or dashing;
+  - *cower* with hands on the hat for 2.5–4.5 s, then hide or flee;
+  - *back off* out of the line of fire, gun up but not shooting, 2–3.5 s;
+  - *dash* for cover and crouch there 2–4 s;
+  - *flee* for 8–12 s, then catch his breath crouched out of sight.
+  Death of a comrade always triggers a reaction from those nearby. Wounded bandits
+  stagger for almost a second.
+- **Morale**: every scare, wound and fallen comrade shakes a bandit. Fear is his
+  nerve minus how shaken he is, so as the fight goes badly the gang breaks: more
+  cowering, more fleeing. `tests/test_reactions.gd` checks reaction hold times and
+  that a death always draws reactions.
+- **Firefight**: each bandit takes a fighting position, preferring cover that hides
+  him crouched but lets him shoot standing (barrels, crates, wagons, corners), not
+  taken by a comrade. Behind cover he ducks, pops up, aims, fires a shot or two and
+  ducks again. He never fires on the move (a shotgunner up close excepted), takes a
+  moment to aim before each shot, and often sidesteps after firing instead of
+  advancing.
 - **Spreading out**: each bandit joining a fight takes his own flanking angle and
   holds a spot around the stranger at his weapon's range, instead of filing in behind
   the others. Comrades push apart when they get too close, and a bandit holds fire
