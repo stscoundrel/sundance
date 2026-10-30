@@ -1,0 +1,5 @@
+.godot/
+tools/.venv/
+__pycache__/
+*.tmp
+/screenshots/

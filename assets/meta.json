@@ -1,0 +1,876 @@
+{
+ "chars": {
+  "hero_colt": {
+   "file": "res://assets/sprites/chars/hero_colt.png",
+   "cell": [
+    192,
+    168
+   ],
+   "anchor": [
+    96,
+    138
+   ],
+   "cols": 18,
+   "rows": 8,
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "crouch": [
+     5,
+     1
+    ],
+    "cwalk": [
+     6,
+     2
+    ],
+    "dead": [
+     8,
+     1
+    ],
+    "point": [
+     9,
+     2
+    ],
+    "flinch": [
+     11,
+     1
+    ],
+    "cower": [
+     12,
+     2
+    ],
+    "hurt": [
+     14,
+     2
+    ],
+    "fire": [
+     16,
+     1
+    ],
+    "fall": [
+     17,
+     1
+    ]
+   }
+  },
+  "hero_coach": {
+   "file": "res://assets/sprites/chars/hero_coach.png",
+   "cell": [
+    192,
+    168
+   ],
+   "anchor": [
+    96,
+    138
+   ],
+   "cols": 18,
+   "rows": 8,
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "crouch": [
+     5,
+     1
+    ],
+    "cwalk": [
+     6,
+     2
+    ],
+    "dead": [
+     8,
+     1
+    ],
+    "point": [
+     9,
+     2
+    ],
+    "flinch": [
+     11,
+     1
+    ],
+    "cower": [
+     12,
+     2
+    ],
+    "hurt": [
+     14,
+     2
+    ],
+    "fire": [
+     16,
+     1
+    ],
+    "fall": [
+     17,
+     1
+    ]
+   }
+  },
+  "hero_rifle": {
+   "file": "res://assets/sprites/chars/hero_rifle.png",
+   "cell": [
+    192,
+    168
+   ],
+   "anchor": [
+    96,
+    138
+   ],
+   "cols": 18,
+   "rows": 8,
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "crouch": [
+     5,
+     1
+    ],
+    "cwalk": [
+     6,
+     2
+    ],
+    "dead": [
+     8,
+     1
+    ],
+    "point": [
+     9,
+     2
+    ],
+    "flinch": [
+     11,
+     1
+    ],
+    "cower": [
+     12,
+     2
+    ],
+    "hurt": [
+     14,
+     2
+    ],
+    "fire": [
+     16,
+     1
+    ],
+    "fall": [
+     17,
+     1
+    ]
+   }
+  },
+  "pistolero": {
+   "file": "res://assets/sprites/chars/pistolero.png",
+   "cell": [
+    192,
+    168
+   ],
+   "anchor": [
+    96,
+    138
+   ],
+   "cols": 18,
+   "rows": 8,
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "crouch": [
+     5,
+     1
+    ],
+    "cwalk": [
+     6,
+     2
+    ],
+    "dead": [
+     8,
+     1
+    ],
+    "point": [
+     9,
+     2
+    ],
+    "flinch": [
+     11,
+     1
+    ],
+    "cower": [
+     12,
+     2
+    ],
+    "hurt": [
+     14,
+     2
+    ],
+    "fire": [
+     16,
+     1
+    ],
+    "fall": [
+     17,
+     1
+    ]
+   }
+  },
+  "rifleman": {
+   "file": "res://assets/sprites/chars/rifleman.png",
+   "cell": [
+    192,
+    168
+   ],
+   "anchor": [
+    96,
+    138
+   ],
+   "cols": 18,
+   "rows": 8,
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "crouch": [
+     5,
+     1
+    ],
+    "cwalk": [
+     6,
+     2
+    ],
+    "dead": [
+     8,
+     1
+    ],
+    "point": [
+     9,
+     2
+    ],
+    "flinch": [
+     11,
+     1
+    ],
+    "cower": [
+     12,
+     2
+    ],
+    "hurt": [
+     14,
+     2
+    ],
+    "fire": [
+     16,
+     1
+    ],
+    "fall": [
+     17,
+     1
+    ]
+   }
+  },
+  "redscarf": {
+   "file": "res://assets/sprites/chars/redscarf.png",
+   "cell": [
+    192,
+    168
+   ],
+   "anchor": [
+    96,
+    138
+   ],
+   "cols": 18,
+   "rows": 8,
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "crouch": [
+     5,
+     1
+    ],
+    "cwalk": [
+     6,
+     2
+    ],
+    "dead": [
+     8,
+     1
+    ],
+    "point": [
+     9,
+     2
+    ],
+    "flinch": [
+     11,
+     1
+    ],
+    "cower": [
+     12,
+     2
+    ],
+    "hurt": [
+     14,
+     2
+    ],
+    "fire": [
+     16,
+     1
+    ],
+    "fall": [
+     17,
+     1
+    ]
+   }
+  },
+  "jefe": {
+   "file": "res://assets/sprites/chars/jefe.png",
+   "cell": [
+    192,
+    168
+   ],
+   "anchor": [
+    96,
+    138
+   ],
+   "cols": 18,
+   "rows": 8,
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "crouch": [
+     5,
+     1
+    ],
+    "cwalk": [
+     6,
+     2
+    ],
+    "dead": [
+     8,
+     1
+    ],
+    "point": [
+     9,
+     2
+    ],
+    "flinch": [
+     11,
+     1
+    ],
+    "cower": [
+     12,
+     2
+    ],
+    "hurt": [
+     14,
+     2
+    ],
+    "fire": [
+     16,
+     1
+    ],
+    "fall": [
+     17,
+     1
+    ]
+   }
+  }
+ },
+ "objects": {
+  "saloon": {
+   "file": "res://assets/sprites/world/saloon.png",
+   "anchor": [
+    344,
+    276
+   ],
+   "footprint": [
+    7,
+    6
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     7,
+     6
+    ]
+   ]
+  },
+  "store": {
+   "file": "res://assets/sprites/world/store.png",
+   "anchor": [
+    296,
+    191
+   ],
+   "footprint": [
+    5,
+    5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     5,
+     5
+    ]
+   ]
+  },
+  "sheriff": {
+   "file": "res://assets/sprites/world/sheriff.png",
+   "anchor": [
+    296,
+    182
+   ],
+   "footprint": [
+    5,
+    5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     5,
+     5
+    ]
+   ]
+  },
+  "bank": {
+   "file": "res://assets/sprites/world/bank.png",
+   "anchor": [
+    344,
+    252
+   ],
+   "footprint": [
+    6,
+    6
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     6,
+     6
+    ]
+   ]
+  },
+  "adobe_a": {
+   "file": "res://assets/sprites/world/adobe_a.png",
+   "anchor": [
+    198,
+    164
+   ],
+   "footprint": [
+    5,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     5,
+     4
+    ]
+   ]
+  },
+  "adobe_b": {
+   "file": "res://assets/sprites/world/adobe_b.png",
+   "anchor": [
+    198,
+    183
+   ],
+   "footprint": [
+    4,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     4,
+     4
+    ]
+   ]
+  },
+  "church": {
+   "file": "res://assets/sprites/world/church.png",
+   "anchor": [
+    342,
+    331
+   ],
+   "footprint": [
+    6,
+    7
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     6,
+     7
+    ]
+   ]
+  },
+  "stable": {
+   "file": "res://assets/sprites/world/stable.png",
+   "anchor": [
+    266,
+    196
+   ],
+   "footprint": [
+    6,
+    5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     6,
+     5
+    ]
+   ]
+  },
+  "water_tower": {
+   "file": "res://assets/sprites/world/water_tower.png",
+   "anchor": [
+    102,
+    247
+   ],
+   "footprint": [
+    2,
+    2
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0.16,
+     0.16,
+     0.4,
+     0.4
+    ],
+    [
+     1.6,
+     0.16,
+     1.84,
+     0.4
+    ],
+    [
+     0.16,
+     1.6,
+     0.4,
+     1.84
+    ],
+    [
+     1.6,
+     1.6,
+     1.84,
+     1.84
+    ]
+   ]
+  },
+  "gallows": {
+   "file": "res://assets/sprites/world/gallows.png",
+   "anchor": [
+    150,
+    181
+   ],
+   "footprint": [
+    3,
+    3
+   ],
+   "collide": "cover",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     3,
+     3
+    ]
+   ]
+  },
+  "crate": {
+   "file": "res://assets/sprites/world/crate.png",
+   "anchor": [
+    45,
+    51
+   ],
+   "footprint": [
+    0.8,
+    0.8
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.8,
+     0.8
+    ]
+   ]
+  },
+  "barrel": {
+   "file": "res://assets/sprites/world/barrel.png",
+   "anchor": [
+    25,
+    46
+   ],
+   "footprint": [
+    0.55,
+    0.55
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.55,
+     0.55
+    ]
+   ]
+  },
+  "wagon": {
+   "file": "res://assets/sprites/world/wagon.png",
+   "anchor": [
+    50,
+    52
+   ],
+   "footprint": [
+    2.4,
+    1.2
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.2,
+     0.15,
+     2.2,
+     1.05
+    ]
+   ]
+  },
+  "trough": {
+   "file": "res://assets/sprites/world/trough.png",
+   "anchor": [
+    33,
+    35
+   ],
+   "footprint": [
+    1.52,
+    0.56
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.52,
+     0.56
+    ]
+   ]
+  },
+  "coffin": {
+   "file": "res://assets/sprites/world/coffin.png",
+   "anchor": [
+    31,
+    25
+   ],
+   "footprint": [
+    1.6,
+    0.56
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.6,
+     0.56
+    ]
+   ]
+  },
+  "hitch": {
+   "file": "res://assets/sprites/world/hitch.png",
+   "anchor": [
+    13,
+    52
+   ],
+   "footprint": [
+    1.6,
+    0.2
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.6,
+     0.2
+    ]
+   ]
+  },
+  "cactus": {
+   "file": "res://assets/sprites/world/cactus.png",
+   "anchor": [
+    30,
+    108
+   ],
+   "footprint": [
+    0.6,
+    0.6
+   ],
+   "collide": "post",
+   "fade": false,
+   "colliders": [
+    [
+     0.15,
+     0.15,
+     0.45,
+     0.45
+    ]
+   ]
+  },
+  "cross": {
+   "file": "res://assets/sprites/world/cross.png",
+   "anchor": [
+    13,
+    55
+   ],
+   "footprint": [
+    0.42,
+    0.2
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.42,
+     0.2
+    ]
+   ]
+  }
+ },
+ "tumbleweed": {
+  "file": "res://assets/sprites/world/tumbleweed.png",
+  "cell": [
+   72,
+   72
+  ],
+  "anchor": [
+   36,
+   54
+  ],
+  "frames": 4
+ },
+ "muzzle": {
+  "file": "res://assets/sprites/fx/muzzle.png",
+  "cell": [
+   72,
+   72
+  ],
+  "frames": 3
+ },
+ "ui": {
+  "portrait": "res://assets/sprites/ui/portrait.png",
+  "eyes": "res://assets/sprites/ui/eyes.png",
+  "title": "res://assets/sprites/ui/title.png"
+ },
+ "sfx": {
+  "colt": "res://assets/sfx/colt.wav",
+  "coach": "res://assets/sfx/coach.wav",
+  "rifle": "res://assets/sfx/rifle.wav",
+  "colt_2": "res://assets/sfx/colt_2.wav",
+  "coach_2": "res://assets/sfx/coach_2.wav",
+  "rifle_2": "res://assets/sfx/rifle_2.wav",
+  "colt_3": "res://assets/sfx/colt_3.wav",
+  "coach_3": "res://assets/sfx/coach_3.wav",
+  "rifle_3": "res://assets/sfx/rifle_3.wav",
+  "ricochet": "res://assets/sfx/ricochet.wav",
+  "cock": "res://assets/sfx/cock.wav",
+  "lever": "res://assets/sfx/lever.wav",
+  "shell_in": "res://assets/sfx/shell_in.wav",
+  "eject": "res://assets/sfx/eject.wav",
+  "break_open": "res://assets/sfx/break_open.wav",
+  "close": "res://assets/sfx/close.wav",
+  "dry": "res://assets/sfx/dry.wav",
+  "hit": "res://assets/sfx/hit.wav",
+  "pickup": "res://assets/sfx/pickup.wav",
+  "step": "res://assets/sfx/step.wav",
+  "bell": "res://assets/sfx/bell.wav",
+  "wind": "res://assets/sfx/wind.wav",
+  "twang": "res://assets/sfx/twang.wav",
+  "sting": "res://assets/sfx/sting.wav",
+  "win": "res://assets/sfx/win.wav",
+  "lose": "res://assets/sfx/lose.wav"
+ },
+ "ground": {
+  "file": "res://assets/sprites/ground.png",
+  "origin": [
+   -896,
+   -128
+  ]
+ },
+ "tex_scale": 0.3333333333333333
+}
