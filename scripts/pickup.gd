@@ -27,7 +27,7 @@ func setup(g: Node, pos: Vector2, k: String) -> void:
 func _on_body(b: Node) -> void:
 	if b is Player and b.alive:
 		b.weapons[kind].reserve += AMOUNT[kind]
-		game.sfx("pickup", position, -4.0)
+		game.sfx("pickup", null, 0.0)
 		queue_free()
 
 

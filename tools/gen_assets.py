@@ -319,16 +319,21 @@ def delay(x, sec, gain, fc=None):
     return y
 
 
-def write(name, x, meta, peak=0.9):
+def write(name, x, meta, peak=0.9, drive=1.0):
+    """Write a mono (n,) or stereo (n, 2) clip, normalised to `peak`. drive > 1
+    soft-clips it first for a louder, denser sound."""
     x = np.asarray(x, float)
     m = np.abs(x).max()
     if m > 0:
-        x = x / m * peak
+        x = x / m
+    if drive > 1.0:
+        x = np.tanh(x * drive) / np.tanh(drive)
+    x = x * peak
     path = os.path.join(ASSETS, "sfx", name + ".wav")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     data = (np.clip(x, -1, 1) * 32767).astype(np.int16)
     with wave.open(path, "wb") as w:
-        w.setnchannels(1)
+        w.setnchannels(1 if x.ndim == 1 else 2)
         w.setsampwidth(2)
         w.setframerate(SR)
         w.writeframes(data.tobytes())
@@ -375,18 +380,41 @@ def modal(rng, freqs, decays, amps, dur):
 
 
 def metal(rng, base, weight=1.0, dur=0.12):
-    """A steel-on-steel click: noise strike exciting inharmonic modes. weight > 1 is
-    heavier: lower, longer, more body."""
-    ratios = [1.0, 1.47, 2.09, 2.76, 3.51, 4.62]
-    freqs = [base / weight * r for r in ratios]
-    decays = [0.012 * weight / (1 + 0.35 * i) for i in range(len(ratios))]
-    amps = [1.0, 0.7, 0.55, 0.4, 0.3, 0.2]
-    x = modal(rng, freqs, decays, amps, dur)
+    """A steel-on-steel click as it really sounds: a sub-millisecond strike through
+    a dense cluster of short, inharmonic high modes, so no single pitch is heard,
+    plus a dull knock from the frame. weight > 1 is heavier: lower, a little
+    longer, more knock."""
     t = t_of(dur)
-    x += highpass(rng.normal(0, 1, len(t)), 2000) * np.exp(-t / 0.0015) * 1.3
-    if weight > 1.2:
-        x += lowpass(rng.normal(0, 1, len(t)), 500) * np.exp(-t / (0.01 * weight)) * 1.5
+    nm = 32
+    freqs = base * rng.uniform(0.7, 3.4, nm) / weight
+    freqs = np.minimum(freqs, 16000)
+    decays = rng.uniform(0.0008, 0.004, nm) * weight
+    amps = rng.uniform(0.2, 1.0, nm) / math.sqrt(nm)
+    x = np.zeros(len(t))
+    for f, d, a in zip(freqs, decays, amps):
+        x += a * np.sin(2 * np.pi * f * t + rng.uniform(0, 6.28)) * np.exp(-t / d)
+    n = rng.normal(0, 1, len(t))
+    x += highpass(n, 2500) * np.exp(-t / 0.00035) * 1.2
+    x += lowpass(rng.normal(0, 1, len(t)), 1100 / weight) * np.exp(-t / (0.0025 * weight)) * 0.7 * weight
     return x
+
+
+def tink(rng, center, ring, amp=1.0, dur=0.12):
+    """Brass or a spur rowel struck lightly: a cluster of close, inharmonic partials
+    around `center` that shimmer instead of beeping."""
+    t = t_of(dur)
+    x = np.zeros(len(t))
+    for i in range(10):
+        f = center * rng.uniform(0.65, 1.7)
+        x += rng.uniform(0.3, 1.0) * np.sin(2 * np.pi * f * t + rng.uniform(0, 6.28)) * np.exp(-t / (ring * rng.uniform(0.3, 1.0)))
+    x += highpass(rng.normal(0, 1, len(t)), 3000) * np.exp(-t / 0.0004) * 1.5
+    return x * amp / 4
+
+
+def knock(rng, fc, tau, dur=0.08):
+    """Wood or a heavy frame taking the blow: a short, dull, unpitched thud."""
+    t = t_of(dur)
+    return lowpass(lowpass(rng.normal(0, 1, len(t)), fc), fc) * np.exp(-t / tau) * 3
 
 
 def room(x, rng, tau=0.07, wet=0.3):
@@ -395,23 +423,43 @@ def room(x, rng, tau=0.07, wet=0.3):
     return w
 
 
-def gunshot(rng, power, crack_tau, body_fc, thump_f, ring_f, tau, echoes):
-    """Spaghetti-western gunshot: whip crack, powder boom, a hint of metallic ring,
-    then a long, dark canyon tail with slap-back echoes."""
-    t = t_of(0.5)
+def gun_ir(rng, tau, echoes, dur):
+    """Canyon reverb for gunfire: a diffuse wash that swells and dies slowly, plus
+    discrete slap-back echoes off the mesas, each darker than the last."""
+    t = t_of(dur)
+    h = lowpass(rng.normal(0, 1, len(t)), 1600) * np.exp(-t / tau) * (1 - np.exp(-t / 0.04)) * 0.012
+    for d, g, fc in echoes:
+        k = int(SR * d)
+        n = int(SR * 0.05)
+        burst = lowpass(rng.normal(0, 1, n), fc) * np.exp(-t_of(0.05) / 0.01)
+        if k + n < len(h):
+            h[k:k + n] += burst * g * 0.06
+    return h
+
+
+def gunshot(rng, crack, blast_fc, blast_tau, boom_fc, boom_tau, sub_f, drive, tau, delay_scale):
+    """Spaghetti-western gunshot, in stereo: a hard crack, a saturated powder
+    blast and a low boom, then a long canyon tail whose echoes bounce left and
+    right. All noise, no pitched sweeps."""
+    t = t_of(0.7)
     n = rng.normal(0, 1, len(t))
-    crack = highpass(n, 2500) * np.exp(-t / crack_tau) * 2.5
-    f = 5200 * np.exp(-t / 0.012) + 700
-    whip = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.03) * 0.5
-    body = lowpass(n, body_fc) * np.exp(-t / (0.05 * power)) * 3.0
-    th = thump_f * (1 + 2.0 * np.exp(-t / 0.015))
-    thump = np.sin(2 * np.pi * np.cumsum(th) / SR) * np.exp(-t / (0.09 * power)) * 1.6
-    ring = modal(rng, [ring_f, ring_f * 1.53, ring_f * 2.2], [0.12, 0.08, 0.05], [0.3, 0.2, 0.1], 0.5)
-    dry = crack + whip + body + thump + ring * 0.6
-    dry[:int(SR * 0.002)] *= np.linspace(0, 1, int(SR * 0.002))
-    wet = convolve(dry, canyon_ir(rng, tau, echoes))
-    out = wet * 0.8
-    out[:len(dry)] += dry
+    c = highpass(n, 3000) * np.exp(-t / crack)
+    c[:int(SR * 0.0007)] += 5.0
+    blast = lowpass(n, blast_fc) * np.exp(-t / blast_tau) * 2.0
+    boom = lowpass(rng.normal(0, 1, len(t)), boom_fc) * np.exp(-t / boom_tau) * 3.5
+    sub = np.sin(2 * np.pi * sub_f * t) * np.exp(-t / 0.12) * (1 - np.exp(-t / 0.003)) * 1.4
+    dry = 1.3 * c + blast + boom + sub
+    dry = np.tanh(dry / np.abs(dry).max() * drive)
+    dur = 3.6
+    ds = delay_scale
+    left = convolve(dry, gun_ir(rng, tau, [(0.27 * ds, 1.0, 2400), (0.63 * ds, 0.6, 1500),
+                                           (1.04 * ds, 0.36, 1000), (1.5 * ds, 0.2, 700)], dur))
+    right = convolve(dry, gun_ir(rng, tau, [(0.36 * ds, 0.9, 2200), (0.8 * ds, 0.5, 1300),
+                                            (1.24 * ds, 0.3, 900), (1.75 * ds, 0.16, 600)], dur))
+    wet = np.stack([left, right], 1)
+    wet = wet / np.abs(wet).max() * 0.6
+    out = wet.copy()
+    out[:len(dry)] += dry[:, None] * [1.0, 0.94]
     return out
 
 
@@ -460,13 +508,10 @@ def gen_sfx(meta):
     # Three takes of each gun so repeated shots don't sound identical.
     for i in range(3):
         sfx = "" if i == 0 else "_%d" % (i + 1)
-        jit = rng.uniform(0.9, 1.1)
-        write("colt" + sfx, gunshot(rng, 1.0, 0.003, 1300, 75, 1150, 0.9 * jit,
-                                    [(0.24 * jit, 0.35, 1400), (0.55 * jit, 0.2, 900)]), meta)
-        write("coach" + sfx, gunshot(rng, 2.0, 0.005, 700, 52, 820, 1.2 * jit,
-                                     [(0.28 * jit, 0.4, 1000), (0.62 * jit, 0.25, 700)]), meta, 0.95)
-        write("rifle" + sfx, gunshot(rng, 1.2, 0.002, 1700, 88, 1400, 1.1 * jit,
-                                     [(0.31 * jit, 0.4, 1600), (0.74 * jit, 0.22, 1000)]), meta)
+        j = rng.uniform(0.92, 1.08)
+        write("colt" + sfx, gunshot(rng, 0.0025, 2600, 0.035, 220, 0.12, 55, 3.0, 0.9, j), meta, 0.98, 1.6)
+        write("rifle" + sfx, gunshot(rng, 0.0018, 3600, 0.03, 260, 0.1, 62, 3.0, 1.1, 1.15 * j), meta, 0.98, 1.6)
+        write("coach" + sfx, gunshot(rng, 0.004, 1500, 0.09, 150, 0.26, 44, 3.6, 1.3, 1.05 * j), meta, 0.98, 1.8)
 
     t = t_of(0.7)
     f = 3600 * np.exp(-t / 0.45) + 900
@@ -477,35 +522,57 @@ def gen_sfx(meta):
     ric += highpass(rng.normal(0, 1, len(t)), 2500) * np.exp(-t / 0.006)
     write("ricochet", room(ric, rng, 0.4, 0.5), meta, 0.5)
 
-    # Colt SAA: thumbing the hammer gives the four famous clicks ("C-O-L-T").
-    cock = place(0.16, [(0.0, metal(rng, 3300) * 0.5), (0.028, metal(rng, 3000) * 0.55),
-                        (0.055, metal(rng, 3400) * 0.6), (0.088, metal(rng, 2500, 1.3) * 1.0)])
-    write("cock", room(cock, rng), meta, 0.5)
-    # Winchester lever: action thrown open, then snapped shut, with wood under it.
-    lever = place(0.32, [(0.0, metal(rng, 1500, 1.6)), (0.01, bandpass(rng.normal(0, 1, int(SR * 0.07)), 1500, 4500) * np.linspace(0.5, 0, int(SR * 0.07))),
-                         (0.15, metal(rng, 1300, 2.0) * 1.3), (0.15, modal(rng, [240, 410], [0.03, 0.02], [0.8, 0.4], 0.1))])
-    write("lever", room(lever, rng), meta, 0.6)
-    # A cartridge pushed past the loading gate.
-    push = bandpass(rng.normal(0, 1, int(SR * 0.05)), 2500, 6000) * np.linspace(0.3, 0.8, int(SR * 0.05))
-    write("shell_in", room(place(0.12, [(0, push), (0.05, metal(rng, 3900, 0.8) * 0.8)]), rng), meta, 0.45)
+    def thunk(f, tau, dur=0.12):
+        tt = t_of(dur)
+        return lowpass(rng.normal(0, 1, len(tt)), f) * np.exp(-tt / tau)
+
+    def rasp(dur, lo, hi):
+        n = int(SR * dur)
+        return bandpass(rng.normal(0, 1, n), lo, hi) * np.sin(np.linspace(0, np.pi, n)) ** 0.5
+
+    # Colt SAA: thumbing the hammer gives the four famous clicks ("C-O-L-T"),
+    # the last one the heavy click of the sear locking.
+    cock = place(0.2, [(0.0, metal(rng, 3200) * 0.6), (0.03, metal(rng, 2900) * 0.65),
+                       (0.058, metal(rng, 3300) * 0.7),
+                       (0.095, metal(rng, 2300, 1.6) * 1.3 + thunk(900, 0.012) * 0.8)])
+    write("cock", room(cock, rng, 0.05, 0.25), meta, 0.85, 1.5)
+    # Hammer falling on an empty chamber or a spent case: a hollow, final clack.
+    dry = place(0.2, [(0.0, metal(rng, 1500, 2.0) * 1.2 + thunk(700, 0.02) * 1.5)])
+    write("dry", room(dry, rng, 0.06, 0.3), meta, 0.9, 1.8)
+    # The Colt's loading gate flipped open at half-cock.
+    write("gate", room(place(0.12, [(0, metal(rng, 2700, 1.1)), (0.01, rasp(0.04, 2000, 5000) * 0.4)]), rng),
+          meta, 0.7, 1.4)
+    # Winchester lever: action thrown open with a rasp, then slammed shut.
+    lever = place(0.34, [(0.0, metal(rng, 1400, 1.9) * 1.1 + thunk(800, 0.015)),
+                         (0.012, rasp(0.09, 1200, 4500) * 0.6),
+                         (0.17, metal(rng, 1150, 2.3) * 1.5 + thunk(500, 0.025) * 1.3),
+                         (0.17, knock(rng, 600, 0.012))])
+    write("lever", room(lever, rng, 0.06, 0.25), meta, 0.92, 1.6)
+    # A cartridge pushed home past the loading gate.
+    shell = place(0.14, [(0, rasp(0.05, 2500, 6500) * 0.7), (0.05, metal(rng, 3700, 0.9) + thunk(1500, 0.006) * 0.6)])
+    write("shell_in", room(shell, rng, 0.05, 0.2), meta, 0.75, 1.4)
     # Ejector rod, then the brass case tinkling onto the boards.
-    parts = [(0.0, metal(rng, 2200) * 0.6)]
+    parts = [(0.0, metal(rng, 2200) * 0.8)]
     for st, a in ((0.11, 1.0), (0.19, 0.55), (0.24, 0.3), (0.27, 0.15)):
-        parts.append((st, modal(rng, [4300, 6900, 9200], [0.05, 0.03, 0.02], [a, a * 0.5, a * 0.3], 0.15)))
-    write("eject", room(place(0.45, parts), rng), meta, 0.35)
-    # Coach gun: breaking it open and snapping it shut.
-    write("break_open", room(place(0.2, [(0, metal(rng, 900, 2.2)), (0.04, metal(rng, 2000, 1.2) * 0.5)]), rng),
-          meta, 0.6)
-    write("close", room(place(0.2, [(0, metal(rng, 800, 2.6) * 1.4), (0.015, modal(rng, [160, 330], [0.04, 0.02], [1, 0.5], 0.15))]), rng),
-          meta, 0.7)
-    write("dry", room(metal(rng, 1900, 1.5), rng), meta, 0.4)
+        parts.append((st, tink(rng, 5200, 0.015, a)))
+    write("eject", room(place(0.45, parts), rng), meta, 0.65, 1.3)
+    # Coach gun: hinge creak and clack breaking open, a solid snap closing.
+    creak = rasp(0.12, 500, 1800) * (0.6 + 0.4 * np.sin(np.linspace(0, 40, int(SR * 0.12))))
+    write("break_open", room(place(0.25, [(0, metal(rng, 900, 2.4) * 1.3 + thunk(400, 0.03)),
+                                          (0.03, creak * 0.5)]), rng), meta, 0.88, 1.6)
+    write("close", room(place(0.22, [(0, metal(rng, 800, 2.8) * 1.6 + thunk(350, 0.04) * 1.5),
+                                     (0.004, knock(rng, 400, 0.015))]), rng),
+          meta, 0.92, 1.7)
     t = t_of(0.15)
     thud = lowpass(rng.normal(0, 1, len(t)), 450) * np.exp(-t / 0.025) * 2
     thud += np.sin(2 * np.pi * (110 + 80 * np.exp(-t / 0.01)) * t) * np.exp(-t / 0.05)
-    write("hit", room(thud, rng, 0.1, 0.2), meta, 0.8)
-    write("pickup", room(place(0.3, [(0, modal(rng, [3800, 6100], [0.05, 0.03], [1, 0.5], 0.1)),
-                                     (0.07, modal(rng, [4200, 6600], [0.05, 0.03], [0.8, 0.4], 0.1))]), rng), meta, 0.4)
-    write("step", steps_crunch(rng), meta, 0.25)
+    write("hit", room(thud, rng, 0.1, 0.2), meta, 0.9, 1.5)
+    write("pickup", room(place(0.3, [(0, tink(rng, 4500, 0.01)), (0.06, tink(rng, 5000, 0.01, 0.8)),
+                                     (0.1, tink(rng, 4800, 0.008, 0.5))]), rng), meta, 0.6)
+    write("step", steps_crunch(rng), meta, 0.45)
+    # Spurs: the rowels jingle as he walks.
+    spur = place(0.2, [(st, tink(rng, 6500, 0.005, a, 0.06)) for st, a in ((0.0, 1.0), (0.03, 0.6), (0.055, 0.35))])
+    write("spur", spur, meta, 0.4)
 
     # church bell
     def bell(f0, dur):

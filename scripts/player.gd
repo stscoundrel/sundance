@@ -13,6 +13,7 @@ var step_t := 0.0
 var bloom := 0.0
 var aim_dist := 0.0
 var aim_target: Enemy = null
+var _spur := false
 
 
 func setup(g: Node, pos: Vector2) -> void:
@@ -67,7 +68,10 @@ func _physics_process(delta: float) -> void:
 		if step_t <= 0.0:
 			step_t = 0.36
 			game.make_noise(global_position, 55.0, "step", self)
-			game.sfx("step", global_position, -16.0, 0.2)
+			game.sfx("step", null, -9.0, 0.2)
+			_spur = not _spur
+			if _spur:
+				game.sfx("spur", null, -12.0, 0.1)
 	update_anim(delta)
 
 
@@ -101,7 +105,7 @@ func switch_to(k: String) -> void:
 	weapon = weapons[k]
 	set_sheet("hero_" + k)
 	switch_t = 0.4
-	game.sfx("close", global_position, -12.0)
+	game.sfx("close", null, -8.0)
 
 
 func accuracy_mult() -> float:

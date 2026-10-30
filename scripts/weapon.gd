@@ -117,10 +117,10 @@ func trigger() -> void:
 				chambered = false
 				_shoot(1)
 				_cycle(d["cycle"])
-				holder.game.sfx("lever", holder.global_position, -6.0)
+				_snd("lever")
 			elif tube > 0:
 				_cycle(d["cycle"])
-				holder.game.sfx("lever", holder.global_position, -6.0)
+				_snd("lever")
 			else:
 				_dry()
 
@@ -160,10 +160,10 @@ func start_reload() -> bool:
 		"colt":
 			timer = 0.35
 			cocked = false
-			holder.game.sfx("dry", holder.global_position, -6.0)
+			_snd("gate")
 		"coach":
 			timer = 0.4
-			holder.game.sfx("break_open", holder.global_position, -3.0)
+			_snd("break_open")
 		_:
 			timer = 0.25
 	return true
@@ -195,7 +195,7 @@ func _advance() -> void:
 				cur = (cur + 1) % 6
 				cocked = true
 				if not fanning:
-					holder.game.sfx("cock", holder.global_position, -8.0)
+					_snd("cock", -2.0)
 			elif kind == "rifle" and not chambered and tube > 0:
 				tube -= 1
 				chambered = true
@@ -211,7 +211,7 @@ func _advance() -> void:
 						break
 			elif kind == "rifle" and not chambered and tube > 0:
 				_cycle(d["cycle"])
-				holder.game.sfx("lever", holder.global_position, -6.0)
+				_snd("lever")
 
 
 func _reload_step() -> void:
@@ -258,7 +258,7 @@ func _reload_step() -> void:
 func _step(s: S, t: float, snd: String) -> void:
 	state = s
 	timer = t
-	holder.game.sfx(snd, holder.global_position, -4.0)
+	_snd(snd)
 
 
 func _close() -> void:
@@ -266,10 +266,10 @@ func _close() -> void:
 	match kind:
 		"colt":
 			timer = 0.3
-			holder.game.sfx("cock", holder.global_position, -6.0)
+			_snd("cock")
 		"coach":
 			timer = 0.35
-			holder.game.sfx("close", holder.global_position, -3.0)
+			_snd("close")
 		_:
 			timer = 0.15
 
@@ -279,8 +279,17 @@ func _cycle(t: float) -> void:
 	timer = t
 
 
+## The hero's own gun is heard up close at full volume; a bandit's is placed in the
+## world and fades with distance.
+func _snd(name: String, vol := 0.0) -> void:
+	if holder.is_player:
+		holder.game.sfx(name, null, vol, 0.04)
+	else:
+		holder.game.sfx(name, holder.global_position, vol - 3.0)
+
+
 func _dry() -> void:
-	holder.game.sfx("dry", holder.global_position, -4.0)
+	_snd("dry", 2.0)
 	_cycle(0.15)
 
 
@@ -289,7 +298,7 @@ func _colt_fire(fan: bool) -> void:
 		chambers[cur] = 2
 		_shoot(1, 11.0 if fan else 0.0)
 	else:
-		holder.game.sfx("dry", holder.global_position, -4.0)
+		_snd("dry", 2.0)
 	cocked = false
 	_cycle(0.12 if fan else d["cycle"])
 
@@ -312,6 +321,6 @@ func _shoot(mult: int, extra_spread := 0.0) -> void:
 			d["damage"], h, h.gun_height(), n > 1)
 	h.game.muzzle_flash(h, dir)
 	h.play_action("fire", 0.14)
-	h.game.sfx(d["sfx"], h.global_position, 2.0 if mult > 1 else 0.0)
+	_snd(d["sfx"], 2.0 if mult > 1 else 0.0)
 	h.game.make_noise(h.global_position, d["noise"], "shot" if h.is_player else "enemy_shot", h)
 	h.on_fired(d["shake"] * mult)

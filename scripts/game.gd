@@ -5,6 +5,7 @@ extends Node2D
 const LEVEL_PATH := "res://data/town.json"
 const META_PATH := "res://assets/meta.json"
 const POST_SHADER := preload("res://shaders/post.gdshader")
+const LOUD := ["colt", "coach", "rifle", "bell"]
 const WIND := Vector2(7, -2)   # px/s drift for smoke and dust
 const VIEW_W := 1280.0 / 3.0   # world pixels across the screen: a close, detailed view
 
@@ -57,6 +58,7 @@ func _ready() -> void:
 	_build_overlay()
 	start_time = Time.get_ticks_msec()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	_setup_audio()
 	var wind := AudioStreamPlayer.new()
 	wind.stream = load(meta["sfx"]["wind"])
 	wind.volume_db = -12.0
@@ -66,6 +68,24 @@ func _ready() -> void:
 	sfx("bell", null, -4.0, 0.0)
 	if _args.has("skip-title"):
 		begin()
+
+
+## Glue and a brick-wall limiter on the master bus: gunfire can be mixed hot and
+## stacked shots in a firefight stay punchy instead of clipping.
+func _setup_audio() -> void:
+	var bus := AudioServer.get_bus_index("Master")
+	if AudioServer.get_bus_effect_count(bus) > 0:
+		return
+	var comp := AudioEffectCompressor.new()
+	comp.threshold = -14.0
+	comp.ratio = 3.0
+	comp.attack_us = 2000.0
+	comp.release_ms = 180.0
+	comp.gain = 3.0
+	AudioServer.add_bus_effect(bus, comp)
+	var lim := AudioEffectHardLimiter.new()
+	lim.ceiling_db = -0.3
+	AudioServer.add_bus_effect(bus, lim)
 
 
 func _parse_args() -> void:
@@ -745,8 +765,13 @@ func sfx(name: String, pos: Variant = null, vol := 0.0, pitch_var := 0.06) -> vo
 		ap2.volume_db = vol
 		ap2.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
 		ap2.position = pos
-		ap2.max_distance = 1600.0
-		ap2.attenuation = 1.4
+		if name in LOUD:
+			# gunfire carries right across town
+			ap2.max_distance = 4000.0
+			ap2.attenuation = 0.5
+		else:
+			ap2.max_distance = 1200.0
+			ap2.attenuation = 1.2
 		p = ap2
 	add_child(p)
 	p.finished.connect(p.queue_free)

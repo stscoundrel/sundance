@@ -147,11 +147,14 @@ carried, which you collect by walking over them.
 - Presentation: a title card in the style of the films' opening credits and a
   church bell. If a bandit lays eyes on the hero before he has fired a shot, the
   game slows briefly while an extreme close-up of his eyes crosses the screen.
-- Sound: gunshots with a whip crack and a long canyon tail with slap-back echoes
-  (three takes per gun); struck-metal mechanics such as the Colt's four cocking
-  clicks, the Winchester's lever and brass tinkling onto the boards.
-- HUD: Colt cylinder showing each chamber, the coach gun's two barrels, a
-  Yellow Boy round counter, health pips and bandits remaining.
+- Sound: gunshots are loud and echoing, like the films: a hard crack, a saturated
+  powder blast and a low boom, then a long stereo canyon tail whose echoes bounce
+  left and right (three takes per gun, no pitched "pew"). Gunfire carries across
+  town. The mechanics are heavy and clear: the Colt's four cocking clicks, the
+  hammer falling on an empty chamber, the loading gate, the Winchester's lever, the
+  coach gun's hinge and snap, brass tinkling onto the boards, spurs jingling. The
+  hero's own sounds play at full volume; a compressor and limiter on the master bus
+  keep firefights punchy.
 
 ## Tech
 
