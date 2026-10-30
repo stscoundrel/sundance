@@ -43,10 +43,22 @@ var _streams := {}
 var _args := {}
 var _shot_done := false
 var _rattled := false
+# What the gang knows about the stranger: when anyone last saw him or heard him
+# fire, and where. Covering fire needs a fresh reason; stale knowledge only earns
+# the odd harassing shot, and then silence.
+const FRESH := 5.0       # seconds a sighting stays a reason to suppress
+const HARASS_UNTIL := 12.0
+const HARASS_EVERY := 3.0
+var clock := 0.0         # game time in seconds (physics frames, so tests can run fast)
+var seen_at := -100.0
+var seen_pos := Vector2.ZERO
+var harass_cd := 0.0
+var stats := {}   # counts of AI events ("orders covering fire", "panic shot"...)
 
 
 func _ready() -> void:
-	randomize()
+	if not Engine.has_meta("fixed_seed"):   # tests seed the RNG themselves
+		randomize()
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -531,13 +543,18 @@ func next_flank() -> float:
 
 
 func ally_in_line(shooter: Enemy, a: Vector2, b: Vector2) -> bool:
+	return blocking_ally(shooter, a, b) != null
+
+
+## The comrade standing in the line of fire from a to b, if any.
+func blocking_ally(shooter: Enemy, a: Vector2, b: Vector2) -> Enemy:
 	for e in enemies:
 		if e == shooter or not e.alive:
 			continue
 		var p := Geometry2D.get_closest_point_to_segment(e.global_position, a, b)
 		if p.distance_to(e.global_position) < 12.0 and p.distance_to(b) > 8.0:
-			return true
-	return false
+			return e
+	return null
 
 
 ## A reachable spot about `dist` away from the threat, for a bandit running off.
@@ -587,6 +604,39 @@ func taken_positions(except: Enemy) -> Array:
 	return out
 
 
+func report_sighting(pos: Vector2) -> void:
+	seen_at = clock
+	seen_pos = pos
+
+
+## Seconds since anyone in the gang saw or heard the stranger.
+func staleness() -> float:
+	return clock - seen_at
+
+
+func _physics_process(delta: float) -> void:
+	if state != "play":
+		return
+	clock += delta
+	# Knowledge gone stale: the shooting dies down to the odd harassing shot at his
+	# last known position from one bandit at a time, then stops altogether.
+	var stale := staleness()
+	if stale < FRESH or stale > HARASS_UNTIL:
+		return
+	harass_cd -= delta
+	if harass_cd > 0.0:
+		return
+	harass_cd = HARASS_EVERY * randf_range(0.8, 1.3)
+	var shooters: Array[Enemy] = []
+	for e in enemies:
+		if e.alive and e.st == Enemy.St.COMBAT and e.reaction == "" and not e.weapon.is_reloading() \
+				and e.global_position.distance_to(seen_pos) < e.weapon.d["range"] * 0.8 \
+				and not ally_in_line(e, e.global_position, seen_pos):
+			shooters.append(e)
+	if not shooters.is_empty():
+		shooters.pick_random().harass(seen_pos)
+
+
 func is_free(p: Vector2) -> bool:
 	return not astar.is_point_solid(_cell(p))
 
@@ -594,6 +644,7 @@ func is_free(p: Vector2) -> bool:
 func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void:
 	if kind == "shot":
 		player_fired = true
+		report_sighting(pos)   # his muzzle flash and the crack give him away
 	for e in enemies:
 		if e.alive:
 			e.hear(pos, radius, kind, source)

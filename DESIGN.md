@@ -102,10 +102,31 @@ carried, which you collect by walking over them.
   that a death always draws reactions.
 - **Firefight**: each bandit takes a fighting position, preferring cover that hides
   him crouched but lets him shoot standing (barrels, crates, wagons, corners), not
-  taken by a comrade. Behind cover he ducks, pops up, aims, fires a shot or two and
-  ducks again. He never fires on the move (a shotgunner up close excepted), takes a
-  moment to aim before each shot, and often sidesteps after firing instead of
-  advancing.
+  taken by a comrade. Behind cover he ducks, pops up, aims, fires and ducks again.
+  He takes a moment to aim before each shot and often sidesteps instead of
+  advancing. **He shoots back unless pinned**: a bandit who can see the stranger
+  and hasn't fired for ~1.6 s stops what he's doing and fires; only rounds landing
+  near him (pinned for 2.5 s) keep him ducking long. It's on the player to pin
+  them down.
+- **Bounding**: before breaking position to move more than ~40 px, a bandit calls
+  "¡Cúbreme!" / "Cover me!" (leaders always, others half the time) and the
+  comrades holding positions nearby lay down fire while he sprints.
+- **Leaders' orders**: El Jefe and the riflemen order "¡Fuego!" / "Covering fire!"
+  when the stranger has gone to ground or a comrade is fleeing, cowering or
+  reloading. Everyone nearby blazes away at his likely position, seen or not,
+  faster and looser than aimed fire; the leader either moves up under it or leads
+  the shooting.
+- **Panic shots**: a bandit running, dashing or backing off may loose a wild shot
+  back over his shoulder.
+- **A reason to shoot**: the gang shares when anyone last saw the stranger or heard
+  him fire. Covering fire, "Cover me!", leaders' orders and panic shots need that
+  to be fresh (under 5 s). Blind suppression tapers as the sighting ages and stops
+  after ~2.5 s without one. From 5 to 12 s only one bandit at a time takes a lone
+  harassing shot at the last known spot, about every 3 s; after that, silence until
+  someone sees or hears him again.
+- `tests/test_tactics.gd` runs a standing firefight and checks that free bandits
+  shoot within a few seconds, that cover calls, leaders' orders and panic shots
+  all happen, and that the shooting dies down once the stranger vanishes.
 - **Spreading out**: each bandit joining a fight takes his own flanking angle and
   holds a spot around the stranger at his weapon's range, instead of filing in behind
   the others. Comrades push apart when they get too close, and a bandit holds fire
