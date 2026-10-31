@@ -122,6 +122,13 @@ CIVILIANS = [
     {"kind": "townswoman", "x": 31.4, "y": 10.4, "facing": 140},
     {"kind": "peon", "x": 48.2, "y": 47.2, "facing": 0},
     {"kind": "townswoman", "x": 22.6, "y": 47.0, "facing": 330},
+    # couples out for a stroll: the first leads, the second walks on his arm
+    {"kind": "gentleman", "x": 35.0, "y": 30.6, "facing": 0, "couple": 1, "wander": 150},
+    {"kind": "townswoman", "x": 35.0, "y": 31.4, "facing": 0, "couple": 1},
+    {"kind": "townsman", "x": 38.0, "y": 14.4, "facing": 180, "couple": 2, "wander": 150},
+    {"kind": "townswoman", "x": 38.0, "y": 15.2, "facing": 180, "couple": 2},
+    # the padre at the church door
+    {"kind": "priest", "x": 31.2, "y": 9.0, "facing": 0},
     # the undertaker at his door, his apprentice up on boot hill
     {"kind": "undertaker", "x": 56.4, "y": 30.6, "facing": 90},
     {"kind": "apprentice", "x": 9.6, "y": 50.4, "facing": 45},

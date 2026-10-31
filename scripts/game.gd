@@ -355,6 +355,17 @@ func _spawn_actors() -> void:
 			cv.setup(self, c["kind"], Iso.to_screen(Vector2(c["x"], c["y"])), c.get("facing", 90.0), overrides)
 			cv.died.connect(_on_civilian_died)
 			civilians.append(cv)
+		# couples: the first of each pair leads, the other walks on his arm
+		var couples := {}
+		for cv in civilians:
+			if cv.tdata.has("couple"):
+				var k: Variant = cv.tdata["couple"]
+				if couples.has(k):
+					cv.partner = couples[k]
+					couples[k].partner = cv
+				else:
+					couples[k] = cv
+					cv.leads = true
 	player.died.connect(_on_player_died)
 	player.make_ghost(ghost_layer, Color(0.92, 0.95, 1.0, 0.6))
 	for en in enemies:
@@ -887,23 +898,55 @@ func quiet_for() -> float:
 	return _quiet
 
 
-## The nearest dead bandit nobody is seeing to yet, now claimed by this undertaker.
+## The dead bandit an undertaker sees to next, now claimed by him: the nearest one
+## the padre has blessed, or else the nearest he isn't about to bless, or else any.
 func claim_body(by: Civilian) -> Enemy:
 	var best: Enemy = null
-	var best_d := INF
+	var best_score := INF
 	for e in enemies:
-		if e.alive or e.dying() or e.has_meta("buried"):
+		if e.alive or e.dying() or e.has_meta("buried") or _held(e, "claimed_by"):
 			continue
-		var owner: Civilian = e.get_meta("claimed_by", null)
-		if owner and owner.alive and owner.body == e:
-			continue
-		var d := by.global_position.distance_to(e.global_position)
-		if d < best_d:
-			best_d = d
+		var score := by.global_position.distance_to(e.global_position)
+		if not e.has_meta("blessed"):
+			score += 2000.0 if _held(e, "blessing_by") else 1000.0
+		if score < best_score:
+			best_score = score
 			best = e
 	if best:
 		best.set_meta("claimed_by", by)
 	return best
+
+
+## The nearest of the dead the padre hasn't blessed yet, townsfolk or bandit.
+func blessing_for(by: Civilian) -> Actor:
+	var dead: Array[Actor] = []
+	dead.append_array(enemies)
+	dead.append_array(civilians)
+	var best: Actor = null
+	var best_d := INF
+	for a in dead:
+		if a.alive or a.dying() or a.has_meta("buried") or a.has_meta("blessed") \
+				or _held(a, "blessing_by") or in_hand(a):
+			continue
+		var d := by.global_position.distance_to(a.global_position)
+		if d < best_d:
+			best_d = d
+			best = a
+	if best:
+		best.set_meta("blessing_by", by)
+	return best
+
+
+## Someone (still about, still on it) has this body.
+func _held(a: Actor, key: String) -> bool:
+	var who: Civilian = a.get_meta(key, null)
+	return who != null and who.alive and who.body == a
+
+
+## The undertaker already has his tape on him, or has him in tow.
+func in_hand(a: Actor) -> bool:
+	var who: Civilian = a.get_meta("claimed_by", null)
+	return who != null and who.alive and who.body == a and who.st in [Civilian.St.MEASURE, Civilian.St.DRAG]
 
 
 ## A free plot on boot hill, a little apart from the other new graves.
@@ -948,7 +991,7 @@ func lay_pool(a: Actor) -> void:
 
 ## Into the ground: the body's gone (no longer anything for the bandits to find)
 ## and a fresh cross marks the spot.
-func bury(body: Enemy, at: Vector2) -> void:
+func bury(body: Actor, at: Vector2) -> void:
 	body.visible = false
 	body.set_meta("buried", true)
 	body.remove_meta("claimed_by")

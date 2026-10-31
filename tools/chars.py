@@ -49,7 +49,7 @@ def template_guns():
         if t.get("concealed"):
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():
-        need(t["template"], "tools" if t.get("role") == "undertaker" else "unarmed")
+        need(t["template"], {"undertaker": "tools", "priest": "prayer"}.get(t.get("role", ""), "unarmed"))
     return out
 
 
@@ -471,6 +471,8 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
 
     with look.tag("skin"):
         m += frustum((0, 0, 0.5), (0, 0, 0.63), 0.05, 0.05, look.c("skin"))
+    if look.get("collar"):   # a priest's white collar
+        m += frustum((0, 0, 0.585), (0, 0, 0.625), 0.092, 0.088, (232, 228, 218))
     if look.get("scarf"):
         with look.tag("accent"):
             m += frustum((0, 0, 0.5), (0, 0, 0.6), 0.1, 0.075, look.c("accent"))
@@ -515,6 +517,10 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         h = np.array(up["hL"], float)
         with look.tag("skin"):
             m += beam(h + [0.03, 0, 0], h + [0.12, -0.01, 0.01], 0.014, look.c("skin"))
+    if up.get("book"):   # the priest's breviary, held to his chest
+        h = np.array(up["hL"], float)
+        m += box(tuple(h + [-0.03, -0.05, -0.02]), tuple(h + [0.04, 0.03, 0.11]), (34, 26, 24))
+        m += box(tuple(h + [-0.031, -0.01, 0.03]), tuple(h + [0.041, -0.005, 0.07]), (200, 170, 80))
     if up.get("tape"):   # the undertaker's tape measure, stretched between his hands
         m += beam(np.array(up["hL"], float), np.array(up["hR"], float), 0.009, (226, 204, 120))
 
@@ -583,6 +589,18 @@ def _key_poses(w):
         return k
     if w == "colts":
         return _twin_poses()
+    if w == "prayer":
+        # empty hands, a book in the left, and the sign of the cross with the right:
+        # up, down, across
+        k = _key_poses("unarmed")
+        book = dict(eL=V(0.08, 0.25, 0.3), hL=V(0.22, 0.1, 0.36), book=True)
+        k["aim"] = P(k["aim"], **book)
+        base = dict(eR=V(0.22, -0.2, 0.45), lean=0.25, nod=0.25, **book)
+        k["bless_a"] = P(base, hR=V(0.44, -0.06, 0.66))
+        k["bless_b"] = P(base, hR=V(0.44, -0.06, 0.36), eR=V(0.2, -0.22, 0.32))
+        k["bless_c"] = P(base, hR=V(0.42, 0.1, 0.52))
+        k["bless_d"] = P(base, hR=V(0.42, -0.24, 0.52))
+        return k
     if w == "tools":
         # the undertaker's trade on top of empty hands: bent over a body with the tape,
         # and hauling one along behind him by the boots
@@ -768,10 +786,12 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools"):
+    if w not in ("unarmed", "tools", "prayer"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
+    elif w == "prayer":
+        add("bless", [k["bless_a"], k["bless_b"], k["bless_c"], k["bless_d"]], 2.5, True)
     elif w == "tools":
         add("measure", [k["measure_a"], k["measure_b"]], 2, True)
         add("drag", [k["drag"]], 1, True)

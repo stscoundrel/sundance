@@ -18,7 +18,8 @@
     "gunslinger":      {"style": "vest",   "hat": "flat",     "scarf": true, "mustache": true, "holsters": 2},
     "peon":            {"style": "shirt",  "hat": "sombrero", "mustache": true, "holsters": 0},
     "undertaker":      {"style": "duster", "hat": "top",      "mustache": true, "holsters": 0},
-    "apprentice":      {"style": "vest",   "hat": "bowler",   "holsters": 0}
+    "apprentice":      {"style": "vest",   "hat": "bowler",   "holsters": 0},
+    "priest":          {"style": "duster", "hat": "flat",     "collar": true, "holsters": 0}
   },
 
   "player": {
@@ -202,6 +203,11 @@
         "shouts": {"flee": ["Mister Coffin!", "Wait for me!"], "work": ["Heavy one.", "Up you get, mister.", "Five foot ten?"]},
         "palettes": [
           {"vest": [70, 66, 66], "shirt": [200, 194, 182], "trousers": [96, 82, 64], "boots": [56, 40, 30], "hat": [44, 40, 40], "band": [70, 60, 50], "skin": [214, 166, 132], "hair": [140, 90, 50]}]},
+      "priest": {"name": "Padre", "template": "priest", "role": "priest", "snitch": 0.0,
+        "wander": 0, "speed": 0.85, "nerve": [0.6, 1.0],
+        "shouts": {"calm": ["Peace, my son.", "Put down your guns!", "¡Basta ya!", "God sees you."], "work": ["Requiescat in pace.", "Go with God, my son.", "In nomine Patris..."]},
+        "palettes": [
+          {"coat": [46, 42, 48], "shirt": [40, 38, 44], "trousers": [40, 38, 44], "boots": [28, 24, 24], "hat": [34, 30, 36], "band": [34, 30, 36], "skin": [200, 150, 116], "hair": [60, 50, 44]}]},
       "saloon_girl": {"name": "Saloon girl", "template": "dress", "nerve": [0.3, 0.9], "snitch": 0.3,
         "shouts": {"flee": ["Oh!", "¡Ay, no!", "Not in here!"], "snitch": ["Boys! There's a stranger in town!"]},
         "palettes_from": "saloon_girl"}

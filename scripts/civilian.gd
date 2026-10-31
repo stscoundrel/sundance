@@ -9,9 +9,13 @@ extends Actor
 ## long look he hurries to the nearest one, points him out and shouts, then makes
 ## himself scarce. Once the town has been quiet a while they come back out.
 ## The undertaker and his apprentice ("role": "undertaker") work the quiet: each
-## claims a dead bandit, measures him, and drags him to boot hill to be buried.
+## claims a dead bandit, measures him, and drags him to boot hill to be buried. The
+## padre ("role": "priest") kneels and blesses the dead first, anyone at all, and
+## the church bell tolls for each; he fears no man, and neither gunfire nor the
+## stranger sends him running. Couples ("couple" in the placement) stroll arm in
+## arm while all is calm, and scatter separately when it isn't.
 
-enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG }
+enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -24,8 +28,10 @@ const GLANCE := 0.9      # how long anyone else looks before averting his eyes
 const FLEE_LINES := ["Lord help us!", "¡Corran!", "Get inside!"]
 const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
 const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios mío!"]
-const WORK := [St.TO_BODY, St.MEASURE, St.DRAG]
+const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS]
 const MEASURE_T := 3.5
+const BLESS_T := 4.0
+const ARM := 13.0          # how far beside him she walks
 const DRAG_SPEED := 0.65   # of his walk, with a man in tow
 
 var kind := "townsman"
@@ -55,7 +61,10 @@ var back_after := 0.0        # extra quiet he waits for before coming out
 var inside_t := 0.0          # how long he's been indoors
 var fade: Tween
 var undertaker := false
-var body: Enemy              # the dead man he's seeing to
+var priest := false
+var body: Actor              # the dead man he's seeing to
+var partner: Civilian        # the other half of a couple
+var leads := false           # he sets the way; she keeps to his arm
 var work_t := 0.0
 var grave := Vector2.ZERO
 var trail := Vector2.ZERO    # where the last smear went down
@@ -78,8 +87,11 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	nerve = randf_range(tdata["nerve"][0], tdata["nerve"][1])
 	snitch = randf() < float(tdata["snitch"])
 	undertaker = tdata.get("role", "") == "undertaker"
+	priest = tdata.get("role", "") == "priest"
 	if undertaker:
 		anim_gun = "tools"   # empty hands plus the tape and the haul
+	elif priest:
+		anim_gun = "prayer"  # a book in one hand, a blessing in the other
 	home = pos
 	facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	desired = facing
@@ -125,6 +137,11 @@ func witness_murder(at: Vector2) -> void:
 ## Run for it, or (short of nerve, or caught close) cower first.
 func alarm(from: Vector2, scary: bool) -> void:
 	if not alive or st in [St.FLEE, St.GONE]:
+		return
+	if priest:
+		# a holy man: he stands his ground, and may have a word for it
+		if shout_t <= 0.0 and randf() < 0.4:
+			_say(_line("calm", ["Peace, my son."]))
 		return
 	threat = from
 	_drop_body()   # the dead can wait
@@ -172,12 +189,16 @@ func _physics_process(delta: float) -> void:
 	if game.state == "play":
 		_perceive(delta)
 	match st:
+		St.IDLE, St.WALK when _on_his_arm():
+			_escort()
 		St.IDLE:
 			_idle(delta)
 		St.WALK:
-			if _follow(walk):
+			if leads and partner and partner._on_his_arm() and partner.global_position.distance_to(global_position) > ARM * 3.0:
+				velocity = Vector2.ZERO   # waits for her to catch up
+			elif _follow(walk):
 				st = St.IDLE
-				wait = randf_range(3.0, 8.0)
+				wait = randf_range(2.0, 5.0) if leads else randf_range(3.0, 8.0)
 		St.FLEE:
 			if _follow(run):
 				_go_inside()
@@ -193,6 +214,8 @@ func _physics_process(delta: float) -> void:
 			_snitch(delta)
 		St.TO_BODY, St.MEASURE, St.DRAG:
 			_work(delta)
+		St.TO_BLESS, St.BLESS:
+			_bless(delta)
 	if velocity.length() > 1.0 and not watching:
 		desired = velocity.normalized()
 	facing = facing.rotated(clamp(facing.angle_to(desired), -3.0 * delta, 3.0 * delta))
@@ -241,6 +264,13 @@ func _idle(delta: float) -> void:
 		body = game.claim_body(self)
 		if body:
 			st = St.TO_BODY
+			path = game.find_path(global_position, body.global_position)
+			path_i = 0
+			return
+	if priest and game.quiet_for() >= game.quiet_after:
+		body = game.blessing_for(self)
+		if body:
+			st = St.TO_BLESS
 			path = game.find_path(global_position, body.global_position)
 			path_i = 0
 			return
@@ -346,7 +376,69 @@ func _work(delta: float) -> void:
 func _drop_body() -> void:
 	if body and body.get_meta("claimed_by", null) == self:
 		body.remove_meta("claimed_by")
+	if body and body.get_meta("blessing_by", null) == self:
+		body.remove_meta("blessing_by")
+	crouched = false
 	body = null
+
+
+# ------------------------------------------------------------------ the padre
+
+func _bless(delta: float) -> void:
+	# gone, or already in the undertaker's hands: on to the next
+	if body == null or body.has_meta("buried") or game.in_hand(body):
+		_drop_body()
+		st = St.IDLE
+		return
+	match st:
+		St.TO_BLESS:
+			if global_position.distance_to(body.global_position) < 16.0 or _follow(walk):
+				st = St.BLESS
+				work_t = BLESS_T
+				velocity = Vector2.ZERO
+				if randf() < 0.7:
+					_say(_line("work", ["Requiescat in pace."]))
+		St.BLESS:
+			# on one knee, the sign of the cross over him
+			velocity = Vector2.ZERO
+			crouched = true
+			pose = "bless"
+			desired = (body.global_position - global_position).normalized()
+			work_t -= delta
+			if work_t <= 0.0:
+				body.set_meta("blessed", true)
+				game.sfx("bell", null, -14.0, 0.0)   # the church bell, far off
+				game.stats["blessings"] = game.stats.get("blessings", 0) + 1
+				_drop_body()
+				st = St.IDLE
+				wait = randf_range(1.5, 3.0)
+
+
+# ------------------------------------------------------------------ couples
+
+## She's on his arm while they're both just out for a stroll.
+func _on_his_arm() -> bool:
+	return partner != null and not leads and partner.alive and partner.st in [St.IDLE, St.WALK] \
+		and st in [St.IDLE, St.WALK]
+
+
+func _escort() -> void:
+	var at := partner.global_position + partner.facing.orthogonal() * ARM
+	var d := global_position.distance_to(at)
+	if d > ARM * 2.0 or not game.clear_path(global_position, at):
+		# fallen behind, or something in the way: find her way round to him
+		repath_t -= get_physics_process_delta_time()
+		if repath_t <= 0.0 or path_i >= path.size():
+			repath_t = 0.6
+			path = game.find_path(global_position, partner.global_position)
+			path_i = 0
+		_follow(run * 0.7)
+	elif d > 3.0:
+		velocity = (at - global_position).normalized() * minf(run * 0.7, maxf(walk, d * 3.0))
+	else:
+		velocity = Vector2.ZERO
+		if not watching:
+			desired = partner.facing
 
 
 # ------------------------------------------------------------------ snitching

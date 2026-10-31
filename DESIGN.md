@@ -304,8 +304,23 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   old ones) and is gone: a buried man is nothing for the bandits to find. A
   bandit who sees a comrade being dragged past still finds the body. Gunfire
   makes them let go and run indoors like anyone else; the body stays where it
-  dropped until they come back out. They see only to bandits for now. Their
-  animations are the "tools" set: empty hands plus measuring and dragging.
+  dropped until they come back out. They see only to bandits for now, and take a
+  man the padre has blessed before one he hasn't (any, if none is blessed yet,
+  preferring one the padre isn't on his way to). Their animations are the "tools"
+  set: empty hands plus measuring and dragging.
+- **The padre** (`role: "priest"`, black cassock, white collar, breviary): waits
+  at the church door. When the town is quiet he walks to the nearest of the dead
+  he hasn't blessed, anyone at all, bandit or townsman, kneels and makes the sign
+  of the cross over him ("Requiescat in pace."), and the church bell tolls once,
+  far off. He leaves a man the undertakers already have in hand. A holy man, he
+  fears no one: gunfire, near misses and killings in front of him never send him
+  running or cowering (at most he calls out "Put down your guns!"). He still waits
+  for the quiet before going out to the dead. Animations: the
+  "prayer" set.
+- **Couples**: two placements sharing a `couple` id stroll together while all is
+  calm: the first leads (with a long `wander`), the second walks on his arm,
+  finding her way round anything in the way, and he waits if she falls behind.
+  At the first shot each runs for it alone; back out, they pair up again.
 - **Innocents**: townsfolk are hit by stray rounds from either side, and bandits
   hold fire when one is in the line. If the hero kills one, the town notices: "AN
   INNOCENT - the town will remember", witnesses shout "Murderer!" and run, and the
@@ -326,7 +341,10 @@ bandits pass as townsfolk, let the stranger stand a few paces off, and draw when
 walks right up; and that a dead townsman counts as an innocent.
 `tests/test_aftermath.gd` (with a shortened quiet period) checks the undertakers
 bury every body, wait for the quiet, drop a body and run at a shot, come back out
-and finish, and that buried men are no longer found. `tests/test_perf.gd` times a firefight with and without the townsfolk.
+and finish, and that buried men are no longer found; that the padre blesses a dead
+townsman and bandits and never runs from gunfire; and that an undertaker takes a blessed man over a nearer
+unblessed one. `tests/test_couples.gd` checks couples stay together on a stroll and
+scatter at a shot. `tests/test_perf.gd` times a firefight with and without the townsfolk.
 
 ## Animation
 
