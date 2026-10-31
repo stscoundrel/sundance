@@ -146,7 +146,9 @@ carried, which you collect by walking over them.
   off when all are within ~70 px of him, or after 30 s with whoever has come. The
   leader walks from street to street, always to the nearest of the spots they've
   seen least lately, so the whole town gets swept rather than the same streets
-  twice; he pauses 1.5–3 s at each and waits for stragglers. The others keep their
+  twice; he pauses 1.5–3 s at each and waits up to 6 s for stragglers, who run
+  for him first when far behind. In an alley too tight for the formation the
+  others fall in behind him single file. The others keep their
   slots behind and beside him, each watching his own side (left, right, the rear)
   whenever they stop. A fight breaks the formation as usual, and once the search
   that follows is over each man falls back in on the leader. If the leader dies, the
@@ -255,6 +257,7 @@ generator:
 | Type | Look | Guns | Character |
 |---|---|---|---|
 | Pistolero | poncho, sombrero (3 serapes) | Colt | rank and file, often breaks under fire |
+| Bandido | peasant whites, straw sombrero, bandolier, coloured sash (3) | Colt Navy (cap-and-ball) | 1 HP, poor aim, thin nerve, slow to react; dangerous for six shots, then an age reloading |
 | Cowboy | vest, bandana (3 palettes) | Colt | steady mid-range gunman |
 | Rifleman | duster, bowler (2) | Winchester + Colt | good shot, leader (orders covering fire) |
 | Red Scarf | vest, red scarf | coach gun + Colt | rushes in, fires on the move |
@@ -294,6 +297,11 @@ barrel, both can go at once). The gunslinger's **pair of Colts** holds twelve: t
 chambers alternate between the guns, so he fires right, left, right, with only a
 short pause between; he reloads one gun at a time while the other sits holstered
 (`tests/test_gunslinger.gd` pits one against a pistolero under fire). The
+**Colt Navy 1851** is the old cap-and-ball revolver the bandidos carry: six shots,
+damage 1, a fog of black-powder smoke, and no cartridges. Each chamber is charged
+with powder and ball, rammed and capped, so a full reload takes about 11 s (a
+Colt's ~4.5): empty, a bandido is a sitting duck. It leaves nothing for the
+stranger to take. Revolver reload steps are data (`eject`, `insert` per gun). The
 **sawn-off** is a double 12-gauge cut down to a pistol grip and stubby barrels: the
 coach gun's shells and volley, a much wider pattern (15 degrees) that is spent by
 ~115 px, and a quicker reload. It's carried at the hip like the coach gun, and a

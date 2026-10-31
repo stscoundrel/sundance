@@ -171,6 +171,32 @@ func _init() -> void:
 	var tc: float = cg["open"][0] + cg["eject"][0] + cg["insert"][0] * 2 + cg["close"][0]
 	check(t0 < tc, "sawn-off reloads quicker than the coach gun (%.2f vs %.2f s)" % [t0, tc])
 
+	# Colt Navy, cap-and-ball: six, a little weaker, and an age to reload (a Colt
+	# reloads all six in a few seconds).
+	var navy := Weapon.new("navy", a)
+	navy.reserve = 12
+	check(navy.d["damage"] < Weapon.DATA["colt"]["damage"], "the Navy should hit softer than the Colt")
+	g.shots = 0
+	for i in 7:
+		navy.trigger()
+		run(navy, 0.5)
+	check(g.shots == 6, "Navy fires 6 (got %d)" % g.shots)
+	var navy_t := 0.0
+	check(navy.start_reload(), "Navy reload starts")
+	while navy.is_reloading() and navy_t < 30.0:
+		run(navy, 0.1)
+		navy_t += 0.1
+	var colt_t := 0.0
+	var colt2 := Weapon.new("colt", a)
+	colt2.reserve = 12
+	colt2.chambers.fill(2)
+	colt2.start_reload()
+	while colt2.is_reloading() and colt_t < 30.0:
+		run(colt2, 0.1)
+		colt_t += 0.1
+	check(navy.loaded() == 6, "Navy reloaded all six (%d)" % navy.loaded())
+	check(navy_t > colt_t * 2.0, "a cap-and-ball reload should take far longer (%.1f vs %.1f s)" % [navy_t, colt_t])
+
 	a.free()
 	g.free()
 	print("weapons: ", "OK" if failures == 0 else "%d failures" % failures)

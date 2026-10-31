@@ -10,6 +10,7 @@ const SIZE := 5
 const GATHER_MAX := 30.0   # set off with whoever has arrived by then
 const TOGETHER := 70.0     # gathered: everyone this close to the leader
 const LAG := 110.0         # the leader waits for anyone further behind than this
+const WAIT_MAX := 6.0      # but not for ever: then he moves on and they catch up
 const SPACING := 8.0       # tiles between route points along a street
 # Formation slots around the leader: [metres back, metres to the side] in his
 # frame, and the bearing each man keeps watch on when they stop.
@@ -22,6 +23,7 @@ var members: Array[Enemy] = []
 var leader: Enemy
 var gathering := true
 var gather_t := 0.0
+var lag_t := 0.0   # how long the leader has been waiting on stragglers
 var points := PackedVector2Array()   # where the posse can go: along every street
 var visited := {}                    # point index -> game clock when last reached
 var goal := -1
@@ -96,6 +98,7 @@ func _pick_leader() -> void:
 
 
 func update(delta: float) -> void:
+	lag_t += delta
 	if leader == null or not leader.alive:
 		_pick_leader()
 		if leader == null:
@@ -115,9 +118,12 @@ func _all_close(r: float) -> bool:
 	return true
 
 
-## The leader holds up while anyone in formation is straggling.
+## The leader holds up while anyone in formation is straggling, a while.
 func lagging() -> bool:
-	return not _all_close(LAG)
+	if _all_close(LAG):
+		lag_t = 0.0
+		return false
+	return lag_t < WAIT_MAX
 
 
 ## Where a man keeps station: his slot behind and beside the leader.
@@ -130,7 +136,14 @@ func slot_of(e: Enemy) -> Vector2:
 	if game.is_free(p):
 		return p
 	var half := leader.global_position.lerp(p, 0.5)   # a wall in the way: close up
-	return half if game.is_free(half) else leader.global_position
+	if game.is_free(half):
+		return half
+	# no room beside him (an alley): fall in behind, single file, never on top of him
+	for k in [1.5, 2.5, 3.5, 4.5]:
+		var behind: Vector2 = leader.global_position - fwd * 18.0 * (k + e.posse_slot * 0.6)
+		if game.is_free(behind):
+			return behind
+	return leader.global_position - fwd * 24.0
 
 
 func watch_of(e: Enemy) -> Vector2:

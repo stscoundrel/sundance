@@ -773,7 +773,8 @@ func _posse(delta: float) -> void:
 	posse_repath -= delta
 	if posse_repath <= 0.0 or path_i >= path.size():
 		posse_repath = 0.8
-		path_to(slot)
+		var to_him := global_position.distance_to(p.leader.global_position)
+		path_to(p.leader.global_position if to_him > Posse.LAG else slot)   # far behind: make for him first
 	follow_path(run if d > 90.0 else walk * 1.15)
 
 

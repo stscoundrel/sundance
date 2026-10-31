@@ -16,6 +16,7 @@
     "buckskin":        {"style": "buckskin", "hat": "fur",    "beard": true},
     "veteran":         {"style": "duster", "hat": "slouch",   "beard": true, "mustache": true},
     "gunslinger":      {"style": "vest",   "hat": "flat",     "scarf": true, "mustache": true, "holsters": 2},
+    "bandido":         {"style": "shirt",  "hat": "sombrero", "bandolier": true, "sash": true, "mustache": true},
     "hillbilly":       {"style": "shirt",  "hat": "slouch",   "bib": true, "beard": true, "holsters": 0},
     "peon":            {"style": "shirt",  "hat": "sombrero", "mustache": true, "holsters": 0},
     "undertaker":      {"style": "duster", "hat": "top",      "mustache": true, "holsters": 0},
@@ -147,6 +148,22 @@
          "hat": [56, 50, 46], "band": [170, 140, 70], "skin": [200, 146, 116], "hair": [222, 218, 208]},
         {"coat": [124, 120, 110], "shirt": [190, 180, 160], "trousers": [110, 104, 92], "boots": [50, 38, 28],
          "hat": [112, 98, 78], "band": [150, 40, 36], "skin": [196, 140, 108], "hair": [210, 206, 196]}
+      ]
+    },
+    "bandido": {
+      "name": "Bandido", "template": "bandido", "loadout": ["navy"],
+      "hp": 1, "range": [60, 170], "cadence": [0.9, 1.7], "aim": 1.7, "speed": 1.0,
+      "reflex": [0.9, 2.0], "nerve": [0.0, 0.45], "cover_call": 0.4, "flank": 0.35,
+      "shouts": {"spot": ["¡Ey! ¡Gringo!", "¡Allí, allí!", "¡Mátenlo!"],
+                 "reload": ["¡Espera, espera!", "Pólvora... bala..."], "scare": ["¡Madre de Dios!", "¡Ay!"],
+                 "flee": ["¡Vámonos!", "¡No me pagan para esto!"]},
+      "palettes": [
+        {"shirt": [214, 204, 180], "trousers": [200, 190, 166], "boots": [92, 66, 44], "hat": [196, 168, 110],
+         "band": [70, 50, 36], "accent": [176, 46, 36], "skin": [166, 108, 74], "hair": [26, 20, 18]},
+        {"shirt": [200, 186, 160], "trousers": [128, 112, 88], "boots": [80, 56, 38], "hat": [176, 150, 98],
+         "band": [120, 40, 30], "accent": [60, 110, 70], "skin": [176, 116, 80], "hair": [34, 26, 22]},
+        {"shirt": [190, 176, 150], "trousers": [206, 196, 172], "boots": [70, 50, 34], "hat": [160, 132, 84],
+         "band": [40, 36, 34], "accent": [70, 80, 140], "skin": [158, 100, 68], "hair": [20, 16, 14]}
       ]
     },
     "hillbilly": {

@@ -56,7 +56,7 @@ def template_guns():
     return out
 
 
-GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6}
+GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6, "navy": 0.36}
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
 # in the left hand (pose key "gun2").
 GUN_ART = {"colts": "colt", "smith": "rifle"}   # the gunsmith looks over a rifle
@@ -220,6 +220,16 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
         out += beam(at(0.4, (0, 0.016)), at(1.0, (0, 0.016)), 0.018, GUNMETAL)        # barrel
         out += beam(at(0.4, (0, -0.014)), at(0.78, (0, -0.014)), 0.009, STEEL)        # ejector rod
         out += beam(at(0.12, (0, 0.03)), at(0.2, (0, 0.06)), 0.01, STEEL)             # hammer spur
+    elif kind == "navy":
+        # Colt Navy 1851: walnut grip, brass frame and trigger guard, a long octagonal
+        # barrel with the loading lever folded under it
+        out += beam(at(0.0, (0, -0.075)), at(0.18, (0, 0.0)), 0.026, (122, 78, 46))      # walnut grip
+        out += box(tuple(at(0.15) - 0.032), tuple(at(0.22) + 0.032), BRASS)            # brass frame
+        out += beam(at(0.16, (0, -0.045)), at(0.24, (0, -0.04)), 0.011, BRASS)          # trigger guard
+        out += frustum(at(0.21), at(0.38), 0.04, 0.04, GUNMETAL)                       # cylinder
+        out += beam(at(0.38, (0, 0.012)), at(1.0, (0, 0.012)), 0.019, GUNMETAL)         # octagon barrel
+        out += beam(at(0.4, (0, -0.02)), at(0.74, (0, -0.02)), 0.01, STEEL)             # loading lever
+        out += beam(at(0.12, (0, 0.03)), at(0.19, (0, 0.06)), 0.01, STEEL)              # hammer
     elif kind == "derringer":
         # Remington double derringer: pearl grip, two stacked barrels that flip up
         out += beam(at(0.0, (0, -0.07)), at(0.25, (0, 0.0)), 0.022, (226, 220, 206))
@@ -482,6 +492,10 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     if style != "dress":
         m += frustum((0, 0, -0.05), (0, 0, 0.06), 0.168, 0.168, LEATHER, su=0.74)
         m += box((0.11, -0.03, -0.03), (0.135, 0.03, 0.04), BRASS)  # buckle
+        if look.get("sash"):   # a cloth sash wound over the belt, the ends hanging at the hip
+            with look.tag("accent"):
+                m += frustum((0, 0, -0.02), (0, 0, 0.09), 0.175, 0.172, look.c("accent"), su=0.74)
+                m += frustum((0.02, 0.15, 0.0), (0.0, 0.17, -0.2), 0.03, 0.022, look.c("accent"))
         if look.get("holsters", 1) > 0:
             m += box((-0.05, -0.2, -0.22), (-0.05 + 0.1, -0.16, -0.02), LEATHER)  # holster
         if look.get("holsters", 1) > 1:
@@ -700,6 +714,8 @@ def _key_poses(w):
                     pose = P(pose, **{g: G(pose[g]["B"] + pose[g]["D"] * 0.17, pose[g]["D"])})
             k[name] = pose
         return k
+    if w == "navy":
+        return _key_poses("colt")   # held and loaded like any Colt
     if w == "derringer":
         k = _key_poses("colt")
         for name in ("load", "eject_a", "eject_b", "insert_a", "insert_b"):
@@ -909,6 +925,13 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 8, events={1: "brass"})
         add("reload_insert", [k["insert_a"], k["insert_b"]], 5.5, True)
         add("reload_close", [k["holster"], k["aim"]], 7)
+    elif w == "navy":
+        # no brass to shake out: a spent cap picked off, then each chamber charged and rammed
+        add("cock", [k["cock"], k["aim"]], 6)
+        add("reload_open", _frames([k["aim"], k["load"]], 2), 5)
+        add("reload_eject", [k["eject_a"], k["eject_b"]], 8)
+        add("reload_insert", [k["insert_a"], k["insert_b"], k["eject_b"], k["insert_b"]], 2.6, True)
+        add("reload_close", _frames([k["load"], k["aim"]], 2), 6)
     elif w == "colt":
         add("cock", [k["cock"], k["aim"]], 7)
         add("fan", [k["fan_a"], k["fan_b"]], 12, True)

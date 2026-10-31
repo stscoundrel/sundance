@@ -3,6 +3,7 @@ extends RefCounted
 ## Period-authentic firearms, described by data. Three kinds of action:
 ##   revolver - Colt Single Action Army: six chambers, cocked per shot, gate loading.
 ##              A pair ("twin") holds twelve, fired right hand, left hand, in turn.
+##              The old cap-and-ball Navy loads each chamber from the front: slow.
 ##   lever    - Winchester 1866: tube magazine, a lever stroke between shots
 ##   breech   - everything that opens to load: coach gun, sawn-off, derringer, Sharps,
 ##              howdah.
@@ -40,6 +41,13 @@ const DATA := {
 		"speed": 650.0, "range": 340.0, "spread": 3.0, "pellets": 1, "noise": 380.0, "sfx": "colt",
 		"cycle": 0.16, "shake": 2.0, "smoke": 9, "ammo": "colt", "drops": ["colt", "colt"],
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
+	# Colt Navy 1851, cap-and-ball: no cartridges. Each chamber takes powder, a ball
+	# rammed home with the loading lever and a cap on the nipple, so a reload takes
+	# an age. A little weaker, and a fog of black powder smoke. The bandidos' gun.
+	"navy": {"name": "COLT NAVY 1851", "action": "revolver", "damage": 1, "speed": 600.0, "range": 330.0,
+		"spread": 3.2, "pellets": 1, "noise": 360.0, "sfx": "colt", "cycle": 0.38, "shake": 2.0, "smoke": 15,
+		"smoke_push": 1.2, "eject": [0.2, "gate"], "insert": [1.5, "shell_in"],
+		"status": {"cycle": "COCKING", "open": "POWDER AND BALL", "close": "CAPPED"}},
 	# Empty hands: townsfolk. Never fires; drops nothing.
 	"unarmed": {"name": "", "action": "none", "damage": 0, "speed": 0.0, "range": 0.0, "spread": 0.0,
 		"pellets": 0, "noise": 0.0, "sfx": "", "cycle": 0.0, "shake": 0.0, "smoke": 0, "drops": [],
@@ -316,13 +324,15 @@ func _reload_step() -> void:
 				var c := (cur + reload_idx) % chambers.size()
 				if chambers[c] == 2:
 					chambers[c] = 0
-					_step(S.EJECT, 0.26, "eject")
+					var ej: Array = d.get("eject", [0.26, "eject"])
+					_step(S.EJECT, ej[0], ej[1])
 					return
 				if chambers[c] == 0 and reserve > 0:
 					chambers[c] = 1
 					reserve -= 1
 					reload_idx += 1
-					_step(S.INSERT, 0.36, "shell_in")
+					var ins: Array = d.get("insert", [0.36, "shell_in"])
+					_step(S.INSERT, ins[0], ins[1])
 					return
 				reload_idx += 1
 		"breech":

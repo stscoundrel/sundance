@@ -78,23 +78,17 @@ MUD = [[13, 30.5, 1.6], [24, 31, 1.2], [38, 30, 1.0], [55, 31.2, 1.4], [18, 40, 
 
 ENEMIES = [
     # main street
-    {"kind": "pistolero", "x": 4, "y": 30.5, "patrol": [[4, 30.5], [15, 30.5]]},
     {"kind": "gunslinger", "x": 48, "y": 31.5, "patrol": [[48, 31.5], [61, 31.5]]},
     {"kind": "cowboy", "x": 22, "y": 31.6, "patrol": [[22, 31.6], [41, 31.6]]},
-    {"kind": "redscarf", "x": 6.5, "y": 30.1, "facing": 90},
     {"kind": "gambler", "x": 4.5, "y": 28.5, "facing": 100},
     {"kind": "saloon_girl", "x": 8.2, "y": 28.5, "facing": 70},
-    {"kind": "gambler", "x": 31.5, "y": 28.6, "facing": 90},
     {"kind": "jefe", "x": 39.5, "y": 29.3, "facing": 135},
     # north of town
     {"kind": "rifleman", "x": 13, "y": 11.2, "facing": 45},
     {"kind": "rifleman", "x": 27, "y": 12.6, "facing": 90},
     {"kind": "poacher", "x": 62, "y": 13.6, "facing": 150},
-    {"kind": "gunslinger", "x": 8, "y": 14.5, "patrol": [[8, 14.5], [40, 14.5]]},
     {"kind": "pistolero", "x": 48, "y": 14.5, "patrol": [[48, 14.5], [57, 14.5]]},
-    {"kind": "rifleman", "x": 26.5, "y": 24.5, "facing": 270},
     {"kind": "cowboy", "x": 45, "y": 20, "facing": 180},
-    {"kind": "hillbilly", "x": 53, "y": 22.2, "patrol": [[53, 22.2], [58.5, 22.2]]},
     # plaza and south of main street
     {"kind": "redscarf", "x": 28, "y": 34.3, "patrol": [[28, 34.3], [36, 34.3], [36, 40.6], [28, 40.6]]},
     {"kind": "oldtimer", "x": 34.5, "y": 42.2, "facing": 270},
@@ -107,6 +101,11 @@ ENEMIES = [
     {"kind": "pistolero", "x": 10, "y": 46.6, "patrol": [[10, 46.6], [30, 46.6]]},
     {"kind": "drunkard", "x": 14, "y": 49, "facing": 200},
     {"kind": "redscarf", "x": 49, "y": 49, "facing": 200},
+    # bandidos: the gang's rank and file, loafing about the poorer end of town
+    {"kind": "bandido", "x": 17, "y": 39.5, "facing": 180},
+    {"kind": "bandido", "x": 17.5, "y": 43, "patrol": [[17.5, 43], [24, 44]]},
+    {"kind": "bandido", "x": 34, "y": 38.2, "facing": 225},
+    {"kind": "bandido", "x": 21, "y": 13.8, "patrol": [[21, 13.8], [31, 13.8]]},
     {"kind": "hillbilly", "x": 27, "y": 55, "patrol": [[27, 55], [36, 56]]},
 ]
 
