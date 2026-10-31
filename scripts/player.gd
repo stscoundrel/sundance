@@ -140,10 +140,12 @@ var _bot_t := 0.0
 func _bot(delta: float) -> void:
 	_bot_t -= delta
 	var best: Enemy = null
-	for e in game.enemies:
-		if e.alive and game.line_of_sight(global_position, e.global_position, false):
-			if best == null or e.global_position.distance_to(global_position) < best.global_position.distance_to(global_position):
-				best = e
+	var near: Array = game.enemies.filter(func(e): return e.alive)
+	near.sort_custom(func(a, b): return a.global_position.distance_to(global_position) < b.global_position.distance_to(global_position))
+	for e in near:   # the nearest one in sight
+		if game.line_of_sight(global_position, e.global_position, false):
+			best = e
+			break
 	if best:
 		facing = (best.global_position - global_position).normalized()
 		if game._args["bot"] == "miss":

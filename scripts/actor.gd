@@ -11,6 +11,7 @@ const PZ := 15.7   # world px per metre of height
 const PALETTE_SHADER := preload("res://shaders/palette.gdshader")
 const SILHOUETTE_SHADER := preload("res://shaders/silhouette.gdshader")
 const HITS := ["hit_l", "hit_r", "hit_gut"]
+const NO_ANIM := {}
 
 var game: Node
 var hurtbox: Area2D
@@ -32,6 +33,8 @@ var stagger_t := 0.0  # knocked back a step
 
 var char_key := ""
 var cdata: Dictionary
+var _anims: Dictionary    # cdata's animations, by key
+var _shown := [null, null]  # the frame each sprite (legs, upper) shows
 var _move_t := 0.0    # distance-driven clock for walk cycles
 var _layers := {}     # layer -> [anim key, start time, last frame]
 var _clock := 0.0
@@ -121,6 +124,7 @@ func _sync_ghost() -> void:
 func set_character(template: String, palette: Dictionary) -> void:
 	char_key = template
 	cdata = game.meta["chars"][template]
+	_anims = cdata.get("anims", {})
 	var tex: Texture2D = game.tex(cdata["atlas"])
 	var neutral: float = float(game.meta.get("neutral", 200)) / 255.0
 	var pal := PackedVector3Array()
@@ -143,11 +147,11 @@ func set_character(template: String, palette: Dictionary) -> void:
 
 
 func anim(key: String) -> Dictionary:
-	return cdata.get("anims", {}).get(key, {})
+	return _anims.get(key, NO_ANIM)
 
 
 func has_anim(key: String) -> bool:
-	return cdata.get("anims", {}).has(key)
+	return _anims.has(key)
 
 
 func _upper_key(name: String) -> String:
@@ -217,8 +221,8 @@ func _legs_choice(moving: bool) -> String:
 ## Advance one layer and return [anim, frame]. Animations restart when they change;
 ## looping ones cycle, the rest hold their last frame. Walk cycles run on distance.
 func _advance(layer: String, key: String) -> Array:
-	var st: Array = _layers.get(layer, ["", 0.0, -1])
-	if st[0] != key:
+	var st = _layers.get(layer)
+	if st == null or st[0] != key:
 		st = [key, _clock, -1]
 	var a := anim(key)
 	var n: int = a["frames"][0].size()
@@ -236,6 +240,10 @@ func _advance(layer: String, key: String) -> Array:
 
 func _show(spr: Sprite2D, a: Dictionary, f: int, dir: int) -> void:
 	var fr: Array = a["frames"][dir][f]
+	var i := 0 if spr == legs_spr else 1
+	if is_same(fr, _shown[i]):
+		return   # still the same frame
+	_shown[i] = fr
 	spr.region_rect = Rect2(fr[0], fr[1], fr[2], fr[3])
 	spr.offset = Vector2(fr[4], fr[5])
 

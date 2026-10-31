@@ -1,7 +1,9 @@
 class_name VisionCone
 extends Node2D
 ## Draws a bandit's view on the ground, clipped by walls. The inner band sees a
-## crouching hero; the outer band only sees him standing.
+## crouching hero; the outer band only sees him standing. Purely a picture: the
+## rays are cast every other frame (half the cones on each), and only when he has
+## moved or turned since, and the cone is shown and on screen.
 
 const RAYS := 18
 
@@ -9,18 +11,33 @@ var enemy: Enemy
 var far := PackedVector2Array()
 var near := PackedVector2Array()
 var _frame := 0
+var _cast := Vector4.INF   # x, y, facing angle and range of the last cast
+var _drawn := -1           # the state whose colour it was drawn in
+
+
+func _ready() -> void:
+	_frame = get_index()   # stagger: odd and even cones take turns
 
 
 func refresh() -> void:
 	position = enemy.global_position
 	_frame += 1
-	if _frame % 2 == 0 and far.size() > 0:
+	if not is_visible_in_tree():
 		return
-	far.clear()
-	near.clear()
+	if far.size() > 0 and (_frame % 2 == 0 or not _on_screen()):
+		return
 	var half := enemy.half_fov()
 	var r := enemy.view_range()
 	var base := enemy.facing.angle()
+	var now := Vector4(position.x, position.y, base, r * half)
+	if far.size() > 0 and absf(now.x - _cast.x) < 1.0 and absf(now.y - _cast.y) < 1.0 \
+			and absf(angle_difference(now.z, _cast.z)) < 0.02 and now.w == _cast.w:
+		if enemy.st != _drawn:
+			queue_redraw()
+		return   # standing still, looking the same way: the same cone
+	_cast = now
+	far.clear()
+	near.clear()
 	var mask := Iso.LAYER_WALL
 	for i in RAYS + 1:
 		var a := base - half + 2.0 * half * i / RAYS
@@ -34,7 +51,14 @@ func refresh() -> void:
 	queue_redraw()
 
 
+func _on_screen() -> bool:
+	var xf := get_global_transform_with_canvas()
+	var reach := enemy.view_range() * xf.get_scale().x
+	return get_viewport_rect().grow(reach).has_point(xf.origin)
+
+
 func _draw() -> void:
+	_drawn = enemy.st
 	if not enemy.alive or far.size() < 2:
 		return
 	var base: Color

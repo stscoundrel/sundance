@@ -82,6 +82,8 @@ func _ready() -> void:
 	start_time = Time.get_ticks_msec()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	_setup_audio()
+	for k in meta["sfx"]:
+		_streams[k] = _takes(k)   # all up front: a first load mid-fight stalls the frame
 	var wind := AudioStreamPlayer.new()
 	wind.stream = load(meta["sfx"]["wind"])
 	wind.volume_db = -12.0
@@ -575,6 +577,8 @@ func find_path(from: Vector2, to: Vector2, avoid: Array = [], penalty := 3.5) ->
 
 
 func _weigh_route(route: PackedVector2Array, from: Vector2, to: Vector2, touched: Array[Vector2i], penalty: float) -> void:
+	# the cells along it first (the samples overlap a lot), then each one weighed once
+	var along := {}
 	var prev := from
 	for p in route:
 		var steps := int(prev.distance_to(p) / 6.0) + 1
@@ -582,15 +586,22 @@ func _weigh_route(route: PackedVector2Array, from: Vector2, to: Vector2, touched
 			var q := prev.lerp(p, float(k) / steps)
 			if q.distance_to(from) < 40.0 or q.distance_to(to) < 50.0:
 				continue
-			var c := _cell(q)
-			# a wide band, so a parallel lane down the same street still counts as taken
-			for dx in range(-3, 4):
-				for dy in range(-3, 4):
-					var n := c + Vector2i(dx, dy)
-					if astar.is_in_boundsv(n) and not astar.is_point_solid(n) and astar.get_point_weight_scale(n) < 2.0:
-						astar.set_point_weight_scale(n, penalty)
-						touched.append(n)
+			along[_cell(q)] = true
 		prev = p
+	# a wide band, so a parallel lane down the same street still counts as taken
+	var w := size * 2
+	var seen := PackedByteArray()
+	seen.resize(w * w)
+	for c in along:
+		for x in range(maxi(c.x - 3, 0), mini(c.x + 4, w)):
+			for y in range(maxi(c.y - 3, 0), mini(c.y + 4, w)):
+				if seen[x * w + y]:
+					continue
+				seen[x * w + y] = 1
+				var n := Vector2i(x, y)
+				if not astar.is_point_solid(n) and astar.get_point_weight_scale(n) < 2.0:
+					astar.set_point_weight_scale(n, penalty)
+					touched.append(n)
 
 
 # Who is hunting the stranger, by which route: {target, path, hunter, role, at}.
@@ -1085,14 +1096,19 @@ func blood(pos: Vector2, dir: Vector2, height: float) -> void:
 		decals.add(pos + dir * randf_range(4, 18) + Vector2(randf_range(-4, 4), randf_range(-2, 2)), randf_range(1.0, 2.5), Color(0.38, 0.05, 0.04, 0.85))
 
 
+## A sound and its alternative takes (name_2 ... name_5).
+func _takes(name: String) -> Array[AudioStream]:
+	var takes: Array[AudioStream] = [load(meta["sfx"][name])]
+	for i in range(2, 6):
+		var k := "%s_%d" % [name, i]
+		if meta["sfx"].has(k):
+			takes.append(load(meta["sfx"][k]))
+	return takes
+
+
 func sfx(name: String, pos: Variant = null, vol := 0.0, pitch_var := 0.06) -> void:
 	if not _streams.has(name):
-		var takes: Array[AudioStream] = [load(meta["sfx"][name])]
-		for i in range(2, 6):
-			var k := "%s_%d" % [name, i]
-			if meta["sfx"].has(k):
-				takes.append(load(meta["sfx"][k]))
-		_streams[name] = takes
+		_streams[name] = _takes(name)
 	var stream: AudioStream = _streams[name].pick_random()
 	var p: Node
 	if pos == null:
