@@ -56,6 +56,7 @@ var clock := 0.0         # game time in seconds (physics frames, so tests can ru
 var seen_at := -100.0
 var seen_pos := Vector2.ZERO
 var harass_cd := 0.0
+var posse: Posse   # the last few bandits, once they band together
 var stats := {}   # counts of AI events ("orders covering fire", "panic shot"...)
 
 
@@ -750,6 +751,8 @@ func _physics_process(delta: float) -> void:
 	if state != "play":
 		return
 	clock += delta
+	if posse:
+		posse.update(delta)
 	# Knowledge gone stale: the shooting dies down to the odd harassing shot at his
 	# last known position from one bandit at a time, then stops altogether.
 	var stale := staleness()
@@ -824,6 +827,9 @@ func _on_enemy_died(e: Actor) -> void:
 		var p := Pickup.new()
 		p.setup(self, e.global_position + Vector2(randf_range(-6, 6), 4), ammo)
 		world.add_child.call_deferred(p)
+	if posse == null and alive_enemies() <= Posse.SIZE and alive_enemies() > 0:
+		posse = Posse.new(self)
+		posse.form()
 	if alive_enemies() == 0 and state == "play":
 		state = "won"
 		end_time = Time.get_ticks_msec()

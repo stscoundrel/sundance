@@ -127,6 +127,19 @@ carried, which you collect by walking over them.
   different side and no more than ~1.8x the straight distance.
   `tests/test_flank.gd` checks it (`NO_FLANK=1` runs the control: about half the
   groups go single file without flanking, about a quarter with it).
+- **The posse**: once five or fewer bandits are left, the survivors band together
+  instead of waiting at their posts at the far end of town. The steadiest man (by
+  rank, then whoever is nearest the others) calls "To me, boys!" and they gather
+  on him; anyone mid-fight or mid-search finishes first and then falls in. They set
+  off when all are within ~70 px of him, or after 30 s with whoever has come. The
+  leader walks from street to street, always to the nearest of the spots they've
+  seen least lately, so the whole town gets swept rather than the same streets
+  twice; he pauses 1.5–3 s at each and waits for stragglers. The others keep their
+  slots behind and beside him, each watching his own side (left, right, the rear)
+  whenever they stop. A fight breaks the formation as usual, and once the search
+  that follows is over each man falls back in on the leader. If the leader dies, the
+  next man takes over. `tests/test_posse.gd` checks they gather, stay together,
+  cover most of the town and re-form after a fight.
 - **Bounding**: before breaking position to move more than ~40 px, a bandit calls
   "¡Cúbreme!" / "Cover me!" (leaders always, others half the time) and the
   comrades holding positions nearby lay down fire while he sprints.

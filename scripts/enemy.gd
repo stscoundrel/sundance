@@ -3,7 +3,7 @@ extends Actor
 ## Bandit AI: guard or patrol, grow suspicious of glimpses and noises, fight with a
 ## reaction delay and aim error, run to cover to reload, search when they lose you.
 
-enum St { GUARD, PATROL, INVESTIGATE, COMBAT, SEARCH, RETURN }
+enum St { GUARD, PATROL, INVESTIGATE, COMBAT, SEARCH, RETURN, POSSE }
 
 const WALK := 24.0
 const RUN := 46.0
@@ -107,6 +107,10 @@ var shout_t := 0.0
 var flank := 0.0
 var flank_dir := Vector2.RIGHT
 var sidestep_t := 0.0
+var in_posse := false    # one of the last few, riding the town together (see Posse)
+var posse_slot := 0
+var posse_repath := 0.0
+var posse_wait := 0.0
 var stride_in := 0.0     # how much a sidestep closes in on him as well (bold types)
 var bold := 0.0          # 0..1: walks in shooting, shrugs off fire, scorns cover
 
@@ -588,6 +592,8 @@ func _run_state(delta: float) -> void:
 		St.RETURN:
 			if follow_path(walk):
 				st = St.PATROL if patrol.size() > 1 else St.GUARD
+		St.POSSE:
+			_posse(delta)
 
 
 func _check_stuck(delta: float, before: Vector2) -> void:
@@ -635,16 +641,14 @@ func _investigate(delta: float) -> void:
 		suspicion = 0.0
 		running = false
 		wary = true
-		st = St.RETURN
-		path_to(patrol[patrol_i] if patrol.size() > 1 else home)
+		_go_back()
 
 
 func _search(delta: float) -> void:
 	search_t -= delta
 	if search_t <= 0.0:
 		running = false
-		st = St.RETURN
-		path_to(patrol[patrol_i] if patrol.size() > 1 else home)
+		_go_back()
 		return
 	if follow_path(run if running else walk):
 		running = false
@@ -653,6 +657,70 @@ func _search(delta: float) -> void:
 			wait = randf_range(0.8, 1.8)
 			desired = Vector2.from_angle(randf() * TAU)
 			path_to(game.free_point_near(last_known, 80.0))
+
+
+## Done looking: back to his post, or back in with the posse.
+func _go_back() -> void:
+	if in_posse:
+		st = St.POSSE
+		path = PackedVector2Array()
+		return
+	st = St.RETURN
+	path_to(patrol[patrol_i] if patrol.size() > 1 else home)
+
+
+## Called when the posse forms. A man in a fight or a search finishes it first.
+func join_posse(slot: int) -> void:
+	in_posse = true
+	posse_slot = slot
+	wary = true
+	for e in game.enemies:
+		if not e.alive and not known_corpses.has(e):
+			known_corpses.append(e)   # they all know who's down by now
+	if st in [St.GUARD, St.PATROL, St.RETURN, St.INVESTIGATE]:
+		st = St.POSSE
+		path = PackedVector2Array()
+		suspicion = 0.0
+
+
+## Riding with the posse: the leader picks the way, the others keep their slots
+## around him and each watches his own side whenever they stop.
+func _posse(delta: float) -> void:
+	var p: Posse = game.posse
+	if p.leader == self:
+		_lead_posse(delta, p)
+		return
+	var slot := p.slot_of(self)
+	var d := global_position.distance_to(slot)
+	if d < 10.0:
+		velocity = Vector2.ZERO
+		path = PackedVector2Array()
+		desired = p.watch_of(self)
+		return
+	posse_repath -= delta
+	if posse_repath <= 0.0 or path_i >= path.size():
+		posse_repath = 0.8
+		path_to(slot)
+	follow_path(run if d > 90.0 else walk * 1.15)
+
+
+func _lead_posse(delta: float, p: Posse) -> void:
+	if p.gathering or p.lagging() or posse_wait > 0.0:
+		posse_wait -= delta
+		velocity = Vector2.ZERO
+		desired = facing.rotated(sin(t * 0.6) * 0.8)   # looking about while they close up
+		return
+	if path.is_empty() or path_i >= path.size():
+		if p.goal >= 0:
+			p.reached()
+			posse_wait = randf_range(1.5, 3.0)
+			return
+		path_to(p.next_point(global_position))
+	follow_path(walk)
+
+
+func say_line(key: String, stock: Array) -> void:
+	_say(_line(key, stock))
 
 
 func _combat(delta: float) -> void:
