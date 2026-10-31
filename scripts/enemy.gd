@@ -16,6 +16,7 @@ const SPOT_LINES := ["¡Allí está!", "There he is!", "¡El gringo!", "Over the
 const SCARE_LINES := ["¡Ay, Dios!", "Whoa!", "¡Cuidado!", "Get down!"]
 const COWER_LINES := ["¡Madre de Dios!", "Don't shoot!", "¡No, no, no!"]
 const COVER_ME_LINES := ["¡Cúbreme!", "Cover me!", "Keep him busy!", "I'm moving!"]
+const FLANK_ROUND_LINES := ["¡Por atrás!", "I'll go round!", "Cut him off!", "¡Rodéenlo!"]
 const FIRE_LINES := ["¡Fuego!", "Covering fire!", "Pin him down!", "¡Disparen!"]
 const FLEE_LINES := ["¡Vámonos!", "I'm getting out!", "¡Corre!", "He's the devil!"]
 const VIEW := 200.0
@@ -29,6 +30,8 @@ var loadout: Array = []   # guns he carries; the first in hand, the rest sidearm
 var walk := WALK
 var run := RUN
 var sidearm_rolled := false
+var hunt_target := Vector2.INF   # the last-seen spot his current hunting route is for
+var hunt_role := ""               # "direct" or "flank"
 var st := St.GUARD
 var home := Vector2.ZERO
 var home_facing := Vector2.DOWN
@@ -670,6 +673,7 @@ func _combat(delta: float) -> void:
 		_suppress(delta, spec)
 		return
 	if sees_player or (at_cover and fight_pos != Vector2.INF and lost_t < 4.0):
+		hunt_target = Vector2.INF   # a fresh hunt once he's lost again
 		_fight(delta, p, to, dist, spec)
 	else:
 		react = max(react, 0.3)
@@ -681,11 +685,19 @@ func _combat(delta: float) -> void:
 			wary = true
 			path_to(last_known)
 			return
-		# Converge on where he was last seen, but each from his own side.
-		var goal: Vector2 = last_known + Vector2.from_angle(flank_dir.angle()) * 26.0 * abs(flank) / 1.2
-		repath_t -= delta
-		if repath_t <= 0.0 and (path.is_empty() or path[path.size() - 1].distance_to(goal) > 16.0):
-			path_to(goal)
+		# Hunt him down where he was last seen: straight there, or round the other
+		# way to cut him off, depending on what his comrades are already doing.
+		if hunt_target == Vector2.INF or hunt_target.distance_to(last_known) > 40.0:
+			var plan: Dictionary = game.plan_hunt(self, last_known)
+			path = plan["path"]
+			path_i = 0
+			repath_t = 3.0
+			hunt_target = last_known
+			hunt_role = plan["role"]
+			if hunt_role == "flank":
+				_log("flanks")
+				if shout_t <= 0.0 and randf() < 0.6:
+					_say(_line("flank", FLANK_ROUND_LINES))
 		if follow_path(run):
 			look_t += delta
 			if int(look_t * 1.2) != int((look_t - delta) * 1.2):

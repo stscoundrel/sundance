@@ -108,6 +108,16 @@ carried, which you collect by walking over them.
   and hasn't fired for ~1.6 s stops what he's doing and fires; only rounds landing
   near him (pinned for 2.5 s) keep him ducking long. It's on the player to pin
   them down.
+- **Hunting and flanking**: when the stranger slips out of sight, bandits head for
+  where he was last seen. The first goes straight there. Any bandit whose comrades
+  from nearby are already heading in the same way may (by his type's `flank`
+  chance: Red Scarves 0.8, most 0.6, El Jefe 0.4, the poacher 0.3, the drunkard
+  0.1) go round instead: the pathfinder steers clear of the routes already taken
+  and he comes in from another side, ending just past the spot to cut off the
+  escape ("¡Por atrás!", "Cut him off!"). Only real flanks count: from a clearly
+  different side and no more than ~1.8x the straight distance.
+  `tests/test_flank.gd` checks it (`NO_FLANK=1` runs the control: about half the
+  groups go single file without flanking, about a quarter with it).
 - **Bounding**: before breaking position to move more than ~40 px, a bandit calls
   "¡Cúbreme!" / "Cover me!" (leaders always, others half the time) and the
   comrades holding positions nearby lay down fire while he sprints.
@@ -179,7 +189,8 @@ generator:
   knobs: `hp`, preferred `range`, `cadence` (pause between shots), `aim` (spread
   multiplier, higher is worse), `speed`, `reflex` and `nerve` ranges, leader `rank`,
   `cover_call` (chance to shout "Cover me!"), `fires_on_move`, `draw_sidearm` and
-  their own `shouts`. Anything not given comes from `defaults`.
+  `flank` (chance to go round when hunting) and their own `shouts`. Anything not
+  given comes from `defaults`.
 - **Placements** in `data/town.json` may override any field for one bandit (a fixed
   `palette` index, a braver nerve), except the loadout, which is baked per type.
 - **Palettes are free**: recolourable parts are baked in neutral grey with a slot

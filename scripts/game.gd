@@ -478,10 +478,17 @@ func _nearest_free(c: Vector2i) -> Vector2i:
 	return c
 
 
-func find_path(from: Vector2, to: Vector2) -> PackedVector2Array:
+## A walkable route. `avoid` is a list of routes to steer clear of: cells along them
+## (away from both ends) cost more, so the pathfinder prefers another way round.
+func find_path(from: Vector2, to: Vector2, avoid: Array = [], penalty := 3.5) -> PackedVector2Array:
 	var a := _nearest_free(_cell(from))
 	var b := _nearest_free(_cell(to))
+	var touched: Array[Vector2i] = []
+	for route in avoid:
+		_weigh_route(route, from, to, touched, penalty)
 	var ids := astar.get_id_path(a, b)
+	for c in touched:
+		astar.set_point_weight_scale(c, 1.0)
 	var pts := PackedVector2Array()
 	for id in ids:
 		pts.append(_cell_center(id))
@@ -499,6 +506,85 @@ func find_path(from: Vector2, to: Vector2) -> PackedVector2Array:
 		cur = pts[j]
 		i = j + 1
 	return out
+
+
+func _weigh_route(route: PackedVector2Array, from: Vector2, to: Vector2, touched: Array[Vector2i], penalty: float) -> void:
+	var prev := from
+	for p in route:
+		var steps := int(prev.distance_to(p) / 6.0) + 1
+		for k in steps:
+			var q := prev.lerp(p, float(k) / steps)
+			if q.distance_to(from) < 40.0 or q.distance_to(to) < 50.0:
+				continue
+			var c := _cell(q)
+			# a wide band, so a parallel lane down the same street still counts as taken
+			for dx in range(-3, 4):
+				for dy in range(-3, 4):
+					var n := c + Vector2i(dx, dy)
+					if astar.is_in_boundsv(n) and not astar.is_point_solid(n) and astar.get_point_weight_scale(n) < 2.0:
+						astar.set_point_weight_scale(n, penalty)
+						touched.append(n)
+		prev = p
+
+
+# Who is hunting the stranger, by which route: {target, path, hunter, role, at}.
+var hunts: Array = []
+
+
+## A bandit setting off after the stranger's last position. If comrades who set
+## off from near him are already going in the way he would, he may (by his type's
+## `flank` chance) go round to come in from another side, to a point just past the
+## spot, cutting off the escape, rather than follow them in single file. Detours much
+## longer than the straight route aren't worth it.
+func plan_hunt(e: Enemy, target: Vector2) -> Dictionary:
+	hunts = hunts.filter(func(h): return is_instance_valid(h["hunter"]) and h["hunter"].alive \
+		and h["hunter"] != e and clock - float(h["at"]) < 12.0)
+	var me := e.global_position
+	var direct := find_path(me, target)
+	var my_side := approach_dir(direct, target)
+	var ahead := hunts.filter(func(h): return h["target"].distance_to(target) < 100.0 \
+		and h["from"].distance_to(me) < 220.0 \
+		and abs(my_side.angle_to(approach_dir(h["path"], target))) < deg_to_rad(50.0))
+	var route := direct
+	var role := "direct"
+	var goal := target
+	if not ahead.is_empty() and randf() < float(e.tdata.get("flank", 0.6)):
+		goal = target - my_side.rotated(randf_range(-0.5, 0.5)) * 65.0   # the far side
+		var g := Iso.to_grid(goal)
+		if g.x < 1.0 or g.y < 1.0 or g.x > size - 1.0 or g.y > size - 1.0 or not is_free(goal):
+			goal = free_point_near(goal, 30.0)
+		var avoid: Array = [direct]
+		for h in ahead:
+			avoid.append(h["path"])
+		# a gentle nudge first, then harder; only a way in from another side counts
+		for penalty in [3.5, 9.0]:
+			var round_ := find_path(me, goal, avoid, penalty)
+			if abs(approach_dir(round_, target).angle_to(my_side)) > deg_to_rad(50.0) \
+					and _length(me, round_) < _length(me, direct) * 1.8 + 60.0:
+				route = round_
+				role = "flank"
+				break
+		if role != "flank":
+			goal = target
+	hunts.append({"target": target, "from": me, "path": route, "hunter": e, "role": role, "at": clock})
+	return {"path": route, "role": role, "goal": goal}
+
+
+## The direction a route closes in on its target from.
+func approach_dir(route: PackedVector2Array, target: Vector2) -> Vector2:
+	for k in range(route.size() - 1, -1, -1):
+		if route[k].distance_to(target) > 55.0:
+			return (route[k] - target).normalized()
+	return Vector2.ZERO
+
+
+func _length(from: Vector2, route: PackedVector2Array) -> float:
+	var total := 0.0
+	var prev := from
+	for p in route:
+		total += prev.distance_to(p)
+		prev = p
+	return total
 
 
 func free_point_near(p: Vector2, radius: float) -> Vector2:

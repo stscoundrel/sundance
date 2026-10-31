@@ -26,7 +26,7 @@
   "defaults": {
     "hp": 2, "range": [70, 170], "cadence": [0.7, 1.3], "aim": 1.0, "speed": 1.0,
     "reflex": [0.6, 1.8], "nerve": [0.15, 0.9], "rank": 0, "cover_call": 0.5,
-    "fires_on_move": false, "draw_sidearm": 0.0, "shouts": {}
+    "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "shouts": {}
   },
 
   "types": {
@@ -57,7 +57,7 @@
     },
     "redscarf": {
       "name": "Red Scarf", "template": "vest", "loadout": ["coach", "colt"],
-      "range": [25, 80], "cadence": [0.5, 1.0], "speed": 1.05, "nerve": [0.2, 0.9],
+      "range": [25, 80], "cadence": [0.5, 1.0], "speed": 1.05, "nerve": [0.2, 0.9], "flank": 0.8,
       "fires_on_move": true, "draw_sidearm": 0.5,
       "palettes": [
         {"vest": [82, 60, 46], "shirt": [206, 196, 172], "trousers": [104, 86, 66], "boots": [60, 42, 30],
@@ -78,7 +78,7 @@
     "jefe": {
       "name": "El Jefe", "template": "duster_sombrero", "loadout": ["coach", "colt"],
       "hp": 4, "range": [30, 95], "cadence": [0.45, 0.9], "nerve": [0.95, 0.95],
-      "rank": 2, "cover_call": 1.0, "fires_on_move": true, "draw_sidearm": 0.8,
+      "rank": 2, "cover_call": 1.0, "fires_on_move": true, "draw_sidearm": 0.8, "flank": 0.4,
       "palettes": [
         {"coat": [142, 32, 28], "shirt": [44, 38, 36], "trousers": [44, 38, 36], "boots": [30, 22, 18],
          "hat": [42, 34, 30], "band": [196, 156, 64], "skin": [170, 114, 80], "hair": [20, 16, 14]}
@@ -87,7 +87,7 @@
     "drunkard": {
       "name": "Drunkard", "template": "shirt", "loadout": ["colt"],
       "range": [50, 140], "cadence": [0.9, 1.8], "aim": 2.2, "speed": 0.85,
-      "reflex": [1.2, 2.2], "nerve": [0.0, 0.3], "cover_call": 0.2,
+      "reflex": [1.2, 2.2], "nerve": [0.0, 0.3], "cover_call": 0.2, "flank": 0.1,
       "shouts": {"spot": ["Hic! Who'zat?", "You... you there!", "¡Ay, gringo!"],
                  "scare": ["Whoa now!", "Hic! ¡Dios!"], "reload": ["Where'd my... bullets..."]},
       "palettes": [
@@ -114,7 +114,7 @@
     "poacher": {
       "name": "Poacher", "template": "buckskin", "loadout": ["sharps"],
       "range": [220, 460], "cadence": [1.6, 2.6], "aim": 0.5, "speed": 0.95,
-      "reflex": [0.8, 1.4], "nerve": [0.4, 0.9], "cover_call": 0.3,
+      "reflex": [0.8, 1.4], "nerve": [0.4, 0.9], "cover_call": 0.3, "flank": 0.3,
       "shouts": {"spot": ["Got me a big one.", "Hold still now...", "There's my buffalo."],
                  "reload": ["Steady..."], "scare": ["Close one."], "flee": ["Ain't worth the hide!"]},
       "palettes": [
@@ -127,7 +127,7 @@
     "oldtimer": {
       "name": "Old timer", "template": "veteran", "loadout": ["howdah"],
       "hp": 3, "range": [50, 150], "cadence": [0.9, 1.6], "aim": 0.9, "speed": 0.75,
-      "reflex": [1.1, 1.8], "nerve": [0.75, 1.0], "cover_call": 0.2,
+      "reflex": [1.1, 1.8], "nerve": [0.75, 1.0], "cover_call": 0.2, "flank": 0.2,
       "shouts": {"spot": ["Seen worse at Shiloh!", "Come on then, sonny!", "Back in '47..."],
                  "reload": ["Hold yer horses..."], "scare": ["Hah! Missed!", "That all ye got?"],
                  "cover_me": ["Watch my back, boys!"]},
