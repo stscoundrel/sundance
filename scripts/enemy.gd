@@ -137,6 +137,16 @@ const ALERT_OVER := 130.0   # px: in a fight, he sees a crouched man over low co
 const BREAK_NEAR := 34.0    # px: last seen this close to it, he's behind it
 const BREAK_LINES := ["Shoot through it!", "¡Tírenle a la caja!", "Splinter that crate!", "Flush him out!"]
 var breaking: Dictionary = {}         # he was waiting for him: a moment where nothing pulls him off the shot
+# Dynamite: a stick or two for when the stranger keeps killing them from one place
+# (see game.dynamite_target). Lit, a moment to wind up, and over it goes.
+const THROW_LINES := ["¡Dinamita!", "Duck, you sucker!", "Giù la testa!", "Fire in the hole!"]
+const WINDUP := 0.57       # s from lighting it to letting go (matches the "throw" animation)
+const FOLLOW := 0.4        # s of follow-through after
+var sticks := 0
+var stick: Dynamite = null   # lit, in his hand
+var throw_at := Vector2.ZERO
+var dyn_look := 0.0
+var clear_for := 0.0         # how long the fuse he's getting away from has left
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -172,6 +182,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	bold = float(tdata["bold"])
 	opportunist = float(tdata["opportunist"])
 	order_cd = randf_range(3.0, 6.0)
+	sticks = int(tdata["dynamite"])
 	cone = VisionCone.new()
 	cone.enemy = self
 	g.cone_layer.add_child(cone)
@@ -318,6 +329,12 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 			else:
 				suspicion = max(suspicion, 0.6)
 				start_investigate(pos, true)
+		"blast":   # his own side's dynamite: the fight's there, wherever the stranger is
+			if st != St.COMBAT:
+				if d < radius * 0.6:
+					enter_combat(game.seen_pos if game.staleness() < 15.0 else pos, false, true)
+				else:
+					start_investigate(pos, true)
 		"enemy_shot":
 			if st != St.COMBAT and source is Enemy:
 				enter_combat(source.last_known, false, false)
@@ -521,6 +538,18 @@ func start_reaction(r: String) -> void:
 			reaction_t = randf_range(8.0, 12.0)
 			path_to(game.point_away(global_position, threat, 220.0))
 			_say(_line("flee", FLEE_LINES))
+		"throw":
+			reaction_t = WINDUP + FOLLOW
+			desired = (throw_at - global_position).normalized()
+			play_action("throw")
+			stick = game.light_stick(self)
+			_say(_line("dynamite", THROW_LINES))
+		"clear":
+			# a lit stick by his boots: run, anywhere out of its reach, then get down
+			reaction_t = clear_for + 0.5
+			path_to(game.point_away(global_position, threat, Dynamite.R + 30.0))
+			if shout_t <= 0.0 and randf() < 0.6:
+				_say(_line("scare", SCARE_LINES))
 		"dash", "hide":
 			cover_pos = game.find_cover(global_position, threat)
 			if cover_pos != Vector2.INF:
@@ -557,6 +586,15 @@ func _do_reaction(delta: float) -> void:
 		"backoff":
 			velocity = retreat_dir * walk
 			desired = (threat - global_position).normalized()
+		"throw":
+			desired = (throw_at - global_position).normalized()
+			aiming = true
+			if stick and reaction_t <= FOLLOW:
+				_let_fly()
+		"clear":
+			if follow_path(run * 1.2):
+				crouched = true
+				desired = (threat - global_position).normalized()
 		"flee":
 			if follow_path(run * 1.15):
 				crouched = true   # out of sight, catching his breath
@@ -827,7 +865,7 @@ func unaware() -> bool:
 func can_fire_at(p: Actor) -> bool:
 	if not alive or not revealed or is_staggered() or weapon.is_reloading() or not weapon.can_fire():
 		return false
-	if reaction in ["cower", "flee", "dash", "hide"]:
+	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear"]:
 		return false
 	return absf(facing.angle_to(p.global_position - global_position)) < 1.1
 
@@ -914,6 +952,8 @@ func _combat(delta: float) -> void:
 		return
 	if _watch(delta, p):
 		return   # his gun's on that corner; covering fire is for the others
+	if sticks > 0 and _think_dynamite(delta):
+		return
 	if suppress_t > 0.0 and ready_t <= 0.0:
 		_suppress(delta, spec)
 		return
@@ -1012,6 +1052,75 @@ func _break_cover() -> bool:
 	if shout_t <= 0.0 and randf() < 0.4:
 		_say(_line("break", BREAK_LINES))
 	return true
+
+
+## Every so often a man with a stick asks himself whether it's time for it.
+func _think_dynamite(delta: float) -> bool:
+	dyn_look -= delta
+	if dyn_look > 0.0:
+		return false
+	dyn_look = randf_range(0.6, 1.2)
+	var at: Vector2 = game.dynamite_target(self)
+	if at == Vector2.INF or randf() > 0.6:
+		return false
+	sticks -= 1
+	throw_at = at
+	pending = ""
+	_stop_watching(WATCH_CD)
+	start_reaction("throw")
+	_log("lights dynamite")
+	return true
+
+
+## Over it goes: at where he last saw the stranger, give or take (a drunk may
+## throw it short, or fumble it at his own feet).
+func _let_fly() -> void:
+	var s := stick
+	stick = null
+	var to := throw_at
+	var r := randf()
+	var fumble := float(tdata["fumble"])
+	if r < fumble * 0.3:
+		reaction_t = 0.0   # done throwing: free to run from it like anyone else
+		s.drop()
+		_log("fumbles the dynamite")
+		return
+	if r < fumble:
+		to = global_position.lerp(to, randf_range(0.35, 0.6))
+		_log("throws it short")
+	to += Vector2.from_angle(randf() * TAU) * randf_range(0.0, 16.0) * float(tdata["aim"]) * Vector2(1.0, 0.6)
+	s.throw(to)
+	_log("throws dynamite")
+
+
+## A lit stick has come down near him: he'll get clear of it in a moment.
+func dodge(at: Vector2, fuse_left: float) -> void:
+	if not alive or reaction == "throw":
+		return
+	threat = at
+	clear_for = fuse_left
+	pending = "clear"
+	pending_forced = true
+	pending_t = randf_range(0.05, 0.3) * reflex
+	_stop_watching(WATCH_CD)
+	suppress_t = 0.0
+
+
+## Hit (not killed) with it lit in his hand: he lets go of it.
+func _fumble_stick() -> void:
+	var s := stick
+	stick = null
+	reaction = ""
+	reaction_t = 0.0
+	s.drop()
+
+
+func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
+	var s := stick
+	stick = null
+	super(from_dir, shooter, how)
+	if s:
+		s.drop()   # once it's lit, it's lit
 
 
 func _stop_watching(cd: float) -> void:
@@ -1418,6 +1527,11 @@ func on_hurt_alert(shooter: Actor) -> void:
 
 func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 	super(dmg, from_dir, shooter)
+	if alive and stick:
+		_fumble_stick()
+	if alive and blasted:
+		shaken = min(1.0, shaken + 0.4)   # his own side's dynamite: no one to shoot back at
+		return
 	if alive:
 		on_hurt_alert(shooter)
 		shaken = min(1.0, shaken + 0.3)

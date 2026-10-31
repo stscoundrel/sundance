@@ -43,6 +43,7 @@ var ghost: Node2D          # his silhouette, shown over buildings that hide him
 var occluded := false
 var anim_gun := ""         # play another gun's upper-body set ("unarmed": hiding his)
 var killer: Actor          # who shot him dead
+var blasted := false       # being hit by dynamite (just for the length of the hit)
 
 
 func setup_body(g: Node, pos: Vector2) -> void:
@@ -358,9 +359,11 @@ func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
 	died.emit(self)
 
 
-## Thrown back by a shotgun blast up close; otherwise one of the four, the slow
+## Thrown back by dynamite, or a shotgun blast up close; otherwise one of the four, the slow
 ## Leone slump among them.
 func _pick_death(shooter: Actor) -> String:
+	if blasted:
+		return "death_back"   # flung off his feet
 	if shooter and shooter.weapon and shooter.weapon.is_shotgun() \
 			and shooter.global_position.distance_to(global_position) < 90.0:
 		return "death_back"

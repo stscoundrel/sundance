@@ -6,7 +6,7 @@ const LEVEL_PATH := "res://data/town.json"
 const META_PATH := "res://assets/meta.json"
 const ENEMIES_PATH := "res://data/enemies.json"
 const POST_SHADER := preload("res://shaders/post.gdshader")
-const LOUD := ["colt", "coach", "rifle", "bell"]
+const LOUD := ["colt", "coach", "rifle", "bell", "boom"]
 const WIND := Vector2(7, -2)   # px/s drift for smoke and dust
 const VIEW_W := 1280.0 / 3.0   # world pixels across the screen: a close, detailed view
 
@@ -57,6 +57,14 @@ const SPOT_FORGET := 35.0    # s unused and the gang forgets it
 const SPOT_HOT := 2          # peeks before they start watching it
 const WATCHERS := 2          # at most this many on one spot; the rest keep moving
 var fire_spots: Array[Dictionary] = []
+# Dynamite: thrown at a firing spot the stranger has killed from, one stick at a time.
+const DYN_KILLS := 2         # kills from one spot before it's worth a stick
+const DYN_FRESH := 8.0       # s: he has to have fired from there this recently
+const DYN_CD := 20.0         # s after a blast before anyone lights another
+const THROW_MIN := 100.0     # px: never close enough to catch it himself
+const THROW_MAX := 220.0
+var lit: Array[Dynamite] = []
+var dyn_cd := 0.0
 # Cover that wears: crates, barrels, coffins, troughs and wagons take the rounds that
 # hit them, look shot up past half, and fall to a heap of boards (no longer cover,
 # nor in anyone's way). A damaged trough leaks. Toughness decides which rounds go
@@ -958,6 +966,7 @@ func _physics_process(delta: float) -> void:
 		return
 	clock += delta
 	innocent_t = maxf(0.0, innocent_t - delta)
+	dyn_cd = maxf(0.0, dyn_cd - delta)
 	_pick_up_guns()
 	_update_den(delta)
 	_quiet = clock - last_gunfire
@@ -1169,12 +1178,12 @@ func grave_to_mourn() -> Dictionary:
 
 
 func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void:
-	if kind in ["shot", "enemy_shot"]:
+	if kind in ["shot", "enemy_shot", "blast"]:
 		last_gunfire = clock
 		for sh in shutters:
 			sh.hear_shot(pos, radius)
 		if den.has("door") and not den["rallied"] and pos.distance_to(den["door"]) < DEN_EAR:
-			den["heat"] += 1.0
+			den["heat"] += 3.0 if kind == "blast" else 1.0
 			den["alarm"] = pos
 			if den["heat"] >= DEN_HEAT:
 				rally("gunfire")
@@ -1530,6 +1539,121 @@ func watch_post(e: Enemy) -> Dictionary:
 				best = {"spot": s, "at": p}
 				break
 	return best
+
+
+# ------------------------------------------------------------------ dynamite
+
+## Where this bandit would throw a stick, or INF: the stranger was just seen at a
+## spot he's killed from more than once and still fires from, in throwing range
+## and with no wall in the way, and none of the gang standing near it. Only one
+## stick lit at a time, and a while between blasts.
+func dynamite_target(e: Enemy) -> Vector2:
+	if Engine.has_meta("no_dynamite") or dyn_cd > 0.0 or not lit.is_empty() or staleness() > FRESH:
+		return Vector2.INF
+	var s := spot_at(seen_pos)
+	if s.is_empty() or s["kills"] < DYN_KILLS or clock - s["last_t"] > DYN_FRESH:
+		return Vector2.INF
+	var d := e.global_position.distance_to(seen_pos)
+	if d < THROW_MIN or d > THROW_MAX or not line_of_sight(e.global_position, seen_pos, false):
+		return Vector2.INF
+	for o in enemies:
+		if o != e and o.alive and o.global_position.distance_to(seen_pos) < Dynamite.R + 12.0:
+			return Vector2.INF
+	return seen_pos
+
+
+func light_stick(by: Enemy) -> Dynamite:
+	var d := Dynamite.new()
+	world.add_child(d)
+	d.setup(self, by)
+	lit.append(d)
+	stats["dynamite lit"] = stats.get("dynamite lit", 0) + 1
+	return d
+
+
+## It's down and fizzing: anyone close who knows what that is gets clear of it.
+func stick_landed(d: Dynamite) -> void:
+	var at := d.global_position
+	for e in enemies:
+		if e.alive and e.global_position.distance_to(at) < Dynamite.R + 20.0:
+			e.dodge(at, d.fuse)
+	for c in civilians:
+		if c.alive and c.global_position.distance_to(at) < Dynamite.R + 40.0:
+			c.alarm(at, true)
+
+
+## The bang. Everyone in reach not behind a wall is hurt (killed, near the middle),
+## a crate or barrel between them and it taking some of it; cover nearby is blown
+## apart; and the whole town hears it.
+func blast(at: Vector2, by: Enemy) -> void:
+	dyn_cd = DYN_CD
+	stats["blasts"] = stats.get("blasts", 0) + 1
+	var hurt: Array[Actor] = []
+	hurt.append(player)
+	hurt.append_array(enemies)
+	hurt.append_array(civilians)
+	for a in hurt:
+		if not a.alive or not a.visible:
+			continue
+		var d := a.global_position.distance_to(at)
+		if d > Dynamite.R or not line_of_sight(at, a.global_position, false):
+			continue
+		var dmg := 8 if d < Dynamite.CORE else (3 if d < Dynamite.R * 0.7 else 1)
+		if d >= Dynamite.CORE and not line_of_sight(at, a.global_position, true):
+			dmg -= 2   # behind a crate: it takes the worst of it
+		if dmg <= 0:
+			continue
+		var dir := (a.global_position - at).normalized() if d > 0.5 else Vector2.from_angle(randf() * TAU)
+		a.blasted = true
+		a.take_hit(dmg, dir, by)
+		a.blasted = false
+		if a.alive:
+			a.stagger_t = maxf(a.stagger_t, 0.6)
+		elif a != player:
+			stats["blown up"] = stats.get("blown up", 0) + 1
+	for prop in props:
+		if prop["state"] >= 2:
+			continue
+		var d := maxf(0.0, prop_centre(prop).distance_to(at) - 8.0)
+		if d < Dynamite.R:
+			hit_prop(prop, int(lerpf(40.0, 8.0, d / Dynamite.R)), 0, prop_centre(prop))
+	for e in enemies:
+		if e.alive and e.global_position.distance_to(at) < Dynamite.R * 2.2:
+			e.shaken = minf(1.0, e.shaken + 0.3)
+	_blast_fx(at)
+	sfx("boom", at, 2.0, 0.08)
+	add_shake(lerpf(10.0, 2.0, clampf(player.global_position.distance_to(at) / 500.0, 0.0, 1.0)))
+	make_noise(at, 650.0, "blast", by)
+
+
+func _blast_fx(at: Vector2) -> void:
+	var puff := Puff.new()
+	puff.position = at
+	puff.add(Vector2(0, -6), Vector2.ZERO, 0.12, 20.0, Color(1.0, 0.95, 0.72, 1.0), -60.0)   # the flash
+	for i in 16:   # the fireball
+		var v := Vector2.from_angle(randf() * TAU) * randf_range(50, 150)
+		puff.add(Vector2(randf_range(-4, 4), -randf_range(2, 10)), Vector2(v.x, v.y * 0.5 - randf_range(30, 90)),
+			randf_range(0.2, 0.45), randf_range(3.0, 6.0), Color(1.0, randf_range(0.5, 0.8), 0.18, 0.95), -9.0)
+	for i in 34:   # dirt and splinters thrown up
+		puff.add(Vector2(randf_range(-6, 6), -2), Vector2(randf_range(-130, 130), -randf_range(80, 240)),
+			randf_range(0.8, 1.5), randf_range(0.8, 1.6), [Color(0.42, 0.31, 0.21), Color(0.3, 0.22, 0.15),
+			Color(0.62, 0.48, 0.32)].pick_random(), 0.0, 320.0)
+	for i in 30:   # a grimy cloud that hangs and drifts
+		var v := Vector2.from_angle(randf() * TAU) * randf_range(15, 70)
+		var shade := randf_range(0.36, 0.56)
+		puff.smoke(Vector2(randf_range(-12, 12), -randf_range(2, 18)), Vector2(v.x, v.y * 0.5 - randf_range(5, 30)),
+			randf_range(3.0, 5.5), randf_range(2.5, 4.5), Color(shade, shade * 0.93, shade * 0.86, 0.4),
+			randf_range(1.5, 3.0), WIND + Vector2(randf_range(-3, 3), randf_range(-4, 0)))
+	for i in 18:   # the dust ring rolling out along the street
+		var a := TAU * i / 18.0
+		puff.smoke(Vector2(cos(a), sin(a) * 0.5) * 6.0, Vector2(cos(a), sin(a) * 0.5) * randf_range(90, 130),
+			randf_range(1.5, 2.6), randf_range(3.0, 5.0), Color(0.78, 0.65, 0.48, 0.45), 4.0, WIND * 0.5)
+	world.add_child(puff)
+	decals.add(at, 24.0, Color(0.1, 0.08, 0.06, 0.5))   # scorched earth
+	decals.add(at, 13.0, Color(0.06, 0.05, 0.04, 0.65))
+	for i in 7:
+		decals.add(at + Vector2.from_angle(randf() * TAU) * randf_range(14, 30) * Vector2(1, 0.5), randf_range(2, 4),
+			Color(0.08, 0.06, 0.05, 0.5))
 
 
 # ------------------------------------------------------------------ cover that wears

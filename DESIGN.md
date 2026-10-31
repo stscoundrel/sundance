@@ -190,6 +190,29 @@ carried, which you collect by walking over them.
   put rounds into it ("Splinter that crate!"); the rest carry on. `tests/test_cover.gd`
   covers the wear, the damage looks, the leak, which rounds go through what, the
   eyes, and the breakers.
+- **Dynamite**: most of the gang's rank and file carry a stick (pistoleros,
+  bandidos, riflemen, red scarves, the poacher, the old timer, the hillbilly and the
+  drunks; not cowboys, gamblers, saloon girls, El Jefe or the gunslinger). They
+  use it only when they believe they're being killed from one place: the stranger
+  was just seen at a firing spot (see corner watching) he's killed **two or more**
+  from, and has fired from in the last 8 s. A carrier 100-220 px off with no wall in
+  the way, and none of his comrades within reach of the blast there, may light it:
+  he shouts ("¡Dinamita!", "Fire in the hole!", or after Leone's *A Fistful of
+  Dynamite*, "Duck, you sucker!" / "Giù la testa!"), winds up for 0.57 s and lobs it
+  at where the stranger was seen, give or take. It arcs over crates (not walls),
+  bounces, rolls to a stop, fizzing. One stick lit at a time, and 20 s after a blast
+  before the next. Once it's lit, it's lit: shot dead winding up, he drops it at his
+  feet and it blows there; winged, he lets go of it and runs. A drunk may throw it
+  short or fumble it. On the ground a pulsing ring shows its reach (80 px), and
+  bandits and townsfolk inside it run clear. The fuse runs 6 s from lighting,
+  so 4-5 s once it's down: time to get clear. The blast hurts everyone in reach who isn't behind a
+  wall: 8 within 32 px (death, flung back), 3 to about 56 px, then 1; a crate or
+  barrel in between takes 2 of it. It blows nearby cover apart (crates, coffins and
+  barrels near it, troughs badly, wagons only right by it), scorches the street,
+  shakes the screen and is heard all over town (the saloon too, three shots' worth).
+  Not yet: throwing it back, shooting the stick, the stranger carrying it.
+  `tests/test_dynamite.gd` covers who carries it, when it's thrown, the blast, and
+  the dropped and fumbled stick.
 - **Corner watching**: the gang remembers where the stranger shoots from. Each shot
   is filed under a *spot*, a loose cluster: within ~90 px of its centre or ~50 px of
   any place he's fired from there, so the two corners of a small house, or turning

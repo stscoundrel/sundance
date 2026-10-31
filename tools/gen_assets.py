@@ -773,6 +773,35 @@ def gen_sfx(meta):
         parts.append((st, knock(rng, rng.uniform(700, 1500), 0.015, 0.08) * rng.uniform(0.5, 1.0)))
     write("wood_break", room(place(0.6, parts), rng, 0.08, 0.35), meta, 0.85, 1.5)
 
+    # Dynamite (its own stream, so everything above stays as it was). The fuse: a
+    # dry fizz with sputters and crackles, long enough for the whole burn.
+    xrng = np.random.default_rng(91)
+    t = t_of(3.6)
+    fizz = bandpass(xrng.normal(0, 1, len(t)), 2500, 9000) * np.clip(0.6 + lowpass(xrng.normal(0, 1, len(t)), 6) * 20, 0.2, 1.2)
+    for st in np.sort(xrng.uniform(0, 3.5, 40)):
+        k = int(SR * st)
+        n = int(SR * 0.012)
+        fizz[k:k + n] += highpass(xrng.normal(0, 1, n), 3000) * np.exp(-t_of(0.012) / 0.003) * xrng.uniform(1.5, 4)
+    fizz *= np.minimum(1, t / 0.05) * np.minimum(1, (t[-1] - t) / 0.05)
+    write("fuse", fizz, meta, 0.45)
+    # The blast: a hard crack, a long saturated roar and a deep thump that rolls
+    # round the canyon for seconds, in stereo like the guns.
+    t = t_of(1.6)
+    n = xrng.normal(0, 1, len(t))
+    crack = highpass(n, 2500) * np.exp(-t / 0.006)
+    crack[:int(SR * 0.001)] += 6.0
+    roar = lowpass(n, 900) * np.exp(-t / 0.22) * 2.5
+    rumble = lowpass(xrng.normal(0, 1, len(t)), 140) * np.exp(-t / 0.55) * 6.0
+    sub = np.sin(2 * np.pi * (30 + 40 * np.exp(-t / 0.08)) * t) * np.exp(-t / 0.35) * (1 - np.exp(-t / 0.004)) * 2.0
+    dry = np.tanh((1.2 * crack + roar + rumble + sub) / np.abs(1.2 * crack + roar + rumble + sub).max() * 4.0)
+    left = convolve(dry, gun_ir(xrng, 2.2, [(0.4, 1.0, 1600), (0.95, 0.6, 1000), (1.6, 0.35, 700), (2.3, 0.2, 500)], 4.6))
+    right = convolve(dry, gun_ir(xrng, 2.2, [(0.52, 0.9, 1500), (1.15, 0.5, 900), (1.85, 0.3, 650), (2.6, 0.16, 450)], 4.6))
+    wet = np.stack([left, right], 1)
+    wet = wet / np.abs(wet).max() * 0.7
+    boom = wet.copy()
+    boom[:len(dry)] += dry[:, None] * [1.0, 0.95]
+    write("boom", boom, meta, 0.98, 1.6)
+
 
 def main():
     with open(os.path.join(ROOT, "data", "town.json")) as f:
