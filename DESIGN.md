@@ -94,8 +94,17 @@ carried, which you collect by walking over them.
   - *back off* out of the line of fire, gun up but not shooting, 2–3.5 s;
   - *dash* for cover and crouch there 2–4 s;
   - *flee* for 8–12 s, then catch his breath crouched out of sight.
-  Death of a comrade always triggers a reaction from those nearby. Wounded bandits
-  stagger for almost a second.
+  Death of a comrade always triggers a reaction from those nearby who see him fall.
+  Wounded bandits stagger for almost a second.
+- **Fear is local**: a round or a strike only frightens a bandit with no wall
+  between him and it; a comrade's death behind a building only tells the others
+  where the fight is. Gunfire he hears but can't see rattles him only if it's
+  right on top of him (~75 px) or in view within ~300 px, checked again when his
+  reaction is due, since he may have moved on by then. Bandits further off come
+  to the fight without stopping for every shot. `tests/test_locality.gd` has the
+  hero shoot it out on main street and checks nobody takes fright at a fight he
+  can't see, no bandit fires into a wall, and at least half the bandits from far
+  off reach the fight.
 - **Morale**: every scare, wound and fallen comrade shakes a bandit. Fear is his
   nerve minus how shaken he is, so as the fight goes badly the gang breaks: more
   cowering, more fleeing. `tests/test_reactions.gd` checks reaction hold times and
@@ -123,9 +132,11 @@ carried, which you collect by walking over them.
   comrades holding positions nearby lay down fire while he sprints.
 - **Leaders' orders**: El Jefe and the riflemen order "¡Fuego!" / "Covering fire!"
   when the stranger has gone to ground or a comrade is fleeing, cowering or
-  reloading. Everyone nearby blazes away at his likely position, seen or not,
-  faster and looser than aimed fire; the leader either moves up under it or leads
-  the shooting.
+  reloading. Everyone nearby with a view of his likely position blazes away at it,
+  seen or not, faster and looser than aimed fire; the leader either moves up under
+  it or leads the shooting. Covering fire, harassing shots and panic shots all need
+  a line to the spot: nobody shoots at walls, and a man who loses his view mid-burst
+  ceases fire.
 - **Panic shots**: a bandit running, dashing or backing off may loose a wild shot
   back over his shoulder.
 - **A reason to shoot**: the gang shares when anyone last saw the stranger or heard

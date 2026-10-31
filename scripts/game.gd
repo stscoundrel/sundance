@@ -763,7 +763,8 @@ func _physics_process(delta: float) -> void:
 	for e in enemies:
 		if e.alive and e.st == Enemy.St.COMBAT and e.reaction == "" and not e.weapon.is_reloading() \
 				and e.global_position.distance_to(seen_pos) < e.weapon.d["range"] * 0.8 \
-				and not ally_in_line(e, e.global_position, seen_pos):
+				and not ally_in_line(e, e.global_position, seen_pos) \
+				and line_of_sight(e.global_position, seen_pos, false):
 			shooters.append(e)
 	if not shooters.is_empty():
 		shooters.pick_random().harass(seen_pos)

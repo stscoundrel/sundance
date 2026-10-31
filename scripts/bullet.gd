@@ -68,13 +68,13 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
-## Bandits the round cracks past get a fright.
+## Bandits the round cracks past get a fright, unless there's a wall between.
 func _scare(a: Vector2, b: Vector2) -> void:
 	for e in game.enemies:
 		if not e.alive or scared.has(e):
 			continue
 		var p := Geometry2D.get_closest_point_to_segment(e.global_position, a, b)
-		if p.distance_to(e.global_position) < 55.0:
+		if p.distance_to(e.global_position) < 55.0 and game.line_of_sight(e.global_position, p, false):
 			scared.append(e)
 			e.near_miss(shooter.global_position)
 
@@ -83,7 +83,10 @@ func _scare_impact(p: Vector2) -> void:
 	if not shooter.is_player:
 		return
 	for e in game.enemies:
-		if e.alive and not scared.has(e) and e.global_position.distance_to(p) < 70.0:
+		# the strike is on the near face of whatever it hit: seen from the shooter's side
+		var face := p + (shooter.global_position - p).normalized() * 4.0
+		if e.alive and not scared.has(e) and e.global_position.distance_to(p) < 70.0 \
+				and game.line_of_sight(e.global_position, face, false):
 			e.near_miss(shooter.global_position)
 
 

@@ -22,6 +22,7 @@ const FLEE_LINES := ["¡Vámonos!", "I'm getting out!", "¡Corre!", "He's the de
 const VIEW := 200.0
 const NEAR := 95.0
 const FOV := deg_to_rad(70.0)
+const LOCAL := 150.0   # within this, a fight is close enough to rattle him unseen
 
 var kind := "pistolero"
 var tdata: Dictionary     # his type, merged with defaults and placement overrides
@@ -73,6 +74,7 @@ var hiding := false
 var threat := Vector2.ZERO
 var pending := ""
 var pending_t := 0.0
+var pending_forced := false
 var fear_cd := 0.0
 var shaken := 0.0      # rises with every scare and every comrade lost
 var retreat_dir := Vector2.ZERO
@@ -313,9 +315,13 @@ func near_miss(from: Vector2) -> void:
 	queue_reaction(from, true)
 
 
-## A comrade dropped near him: shakes him badly, and he always reacts.
+## A comrade dropped near him: if he saw it, it shakes him badly and he always
+## reacts. Out of sight it only tells him where the fight is.
 func witness_death(at: Vector2, killer: Vector2) -> void:
 	if not alive:
+		return
+	if not game.line_of_sight(global_position, at, false):
+		_engage(killer)
 		return
 	shaken = min(1.0, shaken + 0.35 * (1.0 - nerve * 0.5))
 	_engage(killer)
@@ -334,6 +340,15 @@ func _engage(from: Vector2) -> void:
 		lost_t = 0.0
 
 
+## Close enough to the shooting to be rattled by it: he can see where it's coming
+## from, or it's right on top of him.
+func near_action(from: Vector2) -> bool:
+	if sees_player:
+		return true
+	var d := global_position.distance_to(from)
+	return d < LOCAL * 0.5 or (d < LOCAL * 2.0 and game.line_of_sight(global_position, from, false))
+
+
 ## Fear grows as the fight goes badly: his nerve, minus how shaken he is.
 func fear() -> float:
 	return clamp(1.0 - nerve + shaken, 0.0, 1.0)
@@ -344,6 +359,8 @@ func fear() -> float:
 func queue_reaction(from: Vector2, scary: bool, forced := false) -> void:
 	if not alive or pending != "" or (fear_cd > 0.0 and not forced):
 		return
+	if not forced and not near_action(from):
+		return   # a fight he can't see, off down the street: he just heads for it
 	if reaction != "" and reaction != "point" and reaction != "backoff":
 		return
 	fear_cd = 2.0
@@ -353,6 +370,7 @@ func queue_reaction(from: Vector2, scary: bool, forced := false) -> void:
 		react += 0.4 * fear()
 		return
 	pending = r
+	pending_forced = forced
 	pending_t = randf_range(0.05, 0.45) * reflex
 
 
@@ -522,7 +540,12 @@ func _physics_process(delta: float) -> void:
 	if pending != "":
 		pending_t -= delta
 		if pending_t <= 0.0:
-			start_reaction(pending)
+			# by now he may have moved on, out of sight of it
+			if pending_forced or near_action(threat):
+				if not pending_forced and not sees_player and global_position.distance_to(threat) > LOCAL \
+						and not game.line_of_sight(global_position, threat, false):
+					_log("reacts out of sight")   # (kept for the tests: should never happen)
+				start_reaction(pending)
 			pending = ""
 	if is_staggered():
 		velocity = Vector2.ZERO   # reeling from the hit
@@ -893,6 +916,9 @@ func _suppress(delta: float, spec: Dictionary) -> void:
 				blocked_t = 0.0
 			return
 		blocked_t = 0.0
+		if not game.line_of_sight(global_position, aim_at, false):
+			suppress_t = 0.0   # lost his view of the spot: no use shooting the wall
+			return
 		if weapon.can_fire():
 			weapon.trigger()
 			since_shot = 0.0
@@ -906,19 +932,24 @@ func _suppress(delta: float, spec: Dictionary) -> void:
 			weapon.trigger()
 
 
-## Ordered (or asked) to keep the stranger's head down.
-func suppress(at: Vector2, seconds: float) -> void:
+## Ordered (or asked) to keep the stranger's head down. Only a man with a view of
+## the spot answers (nobody blazes away at a wall); returns whether he does.
+func suppress(at: Vector2, seconds: float) -> bool:
 	if not alive or reaction != "" or weapon.is_reloading() or st != St.COMBAT:
-		return
+		return false
 	if game.staleness() > game.FRESH:
-		return   # nobody has seen him for a while: no reason to blaze away
+		return false   # nobody has seen him for a while: no reason to blaze away
+	if global_position.distance_to(at) > weapon.d["range"] * 0.8 or not game.line_of_sight(global_position, at, false):
+		return false
 	single_shot = false
 	suppress_t = seconds
 	suppress_at = at + Vector2(randf_range(-14, 14), randf_range(-8, 8))
 	shot_cd = randf_range(0.0, 0.5)
+	return true
 
 
-## One unaimed shot at where the stranger was last seen, to keep him honest.
+## One unaimed shot at where the stranger was last seen, to keep him honest
+## (the game only asks bandits with a view of the spot).
 func harass(at: Vector2) -> void:
 	if not alive or reaction != "" or suppress_t > 0.0:
 		return
@@ -936,10 +967,12 @@ func _call_for_cover() -> void:
 		return
 	var helpers: Array[Enemy] = []
 	for e in game.enemies:
-		# the ones holding a position (in cover or standing their ground) answer
+		# the ones holding a position (in cover or standing their ground) with a view
+		# of the stranger's spot answer
 		if e != self and e.alive and e.st == St.COMBAT and e.reaction == "" and e.suppress_t <= 0.0 \
 				and (e.settled or e.velocity.length() < 5.0) and not e.weapon.is_reloading() \
-				and e.global_position.distance_to(global_position) < 240.0:
+				and e.global_position.distance_to(global_position) < 240.0 \
+				and game.line_of_sight(e.global_position, last_known, false):
 			helpers.append(e)
 	if helpers.is_empty():
 		return
@@ -968,8 +1001,8 @@ func _leader_orders() -> void:
 			continue
 		if e.reaction in ["flee", "dash", "cower", "hide"] or e.weapon.is_reloading():
 			trouble = true
-		elif e.st == St.COMBAT:
-			men.append(e)
+		elif e.st == St.COMBAT and game.line_of_sight(e.global_position, last_known, false):
+			men.append(e)   # only the ones who can see where he is can shoot at it
 	if not (stalled or trouble) or men.is_empty():
 		return
 	order_cd = randf_range(9.0, 14.0)
@@ -979,8 +1012,9 @@ func _leader_orders() -> void:
 	if randf() < 0.5:
 		fight_pos = Vector2.INF   # he uses the cover to move up...
 		covered_t = 3.5
-	else:
-		suppress(last_known, randf_range(3.0, 4.5))   # ...or leads the shooting
+	elif not suppress(last_known, randf_range(3.0, 4.5)):   # ...or leads the shooting
+		fight_pos = Vector2.INF   # (no view from here: he moves up anyway)
+		covered_t = 3.5
 	_log("orders covering fire, %d answer" % men.size())
 
 
@@ -991,8 +1025,8 @@ func _panic_fire() -> void:
 	panic_cd = randf_range(0.8, 1.8)
 	if randf() > 0.55 or not weapon.can_fire() or game.player == null or not game.player.alive:
 		return
-	if game.staleness() > game.FRESH:
-		return   # nothing chasing him that he knows of
+	if game.staleness() > game.FRESH or not game.line_of_sight(global_position, threat, false):
+		return   # nothing chasing him that he knows of, or nothing to shoot back at
 	var run_facing := facing
 	facing = (threat - global_position).normalized()
 	panic = true

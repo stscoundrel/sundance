@@ -40,6 +40,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_reactions.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_tactics.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_flank.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_gunslinger.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_locality.gd
 ```
 
 Flags go after `--`: `--skip-title`, `--at=GX,GY` (start tile), `--bot` (autopilot that shoots
