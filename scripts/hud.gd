@@ -134,6 +134,9 @@ func _draw_enemy_marks() -> void:
 			if e.st == Civilian.St.SNITCH and e.told_t <= 0.0:
 				_text(Vector2(head.x - 3, y - 6), "!", 14, Color(0.95, 0.95, 0.85), font)   # off to tell them
 			continue
+		if e == game.player.knife_cand:
+			_draw_knife_mark(Vector2(head.x, y - 4), game.player.knife_silent)
+			y -= 12
 		if not e.revealed:
 			continue   # passing as townsfolk: nothing gives him away
 		if e.marker_t > 0.0 and e.marker != "":
@@ -142,6 +145,16 @@ func _draw_enemy_marks() -> void:
 		elif e.suspicion > 0.02 and e.st != Enemy.St.COMBAT:
 			draw_rect(Rect2(head.x - 8, y - 6, 16, 3), Color(0, 0, 0, 0.6))
 			draw_rect(Rect2(head.x - 8, y - 6, 16 * e.suspicion, 3), Color(1, 0.8, 0.3))
+
+
+## Over the man the knife would go for: a pale blade for a quiet takedown, a red
+## one for a rush (he'll shoot if he can).
+func _draw_knife_mark(at: Vector2, quiet: bool) -> void:
+	var c := Color(0.93, 0.9, 0.82) if quiet else Color(1, 0.3, 0.2)
+	var pulse := 0.75 + 0.25 * sin(Time.get_ticks_msec() / 160.0)
+	c.a = pulse
+	draw_colored_polygon(PackedVector2Array([at + Vector2(-5, 3), at + Vector2(5, -7), at + Vector2(6, -6), at + Vector2(-3, 4)]), c)
+	draw_line(at + Vector2(-6, 1), at + Vector2(-2, 5), Color(0.45, 0.3, 0.18, pulse), 2.0)   # guard and grip
 
 
 func _draw_status(p: Player) -> void:
@@ -325,7 +338,7 @@ func _draw_title() -> void:
 	_text(Vector2(0, 100), "~ un western all'italiana ~", 10, Color(0.85, 0.7, 0.5, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	_text(Vector2(0, 196), "%s.  %d bandits.  One stranger." % [town, game.enemies.size()], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	var lines := [
-		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   1 2 3 guns",
+		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   E knife   1 2 3 guns",
 		"RMB: fan the Colt's hammer  /  fire both barrels of the coach gun",
 		"Stay out of their sight. Crouch behind cover. Kill them all.",
 	]

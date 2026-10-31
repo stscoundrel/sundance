@@ -335,7 +335,7 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 		play_action("hit_l" if facing.cross(-from_dir) < 0.0 else "hit_r")
 
 
-func die(from_dir: Vector2, shooter: Actor = null) -> void:
+func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
 	alive = false
 	killer = shooter
 	crouched = false
@@ -349,7 +349,7 @@ func die(from_dir: Vector2, shooter: Actor = null) -> void:
 	set_deferred("collision_layer", 0)
 	set_deferred("collision_mask", 0)
 	hurtbox.set_deferred("collision_layer", 0)
-	_death = _pick_death(shooter)
+	_death = how if how != "" else _pick_death(shooter)
 	if weapon:
 		weapon.abort()
 		game.drop_gun(self)

@@ -587,6 +587,11 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
                                         ("colt", (0.1, 1.0, 0.0)))):
             dv = np.array(d) / np.linalg.norm(d)
             m += weapon_model(kind, c + [0.03 * i, 0, 0.03 * i] - dv * GUN_LEN[kind] * 0.5, dv)
+    if up.get("knife"):   # a Bowie knife in the off hand, blade forward
+        e, h = np.array(up["eL"], float), np.array(up["hL"], float)
+        d = (h - e) / np.linalg.norm(h - e)
+        m += beam(h - d * 0.04, h + d * 0.03, 0.016, (70, 46, 30))         # handle
+        m += beam(h + d * 0.03, h + d * 0.22, 0.012, (214, 214, 220))      # blade
     if up.get("hanky"):   # a white handkerchief pressed to her eyes
         h = np.array(up["hR"], float)
         m += box(tuple(h + [-0.02, -0.03, -0.04]), tuple(h + [0.03, 0.03, 0.03]), (232, 228, 220))
@@ -801,6 +806,9 @@ def _shared_poses(k):
     k["hit_l"] = P(low, eL=V(-0.1, 0.3, 0.25), hL=V(-0.16, 0.32, 0.0), twist=0.45, lean=-0.12)
     k["hit_l"].update(eR=V(0.2, -0.12, 0.3), hR=V(0.09, 0.13, 0.44))      # clutching the left shoulder
     k["hit_gut"] = P(k["belly"], eL=V(0.1, 0.24, 0.25), hL=V(0.17, 0.04, 0.1), lean=0.5, nod=0.2)
+    # the knife: gun hand down, the blade drawn back in the other, then driven in
+    k["stab_a"] = P(low, eL=V(-0.06, 0.27, 0.28), hL=V(0.02, 0.22, 0.4), knife=True, twist=0.25)
+    k["stab_b"] = P(low, eL=V(0.28, 0.14, 0.36), hL=V(0.56, 0.02, 0.3), knife=True, twist=-0.2, lean=0.2)
     if "gun2" in low:   # a man with two guns flinches and cowers with both
         for name in ("point_half", "point", "flinch_half", "hit_l", "hit_gut"):
             k[name].pop("gun2", None)
@@ -950,6 +958,7 @@ def upper_anims(w):
         add("reload_insert", [k["insert_a"], k["insert_b"]], 4.8, True)
         add("reload_close", [k["break_half"], k["aim"]], 6)
     add("point", [k["point_half"], k["point"], k["point"]], 6)
+    add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
     add("flinch", [k["flinch_half"], k["flinch"]], 6)
     add("cower", [k["cower_a"], k["cower_b"]], 4, True)
     for side in ("hit_l", "hit_r", "hit_gut"):

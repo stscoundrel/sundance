@@ -31,6 +31,7 @@ Win when every bandit is dead, lose when the hero dies. Restart instantly.
 | C / Ctrl | Toggle crouch |
 | R | Reload (press fire to stop a partial reload) |
 | 1 / 2 / 3, wheel | Colt / coach gun / Yellow Boy (the ones he has) |
+| E | Knife: a silent takedown from behind, or a rush |
 | Enter | Restart after win or loss |
 | Esc | Quit |
 
@@ -42,6 +43,22 @@ he survives two clean hits. No health pickups.
 
 Crouching: half speed, silent footsteps, tighter spread and a smaller visual
 profile (see Stealth).
+
+**The knife** (E). A small blade over a bandit's head shows who it would go for (the
+one under the cursor if he's in reach, else the nearest; never through a wall):
+- *Pale: a silent takedown.* Within ~22 px of a man who isn't on to him (no fight,
+  not looking at him): the stranger steps in, a hand over his mouth, and lets him
+  down quietly. The sound carries ~40 px; anyone who sees it reacts as to any
+  killing in front of him.
+- *Red: a rush.* Within ~58 px of a man who is aware: he lunges (fast, ~0.4 s). As
+  he gets there it's decided by what the man is doing. A loaded gun, ready, in hand
+  and facing him, not reeling, cowering or fleeing: he fires point-blank (a ready
+  coach gun is the end of him) and the stranger is left reeling right in front of
+  him. Otherwise (mid-reload, as with a bandido's Navy, empty, turned away, staggered)
+  the knife goes in: a yell heard ~160 px off, and a cut of 3 (El Jefe, with 4 HP,
+  takes it and reels). Then 0.7 s before the next (1.2 s after being shot).
+`tests/test_knife.gd` covers both, the witness, and the ready, reloading, tough
+and out-of-reach cases.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: any of
 the Colt, the coach gun and the Winchester, at least one (1 2 3 or a click to take

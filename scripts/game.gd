@@ -166,7 +166,7 @@ func _setup_input() -> void:
 	var keys := {
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN],
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
-		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R],
+		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E],
 		"weapon_1": [KEY_1], "weapon_2": [KEY_2], "weapon_3": [KEY_3],
 		"restart": [KEY_ENTER], "quit": [KEY_ESCAPE],
 	}

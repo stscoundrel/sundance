@@ -285,7 +285,7 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 	if d > radius:
 		return
 	match k:
-		"shot":
+		"shot", "struggle":   # gunfire, or a man yelling as the knife goes in
 			if st == St.COMBAT:
 				if not sees_player:
 					last_known = pos
@@ -795,6 +795,29 @@ func _lead_posse(delta: float, p: Posse) -> void:
 			return
 		path_to(p.next_point(global_position))
 	follow_path(walk)
+
+
+## Not on to the stranger: no fight, no eyes on him. He can be taken from behind.
+func unaware() -> bool:
+	return alive and st != St.COMBAT and not sees_player and reaction != "point"
+
+
+## Could he shoot a man rushing him with a knife, right now? Only with a loaded gun
+## in his hand, ready, facing him, and his wits about him.
+func can_fire_at(p: Actor) -> bool:
+	if not alive or not revealed or is_staggered() or weapon.is_reloading() or not weapon.can_fire():
+		return false
+	if reaction in ["cower", "flee", "dash", "hide"]:
+		return false
+	return absf(facing.angle_to(p.global_position - global_position)) < 1.1
+
+
+## A knife rushes him and he's ready: he turns the gun on him point-blank.
+func point_blank(p: Actor) -> void:
+	facing = (p.global_position - global_position).normalized()
+	desired = facing
+	weapon.trigger()
+	_log("shoots the knife-man point-blank")
 
 
 ## Off to fetch the reserve from the den: he runs for its door, shouting, and

@@ -6,6 +6,17 @@ extends Actor
 
 const ORDER := ["colt", "coach", "rifle"]
 const RESERVE := {"colt": 30, "coach": 10, "rifle": 26}   # what he rides in with, per gun
+# The knife (E). Up close behind a man who isn't on to him, a silent takedown; a
+# few paces off from one who is, a rush: he lunges, and it's decided as he gets
+# there: if the man can shoot (gun loaded and ready, facing him, not reeling or
+# reloading) he does, point-blank, and the stranger is left stunned in front of
+# him; if not, the knife goes in, loudly.
+const KNIFE_SILENT := 22.0   # px: in reach for a takedown from behind
+const KNIFE_RUSH := 58.0     # px: a lunge away
+const LUNGE := 150.0         # px/s
+const LUNGE_MAX := 0.5       # s: if he hasn't reached him by then, he's missed
+const KNIFE_CD := 0.7        # s before the next
+const RUSH_DMG := 3          # a rush's cut: enough for most, not El Jefe
 const WALK := 46.0
 const CROUCH_WALK := 22.0
 
@@ -18,6 +29,12 @@ var bloom := 0.0
 var aim_dist := 0.0
 var aim_target: Enemy = null
 var _spur := false
+var knife_cand: Enemy = null   # who the knife would go for now, if anyone
+var knife_silent := false      # and whether that would be a quiet takedown
+var knife_target: Enemy = null
+var knife_quiet := false
+var knife_t := -1.0            # time into the lunge; < 0 when not lunging
+var knife_cd := 0.0
 
 
 func setup(g: Node, pos: Vector2) -> void:
@@ -38,11 +55,17 @@ func _physics_process(delta: float) -> void:
 			update_anim(delta)
 		return
 	var playing: bool = game.state == "play"
+	knife_cd = maxf(0.0, knife_cd - delta)
+	if knife_t >= 0.0:
+		_lunge(delta)
+		update_anim(delta)
+		return
 	var input := Vector2.ZERO
-	if playing:
+	if playing and not is_staggered():
 		input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = input * (CROUCH_WALK if crouched else WALK) * limp_factor()
 	move_and_slide()
+	_find_knife_target()
 
 	var m := get_global_mouse_position()
 	aim_target = game.enemy_under(m)
@@ -81,6 +104,8 @@ func _handle_actions() -> void:
 		crouched = not crouched
 	if Input.is_action_just_pressed("reload"):
 		weapon.start_reload()
+	if Input.is_action_just_pressed("knife"):
+		knife()
 	for i in 3:
 		if Input.is_action_just_pressed("weapon_%d" % (i + 1)):
 			switch_to(ORDER[i])
@@ -116,6 +141,92 @@ func take_up(k: String) -> void:
 	owned.sort_custom(func(a, b): return ORDER.find(a) < ORDER.find(b))
 	game.sfx("pickup", null, 0.0)
 	game.sfx("close", null, -6.0)
+
+
+# ------------------------------------------------------------------ the knife
+
+## The man under the cursor if the knife can reach him, else the nearest it can.
+func _find_knife_target() -> void:
+	knife_cand = null
+	if knife_cd > 0.0 or is_staggered() or game.state != "play":
+		return
+	var best_d := INF
+	for e in game.enemies:
+		if not e.alive:
+			continue
+		var d := global_position.distance_to(e.global_position)
+		if d > KNIFE_RUSH or not game.line_of_sight(global_position, e.global_position, false):
+			continue
+		if e == aim_target:
+			d = -1.0
+		if d < best_d:
+			best_d = d
+			knife_cand = e
+	if knife_cand:
+		knife_silent = knife_cand.unaware() and global_position.distance_to(knife_cand.global_position) <= KNIFE_SILENT
+
+
+## E: go for him.
+func knife() -> bool:
+	if knife_cand == null or knife_t >= 0.0 or not alive:
+		return false
+	knife_target = knife_cand
+	knife_quiet = knife_silent
+	knife_t = 0.0
+	weapon.abort()
+	return true
+
+
+func _lunge(delta: float) -> void:
+	var e := knife_target
+	knife_t += delta
+	if e == null or not e.alive or knife_t > LUNGE_MAX:
+		_knife_done(KNIFE_CD)   # missed him
+		game.stats["knife misses"] = game.stats.get("knife misses", 0) + 1
+		return
+	var to := e.global_position - global_position
+	facing = to.normalized()
+	if to.length() < 11.0:
+		velocity = Vector2.ZERO
+		_strike(e)
+		return
+	velocity = facing * (LUNGE * 0.7 if knife_quiet else LUNGE)
+	move_and_slide()
+
+
+func _strike(e: Enemy) -> void:
+	var dir := facing
+	play_action("stab")
+	if knife_quiet and e.unaware():
+		# a hand over his mouth, the blade, and he's let down quietly
+		e.die(dir, self, "death_slump")
+		game.sfx("hit", global_position, -14.0)
+		game.make_noise(global_position, 40.0, "struggle", self)
+		game.stats["takedowns"] = game.stats.get("takedowns", 0) + 1
+		_knife_done(KNIFE_CD)
+		return
+	if e.can_fire_at(self):
+		e.point_blank(self)   # he was ready for him
+		stagger_t = 0.8
+		game.stats["rushes shot"] = game.stats.get("rushes shot", 0) + 1
+		_knife_done(KNIFE_CD + 0.5)
+		return
+	game.sfx("hit", global_position, -4.0)
+	game.make_noise(global_position, 160.0, "struggle", self)   # he yells as it goes in
+	if e.hp <= RUSH_DMG:
+		e.die(dir, self, "death_knees")
+	else:
+		e.take_hit(RUSH_DMG, dir, self)   # a hard man: he takes it and reels
+		e.stagger_t = 0.8
+	game.stats["rushes"] = game.stats.get("rushes", 0) + 1
+	_knife_done(KNIFE_CD)
+
+
+func _knife_done(cd: float) -> void:
+	knife_t = -1.0
+	knife_target = null
+	knife_cd = cd
+	velocity = Vector2.ZERO
 
 
 func cycle_weapon(step: int) -> void:
