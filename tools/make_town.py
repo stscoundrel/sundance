@@ -94,6 +94,7 @@ ENEMIES = [
     {"kind": "pistolero", "x": 48, "y": 14.5, "patrol": [[48, 14.5], [57, 14.5]]},
     {"kind": "rifleman", "x": 26.5, "y": 24.5, "facing": 270},
     {"kind": "cowboy", "x": 45, "y": 20, "facing": 180},
+    {"kind": "hillbilly", "x": 53, "y": 22.2, "patrol": [[53, 22.2], [58.5, 22.2]]},
     # plaza and south of main street
     {"kind": "redscarf", "x": 28, "y": 34.3, "patrol": [[28, 34.3], [36, 34.3], [36, 40.6], [28, 40.6]]},
     {"kind": "oldtimer", "x": 34.5, "y": 42.2, "facing": 270},
@@ -106,6 +107,7 @@ ENEMIES = [
     {"kind": "pistolero", "x": 10, "y": 46.6, "patrol": [[10, 46.6], [30, 46.6]]},
     {"kind": "drunkard", "x": 14, "y": 49, "facing": 200},
     {"kind": "redscarf", "x": 49, "y": 49, "facing": 200},
+    {"kind": "hillbilly", "x": 27, "y": 55, "patrol": [[27, 55], [36, 56]]},
 ]
 
 # Townsfolk, near the doors they'd run for. Fewer than the bandits.

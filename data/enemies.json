@@ -16,6 +16,7 @@
     "buckskin":        {"style": "buckskin", "hat": "fur",    "beard": true},
     "veteran":         {"style": "duster", "hat": "slouch",   "beard": true, "mustache": true},
     "gunslinger":      {"style": "vest",   "hat": "flat",     "scarf": true, "mustache": true, "holsters": 2},
+    "hillbilly":       {"style": "shirt",  "hat": "slouch",   "bib": true, "beard": true, "holsters": 0},
     "peon":            {"style": "shirt",  "hat": "sombrero", "mustache": true, "holsters": 0},
     "undertaker":      {"style": "duster", "hat": "top",      "mustache": true, "holsters": 0},
     "apprentice":      {"style": "vest",   "hat": "bowler",   "holsters": 0},
@@ -38,6 +39,8 @@
   "types": {
     "pistolero": {
       "name": "Pistolero", "template": "poncho", "loadout": ["colt"],
+      "loadouts": [{"guns": ["colt"], "weight": 9},
+                   {"guns": ["sawnoff"], "weight": 1, "range": [25, 80], "fires_on_move": true, "flank": 0.75}],
       "palettes": [
         {"poncho_a": [168, 58, 40], "poncho_b": [214, 172, 92], "poncho_c": [60, 44, 36], "shirt": [204, 192, 160],
          "trousers": [124, 102, 72], "boots": [70, 48, 32], "hat": [156, 124, 74], "band": [92, 40, 30],
@@ -142,6 +145,22 @@
          "hat": [56, 50, 46], "band": [170, 140, 70], "skin": [200, 146, 116], "hair": [222, 218, 208]},
         {"coat": [124, 120, 110], "shirt": [190, 180, 160], "trousers": [110, 104, 92], "boots": [50, 38, 28],
          "hat": [112, 98, 78], "band": [150, 40, 36], "skin": [196, 140, 108], "hair": [210, 206, 196]}
+      ]
+    },
+    "hillbilly": {
+      "name": "Hillbilly", "template": "hillbilly", "loadout": ["sawnoff"],
+      "hp": 3, "range": [20, 70], "cadence": [0.45, 0.9], "aim": 1.3, "speed": 1.08,
+      "reflex": [0.7, 1.5], "nerve": [0.55, 1.0], "cover_call": 0.2, "flank": 0.85,
+      "fires_on_move": true, "bold": 0.55,
+      "shouts": {"spot": ["Git off my land!", "Well lookee here.", "Come 'ere, city boy."],
+                 "reload": ["Hold on now..."], "scare": ["Dang!"], "flee": ["Ain't my fight!"]},
+      "palettes": [
+        {"shirt": [168, 62, 48], "trousers": [70, 86, 116], "boots": [72, 52, 36], "hat": [176, 150, 98],
+         "band": [96, 76, 52], "skin": [206, 146, 108], "hair": [140, 96, 54]},
+        {"shirt": [206, 196, 170], "trousers": [96, 90, 70], "boots": [60, 44, 32], "hat": [96, 80, 60],
+         "band": [60, 48, 36], "skin": [196, 136, 98], "hair": [70, 52, 38]},
+        {"shirt": [110, 120, 84], "trousers": [62, 74, 102], "boots": [54, 40, 30], "hat": [130, 108, 78],
+         "band": [150, 50, 36], "skin": [214, 158, 120], "hair": [176, 132, 80]}
       ]
     },
     "gunslinger": {

@@ -45,7 +45,7 @@ var shake := 0.0
 var hurt_fx := 0.0
 var alerted_once := false
 var player_fired := false
-var closeup_until := 0
+var closeup_left := 0.0   # seconds of the stand-off still to run, in unscaled frame time
 var last_twang := -100000
 var end_time := 0
 var start_time := 0
@@ -402,11 +402,13 @@ func _process(delta: float) -> void:
 	var now := Time.get_ticks_msec()
 	if state == "title" and now - start_time > 5500 and not _args.has("freeze"):
 		begin()
-	if closeup_until > 0 and now > closeup_until:
-		closeup_until = 0
-		if state == "play":
-			Engine.time_scale = 1.0
-		hud.hide_eyes()
+	if closeup_left > 0.0:
+		closeup_left -= delta / maxf(Engine.time_scale, 0.01)
+		if closeup_left <= 0.0:
+			closeup_left = 0.0
+			if state == "play":
+				Engine.time_scale = 1.0
+			hud.hide_eyes()
 
 	if player:
 		var look := (get_global_mouse_position() - player.global_position) * 0.35
@@ -908,7 +910,7 @@ func claim_body(by: Civilian) -> Enemy:
 			continue
 		var score := by.global_position.distance_to(e.global_position)
 		if not e.has_meta("blessed"):
-			score += 2000.0 if _held(e, "blessing_by") else 1000.0
+			score += 2.0e6 if _held(e, "blessing_by") else 1.0e6   # anywhere in town, the blessed come first
 		if score < best_score:
 			best_score = score
 			best = e
@@ -1031,7 +1033,7 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 	if not alerted_once and spotted and not player_fired:
 		alerted_once = true
 		Engine.time_scale = 0.3
-		closeup_until = now + 1700
+		closeup_left = 1.7
 		hud.show_eyes()
 		sfx("sting", null, -2.0, 0.0)
 		last_twang = now

@@ -4,7 +4,8 @@ extends RefCounted
 ##   revolver - Colt Single Action Army: six chambers, cocked per shot, gate loading.
 ##              A pair ("twin") holds twelve, fired right hand, left hand, in turn.
 ##   lever    - Winchester 1866: tube magazine, a lever stroke between shots
-##   breech   - everything that opens to load: coach gun, derringer, Sharps, howdah.
+##   breech   - everything that opens to load: coach gun, sawn-off, derringer, Sharps,
+##              howdah.
 ##              Barrel count, timings and sounds come from the data below.
 
 enum S { READY, CYCLE, OPEN, EJECT, INSERT, CLOSE }
@@ -25,6 +26,13 @@ const DATA := {
 		"damage": 1, "speed": 520.0, "range": 175.0, "spread": 9.0, "pellets": 9, "noise": 460.0,
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 20, "smoke_push": 1.5,
 		"open": [0.4, "break_open"], "eject": [0.35, "eject"], "insert": [0.42, "shell_in"], "close": [0.35, "close"],
+		"status": {"cycle": "", "open": "BREAKING OPEN", "close": "CLOSING"}},
+	# A double gun with the barrels and the stock cut down: easy to carry under a coat,
+	# useless past a few paces and murder inside them. Takes the coach gun's shells.
+	"sawnoff": {"name": "SAWN-OFF 12 GA", "action": "breech", "barrels": 2, "volley": true,
+		"damage": 1, "speed": 480.0, "range": 115.0, "spread": 15.0, "pellets": 9, "noise": 470.0,
+		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 22, "smoke_push": 1.7, "ammo": "coach",
+		"open": [0.32, "break_open"], "eject": [0.3, "eject"], "insert": [0.38, "shell_in"], "close": [0.3, "close"],
 		"status": {"cycle": "", "open": "BREAKING OPEN", "close": "CLOSING"}},
 	# A pair of Colts, one in each hand. Chambers alternate between the guns, so the
 	# left is already cocked as the right fires; reloading is one gun at a time.
@@ -89,6 +97,11 @@ func _init(k: String, h: Actor) -> void:
 	chambers.fill(1)
 	for i in int(d.get("barrels", 0)):
 		barrels.append(1)
+
+
+## A shotgun: a hip-carried scattergun throwing a fistful of shot.
+func is_shotgun() -> bool:
+	return int(d["pellets"]) > 1
 
 
 func is_reloading() -> bool:

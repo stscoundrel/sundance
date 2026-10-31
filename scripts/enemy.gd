@@ -126,10 +126,10 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	setup_body(g, pos)
 	kind = k
 	tdata = g.enemy_type(k, overrides)
+	loadout = _pick_loadout()
 	stats = {"keep": _v2(tdata["range"]), "cadence": _v2(tdata["cadence"])}
 	hp = int(tdata["hp"])
 	max_hp = hp
-	loadout = _pick_loadout()
 	weapon = Weapon.new(loadout[0], self)
 	weapon.reserve = 999
 	walk = WALK * float(tdata["speed"])
@@ -172,11 +172,17 @@ func _pick_loadout() -> Array:
 	for o in options:
 		total += float(o.get("weight", 1.0))
 	var r := randf() * total
+	var pick: Dictionary = options[-1]
 	for o in options:
 		r -= float(o.get("weight", 1.0))
 		if r <= 0.0:
-			return o["guns"]
-	return options[-1]["guns"]
+			pick = o
+			break
+	# an option can bring its own way of fighting (a sawn-off wants him close)
+	for key in pick:
+		if not key in ["guns", "weight"]:
+			tdata[key] = pick[key]
+	return pick["guns"]
 
 
 ## In the stranger's sights: he's looking her way down his barrel, or he's close.
@@ -1243,7 +1249,7 @@ func _log(what: String) -> void:
 
 
 func accuracy_mult() -> float:
-	var m: float = (AIM_SPREAD_SHOTGUN if weapon.kind == "coach" else AIM_SPREAD) * float(tdata["aim"])
+	var m: float = (AIM_SPREAD_SHOTGUN if weapon.is_shotgun() else AIM_SPREAD) * float(tdata["aim"])
 	if panic:
 		return m * 5.0   # wild, over the shoulder
 	if suppress_t > 0.0:

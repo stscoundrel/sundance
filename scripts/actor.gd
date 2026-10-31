@@ -298,7 +298,7 @@ func muzzle_offset() -> Vector2:
 
 func gun_height() -> float:
 	var h := Iso.GUN_H_CROUCH if crouched else Iso.GUN_H
-	if weapon and weapon.kind == "coach":
+	if weapon and weapon.is_shotgun():
 		h -= 3.0   # carried at the hip
 	return h
 
@@ -361,7 +361,7 @@ func die(from_dir: Vector2, shooter: Actor = null) -> void:
 ## Thrown back by a shotgun blast up close; otherwise one of the four, the slow
 ## Leone slump among them.
 func _pick_death(shooter: Actor) -> String:
-	if shooter and shooter.weapon and shooter.weapon.kind == "coach" \
+	if shooter and shooter.weapon and shooter.weapon.is_shotgun() \
 			and shooter.global_position.distance_to(global_position) < 90.0:
 		return "death_back"
 	var w := {"death_knees": 0.3, "death_spin": 0.25, "death_slump": 0.25, "death_back": 0.2}

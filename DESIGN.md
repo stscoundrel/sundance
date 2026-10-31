@@ -198,7 +198,8 @@ carried, which you collect by walking over them.
 - Post-process: warm grade, vignette, film grain.
 - Presentation: a title card in the style of the films' opening credits and a
   church bell. If a bandit lays eyes on the hero before he has fired a shot, the
-  game slows briefly while an extreme close-up of his eyes crosses the screen.
+  game slows briefly while an extreme close-up of his eyes crosses the screen
+  (1.7 s, counted in unscaled frame time so headless tests stay deterministic).
 - Sound: gunshots are loud and echoing, like the films: a hard crack, a saturated
   powder blast and a low boom, then a long stereo canyon tail whose echoes bounce
   left and right (three takes per gun, no pitched "pew"). Gunfire carries across
@@ -232,7 +233,9 @@ generator:
 - **Random loadouts**: a type may list weighted `loadouts` instead of one fixed
   loadout; each bandit picks one when the town is built (the art is baked with
   every gun on the list). Saloon girls carry a derringer three times in four, a
-  Colt otherwise.
+  Colt otherwise; one pistolero in ten has a sawn-off. An option can bring its own
+  knobs too (the sawn-off pistolero's range, flanking and firing on the move), so
+  he fights the way his gun wants.
 - **Within reach**: a fighting position, in cover or in the open, is never further
   from the stranger than the bandit's own gun reaches, so a derringer has to come
   close.
@@ -250,6 +253,7 @@ generator:
 | Poacher | buckskin, fringe, coonskin cap, beard (2) | Sharps 1874 | sniper: very long range, deadly, slow single-shot reload |
 | Old timer | old cavalry coat, slouch hat, white beard (Union / Confederate) | howdah pistol | 3 HP, slow, unshakeable, "Seen worse at Shiloh!" |
 | Gunslinger | black (or tan) vest, red scarf, flat hat, two holsters (2) | a pair of Colts | bold: walks in shooting, fast, scorns cover, "Draw, stranger!" |
+| Hillbilly | bib overalls, straw slouch hat, beard (3) | sawn-off | 3 HP, closes in fast, fires on the move, "Git off my land!" |
 
 **Opportunists** (`opportunist`; saloon girls 0.85, with low nerve) shoot while
 the stranger's attention is elsewhere, quickly, without lining up long. When he
@@ -277,7 +281,12 @@ The **howdah pistol** is a two-barrel .577 break-action hand cannon (damage 2 pe
 barrel, both can go at once). The gunslinger's **pair of Colts** holds twelve: the
 chambers alternate between the guns, so he fires right, left, right, with only a
 short pause between; he reloads one gun at a time while the other sits holstered
-(`tests/test_gunslinger.gd` pits one against a pistolero under fire).
+(`tests/test_gunslinger.gd` pits one against a pistolero under fire). The
+**sawn-off** is a double 12-gauge cut down to a pistol grip and stubby barrels: the
+coach gun's shells and volley, a much wider pattern (15 degrees) that is spent by
+~115 px, and a quicker reload. It's carried at the hip like the coach gun, and a
+blast from it up close throws a man back just the same (`tests/test_hillbilly.gd`
+checks a hillbilly closes to its range and fights nearer than a cowboy).
 
 Guns are data too (`Weapon.DATA` in `scripts/weapon.gd`): an action type (revolver,
 lever, or breech for anything that opens to load), stats, smoke, and for breech guns
@@ -323,7 +332,7 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   bandit who sees a comrade being dragged past still finds the body. Gunfire
   makes them let go and run indoors like anyone else; the body stays where it
   dropped until they come back out. They see only to bandits for now, and take a
-  man the padre has blessed before one he hasn't (any, if none is blessed yet,
+  man the padre has blessed, anywhere in town, before one he hasn't (any, if none is blessed yet,
   preferring one the padre isn't on his way to). Their animations are the "tools"
   set: empty hands plus measuring and dragging.
 - **The padre** (`role: "priest"`, black cassock, white collar, breviary): waits

@@ -46,6 +46,11 @@ func _init() -> void:
 		check(t["nerve"][0] >= 0.0 and t["nerve"][1] <= 1.0 and t["nerve"][0] <= t["nerve"][1], where + "nerve must be within 0..1")
 		check(float(t["aim"]) > 0.0 and float(t["speed"]) > 0.0, where + "aim and speed must be positive")
 		check(t["draw_sidearm"] == 0.0 or t["loadout"].size() > 1, where + "draws a sidearm he doesn't carry")
+		for o in t.get("loadouts", []):
+			for k in o:
+				check(k in ["guns", "weight"] or t.has(k), where + "a loadout option sets unknown knob " + k)
+			if o.has("range"):
+				check(o["range"][0] < o["range"][1], where + "a loadout option's range must be [near, far]")
 	for e in level["enemies"]:
 		check(data["types"].has(e["kind"]), "town places unknown type " + str(e["kind"]))
 		check(not e.has("loadout"), "placements can't change loadouts (the art is baked per type)")

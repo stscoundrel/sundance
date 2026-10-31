@@ -56,7 +56,7 @@ def template_guns():
     return out
 
 
-GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44}
+GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6}
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
 # in the left hand (pose key "gun2").
 GUN_ART = {"colts": "colt"}
@@ -107,6 +107,14 @@ def _torso_fn(look):
             paint(P[:, 2] > 0.4, "skin")                                                  # neckline
             lace = front & (np.abs(P[:, 1]) < 0.03) & (P[:, 2] < 0.38) & ((P[:, 2] * 40) % 1.0 < 0.35)
             paint(lace, "accent")
+        if look.get("bib"):
+            # bib overalls: a denim bib up the front, straps over the shoulders
+            bib = (front & (np.abs(P[:, 1]) < 0.11) & (P[:, 2] < 0.34)) | \
+                  ((np.abs(np.abs(P[:, 1]) - 0.085) < 0.022) & (P[:, 2] >= 0.3))
+            paint(bib, "trousers")
+            buttons = front & (np.abs(np.abs(P[:, 1]) - 0.085) < 0.016) & (np.abs(P[:, 2] - 0.33) < 0.016)
+            c[buttons] = BRASS
+            s_[buttons] = 0
         if look.get("suspenders"):
             for side in (-1, 1):
                 m = np.abs(P[:, 1] - side * 0.08) < 0.018
@@ -237,6 +245,19 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
         for o in (-0.021, 0.021):
             out += beam(hinge + side * o, hinge + ab * (L * 0.68) + side * o, 0.022, GUNMETAL)
             out += beam(at(0.17, (o * 1.3, 0.03)), at(0.22, (o * 1.5, 0.07)), 0.011, STEEL)  # hammers
+    elif kind == "sawnoff":
+        # a double gun cut down: the stock sawn to a pistol grip, the barrels stubby
+        out += frustum(at(0.0, (0, -0.075)), at(0.2, (0, -0.005)), 0.04, 0.032, WOOD)
+        out += box(tuple(at(0.2) - 0.04), tuple(at(0.27) + 0.04), STEEL)
+        hinge = at(0.27)
+        ang = 0.75 * broken
+        ab = a * math.cos(ang) - up * math.sin(ang)
+        upb = np.cross(side, ab)
+        bl = L * 0.73
+        for o in (-0.025, 0.025):
+            out += beam(hinge + side * o + upb * 0.012, hinge + ab * bl + side * o + upb * 0.012, 0.024, GUNMETAL)
+            out += beam(at(0.19, (o * 1.4, 0.03)), at(0.24, (o * 1.6, 0.075)), 0.012, STEEL)  # hammers
+        out += beam(hinge - upb * 0.026, hinge + ab * (bl * 0.36) - upb * 0.026, 0.03, WOOD)
     elif kind == "coach":
         out += frustum(at(0.0, (0, -0.04)), at(0.3), 0.06, 0.032, WOOD)
         out += box(tuple(at(0.3) - 0.04), tuple(at(0.34) + 0.04), STEEL)
@@ -620,6 +641,15 @@ def _key_poses(w):
         k = {"aim": aim, "low": aim, "up": {"gun": None}, "cower": {"gun": None}, "clutch_r": {"gun": None},
              "belly": dict(eR=V(0.08, -0.27, 0.2), hR=V(0.17, -0.07, 0.08))}
         return _shared_poses(k)
+    if w == "sawnoff":
+        # held at the hip like the coach gun, but by its grip: the short gun sits forward
+        k = _key_poses("coach")
+        for name, pose in list(k.items()):
+            for g in ("gun", "gun2"):
+                if pose.get(g) is not None:
+                    pose = P(pose, **{g: G(pose[g]["B"] + pose[g]["D"] * 0.17, pose[g]["D"])})
+            k[name] = pose
+        return k
     if w == "derringer":
         k = _key_poses("colt")
         for name in ("load", "eject_a", "eject_b", "insert_a", "insert_b"):

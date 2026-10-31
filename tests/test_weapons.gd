@@ -151,6 +151,26 @@ func _init() -> void:
 	check(pair.loaded() == 12 and pair.reserve == 8, "pair reloaded 12 (%d, reserve %d)" % [pair.loaded(), pair.reserve])
 	check(pair.can_fire(), "pair ready after reload")
 
+	# Sawn-off: a coach gun cut short. Same shells and volley, a wider pattern that
+	# dies off sooner, and a quicker reload.
+	var sawn := Weapon.new("sawnoff", a)
+	var cg: Dictionary = Weapon.DATA["coach"]
+	check(sawn.is_shotgun() and coach.is_shotgun() and not colt.is_shotgun(), "shotguns know they're shotguns")
+	check(sawn.d["ammo"] == "coach", "the sawn-off takes coach gun shells")
+	check(sawn.d["spread"] > cg["spread"] and sawn.d["range"] < cg["range"], "sawn-off: wider and shorter than the coach gun")
+	sawn.reserve = 4
+	g.shots = 0
+	sawn.alt_trigger()
+	check(g.shots == 18, "sawn-off fires both barrels at once (got %d)" % g.shots)
+	run(sawn, 0.5)
+	var t0 := 0.0
+	check(sawn.start_reload(), "sawn-off reload starts")
+	while (sawn.is_reloading() or not sawn.can_fire()) and t0 < 10.0:
+		run(sawn, 0.05)
+		t0 += 0.05
+	var tc: float = cg["open"][0] + cg["eject"][0] + cg["insert"][0] * 2 + cg["close"][0]
+	check(t0 < tc, "sawn-off reloads quicker than the coach gun (%.2f vs %.2f s)" % [t0, tc])
+
 	a.free()
 	g.free()
 	print("weapons: ", "OK" if failures == 0 else "%d failures" % failures)
