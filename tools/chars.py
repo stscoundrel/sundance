@@ -46,6 +46,9 @@ def template_guns():
     for t in _DATA["types"].values():
         for g in t["loadout"]:
             need(t["template"], g)
+        for option in t.get("loadouts", []):
+            for g in option["guns"]:
+                need(t["template"], g)
         if t.get("concealed"):
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():

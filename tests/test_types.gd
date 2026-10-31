@@ -27,7 +27,11 @@ func _init() -> void:
 		check(meta["chars"].has(t["template"]), where + "template not baked: " + str(t["template"]))
 		var anims: Dictionary = meta["chars"].get(t["template"], {}).get("anims", {})
 		check(not t["loadout"].is_empty(), where + "carries no gun")
-		for g in t["loadout"]:
+		var guns: Array = t["loadout"].duplicate()
+		for o in t.get("loadouts", []):
+			check(not o["guns"].is_empty(), where + "a loadout option carries no gun")
+			guns.append_array(o["guns"])
+		for g in guns:
 			check(Weapon.DATA.has(g), where + "unknown gun " + str(g))
 			for a in ["aim", "fire", "reload_open", "reload_insert", "reload_close", "point", "hit_gut"]:
 				check(anims.has("upper/%s/%s" % [g, a]), where + "no %s animation for %s" % [a, g])

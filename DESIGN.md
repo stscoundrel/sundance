@@ -219,7 +219,8 @@ generator:
   knobs: `hp`, preferred `range`, `cadence` (pause between shots), `aim` (spread
   multiplier, higher is worse), `speed`, `reflex` and `nerve` ranges, leader `rank`,
   `cover_call` (chance to shout "Cover me!"), `fires_on_move`, `draw_sidearm`,
-  `flank` (chance to go round when hunting), `bold` (0-1, below) and their own `shouts`. Anything not
+  `flank` (chance to go round when hunting), `bold` and `opportunist` (0-1, below)
+  and their own `shouts`. Anything not
   given comes from `defaults`.
 - **Placements** in `data/town.json` may override any field for one bandit (a fixed
   `palette` index, a braver nerve), except the loadout, which is baked per type.
@@ -228,6 +229,13 @@ generator:
 - **Long gun and sidearm**: a bandit carrying a rifle or coach gun plus a Colt uses
   the long gun until it runs dry mid-fight, then (by `draw_sidearm`) throws it down
   and draws the pistol rather than reloading.
+- **Random loadouts**: a type may list weighted `loadouts` instead of one fixed
+  loadout; each bandit picks one when the town is built (the art is baked with
+  every gun on the list). Saloon girls carry a derringer three times in four, a
+  Colt otherwise.
+- **Within reach**: a fighting position, in cover or in the open, is never further
+  from the stranger than the bandit's own gun reaches, so a derringer has to come
+  close.
 
 | Type | Look | Guns | Character |
 |---|---|---|---|
@@ -238,10 +246,20 @@ generator:
 | El Jefe | red duster, sombrero | coach gun + Colt | 4 HP, nerves of steel, leader |
 | Drunkard | shirt, suspenders, slouch hat (2) | Colt | wild aim, slow, scared, slurs |
 | Gambler | frock coat, top hat (2) | Remington derringer | quick hands, cool head |
-| Saloon girl | dress and shawl (3) | Colt | rare; joins the fight like everyone else |
+| Saloon girl | dress and shawl (3) | derringer (3 in 4) or Colt | opportunist, passes as townsfolk until something's up |
 | Poacher | buckskin, fringe, coonskin cap, beard (2) | Sharps 1874 | sniper: very long range, deadly, slow single-shot reload |
 | Old timer | old cavalry coat, slouch hat, white beard (Union / Confederate) | howdah pistol | 3 HP, slow, unshakeable, "Seen worse at Shiloh!" |
 | Gunslinger | black (or tan) vest, red scarf, flat hat, two holsters (2) | a pair of Colts | bold: walks in shooting, fast, scorns cover, "Draw, stranger!" |
+
+**Opportunists** (`opportunist`; saloon girls 0.85, with low nerve) shoot while
+the stranger's attention is elsewhere, quickly, without lining up long. When he
+turns his gun her way (aiming within ~20 degrees, in sight, within ~260 px) or
+comes within ~70 px, she wavers after a moment: backs off, ducks for cover or
+flinches, then tries again from somewhere else; never twice within 3-5 s. And
+she won't stand and shoot it out while he has her in his sights.
+`tests/test_opportunist.gd` holds the hero still, aiming at her and then away:
+she must waver only when aimed at and shoot more when he looks away; a cowboy
+never wavers just for being aimed at.
 
 **Bold** bandits (`bold`, the gunslinger has 0.8) fight differently: near misses
 pin them down only briefly and shake them less; they seldom flinch, duck, back off

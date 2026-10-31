@@ -31,7 +31,8 @@
   "defaults": {
     "hp": 2, "range": [70, 170], "cadence": [0.7, 1.3], "aim": 1.0, "speed": 1.0,
     "reflex": [0.6, 1.8], "nerve": [0.15, 0.9], "rank": 0, "cover_call": 0.5,
-    "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "bold": 0.0, "concealed": false, "shouts": {}
+    "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "bold": 0.0, "opportunist": 0.0,
+    "concealed": false, "shouts": {}
   },
 
   "types": {
@@ -159,9 +160,10 @@
       ]
     },
     "saloon_girl": {
-      "name": "Saloon girl", "template": "dress", "loadout": ["colt"], "concealed": true,
-      "range": [60, 150], "cadence": [0.8, 1.4], "aim": 1.3, "reflex": [0.7, 1.6], "nerve": [0.3, 0.8],
-      "cover_call": 0.3,
+      "name": "Saloon girl", "template": "dress", "loadout": ["derringer"], "concealed": true,
+      "loadouts": [{"guns": ["derringer"], "weight": 3}, {"guns": ["colt"], "weight": 1}],
+      "range": [50, 140], "cadence": [0.6, 1.1], "aim": 1.2, "reflex": [0.6, 1.4], "nerve": [0.1, 0.5],
+      "cover_call": 0.3, "opportunist": 0.85, "flank": 0.5,
       "shouts": {"spot": ["There he is, boys!", "¡Allí, allí!"], "scare": ["Oh!"], "reload": ["Cover me, boys!"]},
       "palettes": [
         {"dress": [150, 30, 40], "accent": [30, 24, 26], "boots": [30, 24, 22], "skin": [214, 170, 140], "hair": [40, 28, 20]},

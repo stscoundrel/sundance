@@ -115,6 +115,9 @@ var posse_repath := 0.0
 var posse_wait := 0.0
 var stride_in := 0.0     # how much a sidestep closes in on him as well (bold types)
 var bold := 0.0          # 0..1: walks in shooting, shrugs off fire, scorns cover
+var opportunist := 0.0   # 0..1: shoots while he isn't looking, wavers when he is
+var sights_t := 0.0      # how long the stranger has had her in his sights
+var waver_cd := 0.0
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -126,7 +129,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	stats = {"keep": _v2(tdata["range"]), "cadence": _v2(tdata["cadence"])}
 	hp = int(tdata["hp"])
 	max_hp = hp
-	loadout = tdata["loadout"]
+	loadout = _pick_loadout()
 	weapon = Weapon.new(loadout[0], self)
 	weapon.reserve = 999
 	walk = WALK * float(tdata["speed"])
@@ -148,6 +151,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	nerve = randf_range(tdata["nerve"][0], tdata["nerve"][1])
 	rank = int(tdata["rank"])
 	bold = float(tdata["bold"])
+	opportunist = float(tdata["opportunist"])
 	order_cd = randf_range(3.0, 6.0)
 	cone = VisionCone.new()
 	cone.enemy = self
@@ -157,6 +161,34 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 		revealed = false
 		anim_gun = "unarmed"
 		cone.visible = false
+
+
+## His guns: the type's loadout, or one of its weighted "loadouts" picked at random.
+func _pick_loadout() -> Array:
+	var options: Array = tdata.get("loadouts", [])
+	if options.is_empty():
+		return tdata["loadout"]
+	var total := 0.0
+	for o in options:
+		total += float(o.get("weight", 1.0))
+	var r := randf() * total
+	for o in options:
+		r -= float(o.get("weight", 1.0))
+		if r <= 0.0:
+			return o["guns"]
+	return options[-1]["guns"]
+
+
+## In the stranger's sights: he's looking her way down his barrel, or he's close.
+func in_his_sights() -> bool:
+	var p: Player = game.player
+	if not p.alive:
+		return false
+	var to: Vector2 = global_position - p.global_position
+	var d := to.length()
+	if d > 260.0 or not game.line_of_sight(p.global_position, global_position, false):
+		return false
+	return d < 70.0 or abs(p.facing.angle_to(to)) < 0.35
 
 
 ## Drops the act: gun out, and from now on he's plainly one of them.
@@ -802,6 +834,8 @@ func _combat(delta: float) -> void:
 	crouched = false
 	cover_pos = Vector2.INF
 
+	if opportunist > 0.0 and _waver(delta):
+		return
 	if suppress_t > 0.0:
 		_suppress(delta, spec)
 		return
@@ -859,6 +893,7 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 	var fires_moving: bool = tdata["fires_on_move"] and dist < keep.y
 	# Not pinned down and silent for a while: stop whatever he's doing and shoot.
 	var must_fire: bool = sees_player and pinned_t <= 0.0 and since_shot > 1.6 and react <= 0.0 \
+		and not (opportunist > 0.0 and sights_t > 0.0) \
 		and dist < weapon.d["range"] * 0.85 and weapon.can_fire() \
 		and not game.ally_in_line(self, global_position, p.global_position)
 	if hold_t > 0.0:
@@ -909,7 +944,9 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 
 	if velocity.length() < 1.0:
 		aim_t += delta
-	var aimed := aim_t >= 0.35 * reflex or (fires_moving and dist < 70.0 + 70.0 * bold)
+	# an opportunist the stranger isn't watching wastes no time lining up
+	var quick := 0.55 if opportunist > 0.0 and sights_t <= 0.0 else 1.0
+	var aimed := aim_t >= 0.35 * reflex * quick or (fires_moving and dist < 70.0 + 70.0 * bold)
 	var in_range: bool = dist < weapon.d["range"] * 0.85
 	if react <= 0.0 and shot_cd <= 0.0 and in_range and aimed and abs(facing.angle_to(to)) < 0.2:
 		if game.ally_in_line(self, global_position, p.global_position):
@@ -937,17 +974,42 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 			weapon.trigger()
 
 
+## An opportunist turns his gun her way (or comes close) and she loses her nerve:
+## backs off, ducks for cover or flinches. Not every time, and not again at once.
+func _waver(delta: float) -> bool:
+	waver_cd -= delta
+	if in_his_sights():
+		sights_t += delta
+	else:
+		sights_t = 0.0
+	if sights_t < 0.25 * reflex or waver_cd > 0.0:
+		return false
+	waver_cd = randf_range(3.0, 5.0)
+	if randf() > opportunist:
+		return false
+	threat = game.player.global_position
+	start_reaction(_weighted({"backoff": 1.0, "hide": 1.0, "flinch": 0.4}))
+	_log("wavers")
+	return true
+
+
 func _pick_fight_pos(target: Vector2, keep: Vector2) -> void:
 	fight_repick = randf_range(6.0, 10.0)
-	var slot := target + flank_dir * lerpf((keep.x + keep.y) * 0.5, keep.x, bold)
+	# never further off than his own gun reaches (a derringer doesn't carry far)
+	var reach: float = weapon.d["range"] * 0.8
+	var slot := target + flank_dir * minf(lerpf((keep.x + keep.y) * 0.5, keep.x, bold), reach)
 	var c: Vector2 = game.find_fighting_cover(global_position, target, slot, keep, game.taken_positions(self))
+	if c != Vector2.INF and c.distance_to(target) > reach:
+		c = Vector2.INF
 	if c != Vector2.INF and (randf() < bold * 0.6 or (bold > 0.0 and c.distance_to(target) > keep.y)):
 		c = Vector2.INF   # scorns cover, or won't hang back for it: he'll shoot it out in the open
 	if settled and fight_pos != Vector2.INF and c != Vector2.INF and c.distance_to(fight_pos) < 24.0 and randf() < 0.6:
 		# same spot again: work round the flank instead of sitting tight
 		flank_dir = flank_dir.rotated([-0.6, 0.6].pick_random())
-		slot = target + flank_dir * (keep.x + keep.y) * 0.5
+		slot = target + flank_dir * minf((keep.x + keep.y) * 0.5, reach)
 		c = game.find_fighting_cover(global_position, target, slot, keep, game.taken_positions(self))
+		if c != Vector2.INF and c.distance_to(target) > reach:
+			c = Vector2.INF
 	settled = false
 	at_cover = c != Vector2.INF
 	if at_cover:
