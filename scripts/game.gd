@@ -36,7 +36,16 @@ var graves := PackedVector2Array()
 var to_mourn: Array[Dictionary] = []
 # Guns lying about: {kind, sprite, at, under (the body it fell with, or null),
 # ammo (the cartridges dropped beside it: a Pickup, or null), ammo_kind, claimed_by}
-var loose_guns: Array[Dictionary] = []   # fresh graves: {at, mourners, done}
+var loose_guns: Array[Dictionary] = []
+# The gang's reserve, drinking in the den (the saloon) until the shooting comes close
+# and loud enough (heat), or a runner fetches them. Silence the street first and
+# they never come; once out, they have to die too.
+const DEN_EAR := 450.0       # px from the den door: gunfire this close heats it up
+const DEN_HEAT := 7.0        # this much heat (about a shot each) and out they come
+const DEN_COOL := 0.25       # heat lost a second
+const RUNNER_AFTER := 3.0    # seconds of fighting before someone runs for help
+const RUNNER_CD := 15.0      # after a runner falls, before another goes
+var den := {}                # {door, sprite, squad, heat, rallied, cause, spawn_t, runner, runner_cd, fight_t, alarm}   # fresh graves: {at, mourners, done}
 var innocent_t := 0.0               # the town's disapproval, on screen for a moment
 const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
 const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
@@ -53,6 +62,7 @@ var shake := 0.0
 var hurt_fx := 0.0
 var alerted_once := false
 var player_fired := false
+var title_t := 0.0
 var closeup_left := 0.0   # seconds of the stand-off still to run, in unscaled frame time
 var last_twang := -100000
 var end_time := 0
@@ -305,6 +315,13 @@ func _build_world() -> void:
 			var p := Iso.to_screen(Vector2(o["x"] + d[0], o["y"] + d[1]))
 			doors.append(p if is_free(p) else free_point_near(p, 20.0))
 
+	if den.has("sprite"):
+		var d0: Array = meta["objects"][level["reserve"]["den"]]["doors"][0]
+		var dp := Iso.to_screen(den["corner"] + Vector2(d0[0], d0[1]))
+		den.merge({"door": dp if is_free(dp) else free_point_near(dp, 20.0), "squad": level["reserve"]["squad"],
+			"heat": 0.0, "rallied": false, "cause": "", "spawn_t": -1.0, "runner": null, "runner_cd": 0.0,
+			"fight_t": 0.0, "alarm": dp})
+
 	# keep only cover points that are reachable and off obstacles
 	var good := PackedVector2Array()
 	for p in cover_points:
@@ -330,6 +347,15 @@ func _build_world() -> void:
 	camera.limit_bottom = int(origin.y + gsize.y)
 
 
+func _add_enemy(kind: String, pos: Vector2, patrol: PackedVector2Array, facing_deg: float, overrides := {}) -> Enemy:
+	var en := Enemy.new()
+	world.add_child(en)
+	en.setup(self, kind, pos, patrol, facing_deg, overrides)
+	en.died.connect(_on_enemy_died)
+	enemies.append(en)
+	return en
+
+
 func _place_object(type: String, g: Vector2) -> void:
 	var m: Dictionary = meta["objects"][type]
 	var fp := Vector2(m["footprint"][0], m["footprint"][1])
@@ -340,6 +366,10 @@ func _place_object(type: String, g: Vector2) -> void:
 	spr.scale = Vector2.ONE * tex_scale
 	spr.offset = ((Iso.to_screen(g) - spr.position) / tex_scale - Vector2(m["anchor"][0], m["anchor"][1])).round()
 	world.add_child(spr)
+	if level.has("reserve") and type == level["reserve"]["den"] and not den.has("sprite") \
+			and not Engine.has_meta("no_reserve"):   # (tests of the street fight leave them indoors)
+		den["sprite"] = spr
+		den["corner"] = g
 	if m.has("shutters"):
 		var paints: Array = meta["shutter_paint"][m["paint"]]
 		var c: Array = paints[Shutter.rng.randi() % paints.size()]
@@ -398,20 +428,15 @@ func _spawn_actors() -> void:
 		start = Vector2(float(xy[0]), float(xy[1]))
 	player.setup(self, Iso.to_screen(start))
 	for e in level["enemies"]:
-		var en := Enemy.new()
-		world.add_child(en)
 		var patrol := PackedVector2Array()
 		if e.has("patrol"):
 			for p in e["patrol"]:
 				patrol.append(Iso.to_screen(Vector2(p[0], p[1])))
-		var facing_deg: float = e.get("facing", 90.0)
 		var overrides := {}
 		for key in e:
 			if not key in ["kind", "x", "y", "patrol", "facing"]:
 				overrides[key] = e[key]
-		en.setup(self, e["kind"], Iso.to_screen(Vector2(e["x"], e["y"])), patrol, facing_deg, overrides)
-		en.died.connect(_on_enemy_died)
-		enemies.append(en)
+		_add_enemy(e["kind"], Iso.to_screen(Vector2(e["x"], e["y"])), patrol, e.get("facing", 90.0), overrides)
 	if not Engine.has_meta("no_civilians"):
 		for c in level.get("civilians", []):
 			var cv := Civilian.new()
@@ -468,8 +493,10 @@ func _build_overlay() -> void:
 
 func _process(delta: float) -> void:
 	var now := Time.get_ticks_msec()
-	if state == "title" and now - start_time > 5500 and not _args.has("freeze"):
-		_to_loadout()
+	if state == "title":
+		title_t += delta   # frame time, not the wall clock: a slow load doesn't skip the title
+		if title_t > 5.5 and not _args.has("freeze"):
+			_to_loadout()
 	if closeup_left > 0.0:
 		closeup_left -= delta / maxf(Engine.time_scale, 0.01)
 		if closeup_left <= 0.0:
@@ -885,6 +912,7 @@ func _physics_process(delta: float) -> void:
 	clock += delta
 	innocent_t = maxf(0.0, innocent_t - delta)
 	_pick_up_guns()
+	_update_den(delta)
 	_quiet = clock - last_gunfire
 	for e in enemies:
 		if e.alive and e.st == Enemy.St.COMBAT:
@@ -1098,6 +1126,11 @@ func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void
 		last_gunfire = clock
 		for sh in shutters:
 			sh.hear_shot(pos, radius)
+		if den.has("door") and not den["rallied"] and pos.distance_to(den["door"]) < DEN_EAR:
+			den["heat"] += 1.0
+			den["alarm"] = pos
+			if den["heat"] >= DEN_HEAT:
+				rally("gunfire")
 	if kind == "shot":
 		player_fired = true
 		report_sighting(pos)   # his muzzle flash and the crack give him away
@@ -1150,7 +1183,8 @@ func _on_enemy_died(e: Actor) -> void:
 	if posse == null and alive_enemies() <= Posse.SIZE and alive_enemies() > 0:
 		posse = Posse.new(self)
 		posse.form()
-	if alive_enemies() == 0 and state == "play":
+	var coming: bool = den.has("door") and den["rallied"] and not den["squad"].is_empty()
+	if alive_enemies() == 0 and state == "play" and not coming:
 		state = "won"
 		end_time = Time.get_ticks_msec()
 		hud.show_message("THE TOWN IS QUIET", _innocents_line() + "press Enter to ride again")
@@ -1302,6 +1336,87 @@ func claim_gun(by: Civilian, from: Vector2, within := INF) -> Dictionary:
 	if not best.is_empty():
 		best["claimed_by"] = by
 	return best
+
+
+# ------------------------------------------------------------------ the den
+
+func _update_den(delta: float) -> void:
+	if not den.has("door"):
+		return
+	if den["rallied"]:
+		_spill_out(delta)
+		return
+	den["heat"] = maxf(0.0, den["heat"] - DEN_COOL * delta)
+	den["runner_cd"] = maxf(0.0, den["runner_cd"] - delta)
+	var fighting := false
+	for e in enemies:
+		if e.alive and e.st == Enemy.St.COMBAT:
+			fighting = true
+			break
+	den["fight_t"] = den["fight_t"] + delta if fighting else 0.0
+	var r = den["runner"]
+	if r != null and (not is_instance_valid(r) or not r.alive):
+		den["runner"] = null
+		den["runner_cd"] = RUNNER_CD
+		r = null
+	if r == null and fighting and den["fight_t"] > RUNNER_AFTER and den["runner_cd"] <= 0.0:
+		_send_runner()
+
+
+## Someone breaks off from the fight and runs for the saloon: the least use in it
+## (the weak types first), nearest the door, and not the one with the stranger in
+## his sights.
+func _send_runner() -> void:
+	var best: Enemy = null
+	var best_score := INF
+	for e in enemies:
+		if not e.alive or e.st != Enemy.St.COMBAT or e.in_posse or e.rank >= 2 or e.sees_player:
+			continue
+		var score: float = e.global_position.distance_to(den["door"])
+		score += 0.0 if e.kind in ["bandido", "pistolero", "drunkard"] else 300.0
+		if score < best_score:
+			best_score = score
+			best = e
+	if best:
+		den["runner"] = best
+		best.run_for_help(den["door"])
+		stats["runners"] = stats.get("runners", 0) + 1
+
+
+## The reserve comes out: a shout from inside, the den's shutters slam, and a
+## moment later they spill out of the door one after another, spoiling for a fight.
+func rally(cause: String) -> void:
+	if den.is_empty() or den["rallied"] or state != "play":
+		return
+	den["rallied"] = true
+	den["cause"] = cause
+	den["spawn_t"] = 2.5   # chairs scrape: a moment's warning
+	if seen_pos != Vector2.ZERO and staleness() < 10.0:
+		den["alarm"] = seen_pos
+	for sh in shutters:
+		if sh.get_parent() == den["sprite"] and not sh.shut:
+			sh._slam_in(randf_range(0.0, 0.6))
+	hud.banner("¡Vámonos, muchachos!  The saloon empties!")
+	sfx("sting", null, -6.0, 0.0)
+	stats["rally"] = cause
+
+
+func _spill_out(delta: float) -> void:
+	if den["squad"].is_empty() or state != "play":
+		return
+	den["spawn_t"] -= delta
+	if den["spawn_t"] > 0.0:
+		return
+	den["spawn_t"] = 0.7
+	var kind: String = den["squad"].pop_front()
+	var door: Vector2 = den["door"]
+	var at := door + Vector2(randf_range(-6.0, 6.0), randf_range(0.0, 6.0))
+	var en := _add_enemy(kind, at, PackedVector2Array(), rad_to_deg((den["alarm"] - door).angle()))
+	en.home = door + (den["alarm"] - door).normalized() * 40.0   # after the fight: back out front of the den
+	en.enter_combat(den["alarm"], false, false)
+	if randf() < 0.5:
+		en.say_line("spot", ["¡Vámonos!"])
+	stats["reinforcements"] = stats.get("reinforcements", 0) + 1
 
 
 ## The stranger walks over a gun he hasn't got (a Colt, a coach gun, a Winchester):

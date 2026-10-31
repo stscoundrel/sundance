@@ -19,6 +19,8 @@ var eyes_t := 0.0
 var message := ""
 var sub := ""
 var msg_t := 0.0
+var banner_text := ""
+var banner_t := 0.0
 var toast_text := ""
 var toast_t := 0.0
 
@@ -47,6 +49,12 @@ func hide_eyes() -> void:
 	eyes_on = false
 
 
+## A warning under the bandit count for a few seconds (the saloon empties).
+func banner(t: String) -> void:
+	banner_text = t
+	banner_t = 4.0
+
+
 ## A line above the gun panel for a moment ("picked up").
 func toast(t: String) -> void:
 	toast_text = t
@@ -68,6 +76,7 @@ func _process(delta: float) -> void:
 	if message != "":
 		msg_t += real
 	toast_t = maxf(0.0, toast_t - real)
+	banner_t = maxf(0.0, banner_t - real)
 	queue_redraw()
 
 
@@ -149,6 +158,10 @@ func _draw_status(p: Player) -> void:
 	var n: int = game.alive_enemies()
 	var label := "BANDITS  %d" % n
 	_text(Vector2(0, 16), label, 12, INK, font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	if banner_t > 0.0:
+		var a := clampf(banner_t, 0.0, 1.0)
+		draw_rect(Rect2(150, 24, 340, 18), Color(0.3, 0.05, 0.03, 0.7 * a))
+		_text(Vector2(0, 37), banner_text, 10, Color(1, 0.8, 0.45, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 
 
 func _draw_weapon(p: Player) -> void:

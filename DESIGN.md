@@ -154,6 +154,23 @@ carried, which you collect by walking over them.
   that follows is over each man falls back in on the leader. If the leader dies, the
   next man takes over. `tests/test_posse.gd` checks they gather, stay together,
   cover most of the town and re-form after a fight.
+- **Reinforcements**: five more of the gang (two bandidos, a pistolero, a cowboy and
+  a red scarf; `reserve` in the town data) drink in the saloon, out of the story
+  until something brings them out. Gunfire within ~450 px of its door heats it up
+  (about a shot each, cooling a quarter a second): around seven shots in a short
+  while and they come. Or a runner: once a fight has gone on 3 s, a man breaks off
+  from it and runs for the door shouting "¡Al saloon! ¡Refuerzos!", not stopping to
+  shoot: the weak ones first (bandido, pistolero, drunkard), nearest the door, never
+  the one with the stranger in his sights. Shoot him and the next goes 15 s later.
+  When they rally there's a warning ("¡Vámonos, muchachos! The saloon empties!"),
+  the saloon's shutters slam, and 2.5 s later they spill out of the door one every
+  0.7 s, already fighting, making for the last place the stranger was seen (or the
+  shooting). Silence all 25 on the street before then and the town is won; once
+  they've rallied they have to die too (the count goes up as they come out).
+  `tests/test_reinforcements.gd` checks a quiet win brings nobody out, distant
+  gunfire doesn't stir them but gunfire outside does, that all five come out and
+  must be killed, and that a runner is sent, can be stopped, and the next one
+  brings them. (`no_reserve` leaves them indoors for tests of the street fight.)
 - **Bounding**: before breaking position to move more than ~40 px, a bandit calls
   "¡Cúbreme!" / "Cover me!" (leaders always, others half the time) and the
   comrades holding positions nearby lay down fire while he sprints.

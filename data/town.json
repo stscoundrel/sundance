@@ -1167,5 +1167,15 @@
    "y": 50.4,
    "facing": 45
   }
- ]
+ ],
+ "reserve": {
+  "den": "saloon",
+  "squad": [
+   "pistolero",
+   "bandido",
+   "cowboy",
+   "bandido",
+   "redscarf"
+  ]
+ }
 }

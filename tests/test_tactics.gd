@@ -25,6 +25,7 @@ var failures := 0
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
 	Engine.set_meta("no_civilians", true)   # bandit tactics only; townsfolk have their own test
+	Engine.set_meta("no_reserve", true)     # and the street fight alone: no reinforcements
 	seed(11)
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)

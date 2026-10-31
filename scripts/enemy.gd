@@ -118,6 +118,7 @@ var bold := 0.0          # 0..1: walks in shooting, shrugs off fire, scorns cove
 var opportunist := 0.0   # 0..1: shoots while he isn't looking, wavers when he is
 var sights_t := 0.0      # how long the stranger has had her in his sights
 var waver_cd := 0.0
+var runner_to := Vector2.INF   # the den door he's running to, to fetch the reserve
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -650,6 +651,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _run_state(delta: float) -> void:
+	if runner_to != Vector2.INF:
+		_run_for_help(delta)
+		return
 	match st:
 		St.GUARD:
 			_guard(delta)
@@ -791,6 +795,28 @@ func _lead_posse(delta: float, p: Posse) -> void:
 			return
 		path_to(p.next_point(global_position))
 	follow_path(walk)
+
+
+## Off to fetch the reserve from the den: he runs for its door, shouting, and
+## doesn't stop to shoot.
+func run_for_help(door: Vector2) -> void:
+	reveal()
+	runner_to = door
+	path_to(door)
+	_say(_line("help", ["¡Al saloon! ¡Refuerzos!", "¡Muchachos! ¡Ayuda!", "Get the boys!"]))
+	_log("runs for help")
+
+
+func _run_for_help(delta: float) -> void:
+	repath_t -= delta
+	if repath_t <= 0.0:
+		path_to(runner_to)
+	crouched = false
+	if follow_path(run) or global_position.distance_to(runner_to) < 16.0:
+		game.rally("runner")
+		runner_to = Vector2.INF
+		if st != St.COMBAT:
+			enter_combat(game.seen_pos, false, false)
 
 
 func say_line(key: String, stock: Array) -> void:

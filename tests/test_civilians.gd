@@ -227,6 +227,8 @@ func _start_honest() -> void:
 		c.snitch = false   # nobody runs to tell her: she has to find out for herself
 	honest = _pick_townsman()
 	check(honest != null, "nowhere to put the hero in a townsman's view")
+	if honest:
+		honest.wait = 100.0   # standing about: we're watching his eyes, not where he strolls
 
 
 func _honest() -> bool:

@@ -110,6 +110,10 @@ ENEMIES = [
 ]
 
 # Townsfolk, near the doors they'd run for. Fewer than the bandits.
+# The gang's reserve, drinking in the saloon: they come out when the shooting gets
+# close and loud, or when a runner fetches them.
+RESERVE = {"den": "saloon", "squad": ["pistolero", "bandido", "cowboy", "bandido", "redscarf"]}
+
 CIVILIANS = [
     {"kind": "gunsmith", "x": 45.5, "y": 28.6, "facing": 90},
     # mourners, indoors in black until there's a fresh grave on boot hill
@@ -181,6 +185,7 @@ def main():
         "player": PLAYER,
         "enemies": ENEMIES,
         "civilians": CIVILIANS,
+        "reserve": RESERVE,
     }
     with open(os.path.join(ROOT, "data", "town.json"), "w") as f:
         json.dump(town, f, indent=1)
