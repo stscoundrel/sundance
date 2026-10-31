@@ -818,9 +818,10 @@ func _on_enemy_died(e: Actor) -> void:
 			o.witness_death(e.global_position, player.global_position)
 	if _args.has("bot"):
 		print("%.1fs  %s down, %d left" % [(Time.get_ticks_msec() - start_time) / 1000.0, e.kind, alive_enemies()])
-	if player.weapons.has(e.weapon.kind):   # nothing to take from a derringer
+	var ammo: String = e.weapon.d.get("ammo", e.weapon.kind)
+	if player.weapons.has(ammo):   # nothing to take from a derringer
 		var p := Pickup.new()
-		p.setup(self, e.global_position + Vector2(randf_range(-6, 6), 4), e.weapon.kind)
+		p.setup(self, e.global_position + Vector2(randf_range(-6, 6), 4), ammo)
 		world.add_child.call_deferred(p)
 	if alive_enemies() == 0 and state == "play":
 		state = "won"
@@ -895,7 +896,11 @@ func muzzle_flash(holder: Actor, dir: Vector2) -> void:
 
 ## A dead man's gun falls from his hand and lands in the dirt beside him.
 func drop_gun(a: Actor) -> void:
-	var kind: String = a.weapon.kind
+	for kind in a.weapon.d.get("drops", [a.weapon.kind]):
+		_drop_one(a, kind)
+
+
+func _drop_one(a: Actor, kind: String) -> void:
 	var g: Dictionary = meta["guns"][kind].pick_random()
 	var s := Sprite2D.new()
 	s.texture = tex(g["file"])

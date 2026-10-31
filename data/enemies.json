@@ -14,7 +14,8 @@
     "suit":            {"style": "suit",   "hat": "top",      "mustache": true},
     "dress":           {"style": "dress",  "hat": "none",     "female": true},
     "buckskin":        {"style": "buckskin", "hat": "fur",    "beard": true},
-    "veteran":         {"style": "duster", "hat": "slouch",   "beard": true, "mustache": true}
+    "veteran":         {"style": "duster", "hat": "slouch",   "beard": true, "mustache": true},
+    "gunslinger":      {"style": "vest",   "hat": "flat",     "scarf": true, "mustache": true, "holsters": 2}
   },
 
   "player": {
@@ -26,7 +27,7 @@
   "defaults": {
     "hp": 2, "range": [70, 170], "cadence": [0.7, 1.3], "aim": 1.0, "speed": 1.0,
     "reflex": [0.6, 1.8], "nerve": [0.15, 0.9], "rank": 0, "cover_call": 0.5,
-    "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "shouts": {}
+    "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "bold": 0.0, "shouts": {}
   },
 
   "types": {
@@ -136,6 +137,21 @@
          "hat": [56, 50, 46], "band": [170, 140, 70], "skin": [200, 146, 116], "hair": [222, 218, 208]},
         {"coat": [124, 120, 110], "shirt": [190, 180, 160], "trousers": [110, 104, 92], "boots": [50, 38, 28],
          "hat": [112, 98, 78], "band": [150, 40, 36], "skin": [196, 140, 108], "hair": [210, 206, 196]}
+      ]
+    },
+    "gunslinger": {
+      "name": "Gunslinger", "template": "gunslinger", "loadout": ["colts"],
+      "range": [45, 130], "cadence": [0.35, 0.6], "aim": 1.1, "speed": 1.12,
+      "reflex": [0.4, 0.9], "nerve": [0.8, 1.0], "rank": 1, "cover_call": 0.3, "flank": 0.75,
+      "fires_on_move": true, "bold": 0.8,
+      "shouts": {"spot": ["Draw, stranger!", "Let's dance.", "¡Ven, gringo!", "Just you and me."],
+                 "scare": ["Close.", "Is that all?"], "reload": ["Don't go nowhere."],
+                 "flank": ["I'll take him myself!"], "cover_me": ["Keep his head down!"]},
+      "palettes": [
+        {"vest": [30, 28, 32], "shirt": [196, 190, 176], "trousers": [48, 44, 48], "boots": [28, 22, 20],
+         "hat": [26, 24, 28], "band": [196, 196, 204], "accent": [150, 26, 26], "skin": [196, 140, 104], "hair": [28, 22, 18]},
+        {"vest": [112, 84, 58], "shirt": [60, 58, 64], "trousers": [130, 112, 86], "boots": [56, 38, 26],
+         "hat": [176, 156, 120], "band": [36, 30, 26], "accent": [220, 214, 196], "skin": [184, 126, 90], "hair": [70, 46, 30]}
       ]
     },
     "saloon_girl": {

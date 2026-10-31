@@ -105,6 +105,8 @@ var shout_t := 0.0
 var flank := 0.0
 var flank_dir := Vector2.RIGHT
 var sidestep_t := 0.0
+var stride_in := 0.0     # how much a sidestep closes in on him as well (bold types)
+var bold := 0.0          # 0..1: walks in shooting, shrugs off fire, scorns cover
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -137,6 +139,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	reflex = randf_range(tdata["reflex"][0], tdata["reflex"][1])
 	nerve = randf_range(tdata["nerve"][0], tdata["nerve"][1])
 	rank = int(tdata["rank"])
+	bold = float(tdata["bold"])
 	order_cd = randf_range(3.0, 6.0)
 	cone = VisionCone.new()
 	cone.enemy = self
@@ -304,8 +307,8 @@ func _say(s: String) -> void:
 func near_miss(from: Vector2) -> void:
 	if not alive:
 		return
-	shaken = min(1.0, shaken + 0.15)
-	pinned_t = 2.5
+	shaken = min(1.0, shaken + 0.15 * (1.0 - bold * 0.6))
+	pinned_t = 2.5 * (1.0 - bold * 0.7)
 	_engage(from)
 	queue_reaction(from, true)
 
@@ -355,14 +358,15 @@ func queue_reaction(from: Vector2, scary: bool, forced := false) -> void:
 
 func _pick_reaction(scary: bool, forced: bool) -> String:
 	var f := fear()
+	var timid := 1.0 - bold * 0.75   # a bold man rarely gives ground or ducks
 	var w := {
 		"point": 0.15 if scary else 0.35,
-		"flinch": (0.3 + 0.25 * f) if scary else 0.12,
-		"cower": 0.7 * f * f * (1.0 if scary else 0.3),
-		"dash": 0.45 * f + 0.1,
-		"backoff": 0.35 if scary else 0.2,
-		"flee": 0.6 * f * f * f * (1.5 if forced else 1.0),
-		"": 0.0 if forced else 0.2 * (1.0 - f),
+		"flinch": ((0.3 + 0.25 * f) if scary else 0.12) * timid,
+		"cower": 0.7 * f * f * (1.0 if scary else 0.3) * timid,
+		"dash": (0.45 * f + 0.1) * timid,
+		"backoff": (0.35 if scary else 0.2) * timid,
+		"flee": 0.6 * f * f * f * (1.5 if forced else 1.0) * timid,
+		"": (0.6 * bold if forced else 0.2 * (1.0 - f) + 0.8 * bold),
 	}
 	return _weighted(w)
 
@@ -637,8 +641,11 @@ func _combat(delta: float) -> void:
 	var dist := to.length()
 	var spec: Dictionary = stats
 
-	# Reloading: get behind cover and crouch.
+	# Reloading: get behind cover and crouch. A bold man with a pair of guns comes
+	# back out as soon as one of them is full.
 	if weapon.is_reloading():
+		if bold > 0.0 and sees_player and weapon.d.get("twin", false) and weapon.loaded() >= 6:
+			weapon.stop_requested = true
 		if cover_pos != Vector2.INF and global_position.distance_to(cover_pos) > 5.0:
 			if path.is_empty() or path_i >= path.size():
 				path_to(cover_pos)
@@ -722,7 +729,8 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 	elif global_position.distance_to(fight_pos) <= 10.0:
 		settled = true
 
-	var close_shotgun: bool = tdata["fires_on_move"] and dist < keep.y
+	# Shotgunners up close, and bold men at any fighting range, shoot on the move.
+	var fires_moving: bool = tdata["fires_on_move"] and dist < keep.y
 	# Not pinned down and silent for a while: stop whatever he's doing and shoot.
 	var must_fire: bool = sees_player and pinned_t <= 0.0 and since_shot > 1.6 and react <= 0.0 \
 		and dist < weapon.d["range"] * 0.85 and weapon.can_fire() \
@@ -736,10 +744,12 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 		crouched = false
 		peek_t = max(peek_t, 0.6)
 	elif sidestep_t > 0.0:
-		velocity = to.orthogonal().normalized() * strafe_dir * walk
+		velocity = (to.orthogonal().normalized() * strafe_dir + to.normalized() * stride_in).normalized() \
+			* walk * (1.0 + 0.3 * bold)
 		crouched = false
 		aim_t = 0.0
-		return
+		if not (fires_moving and bold > 0.0):
+			return
 	elif global_position.distance_to(fight_pos) > (18.0 if settled else 8.0):
 		# once in place he tolerates being jostled a little before walking back
 		crouched = false
@@ -747,11 +757,11 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 		if path_i >= path.size():
 			path_to(fight_pos)
 		follow_path(run if covered_t > 0.0 else run * 0.8)
-		if not close_shotgun:
+		if not fires_moving:
 			return
 	else:
 		velocity = Vector2.ZERO
-		if dist < keep.x * 0.8 and not at_cover and since_shot < 1.2:
+		if dist < keep.x * 0.8 and not at_cover and since_shot < 1.2 and bold < 0.5:
 			velocity = -to.normalized() * walk   # too close: fire, then give ground
 
 	if at_cover and velocity == Vector2.ZERO:
@@ -773,7 +783,7 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 
 	if velocity.length() < 1.0:
 		aim_t += delta
-	var aimed := aim_t >= 0.35 * reflex or (close_shotgun and dist < 70.0)
+	var aimed := aim_t >= 0.35 * reflex or (fires_moving and dist < 70.0 + 70.0 * bold)
 	var in_range: bool = dist < weapon.d["range"] * 0.85
 	if react <= 0.0 and shot_cd <= 0.0 and in_range and aimed and abs(facing.angle_to(to)) < 0.2:
 		if game.ally_in_line(self, global_position, p.global_position):
@@ -790,10 +800,12 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 			since_shot = 0.0
 			blocked_steps = 0
 			shot_cd = randf_range(spec["cadence"].x, spec["cadence"].y) * CADENCE_MULT
+			if weapon.d.get("twin", false) and weapon.hand == 0 and randf() < 0.75:
+				shot_cd = randf_range(0.2, 0.35)   # the left gun follows the right: bang-bang
 			if at_cover:
 				if randf() < 0.5:
 					peek_t = min(peek_t, 0.35)   # fire and duck
-			elif randf() < 0.45:
+			elif randf() < 0.45 + 0.35 * bold:
 				_sidestep()
 		elif weapon.state == Weapon.S.READY:
 			weapon.trigger()
@@ -801,8 +813,10 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 
 func _pick_fight_pos(target: Vector2, keep: Vector2) -> void:
 	fight_repick = randf_range(6.0, 10.0)
-	var slot := target + flank_dir * (keep.x + keep.y) * 0.5
+	var slot := target + flank_dir * lerpf((keep.x + keep.y) * 0.5, keep.x, bold)
 	var c: Vector2 = game.find_fighting_cover(global_position, target, slot, keep, game.taken_positions(self))
+	if c != Vector2.INF and (randf() < bold * 0.6 or (bold > 0.0 and c.distance_to(target) > keep.y)):
+		c = Vector2.INF   # scorns cover, or won't hang back for it: he'll shoot it out in the open
 	if settled and fight_pos != Vector2.INF and c != Vector2.INF and c.distance_to(fight_pos) < 24.0 and randf() < 0.6:
 		# same spot again: work round the flank instead of sitting tight
 		flank_dir = flank_dir.rotated([-0.6, 0.6].pick_random())
@@ -823,8 +837,11 @@ func _pick_fight_pos(target: Vector2, keep: Vector2) -> void:
 
 ## Step sideways: away from the comrade in the way, if that's the reason.
 func _sidestep(away_from: Enemy = null) -> void:
-	sidestep_t = randf_range(0.6, 1.1)
+	sidestep_t = randf_range(0.6, 1.1) * (1.0 + bold)
 	strafe_dir = [-1.0, 1.0].pick_random()
+	# a bold man closes in as he goes, down to the near end of his range
+	var dist: float = global_position.distance_to(game.player.global_position)
+	stride_in = bold * 0.8 if dist > stats["keep"].x else 0.0
 	if away_from:
 		var perp: Vector2 = (game.player.global_position - global_position).orthogonal()
 		strafe_dir = 1.0 if (global_position - away_from.global_position).dot(perp) >= 0.0 else -1.0
@@ -881,7 +898,8 @@ func _suppress(delta: float, spec: Dictionary) -> void:
 			since_shot = 0.0
 			# suppressing a place he can't see, he slows as the sighting ages
 			var taper: float = 1.0 if sees_player else 1.0 + game.staleness() * 0.8
-			shot_cd = randf_range(spec["cadence"].x, spec["cadence"].y) * 0.7 * taper
+			# (never faster than a steady rhythm, however quick his hands)
+			shot_cd = max(randf_range(spec["cadence"].x, spec["cadence"].y) * 0.7, 0.45) * taper
 			if single_shot:
 				suppress_t = 0.0
 		elif weapon.state == Weapon.S.READY:

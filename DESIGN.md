@@ -155,7 +155,7 @@ carried, which you collect by walking over them.
   buildings. Saloon, hotel, bank, sheriff, general store, barber, undertaker,
   assay office, feed store, an adobe cantina, a church with a bell tower, stables,
   a water tower, adobe houses and boot hill; wagons, crates, barrels, troughs,
-  hitching rails, cacti, tumbleweeds and mud. 24 bandits.
+  hitching rails, cacti, tumbleweeds and mud. 25 bandits.
 - **Seeing through buildings**: a building fades when it hides the hero or when
   he aims at it; anyone else hidden behind a building shows through as a
   silhouette (red for bandits, pale for the hero).
@@ -193,8 +193,8 @@ generator:
 - **Types** pick a template, one or more **palettes**, a **loadout** and behaviour
   knobs: `hp`, preferred `range`, `cadence` (pause between shots), `aim` (spread
   multiplier, higher is worse), `speed`, `reflex` and `nerve` ranges, leader `rank`,
-  `cover_call` (chance to shout "Cover me!"), `fires_on_move`, `draw_sidearm` and
-  `flank` (chance to go round when hunting) and their own `shouts`. Anything not
+  `cover_call` (chance to shout "Cover me!"), `fires_on_move`, `draw_sidearm`,
+  `flank` (chance to go round when hunting), `bold` (0-1, below) and their own `shouts`. Anything not
   given comes from `defaults`.
 - **Placements** in `data/town.json` may override any field for one bandit (a fixed
   `palette` index, a braver nerve), except the loadout, which is baked per type.
@@ -216,12 +216,25 @@ generator:
 | Saloon girl | dress and shawl (3) | Colt | rare; joins the fight like everyone else |
 | Poacher | buckskin, fringe, coonskin cap, beard (2) | Sharps 1874 | sniper: very long range, deadly, slow single-shot reload |
 | Old timer | old cavalry coat, slouch hat, white beard (Union / Confederate) | howdah pistol | 3 HP, slow, unshakeable, "Seen worse at Shiloh!" |
+| Gunslinger | black (or tan) vest, red scarf, flat hat, two holsters (2) | a pair of Colts | bold: walks in shooting, fast, scorns cover, "Draw, stranger!" |
+
+**Bold** bandits (`bold`, the gunslinger has 0.8) fight differently: near misses
+pin them down only briefly and shake them less; they seldom flinch, duck, back off
+or run; they often skip cover and pick a fighting spot near the close end of their
+range, never give ground, and their sidesteps close in while they keep shooting on
+the move. With a pair of guns, the left usually follows the right quickly
+(bang-bang), and if he can see the hero while reloading he comes back out as soon
+as one gun is full. Blind suppressive fire keeps a steady floor (0.45 s) whatever
+the type, so a quick-handed bandit can't fill the air at nothing.
 
 The **Remington double derringer** (1866) has two stacked barrels, cocked per shot,
 short range and damage 1; its barrels tip up to reload. The **Sharps 1874** is a single-shot
 falling-block buffalo rifle (damage 3, the longest range, reloaded after every shot).
 The **howdah pistol** is a two-barrel .577 break-action hand cannon (damage 2 per
-barrel, both can go at once).
+barrel, both can go at once). The gunslinger's **pair of Colts** holds twelve: the
+chambers alternate between the guns, so he fires right, left, right, with only a
+short pause between; he reloads one gun at a time while the other sits holstered
+(`tests/test_gunslinger.gd` pits one against a pistolero under fire).
 
 Guns are data too (`Weapon.DATA` in `scripts/weapon.gd`): an action type (revolver,
 lever, or breech for anything that opens to load), stats, smoke, and for breech guns

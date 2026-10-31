@@ -781,7 +781,7 @@
    ]
   },
   {
-   "kind": "pistolero",
+   "kind": "gunslinger",
    "x": 48,
    "y": 31.5,
    "patrol": [
@@ -859,7 +859,7 @@
    "facing": 150
   },
   {
-   "kind": "cowboy",
+   "kind": "gunslinger",
    "x": 8,
    "y": 14.5,
    "patrol": [
@@ -928,6 +928,12 @@
    "x": 34.5,
    "y": 42.2,
    "facing": 270
+  },
+  {
+   "kind": "gunslinger",
+   "x": 40.5,
+   "y": 43.2,
+   "facing": 300
   },
   {
    "kind": "drunkard",

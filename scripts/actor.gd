@@ -267,13 +267,15 @@ func update_anim(delta: float) -> void:
 		upper_spr.modulate = c
 
 
-## Where the muzzle is, relative to his feet, in the frame now showing.
+## Where the muzzle is, relative to his feet, in the frame now showing (the left
+## gun's, of a pair, after it fired).
 func muzzle_offset() -> Vector2:
 	var st: Array = _layers.get("upper", [])
 	if not st.is_empty():
 		var a := anim(st[0])
-		if a.has("muzzle"):
-			var m = a["muzzle"][Iso.dir8(facing)][maxi(st[2], 0)]
+		var key := "muzzle2" if weapon and weapon.hand == 1 and a.has("muzzle2") else "muzzle"
+		if a.has(key):
+			var m = a[key][Iso.dir8(facing)][maxi(st[2], 0)]
 			if m != null:
 				return upper_spr.position + Vector2(m[0], m[1]) * game.tex_scale
 	return facing * 12.0 + Vector2(0, -gun_height())

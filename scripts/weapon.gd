@@ -1,7 +1,8 @@
 class_name Weapon
 extends RefCounted
 ## Period-authentic firearms, described by data. Three kinds of action:
-##   revolver - Colt Single Action Army: six chambers, cocked per shot, gate loading
+##   revolver - Colt Single Action Army: six chambers, cocked per shot, gate loading.
+##              A pair ("twin") holds twelve, fired right hand, left hand, in turn.
 ##   lever    - Winchester 1866: tube magazine, a lever stroke between shots
 ##   breech   - everything that opens to load: coach gun, derringer, Sharps, howdah.
 ##              Barrel count, timings and sounds come from the data below.
@@ -25,6 +26,12 @@ const DATA := {
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 20, "smoke_push": 1.5,
 		"open": [0.4, "break_open"], "eject": [0.35, "eject"], "insert": [0.42, "shell_in"], "close": [0.35, "close"],
 		"status": {"cycle": "", "open": "BREAKING OPEN", "close": "CLOSING"}},
+	# A pair of Colts, one in each hand. Chambers alternate between the guns, so the
+	# left is already cocked as the right fires; reloading is one gun at a time.
+	"colts": {"name": "PAIR OF COLTS", "action": "revolver", "twin": true, "chambers": 12, "damage": 2,
+		"speed": 650.0, "range": 340.0, "spread": 3.0, "pellets": 1, "noise": 380.0, "sfx": "colt",
+		"cycle": 0.16, "shake": 2.0, "smoke": 9, "ammo": "colt", "drops": ["colt", "colt"],
+		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
 	# Remington double derringer: two stacked barrels, cocked per shot, short and weak.
 	"derringer": {"name": "REMINGTON DERRINGER", "action": "breech", "barrels": 2, "hammer": true,
 		"damage": 1, "speed": 550.0, "range": 160.0, "spread": 3.0, "pellets": 1, "noise": 280.0,
@@ -60,6 +67,7 @@ var chambers: Array[int] = [1, 1, 1, 1, 1, 1]
 var cur := 0
 var cocked := true
 var fanning := false
+var hand := 0   # the hand that fired last: 0 right, 1 left (a pair of guns)
 # Breech guns, same encoding per barrel.
 var barrels: Array[int] = []
 # Lever action.
@@ -73,6 +81,8 @@ func _init(k: String, h: Actor) -> void:
 	d = DATA[k]
 	action = d["action"]
 	holder = h
+	chambers.resize(int(d.get("chambers", 6)))
+	chambers.fill(1)
 	for i in int(d.get("barrels", 0)):
 		barrels.append(1)
 
@@ -234,7 +244,7 @@ func _advance() -> void:
 		S.CYCLE:
 			state = S.READY
 			if action == "revolver":
-				cur = (cur + 1) % 6
+				cur = (cur + 1) % chambers.size()
 				cocked = true
 				if not fanning:
 					_snd("cock", -2.0)
@@ -249,9 +259,10 @@ func _advance() -> void:
 			state = S.READY
 			if action == "revolver":
 				cocked = true
-				for i in 6:
-					if chambers[(cur + i) % 6] == 1:
-						cur = (cur + i) % 6
+				var n := chambers.size()
+				for i in n:
+					if chambers[(cur + i) % n] == 1:
+						cur = (cur + i) % n
 						break
 			elif action == "lever" and not chambered and tube > 0:
 				_cycle(d["cycle"])
@@ -265,8 +276,8 @@ func _reload_step() -> void:
 		return
 	match action:
 		"revolver":
-			while reload_idx < 6:
-				var c := (cur + reload_idx) % 6
+			while reload_idx < chambers.size():
+				var c := (cur + reload_idx) % chambers.size()
 				if chambers[c] == 2:
 					chambers[c] = 0
 					_step(S.EJECT, 0.26, "eject")
@@ -339,6 +350,8 @@ func _dry() -> void:
 
 
 func _colt_fire(fan: bool) -> void:
+	if d.get("twin", false):
+		hand = cur % 2   # even chambers are the right gun's, odd the left's
 	if chambers[cur] == 1:
 		chambers[cur] = 2
 		_shoot(1, 11.0 if fan else 0.0)
@@ -365,7 +378,7 @@ func _shoot(mult: int, extra_spread := 0.0) -> void:
 		h.game.spawn_bullet(origin, dir.rotated(a) * d["speed"] * randf_range(0.93, 1.05), rng,
 			d["damage"], h, h.gun_height(), d["pellets"] > 1)
 	h.game.muzzle_flash(h, dir)
-	h.play_action("fire")
+	h.play_action("fire_l" if hand == 1 else "fire")
 	_snd(d["sfx"], 2.0 if mult > 1 else 0.0)
 	h.game.make_noise(h.global_position, d["noise"], "shot" if h.is_player else "enemy_shot", h)
 	h.on_fired(d["shake"] * mult)

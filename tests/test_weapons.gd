@@ -134,6 +134,23 @@ func _init() -> void:
 	der.alt_trigger()
 	check(g.shots == 2, "derringer has no volley")
 
+	# A pair of Colts: twelve shots, right hand then left, quicker than one gun.
+	var pair := Weapon.new("colts", a)
+	pair.reserve = 20
+	g.shots = 0
+	var hands: Array[int] = []
+	for i in 13:
+		pair.trigger()
+		hands.append(pair.hand)
+		run(pair, 0.2)
+	check(g.shots == 12, "pair fires 12 (got %d)" % g.shots)
+	check(hands.slice(0, 4) == [0, 1, 0, 1], "pair alternates hands (%s)" % [hands])
+	check(pair.needs_reload(), "pair empty after 12")
+	check(pair.start_reload(), "pair reload starts")
+	run(pair, 20.0)
+	check(pair.loaded() == 12 and pair.reserve == 8, "pair reloaded 12 (%d, reserve %d)" % [pair.loaded(), pair.reserve])
+	check(pair.can_fire(), "pair ready after reload")
+
 	a.free()
 	g.free()
 	print("weapons: ", "OK" if failures == 0 else "%d failures" % failures)

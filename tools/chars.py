@@ -46,6 +46,9 @@ def template_guns():
 
 
 GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44}
+# Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
+# in the left hand (pose key "gun2").
+GUN_ART = {"colts": "colt"}
 
 
 class Look:
@@ -420,15 +423,18 @@ def build_legs(look, lp):
 
 # ---------------------------------------------------------------- rig: upper layer
 
-def build_upper(look, weapon, up, H=H_REF, with_gun=True):
+def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     """Belt and up: torso, coat body and cape, arms, head, hat and gun, posed by `up`
-    (hip-relative) and placed with the hip at height H. Returns (cloud, muzzle point)."""
+    (hip-relative) and placed with the hip at height H. Returns (cloud, muzzle point);
+    a left-hand gun's muzzle goes in extra["muzzle2"] when `extra` is given."""
     m = Cloud()
     style = look.get("style")
     if style != "dress":
         m += frustum((0, 0, -0.05), (0, 0, 0.06), 0.168, 0.168, LEATHER, su=0.74)
         m += box((0.11, -0.03, -0.03), (0.135, 0.03, 0.04), BRASS)  # buckle
         m += box((-0.05, -0.2, -0.22), (-0.05 + 0.1, -0.16, -0.02), LEATHER)  # holster
+        if look.get("holsters", 1) > 1:
+            m += box((-0.05, 0.16, -0.22), (-0.05 + 0.1, 0.2, -0.02), LEATHER)
     m += frustum((0, 0, 0.04), (0, 0, 0.5), 0.15 if style != "dress" else 0.13, 0.19, _torso_fn(look), su=0.62)
     sleeve = forearm = "shirt"
     if style == "buckskin":
@@ -501,20 +507,25 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True):
         with look.tag("skin"):
             m += beam(h + [0.03, 0, 0], h + [0.12, -0.01, 0.01], 0.014, look.c("skin"))
 
-    muzzle = None
+    muzzle = muzzle2 = None
     g = up.get("gun")
+    art = GUN_ART.get(weapon, weapon)
     if with_gun and g is not None:
-        m += weapon_model(weapon, g["B"], g["D"], up.get("lever", 0.0), up.get("broken", 0.0))
-        muzzle = gun_muzzle(weapon, g["B"], g["D"])
+        m += weapon_model(art, g["B"], g["D"], up.get("lever", 0.0), up.get("broken", 0.0))
+        muzzle = gun_muzzle(art, g["B"], g["D"])
+    g2 = up.get("gun2")
+    if with_gun and g2 is not None:
+        m += weapon_model(art, g2["B"], g2["D"])
+        muzzle2 = gun_muzzle(art, g2["B"], g2["D"])
 
     # lean (pitch, + forward) and twist (yaw) about the hip
     R = rot_z(up.get("twist", 0.0)) @ rot_y(up.get("lean", 0.0))
     m.transform(R)
-    if muzzle is not None:
-        muzzle = R @ muzzle
     m.translate((0, 0, H))
     if muzzle is not None:
-        muzzle = muzzle + [0, 0, H]
+        muzzle = R @ muzzle + [0, 0, H]
+    if extra is not None and muzzle2 is not None:
+        extra["muzzle2"] = R @ muzzle2 + [0, 0, H]
     return m, muzzle
 
 
@@ -559,6 +570,8 @@ def _key_poses(w):
             k[name] = P(k[name], broken=1.0, gun=G((0.24, -0.1, 0.27), (0.3, 0.08, 0.05)))
         k["load_half"] = P(k["load"], broken=0.5)
         return k
+    if w == "colts":
+        return _twin_poses()
     if w == "derringer":
         k = _key_poses("colt")
         for name in ("load", "eject_a", "eject_b", "insert_a", "insert_b"):
@@ -624,7 +637,11 @@ def _key_poses(w):
         k["clutch_r"] = dict(gun=G((-0.15, -0.45, 0.05), (0.75, -0.15, -0.6)))
         k["belly"] = dict(eR=V(0.06, -0.28, 0.2), hR=V(0.12, -0.12, 0.06), gun=G((-0.25, -0.2, 0.2), (0.85, 0, -0.55)))
         k["cower"] = dict(gun=G((-0.2, 0.18, 0.05), (0.0, -0.55, 0.83)))
-    # Shared, gun-agnostic arm poses; the gun placement comes from the keys above.
+    return _shared_poses(k)
+
+
+def _shared_poses(k):
+    """Shared, gun-agnostic arm poses; the gun placement comes from the gun's keys."""
     low = k["low"]
     k["point_half"] = P(low, eL=V(0.14, 0.24, 0.34), hL=V(0.32, 0.16, 0.42))
     k["point"] = P(low, eL=V(0.26, 0.14, 0.51), hL=V(0.54, 0.05, 0.58), finger=True)
@@ -640,6 +657,44 @@ def _key_poses(w):
     k["hit_l"] = P(low, eL=V(-0.1, 0.3, 0.25), hL=V(-0.16, 0.32, 0.0), twist=0.45, lean=-0.12)
     k["hit_l"].update(eR=V(0.2, -0.12, 0.3), hR=V(0.09, 0.13, 0.44))      # clutching the left shoulder
     k["hit_gut"] = P(k["belly"], eL=V(0.1, 0.24, 0.25), hL=V(0.17, 0.04, 0.1), lean=0.5, nod=0.2)
+    if "gun2" in low:   # a man with two guns flinches and cowers with both
+        for name in ("point_half", "point", "flinch_half", "hit_l", "hit_gut"):
+            k[name].pop("gun2", None)
+        k["point"]["finger"] = False
+    return k
+
+
+def _left_gun(p):
+    """The left hand's gun, held along the forearm (for poses that don't place it)."""
+    e, h = np.array(p["eL"], float), np.array(p["hL"], float)
+    d = (h - e) / np.linalg.norm(h - e) + V(0, 0, 0.15)
+    return G(h + V(-0.03, 0, -0.06), d)
+
+
+HOLSTERED_L = G((-0.01, 0.2, -0.04), (0.12, 0.04, -1.0))   # the left gun put away in its holster
+
+
+def _twin_poses():
+    """A gun in each hand. Both arms out in front to shoot; for the reload the left
+    gun goes back in its holster and the free hand works the right gun's gate."""
+    k = _key_poses("colt")
+    aim = dict(eR=V(0.27, -0.2, 0.45), hR=V(0.5, -0.13, 0.43), gun=G((0.47, -0.13, 0.37), (0.3, -0.02, 0.06)),
+               eL=V(0.27, 0.2, 0.45), hL=V(0.5, 0.13, 0.43), gun2=G((0.47, 0.13, 0.37), (0.3, 0.02, 0.06)))
+    k["aim"] = aim
+    k["kick"] = P(aim, eR=V(0.22, -0.2, 0.56), hR=V(0.4, -0.13, 0.64),
+                  gun=G((0.38, -0.13, 0.58), (0.18, -0.02, 0.26)), lean=-0.06, twist=0.08)
+    k["kick_l"] = P(aim, eL=V(0.22, 0.2, 0.56), hL=V(0.4, 0.13, 0.64),
+                    gun2=G((0.38, 0.13, 0.58), (0.18, 0.02, 0.26)), lean=-0.06, twist=-0.08)
+    # both guns low and ready, muzzles down in front of him
+    k["low"] = dict(eR=V(0.04, -0.26, 0.2), hR=V(0.16, -0.22, 0.02), gun=G((0.13, -0.22, -0.04), (0.8, -0.05, -0.55)),
+                    eL=V(0.04, 0.26, 0.2), hL=V(0.16, 0.22, 0.02), gun2=G((0.13, 0.22, -0.04), (0.8, 0.05, -0.55)))
+    k["holster"] = P(k["load"], eL=V(-0.03, 0.28, 0.2), hL=V(0.0, 0.22, 0.0), gun2=HOLSTERED_L)
+    for name in ("load", "eject_a", "eject_b", "insert_a", "insert_b"):
+        k[name] = P(k[name], gun2=HOLSTERED_L)
+    k = _shared_poses(k)
+    for p in k.values():
+        if "gun2" not in p and "hL" in p and "eL" in p:
+            p["gun2"] = _left_gun(p)
     return k
 
 
@@ -647,7 +702,7 @@ def lerp_pose(a, b, t):
     out = {}
     for key in set(a) | set(b):
         va, vb = a.get(key, b.get(key)), b.get(key, a.get(key))
-        if key == "gun":
+        if key in ("gun", "gun2"):
             if va is None or vb is None:
                 out[key] = va or vb
             else:
@@ -705,6 +760,12 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 7, events={1: "brass"})
         add("reload_insert", [k["insert_a"], k["insert_b"]], 5, True)
         add("reload_close", [k["load_half"], k["aim"]], 7)
+    elif w == "colts":
+        add("fire_l", [k["kick_l"], lerp_pose(k["kick_l"], k["aim"], 0.4), k["aim"]], 12)
+        add("reload_open", [k["holster"], k["load"]], 6)
+        add("reload_eject", [k["eject_a"], k["eject_b"]], 8, events={1: "brass"})
+        add("reload_insert", [k["insert_a"], k["insert_b"]], 5.5, True)
+        add("reload_close", [k["holster"], k["aim"]], 7)
     elif w == "colt":
         add("cock", [k["cock"], k["aim"]], 7)
         add("fan", [k["fan_a"], k["fan_b"]], 12, True)
@@ -870,15 +931,16 @@ def bake_job(job):
     elif layer == "upper":
         anim = upper_anims(weapon)[name]
         info = {"fps": anim["fps"], "loop": anim["loop"], "events": {str(k): v for k, v in anim["events"].items()}}
-        models = [build_upper(look, weapon, p) for p in anim["poses"]]
+        extras = [{} for _ in anim["poses"]]
+        models = [build_upper(look, weapon, p, extra=x) for p, x in zip(anim["poses"], extras)]
     else:
         bodies = death_anims(look)[name]
         info = {"fps": DEATH_FPS[name], "loop": False}
         models = [(b, None) for b in bodies]
-    dirs, muzzles = [], []
+    dirs, muzzles, muzzles2 = [], [], []
     for d in range(8):
         R = rot_z(yaw_for_dir(d))
-        frames, mz = [], []
+        frames, mz, mz2 = [], [], []
         for i, (cloud, extra) in enumerate(models):
             c = cloud.copy().transform(R)
             ground = shadow_extra = None
@@ -892,10 +954,15 @@ def bake_job(job):
             frames.append(_trim(img, slots_))
             if layer == "upper":
                 mz.append(_project(R @ extra) if extra is not None else None)
+                m2 = extras[i].get("muzzle2")
+                mz2.append(_project(R @ m2) if m2 is not None else None)
         dirs.append(frames)
         muzzles.append(mz)
+        muzzles2.append(mz2)
     if layer == "upper":
         info["muzzle"] = muzzles
+        if any(m is not None for mz in muzzles2 for m in mz):
+            info["muzzle2"] = muzzles2
     key = f"{layer}/{name}" if layer != "upper" else f"upper/{weapon}/{name}"
     return template, key, info, dirs
 
