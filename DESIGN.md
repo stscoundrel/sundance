@@ -348,6 +348,24 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   calm: the first leads (with a long `wander`), the second walks on his arm,
   finding her way round anything in the way, and he waits if she falls behind.
   At the first shot each runs for it alone; back out, they pair up again.
+- **Mourners** (`role: "mourner"`, placed `indoors`): women in black, a rebozo
+  drawn over the head and long sleeves, who stay inside until there's a fresh
+  grave. Once the town is quiet one comes out (two at most to a grave) and walks
+  up to boot hill to stand at the mound, hands clasped and head bowed, now and then
+  a handkerchief to her eyes ("Descanse en paz."), for 20-30 s; then she goes home
+  and in. Gunfire scatters them like anyone, and a grave left unmourned waits for
+  the next to come out. Animations: the "grief" set.
+- **Shutters**: every glazed window on the wooden buildings and every small window
+  on the adobes has a pair of shutters (weathered planks on the wood, painted
+  turquoise, blue, green or oxblood on the adobes; one colour per building, picked
+  in game). The townsfolk behind them slam them shut as the stranger comes into
+  view (~150 px, line of sight), one after another ahead of him with a bang of
+  wood; crouched, he's only noticed within ~70 px. Gunfire slams every shutter
+  within earshot of it, the nearest first. Once the town has been quiet a while and
+  he's moved on they creak open again, a few at a time. A fifth are shut from the
+  start, against the heat. Purely atmosphere: the bandits pay them no mind. The
+  shutters are baked per window (four frames, open to shut) in neutral grey,
+  rendered with the building around them so a porch post stays in front.
 - **Innocents**: townsfolk are hit by stray rounds from either side, and bandits
   hold fire when one is in the line. If the hero kills one, the town notices: "AN
   INNOCENT - the town will remember", witnesses shout "Murderer!" and run, and the
@@ -371,7 +389,13 @@ bury every body, wait for the quiet, drop a body and run at a shot, come back ou
 and finish, and that buried men are no longer found; that the padre blesses a dead
 townsman and bandits and never runs from gunfire; and that an undertaker takes a blessed man over a nearer
 unblessed one. `tests/test_couples.gd` checks couples stay together on a stroll and
-scatter at a shot. `tests/test_perf.gd` times a firefight with and without the townsfolk.
+scatter at a shot. `tests/test_mourners.gd` checks nobody in black comes out
+before there's a grave, that mourners stand at the fresh graves once it's quiet,
+run at a shot (freeing the grave), and in the end mourn every grave and go home.
+`tests/test_shutters.gd` checks creeping down main street slams far fewer shutters
+than walking it, that the far end of town stays open, that a shot slams those
+around it, and that they open again once it's quiet. `tests/test_perf.gd` times a
+firefight with and without the townsfolk.
 
 ## Animation
 

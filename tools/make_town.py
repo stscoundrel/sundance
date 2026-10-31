@@ -112,6 +112,10 @@ ENEMIES = [
 
 # Townsfolk, near the doors they'd run for. Fewer than the bandits.
 CIVILIANS = [
+    # mourners, indoors in black until there's a fresh grave on boot hill
+    {"kind": "mourner", "x": 8.4, "y": 37.4, "facing": 270, "indoors": True},
+    {"kind": "mourner", "x": 25.4, "y": 37.4, "facing": 270, "indoors": True},
+    {"kind": "mourner", "x": 27.4, "y": 52.4, "facing": 270, "indoors": True},
     {"kind": "saloon_girl", "x": 6.6, "y": 29.8, "facing": 60},
     {"kind": "townsman", "x": 15.2, "y": 30.2, "facing": 300},
     {"kind": "townsman", "x": 29.4, "y": 29.4, "facing": 120},

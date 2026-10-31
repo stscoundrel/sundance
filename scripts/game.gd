@@ -33,10 +33,12 @@ var quiet_after := 45.0             # seconds without gunfire or a fight before 
 var last_gunfire := -1e9
 var _quiet := 0.0
 var graves := PackedVector2Array()
+var to_mourn: Array[Dictionary] = []   # fresh graves: {at, mourners, done}
 var innocent_t := 0.0               # the town's disapproval, on screen for a moment
 const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
 const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
 var buildings: Array[Dictionary] = []
+var shutters: Array[Shutter] = []
 var cover_points := PackedVector2Array()
 var astar := AStarGrid2D.new()
 
@@ -73,6 +75,9 @@ var stats := {}   # counts of AI events ("orders covering fire", "panic shot"...
 func _ready() -> void:
 	if not Engine.has_meta("fixed_seed"):   # tests seed the RNG themselves
 		randomize()
+		Shutter.rng.randomize()
+	else:
+		Shutter.rng.seed = 7
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -280,6 +285,14 @@ func _place_object(type: String, g: Vector2) -> void:
 	spr.scale = Vector2.ONE * tex_scale
 	spr.offset = ((Iso.to_screen(g) - spr.position) / tex_scale - Vector2(m["anchor"][0], m["anchor"][1])).round()
 	world.add_child(spr)
+	if m.has("shutters"):
+		var paints: Array = meta["shutter_paint"][m["paint"]]
+		var c: Array = paints[Shutter.rng.randi() % paints.size()]
+		for s in m["shutters"]:
+			var sh := Shutter.new()
+			sh.setup(self, spr, m, s, g, Color(c[0] / 226.0, c[1] / 226.0, c[2] / 226.0))
+			spr.add_child(sh)
+			shutters.append(sh)
 
 	var collide: String = m["collide"]
 	if collide != "none":
@@ -428,6 +441,9 @@ func _process(delta: float) -> void:
 			Engine.time_scale = 1.0
 
 	_update_fades(delta)
+	if state == "play":
+		for sh in shutters:
+			sh.tick(delta)
 	_maybe_screenshot(now)
 
 
@@ -941,13 +957,17 @@ func blessing_for(by: Civilian) -> Actor:
 
 ## Someone (still about, still on it) has this body.
 func _held(a: Actor, key: String) -> bool:
-	var who: Civilian = a.get_meta(key, null)
+	if not a.has_meta(key):
+		return false
+	var who: Civilian = a.get_meta(key)
 	return who != null and who.alive and who.body == a
 
 
 ## The undertaker already has his tape on him, or has him in tow.
 func in_hand(a: Actor) -> bool:
-	var who: Civilian = a.get_meta("claimed_by", null)
+	if not a.has_meta("claimed_by"):
+		return false
+	var who: Civilian = a.get_meta("claimed_by")
 	return who != null and who.alive and who.body == a and who.st in [Civilian.St.MEASURE, Civilian.St.DRAG]
 
 
@@ -1004,11 +1024,24 @@ func bury(body: Actor, at: Vector2) -> void:
 	var cf: Array = meta["objects"]["cross"]["footprint"]
 	_place_object("cross", g - Vector2(mf[0] * 0.5 + cf[0] * 0.6, cf[1] * 0.5))
 	stats["burials"] = stats.get("burials", 0) + 1
+	to_mourn.append({"at": at, "mourners": 0, "done": false})
+
+
+## The oldest fresh grave nobody has wept over yet, with room for one more at it
+## (two at most), now hers to go to; or none.
+func grave_to_mourn() -> Dictionary:
+	for g in to_mourn:
+		if not g["done"] and g["mourners"] < 2:
+			g["mourners"] += 1
+			return g
+	return {}
 
 
 func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void:
 	if kind in ["shot", "enemy_shot"]:
 		last_gunfire = clock
+		for sh in shutters:
+			sh.hear_shot(pos, radius)
 	if kind == "shot":
 		player_fired = true
 		report_sighting(pos)   # his muzzle flash and the crack give him away

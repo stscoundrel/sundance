@@ -52,7 +52,7 @@ def template_guns():
         if t.get("concealed"):
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():
-        need(t["template"], {"undertaker": "tools", "priest": "prayer"}.get(t.get("role", ""), "unarmed"))
+        need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief"}.get(t.get("role", ""), "unarmed"))
     return out
 
 
@@ -302,6 +302,14 @@ def _hat(look, z):
         with look.tag("accent"):
             out += ellipsoid((-0.03, 0.07, z - 0.02), (0.03, 0.03, 0.03), look.c("accent"))
         return out
+    if kind == "rebozo":
+        # a black shawl drawn up over the head, open at the face, falling down the back
+        with look.tag("hat"):
+            hood = ellipsoid((-0.005, 0, z - 0.075), (0.112, 0.104, 0.135), col)
+            keep = ~((hood.P[:, 0] > 0.035) & (hood.P[:, 2] < z - 0.01))
+            out += Cloud(hood.P[keep], hood.N[keep], hood.C[keep], hood.S[keep])
+            out += frustum((-0.05, 0, z - 0.1), (-0.07, 0, z - 0.4), 0.09, 0.17, col, su=0.8, caps=False)
+        return out
     if kind == "fur":
         # coonskin cap with the tail hanging down the back
         def fur(P, N):
@@ -491,7 +499,7 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     elif style == "dress":
         with look.tag("accent"):   # shawl over the shoulders
             m += frustum((0, 0, 0.6), (0, 0, 0.38), 0.11, 0.26, look.c("accent"), su=0.8, caps=False)
-        sleeve, forearm = "dress", "skin"
+        sleeve, forearm = "dress", "dress" if look.get("sleeves") else "skin"
 
     with look.tag("skin"):
         m += frustum((0, 0, 0.5), (0, 0, 0.63), 0.05, 0.05, look.c("skin"))
@@ -545,6 +553,9 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         h = np.array(up["hL"], float)
         m += box(tuple(h + [-0.03, -0.05, -0.02]), tuple(h + [0.04, 0.03, 0.11]), (34, 26, 24))
         m += box(tuple(h + [-0.031, -0.01, 0.03]), tuple(h + [0.041, -0.005, 0.07]), (200, 170, 80))
+    if up.get("hanky"):   # a white handkerchief pressed to her eyes
+        h = np.array(up["hR"], float)
+        m += box(tuple(h + [-0.02, -0.03, -0.04]), tuple(h + [0.03, 0.03, 0.03]), (232, 228, 220))
     if up.get("tape"):   # the undertaker's tape measure, stretched between his hands
         m += beam(np.array(up["hL"], float), np.array(up["hR"], float), 0.009, (226, 204, 120))
 
@@ -624,6 +635,13 @@ def _key_poses(w):
         k["bless_b"] = P(base, hR=V(0.44, -0.06, 0.36), eR=V(0.2, -0.22, 0.32))
         k["bless_c"] = P(base, hR=V(0.42, 0.1, 0.52))
         k["bless_d"] = P(base, hR=V(0.42, -0.24, 0.52))
+        return k
+    if w == "grief":
+        # empty hands clasped before her, head bowed; now and then a handkerchief
+        k = _key_poses("unarmed")
+        k["mourn_a"] = dict(eL=V(0.05, 0.22, 0.24), hL=V(0.17, 0.03, 0.14), eR=V(0.05, -0.22, 0.24),
+                            hR=V(0.17, -0.03, 0.15), nod=0.38, lean=0.08)
+        k["mourn_b"] = P(k["mourn_a"], eR=V(0.14, -0.22, 0.42), hR=V(0.15, -0.06, 0.64), hanky=True, nod=0.25)
         return k
     if w == "tools":
         # the undertaker's trade on top of empty hands: bent over a body with the tape,
@@ -819,12 +837,15 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer"):
+    if w not in ("unarmed", "tools", "prayer", "grief"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
     elif w == "prayer":
         add("bless", [k["bless_a"], k["bless_b"], k["bless_c"], k["bless_d"]], 2.5, True)
+    elif w == "grief":
+        a_, b_ = k["mourn_a"], k["mourn_b"]
+        add("mourn", [a_, a_, a_, a_, lerp_pose(a_, b_, 0.5), b_, b_, b_, lerp_pose(a_, b_, 0.5)], 1.5, True)
     elif w == "tools":
         add("measure", [k["measure_a"], k["measure_b"]], 2, True)
         add("drag", [k["drag"]], 1, True)

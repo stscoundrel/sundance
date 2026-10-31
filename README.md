@@ -47,6 +47,8 @@ godot --headless --path . --fixed-fps 60 -s tests/test_aftermath.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_couples.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_opportunist.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_hillbilly.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_mourners.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_shutters.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_perf.gd
 ```
 

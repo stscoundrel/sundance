@@ -88,18 +88,52 @@ def gen_world(meta):
     for name, (fn, fp, collide, fade, colliders) in world.BUILDINGS.items():
         print("  object", name)
         world.DOORS.clear()
-        img, anchor = render(fn(), edges=True)
+        world.WINDOWS.clear()
+        model = fn()
+        img, anchor = render(model, edges=True)
         path = save(img, f"sprites/world/{name}.png")
         meta["objects"][name] = {"file": path, "anchor": list(anchor), "footprint": list(fp),
                                  "collide": collide, "fade": fade,
                                  "colliders": colliders or [[0, 0, fp[0], fp[1]]],
                                  "doors": _doorsteps(world.DOORS)}
+        if world.WINDOWS:
+            meta["objects"][name]["shutters"] = _shutters(name, list(world.WINDOWS), model)
+            meta["objects"][name]["paint"] = "adobe" if name.startswith("adobe") or name == "cantina" else "wood"
+    meta["shutter_paint"] = world.SHUTTER_PAINT
     frames = []
     for f in range(4):
         img, anchor = render(world.tumbleweed(f), size=(24 * PIX, 24 * PIX), anchor=(12 * PIX, 18 * PIX))
         frames.append(img)
     path = save(np.concatenate(frames, 1), "sprites/world/tumbleweed.png")
     meta["tumbleweed"] = {"file": path, "cell": [24 * PIX, 24 * PIX], "anchor": [12 * PIX, 18 * PIX], "frames": 4}
+
+
+def _shutters(name, windows, building):
+    """Each window's shutters as a strip of frames, open to slammed shut, drawn in
+    neutral grey (the game paints them) and anchored at the building's own origin.
+    Each frame is rendered with the building around it and keeps only what shows, so
+    a porch post or roof in front of a window stays in front of its shutters."""
+    bare, anchor = render(building, shadow=False, edges=True)
+    size = (bare.shape[1], bare.shape[0])
+    out = []
+    for i, w in enumerate(windows):
+        frames = []
+        for a in world.SHUTTER_SWING:
+            m = building.copy()
+            m += world.shutter(w, a, (226, 226, 226))
+            im = render(m, size=size, anchor=anchor, shadow=False, edges=True)[0]
+            shows = np.any(im != bare, axis=2)
+            frames.append(np.where(shows[..., None], im, 0).astype(np.uint8))
+        ys, xs = np.nonzero(np.any(np.stack(frames)[..., 3] > 0, axis=0))
+        x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
+        strip = np.concatenate([f[y0:y1, x0:x1] for f in frames], 1)
+        face, (u0, u1), (z0, z1), W, D = w
+        out.append({"file": save(strip, f"sprites/world/shutters/{name}_{i}.png"),
+                    "cell": [int(x1 - x0), int(y1 - y0)], "frames": len(frames),
+                    "anchor": [int(anchor[0] - x0), int(anchor[1] - y0)],
+                    "at": [W / world.T, (u0 + u1) / 2 / world.T] if face == "+x" else [(u0 + u1) / 2 / world.T, D / world.T],
+                    "z": z0})
+    return out
 
 
 def _doorsteps(doors):
@@ -709,6 +743,13 @@ def gen_sfx(meta):
     # lose: falling low strings
     parts = [(i * 0.4, karplus(rng, fr, 2.2, 0.998, 0.5)) for i, fr in enumerate((110, 98, 82.4, 73.4))]
     write("lose", spring(place(3.6, parts)), meta, 0.75)
+    # Shutters slammed: a short creak of the hinges, the first leaf banging home and
+    # the second right after it.
+    hinge = rasp(0.1, 600, 2200) * (0.6 + 0.4 * np.sin(np.linspace(0, 30, int(SR * 0.1))))
+    write("shutter", room(place(0.5, [(0, hinge * 0.35),
+                                      (0.09, knock(rng, 260, 0.03, 0.12) * 1.6 + thunk(180, 0.05) * 1.4),
+                                      (0.17, knock(rng, 300, 0.025, 0.12) * 1.2 + thunk(200, 0.04))]), rng, 0.09, 0.4),
+          meta, 0.85, 1.4)
 
 
 def main():

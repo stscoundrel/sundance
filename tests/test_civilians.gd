@@ -87,6 +87,8 @@ func _start_shot() -> void:
 	game.player.global_position = hero
 	print("the stranger shoots from %s" % Iso.to_grid(hero).round())
 	for c in game.civilians:
+		if c.gone():
+			continue   # indoors already (the mourners, until there's a grave)
 		var d: float = c.global_position.distance_to(hero)
 		if d < Civilian.CLOSE or (d < Civilian.HEAR and game.line_of_sight(c.global_position, hero, false)):
 			near.append(c)

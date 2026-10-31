@@ -113,6 +113,43 @@ def solid(col):
 # Doorways at street level, recorded as buildings are modelled so townsfolk know
 # where they can run indoors: (face, centre along the face in metres, W, D).
 DOORS = []
+# Glazed windows, for shutters: (face, (u0, u1), (z0, z1), W, D).
+WINDOWS = []
+
+
+# Shutter frames, open to closed: each leaf's swing from flat against the wall (pi)
+# to shut across the window (0).
+SHUTTER_SWING = (math.pi * 0.97, math.pi * 0.6, math.pi * 0.27, 0.0)
+SHUTTER_PAINT = {"adobe": [(64, 128, 138), (58, 88, 140), (86, 124, 80), (150, 64, 48)],
+                 "wood": [(118, 98, 76), (96, 108, 90), (128, 72, 58), (150, 140, 120)]}
+
+
+def shutter(window, swing, col):
+    """A window's pair of plank shutters, each leaf hinged at its side of the frame
+    and swung `swing` radians from shut (0) toward flat against the wall (pi)."""
+    face, (u0, u1), (z0, z1), W, D = window
+    if face == "+y":
+        at = lambda u, n, z: np.array([u, D + n, z])
+    else:
+        at = lambda u, n, z: np.array([W + n, u, z])
+    out = Cloud()
+    hw = (u1 - u0) / 2 + 0.04
+    base = np.array(col, float)
+    for hinge, side in ((u0 - 0.04, 1.0), (u1 + 0.04, -1.0)):
+        du, dn = side * math.cos(swing), math.sin(swing) + 0.002
+        h = at(hinge, 0.05, z0 - 0.04)
+        along = at(hinge + du, 0.05 + dn, z0 - 0.04) - h
+        up = np.array([0, 0, z1 - z0 + 0.08])
+        normal = at(-dn * side, du * side, 0) - at(0, 0, 0)
+
+        def planks(P, N, h=h, along=along):
+            t = (P - h) @ along / hw
+            c = np.tile(base, (len(P), 1)) * (0.82 + 0.28 * hash01(np.floor(t * 4.0)))[:, None]
+            c[((P[:, 2] - z0) % 0.6) < 0.08] *= 0.8   # battens
+            return c
+        for off in (0.0, 0.035):
+            out += quad(h + normal * off, along * hw, up, planks, normal=normal if off else -normal)
+    return out
 
 
 def decorate(fn, W, D, openings):
@@ -122,6 +159,8 @@ def decorate(fn, W, D, openings):
     for o in openings:
         if o["kind"] in ("door", "batwing", "arch", "dark") and o["z"][0] < 0.5:
             DOORS.append((o["face"], (o["u"][0] + o["u"][1]) / 2, W, D))
+        if o["kind"] == "win" or (o["kind"] == "dark" and o["z"][0] >= 0.5):
+            WINDOWS.append((o["face"], tuple(o["u"]), tuple(o["z"]), W, D))
 
     def f(P, N):
         c = fn(P, N)

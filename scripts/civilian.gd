@@ -13,9 +13,11 @@ extends Actor
 ## padre ("role": "priest") kneels and blesses the dead first, anyone at all, and
 ## the church bell tolls for each; he fears no man, and neither gunfire nor the
 ## stranger sends him running. Couples ("couple" in the placement) stroll arm in
-## arm while all is calm, and scatter separately when it isn't.
+## arm while all is calm, and scatter separately when it isn't. Mourners ("role":
+## "mourner", placed "indoors") stay inside until there's a fresh grave and the town
+## is quiet, then come out in black to stand at it a while, and go home again.
 
-enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS }
+enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -28,9 +30,10 @@ const GLANCE := 0.9      # how long anyone else looks before averting his eyes
 const FLEE_LINES := ["Lord help us!", "¡Corran!", "Get inside!"]
 const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
 const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios mío!"]
-const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS]
+const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS, St.TO_GRAVE, St.MOURN]
 const MEASURE_T := 3.5
 const BLESS_T := 4.0
+const MOURN_T := Vector2(20.0, 32.0)
 const ARM := 13.0          # how far beside him she walks
 const DRAG_SPEED := 0.65   # of his walk, with a man in tow
 
@@ -62,6 +65,8 @@ var inside_t := 0.0          # how long he's been indoors
 var fade: Tween
 var undertaker := false
 var priest := false
+var mourner := false
+var mourning: Dictionary = {}   # the grave she's going to, or standing at
 var body: Actor              # the dead man he's seeing to
 var partner: Civilian        # the other half of a couple
 var leads := false           # he sets the way; she keeps to his arm
@@ -88,15 +93,22 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	snitch = randf() < float(tdata["snitch"])
 	undertaker = tdata.get("role", "") == "undertaker"
 	priest = tdata.get("role", "") == "priest"
+	mourner = tdata.get("role", "") == "mourner"
 	if undertaker:
 		anim_gun = "tools"   # empty hands plus the tape and the haul
 	elif priest:
 		anim_gun = "prayer"  # a book in one hand, a blessing in the other
+	elif mourner:
+		anim_gun = "grief"   # hands clasped, and a handkerchief
 	home = pos
 	facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	desired = facing
 	wait = randf_range(1.0, 6.0)
 	t = randf() * 10.0
+	if tdata.get("indoors", false):
+		_go_inside(false)
+		modulate.a = 0.0
+		visible = false
 
 
 # ------------------------------------------------------------------ senses
@@ -145,6 +157,7 @@ func alarm(from: Vector2, scary: bool) -> void:
 		return
 	threat = from
 	_drop_body()   # the dead can wait
+	_leave_grave()
 	if st == St.COWER:
 		return
 	var freeze := (1.0 - nerve) * (0.7 if scary else 0.4)
@@ -178,7 +191,10 @@ func _physics_process(delta: float) -> void:
 	if st == St.GONE:
 		inside_t += delta
 		if game.state == "play" and inside_t > 10.0 and game.quiet_for() >= game.quiet_after + back_after:
-			_come_out()
+			if not mourner:
+				_come_out()
+			else:
+				_to_a_grave()
 		return
 	shout_t = max(0.0, shout_t - delta)
 	if game.state != "play" and game.state != "lost":
@@ -216,6 +232,8 @@ func _physics_process(delta: float) -> void:
 			_work(delta)
 		St.TO_BLESS, St.BLESS:
 			_bless(delta)
+		St.TO_GRAVE, St.MOURN:
+			_mourn(delta)
 	if velocity.length() > 1.0 and not watching:
 		desired = velocity.normalized()
 	facing = facing.rotated(clamp(facing.angle_to(desired), -3.0 * delta, 3.0 * delta))
@@ -260,6 +278,9 @@ func _perceive(delta: float) -> void:
 func _idle(delta: float) -> void:
 	velocity = sidle * walk * 0.6
 	wait -= delta
+	if mourner:
+		_go_inside(false)   # home again, and in at the door
+		return
 	if undertaker and game.quiet_for() >= game.quiet_after:
 		body = game.claim_body(self)
 		if body:
@@ -295,7 +316,7 @@ func _follow(speed: float) -> bool:
 
 
 ## Through the door (or off the edge of town): out of the story.
-func _go_inside() -> void:
+func _go_inside(hiding := true) -> void:
 	st = St.GONE
 	velocity = Vector2.ZERO
 	occluded = false
@@ -308,7 +329,8 @@ func _go_inside() -> void:
 	fade.tween_callback(func(): visible = false)
 	inside_t = 0.0
 	back_after = randf_range(0.0, 15.0)   # they don't all come out at once
-	game.stats["civilian hides"] = game.stats.get("civilian hides", 0) + 1
+	if hiding:
+		game.stats["civilian hides"] = game.stats.get("civilian hides", 0) + 1
 
 
 ## The town's been quiet long enough: back out the way he went in, and home.
@@ -374,9 +396,9 @@ func _work(delta: float) -> void:
 
 
 func _drop_body() -> void:
-	if body and body.get_meta("claimed_by", null) == self:
+	if body and body.has_meta("claimed_by") and body.get_meta("claimed_by") == self:
 		body.remove_meta("claimed_by")
-	if body and body.get_meta("blessing_by", null) == self:
+	if body and body.has_meta("blessing_by") and body.get_meta("blessing_by") == self:
 		body.remove_meta("blessing_by")
 	crouched = false
 	body = null
@@ -412,6 +434,52 @@ func _bless(delta: float) -> void:
 				_drop_body()
 				st = St.IDLE
 				wait = randf_range(1.5, 3.0)
+
+
+# ------------------------------------------------------------------ mourners
+
+## A fresh grave wants weeping over: out she comes, in black, and up to boot hill.
+func _to_a_grave() -> void:
+	var g: Dictionary = game.grave_to_mourn()
+	if g.is_empty():
+		return
+	_come_out()
+	mourning = g
+	# beside the mound, a little apart from whoever else is there
+	var spot: Vector2 = g["at"] + Vector2(randf_range(-16.0, 16.0), randf_range(10.0, 16.0))
+	path = game.find_path(global_position, game.free_point_near(spot, 10.0))
+	path_i = 0
+	st = St.TO_GRAVE
+
+
+func _mourn(delta: float) -> void:
+	match st:
+		St.TO_GRAVE:
+			if _follow(walk):
+				st = St.MOURN
+				work_t = randf_range(MOURN_T.x, MOURN_T.y)
+				velocity = Vector2.ZERO
+				if randf() < 0.6:
+					_say(_line("work", ["..."]))
+		St.MOURN:
+			velocity = Vector2.ZERO
+			pose = "mourn"
+			desired = (mourning["at"] - global_position).normalized()
+			work_t -= delta
+			if work_t <= 0.0:
+				mourning["done"] = true
+				mourning = {}
+				game.stats["mournings"] = game.stats.get("mournings", 0) + 1
+				path = game.find_path(global_position, home)
+				path_i = 0
+				st = St.WALK
+
+
+## Frightened off before she'd done: the grave is free for someone else.
+func _leave_grave() -> void:
+	if not mourning.is_empty():
+		mourning["mourners"] -= 1
+		mourning = {}
 
 
 # ------------------------------------------------------------------ couples

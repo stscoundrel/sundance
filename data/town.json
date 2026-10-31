@@ -1037,6 +1037,27 @@
  ],
  "civilians": [
   {
+   "kind": "mourner",
+   "x": 8.4,
+   "y": 37.4,
+   "facing": 270,
+   "indoors": true
+  },
+  {
+   "kind": "mourner",
+   "x": 25.4,
+   "y": 37.4,
+   "facing": 270,
+   "indoors": true
+  },
+  {
+   "kind": "mourner",
+   "x": 27.4,
+   "y": 52.4,
+   "facing": 270,
+   "indoors": true
+  },
+  {
    "kind": "saloon_girl",
    "x": 6.6,
    "y": 29.8,
