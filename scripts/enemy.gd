@@ -5,12 +5,6 @@ extends Actor
 
 enum St { GUARD, PATROL, INVESTIGATE, COMBAT, SEARCH, RETURN }
 
-const KINDS := {
-	"pistolero": {"weapon": "colt", "hp": 2, "keep": Vector2(70, 170), "cadence": Vector2(0.7, 1.3)},
-	"rifleman": {"weapon": "rifle", "hp": 2, "keep": Vector2(130, 320), "cadence": Vector2(1.1, 1.8)},
-	"redscarf": {"weapon": "coach", "hp": 2, "keep": Vector2(25, 80), "cadence": Vector2(0.5, 1.0)},
-	"jefe": {"weapon": "coach", "hp": 4, "keep": Vector2(30, 95), "cadence": Vector2(0.45, 0.9)},
-}
 const WALK := 24.0
 const RUN := 46.0
 # Difficulty knobs: spread multiplier on the weapon's base spread, and a multiplier
@@ -24,13 +18,17 @@ const COWER_LINES := ["¡Madre de Dios!", "Don't shoot!", "¡No, no, no!"]
 const COVER_ME_LINES := ["¡Cúbreme!", "Cover me!", "Keep him busy!", "I'm moving!"]
 const FIRE_LINES := ["¡Fuego!", "Covering fire!", "Pin him down!", "¡Disparen!"]
 const FLEE_LINES := ["¡Vámonos!", "I'm getting out!", "¡Corre!", "He's the devil!"]
-# Leaders give orders: El Jefe and the riflemen.
-const RANK := {"jefe": 2, "rifleman": 1}
 const VIEW := 200.0
 const NEAR := 95.0
 const FOV := deg_to_rad(70.0)
 
 var kind := "pistolero"
+var tdata: Dictionary     # his type, merged with defaults and placement overrides
+var stats: Dictionary     # {"keep": preferred range, "cadence": pause between shots}
+var loadout: Array = []   # guns he carries; the first in hand, the rest sidearms
+var walk := WALK
+var run := RUN
+var sidearm_rolled := false
 var st := St.GUARD
 var home := Vector2.ZERO
 var home_facing := Vector2.DOWN
@@ -106,15 +104,23 @@ var flank_dir := Vector2.RIGHT
 var sidestep_t := 0.0
 
 
-func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_deg: float) -> void:
+## Everything that makes this bandit who he is comes from his type in
+## data/enemies.json (merged over the defaults, then any per-placement overrides).
+func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_deg: float, overrides := {}) -> void:
 	setup_body(g, pos)
 	kind = k
-	var spec: Dictionary = KINDS[k]
-	hp = spec["hp"]
+	tdata = g.enemy_type(k, overrides)
+	stats = {"keep": _v2(tdata["range"]), "cadence": _v2(tdata["cadence"])}
+	hp = int(tdata["hp"])
 	max_hp = hp
-	weapon = Weapon.new(spec["weapon"], self)
+	loadout = tdata["loadout"]
+	weapon = Weapon.new(loadout[0], self)
 	weapon.reserve = 999
-	set_character(k)
+	walk = WALK * float(tdata["speed"])
+	run = RUN * float(tdata["speed"])
+	var palettes: Array = tdata["palettes"]
+	var pi_: int = int(tdata.get("palette", randi() % palettes.size())) % palettes.size()
+	set_character(tdata["template"], palettes[pi_])
 	home = pos
 	home_facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	facing = home_facing
@@ -125,9 +131,9 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 		facing = (patrol[1] - patrol[0]).normalized()
 		desired = facing
 	t = randf() * 10.0
-	reflex = randf_range(0.6, 1.8)
-	nerve = 0.95 if k == "jefe" else randf_range(0.15, 0.9)
-	rank = RANK.get(k, 0)
+	reflex = randf_range(tdata["reflex"][0], tdata["reflex"][1])
+	nerve = randf_range(tdata["nerve"][0], tdata["nerve"][1])
+	rank = int(tdata["rank"])
 	order_cd = randf_range(3.0, 6.0)
 	cone = VisionCone.new()
 	cone.enemy = self
@@ -380,12 +386,12 @@ func start_reaction(r: String) -> void:
 	match r:
 		"point":
 			reaction_t = clamp(randf_range(1.8, 3.2) * reflex, 1.5, 5.0)
-			_say(SPOT_LINES.pick_random())
+			_say(_line("spot", SPOT_LINES))
 		"flinch":
 			reaction_t = randf_range(1.2, 2.0)
 		"cower":
 			reaction_t = randf_range(2.5, 4.5)
-			_say(COWER_LINES.pick_random())
+			_say(_line("cower", COWER_LINES))
 		"backoff":
 			# step back out of the line of fire, gun still up, not shooting
 			reaction_t = randf_range(2.0, 3.5)
@@ -394,7 +400,7 @@ func start_reaction(r: String) -> void:
 		"flee":
 			reaction_t = randf_range(8.0, 12.0)
 			path_to(game.point_away(global_position, threat, 220.0))
-			_say(FLEE_LINES.pick_random())
+			_say(_line("flee", FLEE_LINES))
 		"dash", "hide":
 			cover_pos = game.find_cover(global_position, threat)
 			if cover_pos != Vector2.INF:
@@ -403,7 +409,7 @@ func start_reaction(r: String) -> void:
 			else:
 				reaction_t = randf_range(2.0, 3.0)   # nowhere to hide: back away
 			if r == "dash":
-				_say(SCARE_LINES.pick_random())
+				_say(_line("scare", SCARE_LINES))
 	if r == "point" or r == "cower":
 		shout_t = reaction_t   # the line hangs for as long as he holds the pose
 	if game._args.has("bot") or game._args.has("rattle"):
@@ -429,10 +435,10 @@ func _do_reaction(delta: float) -> void:
 				start_reaction("flee" if randf() < fear() * 0.6 else "hide")   # then off he goes
 				return
 		"backoff":
-			velocity = retreat_dir * WALK
+			velocity = retreat_dir * walk
 			desired = (threat - global_position).normalized()
 		"flee":
-			if follow_path(RUN * 1.15):
+			if follow_path(run * 1.15):
 				crouched = true   # out of sight, catching his breath
 				desired = (threat - global_position).normalized()
 		"dash", "hide":
@@ -440,8 +446,8 @@ func _do_reaction(delta: float) -> void:
 				crouched = true
 				desired = (threat - global_position).normalized()
 			elif cover_pos == Vector2.INF:
-				velocity = (global_position - threat).normalized() * RUN
-			elif follow_path(RUN * (1.25 if reaction == "dash" else 0.9)):
+				velocity = (global_position - threat).normalized() * run
+			elif follow_path(run * (1.25 if reaction == "dash" else 0.9)):
 				hiding = true
 				crouched = true
 				reaction_t = randf_range(2.0, 4.0)
@@ -550,7 +556,7 @@ func _run_state(delta: float) -> void:
 		St.SEARCH:
 			_search(delta)
 		St.RETURN:
-			if follow_path(WALK):
+			if follow_path(walk):
 				st = St.PATROL if patrol.size() > 1 else St.GUARD
 
 
@@ -568,7 +574,7 @@ func _guard(delta: float) -> void:
 	if global_position.distance_to(home) > 6.0:
 		if path.is_empty() or path_i >= path.size():
 			path_to(home)
-		follow_path(WALK)
+		follow_path(walk)
 		return
 	velocity = Vector2.ZERO
 	desired = home_facing.rotated(sin(t * 0.5) * 0.7)
@@ -586,11 +592,11 @@ func _patrol(delta: float) -> void:
 			wait = randf_range(1.0, 2.5)
 			return
 		path_to(patrol[patrol_i])
-	follow_path(WALK)
+	follow_path(walk)
 
 
 func _investigate(delta: float) -> void:
-	if not follow_path(RUN if running else WALK):
+	if not follow_path(run if running else walk):
 		return
 	look_t += delta
 	if int(look_t * 0.9) != int((look_t - delta) * 0.9):
@@ -610,7 +616,7 @@ func _search(delta: float) -> void:
 		st = St.RETURN
 		path_to(patrol[patrol_i] if patrol.size() > 1 else home)
 		return
-	if follow_path(RUN if running else WALK):
+	if follow_path(run if running else walk):
 		running = false
 		wait -= delta
 		if wait <= 0.0:
@@ -626,20 +632,27 @@ func _combat(delta: float) -> void:
 		return
 	var to := p.global_position - global_position
 	var dist := to.length()
-	var spec: Dictionary = KINDS[kind]
+	var spec: Dictionary = stats
 
 	# Reloading: get behind cover and crouch.
 	if weapon.is_reloading():
 		if cover_pos != Vector2.INF and global_position.distance_to(cover_pos) > 5.0:
 			if path.is_empty() or path_i >= path.size():
 				path_to(cover_pos)
-			follow_path(RUN)
+			follow_path(run)
 		else:
 			velocity = Vector2.ZERO
 			crouched = cover_pos != Vector2.INF
 		if sees_player:
 			desired = to.normalized()
 		return
+	if not weapon.needs_reload():
+		sidearm_rolled = false
+	elif not sidearm_rolled:
+		sidearm_rolled = true
+		if loadout.size() > 1 and weapon.kind == loadout[0] and randf() < float(tdata["draw_sidearm"]):
+			_draw_sidearm()
+			return
 	if weapon.needs_reload():
 		if cover_pos == Vector2.INF:
 			cover_pos = game.find_cover(global_position, p.global_position)
@@ -648,7 +661,7 @@ func _combat(delta: float) -> void:
 		if cover_pos == Vector2.INF or global_position.distance_to(cover_pos) < 6.0 or (path_i >= path.size()):
 			weapon.start_reload()
 		else:
-			follow_path(RUN)
+			follow_path(run)
 		return
 	crouched = false
 	cover_pos = Vector2.INF
@@ -673,7 +686,7 @@ func _combat(delta: float) -> void:
 		repath_t -= delta
 		if repath_t <= 0.0 and (path.is_empty() or path[path.size() - 1].distance_to(goal) > 16.0):
 			path_to(goal)
-		if follow_path(RUN):
+		if follow_path(run):
 			look_t += delta
 			if int(look_t * 1.2) != int((look_t - delta) * 1.2):
 				desired = Vector2.from_angle(randf() * TAU)
@@ -697,7 +710,7 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 	elif global_position.distance_to(fight_pos) <= 10.0:
 		settled = true
 
-	var close_shotgun := weapon.kind == "coach" and dist < keep.y
+	var close_shotgun: bool = tdata["fires_on_move"] and dist < keep.y
 	# Not pinned down and silent for a while: stop whatever he's doing and shoot.
 	var must_fire: bool = sees_player and pinned_t <= 0.0 and since_shot > 1.6 and react <= 0.0 \
 		and dist < weapon.d["range"] * 0.85 and weapon.can_fire() \
@@ -711,7 +724,7 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 		crouched = false
 		peek_t = max(peek_t, 0.6)
 	elif sidestep_t > 0.0:
-		velocity = to.orthogonal().normalized() * strafe_dir * WALK
+		velocity = to.orthogonal().normalized() * strafe_dir * walk
 		crouched = false
 		aim_t = 0.0
 		return
@@ -721,13 +734,13 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 		aim_t = 0.0
 		if path_i >= path.size():
 			path_to(fight_pos)
-		follow_path(RUN if covered_t > 0.0 else RUN * 0.8)
+		follow_path(run if covered_t > 0.0 else run * 0.8)
 		if not close_shotgun:
 			return
 	else:
 		velocity = Vector2.ZERO
 		if dist < keep.x * 0.8 and not at_cover and since_shot < 1.2:
-			velocity = -to.normalized() * WALK   # too close: fire, then give ground
+			velocity = -to.normalized() * walk   # too close: fire, then give ground
 
 	if at_cover and velocity == Vector2.ZERO:
 		if peek_t > 0.0:
@@ -816,7 +829,7 @@ func _separate() -> void:
 		if l < 32.0 and l > 0.01:
 			push += d / l * (32.0 - l) / 32.0
 	if push != Vector2.ZERO:
-		var speed: float = max(velocity.length(), WALK)
+		var speed: float = max(velocity.length(), walk)
 		velocity = (velocity + push * 40.0).limit_length(speed * 1.2)
 
 
@@ -843,7 +856,7 @@ func _suppress(delta: float, spec: Dictionary) -> void:
 		return
 	if shot_cd <= 0.0 and abs(facing.angle_to(desired)) < 0.25:
 		if game.ally_in_line(self, global_position, aim_at):
-			velocity = desired.orthogonal() * strafe_dir * WALK   # step clear of him
+			velocity = desired.orthogonal() * strafe_dir * walk   # step clear of him
 			blocked_t += delta
 			if blocked_t > 1.0:
 				# still blocked: give up suppressing and fight normally
@@ -889,7 +902,7 @@ func harass(at: Vector2) -> void:
 ## About to break cover: ask the comrades in cover nearby to lay down fire.
 ## Leaders always do; the others only sometimes think of it.
 func _call_for_cover() -> void:
-	if cover_call_cd > 0.0 or (rank == 0 and randf() > 0.5) or game.staleness() > game.FRESH:
+	if cover_call_cd > 0.0 or randf() > float(tdata["cover_call"]) or game.staleness() > game.FRESH:
 		return
 	var helpers: Array[Enemy] = []
 	for e in game.enemies:
@@ -901,7 +914,7 @@ func _call_for_cover() -> void:
 	if helpers.is_empty():
 		return
 	cover_call_cd = 8.0
-	_say(COVER_ME_LINES.pick_random())
+	_say(_line("cover_me", COVER_ME_LINES))
 	for h in helpers:
 		h.suppress(last_known, randf_range(2.5, 3.5))
 	hold_t = 0.4
@@ -930,7 +943,7 @@ func _leader_orders() -> void:
 	if not (stalled or trouble) or men.is_empty():
 		return
 	order_cd = randf_range(9.0, 14.0)
-	_say(FIRE_LINES.pick_random())
+	_say(_line("fire", FIRE_LINES))
 	for e in men:
 		e.suppress(last_known, randf_range(3.0, 4.5))
 	if randf() < 0.5:
@@ -967,7 +980,30 @@ const RELOAD_LINES := ["¡Recargando!", "Reloading!", "Cover me, I'm loading!"]
 ## He's out and loading: everyone should know (the stranger included).
 func on_reload() -> void:
 	if randf() < 0.6 and shout_t <= 0.0:
-		_say(RELOAD_LINES.pick_random())
+		_say(_line("reload", RELOAD_LINES))
+
+
+## The long gun is empty and there's no time: he throws it down and draws.
+func _draw_sidearm() -> void:
+	game.drop_gun(self)
+	weapon = Weapon.new(loadout[1], self)
+	weapon.reserve = 999
+	hold_t = 0.45
+	game.sfx("close", global_position, -6.0)
+	if shout_t <= 0.0 and randf() < 0.5:
+		_say(_line("sidearm", ["To hell with it!", "¡Al diablo!"]))
+	_log("draws his " + weapon.kind)
+
+
+## A shouted line: his type's own if it has them, else the stock ones.
+func _line(key: String, stock: Array) -> String:
+	var own: Dictionary = tdata.get("shouts", {})
+	var lines: Array = own.get(key, stock)
+	return lines.pick_random()
+
+
+static func _v2(a: Array) -> Vector2:
+	return Vector2(float(a[0]), float(a[1]))
 
 
 func _log(what: String) -> void:
@@ -978,7 +1014,7 @@ func _log(what: String) -> void:
 
 
 func accuracy_mult() -> float:
-	var m := AIM_SPREAD_SHOTGUN if weapon.kind == "coach" else AIM_SPREAD
+	var m: float = (AIM_SPREAD_SHOTGUN if weapon.kind == "coach" else AIM_SPREAD) * float(tdata["aim"])
 	if panic:
 		return m * 5.0   # wild, over the shoulder
 	if suppress_t > 0.0:

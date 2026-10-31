@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b1pi7ljw6a1nw"
-path="res://.godot/imported/pistolero.png-1ab32b8be11873045df1fadaf865740e.ctex"
+uid="uid://bbnob83kcid23"
+path="res://.godot/imported/gun_sharps_3.png-c1948864b44c2bf7de68d40e7ce6b456.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/chars/pistolero.png"
-dest_files=["res://.godot/imported/pistolero.png-1ab32b8be11873045df1fadaf865740e.ctex"]
+source_file="res://assets/sprites/fx/gun_sharps_3.png"
+dest_files=["res://.godot/imported/gun_sharps_3.png-c1948864b44c2bf7de68d40e7ce6b456.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ckouhb43fumpt"
-path="res://.godot/imported/rifleman.png-5e33c69585a0b6a6a00e9f6a38bdb8b0.ctex"
+uid="uid://cj1b66m4iiwo7"
+path="res://.godot/imported/dress_slots.png-b7615145a0b58a1534968c78052e9c40.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/chars/rifleman.png"
-dest_files=["res://.godot/imported/rifleman.png-5e33c69585a0b6a6a00e9f6a38bdb8b0.ctex"]
+source_file="res://assets/sprites/chars/dress_slots.png"
+dest_files=["res://.godot/imported/dress_slots.png-b7615145a0b58a1534968c78052e9c40.ctex"]
 
 [params]
 

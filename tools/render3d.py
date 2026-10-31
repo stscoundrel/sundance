@@ -21,10 +21,35 @@ SHADOW_TINT = np.array([44.0, 30.0, 52.0])
 OUTLINE = (26, 17, 13)
 
 
+# Palette slot of everything made right now (0 = not recolourable). Colour functions
+# may also return (colours, slots) to tag points individually.
+CUR_SLOT = 0
+
+
+class slot:
+    """`with slot(3): ...` tags every point made inside with palette slot 3."""
+
+    def __init__(self, sid):
+        self.sid = sid
+
+    def __enter__(self):
+        global CUR_SLOT
+        self.prev = CUR_SLOT
+        CUR_SLOT = self.sid
+
+    def __exit__(self, *a):
+        global CUR_SLOT
+        CUR_SLOT = self.prev
+
+
 def _col(color, P, N):
+    """(colours, slots) for points P."""
     if callable(color):
-        return np.asarray(color(P, N), float).reshape(len(P), 3)
-    return np.tile(np.array(color, float), (len(P), 1))
+        r = color(P, N)
+        if isinstance(r, tuple):
+            return np.asarray(r[0], float).reshape(len(P), 3), np.asarray(r[1], np.uint8)
+        return np.asarray(r, float).reshape(len(P), 3), np.full(len(P), CUR_SLOT, np.uint8)
+    return np.tile(np.array(color, float), (len(P), 1)), np.full(len(P), CUR_SLOT, np.uint8)
 
 
 def _norm(v):
@@ -34,22 +59,24 @@ def _norm(v):
 
 
 class Cloud:
-    def __init__(self, P=None, N=None, C=None):
+    def __init__(self, P=None, N=None, C=None, S=None):
         self.P = np.zeros((0, 3)) if P is None else P
         self.N = np.zeros((0, 3)) if N is None else N
         self.C = np.zeros((0, 3)) if C is None else C
+        self.S = np.zeros(len(self.P), np.uint8) if S is None else S
 
     def add(self, other):
         self.P = np.concatenate([self.P, other.P])
         self.N = np.concatenate([self.N, other.N])
         self.C = np.concatenate([self.C, other.C])
+        self.S = np.concatenate([self.S, other.S])
         return self
 
     def __iadd__(self, other):
         return self.add(other)
 
     def copy(self):
-        return Cloud(self.P.copy(), self.N.copy(), self.C.copy())
+        return Cloud(self.P.copy(), self.N.copy(), self.C.copy(), self.S.copy())
 
     def transform(self, R, t=(0, 0, 0), pivot=(0, 0, 0)):
         pivot = np.array(pivot, float)
@@ -80,7 +107,8 @@ def rot_x(a):
 def make(P, N, color):
     P = np.asarray(P, float).reshape(-1, 3)
     N = _norm(np.asarray(N, float).reshape(-1, 3))
-    return Cloud(P, N, _col(color, P, N))
+    C, S = _col(color, P, N)
+    return Cloud(P, N, C, S)
 
 
 # ---------------------------------------------------------------- primitives
@@ -248,7 +276,7 @@ def shade(cloud):
 
 
 def render(cloud, size=None, anchor=None, shadow=True, outline=True, edges=True,
-           scale=PIX, ground=None, shadow_alpha=96, pad=6, shadow_extra=None):
+           scale=PIX, ground=None, shadow_alpha=96, pad=6, shadow_extra=None, want_slots=False):
     """Render to an RGBA array. Returns (img, anchor) where anchor is the pixel of
     the model origin. ground: Cloud drawn first at ground level (pools, decals)."""
     P = cloud.P
@@ -317,6 +345,8 @@ def render(cloud, size=None, anchor=None, shadow=True, outline=True, edges=True,
     flat[u, 3] = 255
     D.reshape(-1)[u] = dep[sel]
     mask.reshape(-1)[u] = True
+    slots = np.zeros((H, W), np.uint8)
+    slots.reshape(-1)[u] = cloud.S[ok][sel]
 
     if edges:
         dark = np.zeros((H, W), bool)
@@ -336,6 +366,8 @@ def render(cloud, size=None, anchor=None, shadow=True, outline=True, edges=True,
         dil[:, :-1] |= mask[:, 1:]
         ring = dil & ~mask
         img[ring] = (*OUTLINE, 255)
+    if want_slots:
+        return img, anchor, slots
     return img, anchor
 
 

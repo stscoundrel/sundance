@@ -37,32 +37,39 @@ def save(img, rel):
 def gen_characters(meta):
     """Bake every character's animations (in parallel) and pack each into one atlas."""
     from multiprocessing import Pool
-    meta["chars"] = {}
+    # SUNDANCE_TEMPLATES=veteran,buckskin re-bakes only those and keeps the rest.
+    only = [t for t in os.environ.get("SUNDANCE_TEMPLATES", "").split(",") if t]
+    if not only:
+        meta["chars"] = {}
+    guns = chars.template_guns()
     jobs = []
-    for char in chars.SPECS:
-        jobs += chars.jobs_for(char)
+    for template in (only or chars.TEMPLATES):
+        jobs += chars.jobs_for(template, guns.get(template, ["colt"]))
     print("  baking %d animations x 8 directions..." % len(jobs))
     with Pool() as pool:
         results = pool.map(chars.bake_job, jobs, chunksize=1)
-    by_char = {}
-    for char, key, info, dirs in results:
-        by_char.setdefault(char, []).append((key, info, dirs))
-    for char, anims in by_char.items():
+    by_template = {}
+    for template, key, info, dirs in results:
+        by_template.setdefault(template, []).append((key, info, dirs))
+    for template, anims in by_template.items():
         entries = []
         for key, info, dirs in anims:
             for d, frames in enumerate(dirs):
-                for i, (img, ox, oy) in enumerate(frames):
-                    entries.append((key, d, i, img, ox, oy))
-        atlas, rects = chars.pack(entries)
-        path = save(atlas, f"sprites/chars/{char}.png")
+                for i, (img, sl, ox, oy) in enumerate(frames):
+                    entries.append((key, d, i, img, sl, ox, oy))
+        atlas, slot_atlas, rects = chars.pack(entries)
+        path = save(atlas, f"sprites/chars/{template}.png")
+        slot_path = save(slot_atlas, f"sprites/chars/{template}_slots.png")
         out = {}
         for key, info, dirs in anims:
             out[key] = dict(info, frames=rects[key])
-        meta["chars"][char] = {"atlas": path, "h_ref": chars.H_REF, "loadout": chars.LOADOUT[char], "anims": out}
-        print("  %s: %d frames, atlas %dx%d" % (char, len(entries), atlas.shape[1], atlas.shape[0]))
+        meta["chars"][template] = {"atlas": path, "slots": slot_path, "h_ref": chars.H_REF,
+                                   "guns": guns.get(template, ["colt"]), "anims": out}
+        print("  %s: %d frames, atlas %dx%d" % (template, len(entries), atlas.shape[1], atlas.shape[0]))
+    meta["neutral"] = chars.NEUTRAL[0]
     # Guns dropped by the dead, lying in the dirt in four orientations.
     meta["guns"] = {}
-    for kind in ("colt", "coach", "rifle"):
+    for kind in chars.GUN_LEN:
         meta["guns"][kind] = []
         for v in range(4):
             img, anchor = render(chars.dropped_gun(kind, v))
@@ -527,6 +534,8 @@ def gen_sfx(meta):
     meta["sfx"] = {}
     rng = np.random.default_rng(5)
     print("  sfx")
+    # newer guns get their own random streams, so the others stay exactly as they were
+    drng, srng, hrng = (np.random.default_rng(s) for s in (77, 78, 79))
     # Three takes of each gun so repeated shots don't sound identical.
     for i in range(3):
         sfx = "" if i == 0 else "_%d" % (i + 1)
@@ -534,6 +543,12 @@ def gen_sfx(meta):
         write("colt" + sfx, gunshot(rng, 0.0025, 2600, 0.035, 220, 0.12, 55, 3.0, 0.9, j), meta, 0.98, 1.6)
         write("rifle" + sfx, gunshot(rng, 0.0018, 3600, 0.03, 260, 0.1, 62, 3.0, 1.1, 1.15 * j), meta, 0.98, 1.6)
         write("coach" + sfx, gunshot(rng, 0.004, 1500, 0.09, 150, 0.26, 44, 3.6, 1.3, 1.05 * j), meta, 0.98, 1.8)
+        # the derringer: a short, flat pop with little behind it
+        write("derringer" + sfx, gunshot(drng, 0.0015, 3200, 0.018, 320, 0.05, 90, 2.4, 0.7, 0.9 * j), meta, 0.8, 1.4)
+        # the Sharps: a deep, heavy buffalo-gun boom that rolls a long way
+        write("sharps" + sfx, gunshot(srng, 0.0022, 2200, 0.055, 190, 0.18, 46, 3.4, 1.5, 1.3 * j), meta, 0.98, 1.8)
+        # the howdah: a hand cannon, short and thunderous
+        write("howdah" + sfx, gunshot(hrng, 0.003, 1700, 0.07, 165, 0.21, 44, 3.6, 1.1, j), meta, 0.98, 1.8)
 
     t = t_of(0.7)
     f = 3600 * np.exp(-t / 0.45) + 900

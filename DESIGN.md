@@ -135,14 +135,7 @@ carried, which you collect by walking over them.
   the coach gun broken open — and he often shouts "¡Recargando!".
 - Enemy aim and rate of fire are tunable at the top of `scripts/enemy.gd`
   (`AIM_SPREAD`, `AIM_SPREAD_SHOTGUN`, `CADENCE_MULT`).
-- Bandit types:
-  - *Pistolero* — poncho and sombrero, Colt.
-  - *Rifleman* — duster and bowler, Yellow Boy, long-range sentry.
-  - *Red Scarf* — Corbucci-style gang scarf, coach gun.
-  - *El Jefe* — the boss in a red coat, coach gun, takes 4 HP.
-
-## World
-
+- Bandit types live in `data/enemies.json` (see *Bandit types* below).
 - 2:1 isometric diamond tiles. Sprites are rendered at 3× detail (96×48 px per tile)
   and shown through a close camera (about 13 tiles across) in a 1280×720 view, scaled up by whole numbers with no smoothing, in a
   maximised window.
@@ -174,6 +167,51 @@ carried, which you collect by walking over them.
   coach gun's hinge and snap, brass tinkling onto the boards, spurs jingling. The
   hero's own sounds play at full volume; a compressor and limiter on the master bus
   keep firefights punchy.
+
+## Bandit types
+
+All bandit types are data in `data/enemies.json`, shared by the game and the art
+generator:
+
+- **Templates** are body shapes (duster and bowler, poncho and sombrero, vest,
+  shirt and suspenders, frock coat and top hat, saloon dress...), baked once each.
+- **Types** pick a template, one or more **palettes**, a **loadout** and behaviour
+  knobs: `hp`, preferred `range`, `cadence` (pause between shots), `aim` (spread
+  multiplier, higher is worse), `speed`, `reflex` and `nerve` ranges, leader `rank`,
+  `cover_call` (chance to shout "Cover me!"), `fires_on_move`, `draw_sidearm` and
+  their own `shouts`. Anything not given comes from `defaults`.
+- **Placements** in `data/town.json` may override any field for one bandit (a fixed
+  `palette` index, a braver nerve), except the loadout, which is baked per type.
+- **Palettes are free**: recolourable parts are baked in neutral grey with a slot
+  map, and a shader paints each bandit, so variants cost no art.
+- **Long gun and sidearm**: a bandit carrying a rifle or coach gun plus a Colt uses
+  the long gun until it runs dry mid-fight, then (by `draw_sidearm`) throws it down
+  and draws the pistol rather than reloading.
+
+| Type | Look | Guns | Character |
+|---|---|---|---|
+| Pistolero | poncho, sombrero (3 serapes) | Colt | rank and file, often breaks under fire |
+| Cowboy | vest, bandana (3 palettes) | Colt | steady mid-range gunman |
+| Rifleman | duster, bowler (2) | Winchester + Colt | good shot, leader (orders covering fire) |
+| Red Scarf | vest, red scarf | coach gun + Colt | rushes in, fires on the move |
+| El Jefe | red duster, sombrero | coach gun + Colt | 4 HP, nerves of steel, leader |
+| Drunkard | shirt, suspenders, slouch hat (2) | Colt | wild aim, slow, scared, slurs |
+| Gambler | frock coat, top hat (2) | Remington derringer | quick hands, cool head |
+| Saloon girl | dress and shawl (3) | Colt | rare; joins the fight like everyone else |
+| Poacher | buckskin, fringe, coonskin cap, beard (2) | Sharps 1874 | sniper: very long range, deadly, slow single-shot reload |
+| Old timer | old cavalry coat, slouch hat, white beard (Union / Confederate) | howdah pistol | 3 HP, slow, unshakeable, "Seen worse at Shiloh!" |
+
+The **Remington double derringer** (1866) has two stacked barrels, cocked per shot,
+short range and damage 1; its barrels tip up to reload. The **Sharps 1874** is a single-shot
+falling-block buffalo rifle (damage 3, the longest range, reloaded after every shot).
+The **howdah pistol** is a two-barrel .577 break-action hand cannon (damage 2 per
+barrel, both can go at once).
+
+Guns are data too (`Weapon.DATA` in `scripts/weapon.gd`): an action type (revolver,
+lever, or breech for anything that opens to load), stats, smoke, and for breech guns
+the barrel count and each reload step's time and sound. A new breech gun is a data
+entry plus a model and poses in `tools/chars.py`. `tests/test_types.gd`
+checks the type data against the baked art.
 
 ## Animation
 

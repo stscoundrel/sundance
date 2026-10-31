@@ -100,6 +100,40 @@ func _init() -> void:
 	run(rifle, 5.0)
 	check(rifle.tube == 4 and rifle.chambered, "rifle loaded 5 and levered one in (tube %d, chambered %s)" % [rifle.tube, rifle.chambered])
 
+	# Breech guns, all driven by the same data-described reload.
+	var sharps := Weapon.new("sharps", a)
+	sharps.reserve = 3
+	g.shots = 0
+	sharps.trigger()
+	run(sharps, 0.6)
+	check(g.shots == 1 and sharps.needs_reload(), "Sharps: one shot, then empty")
+	sharps.trigger()
+	run(sharps, 0.3)
+	check(g.shots == 1, "Sharps clicks dry when empty")
+	check(sharps.start_reload(), "Sharps reload starts")
+	run(sharps, 3.0)
+	check(sharps.loaded() == 1 and sharps.reserve == 2, "Sharps reloaded one round (%d, reserve %d)" % [sharps.loaded(), sharps.reserve])
+
+	var howdah := Weapon.new("howdah", a)
+	howdah.reserve = 2
+	g.shots = 0
+	howdah.alt_trigger()
+	check(g.shots == 2 and howdah.needs_reload(), "howdah: both barrels at once")
+	run(howdah, 1.0)
+	howdah.start_reload()
+	run(howdah, 4.0)
+	check(howdah.loaded() == 2 and howdah.reserve == 0, "howdah reloaded both")
+
+	var der := Weapon.new("derringer", a)
+	der.reserve = 2
+	g.shots = 0
+	for i in 3:
+		der.trigger()
+		run(der, 0.6)
+	check(g.shots == 2, "derringer holds two (got %d)" % g.shots)
+	der.alt_trigger()
+	check(g.shots == 2, "derringer has no volley")
+
 	a.free()
 	g.free()
 	print("weapons: ", "OK" if failures == 0 else "%d failures" % failures)

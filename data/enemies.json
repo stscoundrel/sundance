@@ -1,0 +1,153 @@
+{
+  "_doc": "Bandit types. 'templates' are body shapes, baked once each. 'types' combine a template with palettes, a loadout and behaviour knobs; town.json places them and may override any type field per bandit. Palette slots are listed in 'slots'; any slot left out keeps a neutral grey.",
+
+  "slots": ["coat", "shirt", "vest", "trousers", "boots", "hat", "band", "accent", "skin", "hair",
+            "poncho_a", "poncho_b", "poncho_c", "dress"],
+
+  "templates": {
+    "hero":            {"style": "duster", "hat": "flat",     "cigar": true,  "bandolier": true,  "mustache": false},
+    "poncho":          {"style": "poncho", "hat": "sombrero", "mustache": true},
+    "duster_bowler":   {"style": "duster", "hat": "bowler",   "mustache": true},
+    "vest":            {"style": "vest",   "hat": "flat",     "bandolier": true, "scarf": true},
+    "duster_sombrero": {"style": "duster", "hat": "sombrero", "cigar": true,  "bandolier": true,  "mustache": true},
+    "shirt":           {"style": "shirt",  "hat": "slouch",   "suspenders": true, "mustache": true},
+    "suit":            {"style": "suit",   "hat": "top",      "mustache": true},
+    "dress":           {"style": "dress",  "hat": "none",     "female": true},
+    "buckskin":        {"style": "buckskin", "hat": "fur",    "beard": true},
+    "veteran":         {"style": "duster", "hat": "slouch",   "beard": true, "mustache": true}
+  },
+
+  "player": {
+    "template": "hero",
+    "palette": {"coat": [172, 142, 100], "shirt": [120, 130, 140], "trousers": [94, 80, 64], "boots": [56, 38, 26],
+                "hat": [52, 38, 30], "band": [104, 72, 46], "skin": [196, 138, 98], "hair": [68, 48, 34]}
+  },
+
+  "defaults": {
+    "hp": 2, "range": [70, 170], "cadence": [0.7, 1.3], "aim": 1.0, "speed": 1.0,
+    "reflex": [0.6, 1.8], "nerve": [0.15, 0.9], "rank": 0, "cover_call": 0.5,
+    "fires_on_move": false, "draw_sidearm": 0.0, "shouts": {}
+  },
+
+  "types": {
+    "pistolero": {
+      "name": "Pistolero", "template": "poncho", "loadout": ["colt"],
+      "palettes": [
+        {"poncho_a": [168, 58, 40], "poncho_b": [214, 172, 92], "poncho_c": [60, 44, 36], "shirt": [204, 192, 160],
+         "trousers": [124, 102, 72], "boots": [70, 48, 32], "hat": [156, 124, 74], "band": [92, 40, 30],
+         "skin": [168, 110, 76], "hair": [30, 24, 20]},
+        {"poncho_a": [52, 84, 110], "poncho_b": [220, 206, 170], "poncho_c": [120, 40, 34], "shirt": [196, 188, 162],
+         "trousers": [96, 84, 66], "boots": [60, 42, 30], "hat": [124, 98, 62], "band": [40, 40, 44],
+         "skin": [176, 118, 82], "hair": [24, 20, 18]},
+        {"poncho_a": [90, 110, 60], "poncho_b": [200, 160, 80], "poncho_c": [70, 40, 30], "shirt": [210, 200, 176],
+         "trousers": [130, 110, 80], "boots": [66, 44, 30], "hat": [170, 144, 96], "band": [120, 50, 34],
+         "skin": [160, 104, 72], "hair": [36, 28, 22]}
+      ]
+    },
+    "rifleman": {
+      "name": "Rifleman", "template": "duster_bowler", "loadout": ["rifle", "colt"],
+      "range": [130, 320], "cadence": [1.1, 1.8], "aim": 0.85, "nerve": [0.3, 0.9],
+      "rank": 1, "cover_call": 1.0, "draw_sidearm": 0.6,
+      "palettes": [
+        {"coat": [58, 54, 52], "shirt": [192, 186, 170], "trousers": [82, 80, 84], "boots": [40, 30, 24],
+         "hat": [38, 34, 32], "band": [60, 50, 44], "skin": [202, 150, 116], "hair": [110, 70, 40]},
+        {"coat": [96, 72, 52], "shirt": [176, 170, 150], "trousers": [70, 66, 62], "boots": [46, 34, 26],
+         "hat": [70, 56, 44], "band": [36, 30, 28], "skin": [190, 134, 100], "hair": [60, 40, 28]}
+      ]
+    },
+    "redscarf": {
+      "name": "Red Scarf", "template": "vest", "loadout": ["coach", "colt"],
+      "range": [25, 80], "cadence": [0.5, 1.0], "speed": 1.05, "nerve": [0.2, 0.9],
+      "fires_on_move": true, "draw_sidearm": 0.5,
+      "palettes": [
+        {"vest": [82, 60, 46], "shirt": [206, 196, 172], "trousers": [104, 86, 66], "boots": [60, 42, 30],
+         "hat": [92, 72, 54], "band": [164, 30, 26], "accent": [172, 30, 26], "skin": [184, 126, 90], "hair": [50, 36, 28]}
+      ]
+    },
+    "cowboy": {
+      "name": "Cowboy", "template": "vest", "loadout": ["colt"], "range": [70, 180], "nerve": [0.2, 0.85],
+      "palettes": [
+        {"vest": [118, 96, 70], "shirt": [120, 140, 170], "trousers": [70, 74, 96], "boots": [76, 50, 32],
+         "hat": [150, 120, 84], "band": [70, 50, 36], "accent": [60, 80, 130], "skin": [200, 146, 106], "hair": [120, 84, 50]},
+        {"vest": [44, 40, 38], "shirt": [190, 150, 120], "trousers": [110, 92, 70], "boots": [50, 36, 28],
+         "hat": [60, 48, 40], "band": [150, 120, 70], "accent": [180, 170, 150], "skin": [186, 130, 92], "hair": [40, 30, 24]},
+        {"vest": [140, 70, 50], "shirt": [214, 206, 186], "trousers": [86, 70, 56], "boots": [64, 44, 30],
+         "hat": [110, 86, 60], "band": [40, 34, 30], "accent": [70, 110, 80], "skin": [206, 156, 120], "hair": [150, 110, 60]}
+      ]
+    },
+    "jefe": {
+      "name": "El Jefe", "template": "duster_sombrero", "loadout": ["coach", "colt"],
+      "hp": 4, "range": [30, 95], "cadence": [0.45, 0.9], "nerve": [0.95, 0.95],
+      "rank": 2, "cover_call": 1.0, "fires_on_move": true, "draw_sidearm": 0.8,
+      "palettes": [
+        {"coat": [142, 32, 28], "shirt": [44, 38, 36], "trousers": [44, 38, 36], "boots": [30, 22, 18],
+         "hat": [42, 34, 30], "band": [196, 156, 64], "skin": [170, 114, 80], "hair": [20, 16, 14]}
+      ]
+    },
+    "drunkard": {
+      "name": "Drunkard", "template": "shirt", "loadout": ["colt"],
+      "range": [50, 140], "cadence": [0.9, 1.8], "aim": 2.2, "speed": 0.85,
+      "reflex": [1.2, 2.2], "nerve": [0.0, 0.3], "cover_call": 0.2,
+      "shouts": {"spot": ["Hic! Who'zat?", "You... you there!", "¡Ay, gringo!"],
+                 "scare": ["Whoa now!", "Hic! ¡Dios!"], "reload": ["Where'd my... bullets..."]},
+      "palettes": [
+        {"shirt": [196, 184, 150], "trousers": [90, 78, 62], "boots": [62, 44, 32], "hat": [96, 84, 66],
+         "band": [70, 60, 50], "skin": [204, 130, 104], "hair": [90, 70, 50]},
+        {"shirt": [150, 130, 120], "trousers": [70, 64, 60], "boots": [50, 38, 30], "hat": [80, 70, 60],
+         "band": [50, 44, 40], "skin": [196, 124, 96], "hair": [60, 50, 40]}
+      ]
+    },
+    "gambler": {
+      "name": "Gambler", "template": "suit", "loadout": ["derringer"],
+      "range": [40, 120], "cadence": [0.5, 0.9], "aim": 0.8, "reflex": [0.5, 1.0], "nerve": [0.5, 0.95],
+      "shouts": {"spot": ["Well now.", "Bad hand, stranger.", "Gentlemen..."],
+                 "reload": ["One moment."], "scare": ["Steady..."]},
+      "palettes": [
+        {"coat": [34, 32, 34], "vest": [120, 30, 40], "shirt": [220, 216, 204], "accent": [24, 22, 22],
+         "trousers": [60, 56, 58], "boots": [26, 22, 20], "hat": [28, 26, 28], "band": [80, 70, 60],
+         "skin": [208, 164, 132], "hair": [40, 32, 26]},
+        {"coat": [70, 56, 44], "vest": [180, 150, 90], "shirt": [214, 206, 190], "accent": [30, 28, 28],
+         "trousers": [96, 82, 66], "boots": [40, 30, 24], "hat": [46, 40, 36], "band": [150, 120, 70],
+         "skin": [200, 150, 116], "hair": [70, 50, 34]}
+      ]
+    },
+    "poacher": {
+      "name": "Poacher", "template": "buckskin", "loadout": ["sharps"],
+      "range": [220, 460], "cadence": [1.6, 2.6], "aim": 0.5, "speed": 0.95,
+      "reflex": [0.8, 1.4], "nerve": [0.4, 0.9], "cover_call": 0.3,
+      "shouts": {"spot": ["Got me a big one.", "Hold still now...", "There's my buffalo."],
+                 "reload": ["Steady..."], "scare": ["Close one."], "flee": ["Ain't worth the hide!"]},
+      "palettes": [
+        {"coat": [176, 140, 96], "shirt": [140, 50, 40], "trousers": [100, 84, 64], "boots": [70, 50, 34],
+         "hat": [110, 82, 54], "band": [58, 44, 32], "skin": [196, 140, 104], "hair": [96, 66, 40]},
+        {"coat": [130, 100, 66], "shirt": [70, 80, 96], "trousers": [84, 74, 60], "boots": [56, 40, 28],
+         "hat": [90, 70, 50], "band": [40, 32, 26], "skin": [184, 126, 92], "hair": [60, 46, 34]}
+      ]
+    },
+    "oldtimer": {
+      "name": "Old timer", "template": "veteran", "loadout": ["howdah"],
+      "hp": 3, "range": [50, 150], "cadence": [0.9, 1.6], "aim": 0.9, "speed": 0.75,
+      "reflex": [1.1, 1.8], "nerve": [0.75, 1.0], "cover_call": 0.2,
+      "shouts": {"spot": ["Seen worse at Shiloh!", "Come on then, sonny!", "Back in '47..."],
+                 "reload": ["Hold yer horses..."], "scare": ["Hah! Missed!", "That all ye got?"],
+                 "cover_me": ["Watch my back, boys!"]},
+      "palettes": [
+        {"coat": [52, 60, 86], "shirt": [176, 166, 146], "trousers": [100, 112, 140], "boots": [40, 32, 26],
+         "hat": [56, 50, 46], "band": [170, 140, 70], "skin": [200, 146, 116], "hair": [222, 218, 208]},
+        {"coat": [124, 120, 110], "shirt": [190, 180, 160], "trousers": [110, 104, 92], "boots": [50, 38, 28],
+         "hat": [112, 98, 78], "band": [150, 40, 36], "skin": [196, 140, 108], "hair": [210, 206, 196]}
+      ]
+    },
+    "saloon_girl": {
+      "name": "Saloon girl", "template": "dress", "loadout": ["colt"],
+      "range": [60, 150], "cadence": [0.8, 1.4], "aim": 1.3, "reflex": [0.7, 1.6], "nerve": [0.3, 0.8],
+      "cover_call": 0.3,
+      "shouts": {"spot": ["There he is, boys!", "¡Allí, allí!"], "scare": ["Oh!"], "reload": ["Cover me, boys!"]},
+      "palettes": [
+        {"dress": [150, 30, 40], "accent": [30, 24, 26], "boots": [30, 24, 22], "skin": [214, 170, 140], "hair": [40, 28, 20]},
+        {"dress": [40, 90, 70], "accent": [210, 190, 150], "boots": [40, 30, 26], "skin": [200, 150, 116], "hair": [150, 90, 40]},
+        {"dress": [90, 50, 110], "accent": [20, 20, 24], "boots": [30, 24, 22], "skin": [180, 124, 92], "hair": [20, 16, 14]}
+      ]
+    }
+  }
+}

@@ -27,7 +27,7 @@ func setup(g: Node, pos: Vector2) -> void:
 	weapons["coach"].reserve = 10
 	weapons["rifle"].reserve = 26
 	weapon = weapons["colt"]
-	set_character("hero")
+	set_character(g.enemy_data["player"]["template"], g.enemy_data["player"]["palette"])
 	facing = Vector2(1, -0.3).normalized()
 
 

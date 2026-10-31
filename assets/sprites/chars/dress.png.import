@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ba01xwcdhmbh3"
-path="res://.godot/imported/redscarf.png-946b7482f3b91d8c8e50d420db39acf7.ctex"
+uid="uid://7jqla7ngt3q1"
+path="res://.godot/imported/dress.png-11fc921e1d80e2920faae25a8c4a2424.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/chars/redscarf.png"
-dest_files=["res://.godot/imported/redscarf.png-946b7482f3b91d8c8e50d420db39acf7.ctex"]
+source_file="res://assets/sprites/chars/dress.png"
+dest_files=["res://.godot/imported/dress.png-11fc921e1d80e2920faae25a8c4a2424.ctex"]
 
 [params]
 

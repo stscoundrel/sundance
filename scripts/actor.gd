@@ -8,6 +8,7 @@ extends CharacterBody2D
 signal died(actor: Actor)
 
 const PZ := 15.7   # world px per metre of height
+const PALETTE_SHADER := preload("res://shaders/palette.gdshader")
 const HITS := ["hit_l", "hit_r", "hit_gut"]
 
 var game: Node
@@ -71,14 +72,30 @@ func setup_body(g: Node, pos: Vector2) -> void:
 			upper_spr = s
 
 
-## Use a character's atlas ("hero", "pistolero", ...).
-func set_character(key: String) -> void:
-	char_key = key
-	cdata = game.meta["chars"][key]
+## Use a body template's atlas ("hero", "poncho", "suit", ...) painted with a palette
+## ({slot name: [r, g, b]}); slots it doesn't name stay neutral grey.
+func set_character(template: String, palette: Dictionary) -> void:
+	char_key = template
+	cdata = game.meta["chars"][template]
 	var tex: Texture2D = game.tex(cdata["atlas"])
+	var neutral: float = float(game.meta.get("neutral", 200)) / 255.0
+	var pal := PackedVector3Array()
+	pal.resize(16)
+	pal.fill(Vector3(neutral, neutral, neutral))
+	var names: Array = game.enemy_data["slots"]
+	for i in names.size():
+		if palette.has(names[i]):
+			var c: Array = palette[names[i]]
+			pal[i + 1] = Vector3(c[0], c[1], c[2]) / 255.0
+	var mat := ShaderMaterial.new()
+	mat.shader = PALETTE_SHADER
+	mat.set_shader_parameter("slots", game.tex(cdata["slots"]))
+	mat.set_shader_parameter("pal", pal)
+	mat.set_shader_parameter("neutral", neutral)
 	for s in [legs_spr, upper_spr]:
 		s.texture = tex
 		s.scale = Vector2.ONE * game.tex_scale
+		s.material = mat
 
 
 func anim(key: String) -> Dictionary:
@@ -135,11 +152,11 @@ func _upper_choice() -> String:
 			Weapon.S.CLOSE:
 				return "reload_close"
 			Weapon.S.CYCLE:
-				match weapon.kind:
-					"colt":
-						return "fan" if weapon.fanning else "cock"
-					"rifle":
-						return "lever"
+				if weapon.fanning:
+					return "fan"
+				for a in ["cock", "lever"]:   # whichever this gun has
+					if has_anim(_upper_key(a)):
+						return a
 	return "aim"
 
 

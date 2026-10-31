@@ -4,12 +4,14 @@ extends Node2D
 
 const LEVEL_PATH := "res://data/town.json"
 const META_PATH := "res://assets/meta.json"
+const ENEMIES_PATH := "res://data/enemies.json"
 const POST_SHADER := preload("res://shaders/post.gdshader")
 const LOUD := ["colt", "coach", "rifle", "bell"]
 const WIND := Vector2(7, -2)   # px/s drift for smoke and dust
 const VIEW_W := 1280.0 / 3.0   # world pixels across the screen: a close, detailed view
 
 var meta: Dictionary
+var enemy_data: Dictionary   # data/enemies.json: body templates, bandit types, palettes
 var level: Dictionary
 var size := 40
 
@@ -63,6 +65,7 @@ func _ready() -> void:
 	_setup_input()
 	meta = _load_json(META_PATH)
 	level = _load_json(LEVEL_PATH)
+	enemy_data = _load_json(ENEMIES_PATH)
 	size = int(level["size"])
 	tex_scale = float(meta.get("tex_scale", 1.0))
 	_build_world()
@@ -80,6 +83,8 @@ func _ready() -> void:
 	sfx("bell", null, -4.0, 0.0)
 	if _args.has("skip-title"):
 		begin()
+	elif _args.has("freeze"):
+		hud.hide_title()   # debug: look around town with everyone standing still
 
 
 ## Glue and a brick-wall limiter on the master bus: gunfire can be mixed hot and
@@ -309,7 +314,11 @@ func _spawn_actors() -> void:
 			for p in e["patrol"]:
 				patrol.append(Iso.to_screen(Vector2(p[0], p[1])))
 		var facing_deg: float = e.get("facing", 90.0)
-		en.setup(self, e["kind"], Iso.to_screen(Vector2(e["x"], e["y"])), patrol, facing_deg)
+		var overrides := {}
+		for key in e:
+			if not key in ["kind", "x", "y", "patrol", "facing"]:
+				overrides[key] = e[key]
+		en.setup(self, e["kind"], Iso.to_screen(Vector2(e["x"], e["y"])), patrol, facing_deg, overrides)
 		en.died.connect(_on_enemy_died)
 		enemies.append(en)
 	player.died.connect(_on_player_died)
@@ -341,7 +350,7 @@ func _build_overlay() -> void:
 
 func _process(delta: float) -> void:
 	var now := Time.get_ticks_msec()
-	if state == "title" and now - start_time > 5500:
+	if state == "title" and now - start_time > 5500 and not _args.has("freeze"):
 		begin()
 	if closeup_until > 0 and now > closeup_until:
 		closeup_until = 0
@@ -641,6 +650,14 @@ func is_free(p: Vector2) -> bool:
 	return not astar.is_point_solid(_cell(p))
 
 
+## A bandit type: the defaults, then the type, then any per-placement overrides.
+func enemy_type(kind: String, overrides := {}) -> Dictionary:
+	var t: Dictionary = enemy_data["defaults"].duplicate(true)
+	t.merge(enemy_data["types"][kind], true)
+	t.merge(overrides, true)
+	return t
+
+
 func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void:
 	if kind == "shot":
 		player_fired = true
@@ -678,9 +695,10 @@ func _on_enemy_died(e: Actor) -> void:
 			o.witness_death(e.global_position, player.global_position)
 	if _args.has("bot"):
 		print("%.1fs  %s down, %d left" % [(Time.get_ticks_msec() - start_time) / 1000.0, e.kind, alive_enemies()])
-	var p := Pickup.new()
-	p.setup(self, e.global_position + Vector2(randf_range(-6, 6), 4), e.weapon.kind)
-	world.add_child.call_deferred(p)
+	if player.weapons.has(e.weapon.kind):   # nothing to take from a derringer
+		var p := Pickup.new()
+		p.setup(self, e.global_position + Vector2(randf_range(-6, 6), 4), e.weapon.kind)
+		world.add_child.call_deferred(p)
 	if alive_enemies() == 0 and state == "play":
 		state = "won"
 		end_time = Time.get_ticks_msec()
@@ -742,9 +760,8 @@ func muzzle_flash(holder: Actor, dir: Vector2) -> void:
 	var puff := Puff.new()
 	puff.position = holder.global_position + Vector2(0, 2)
 	var base := tip + Vector2(0, -1)
-	var kind: String = holder.weapon.kind
-	var n: int = {"colt": 9, "rifle": 11, "coach": 20}[kind]
-	var push := 1.5 if kind == "coach" else 1.0
+	var n: int = holder.weapon.d.get("smoke", 9)
+	var push: float = holder.weapon.d.get("smoke_push", 1.0)
 	for i in n:
 		var shade := randf_range(0.78, 0.95)
 		puff.smoke(base + dir * randf_range(0, 8), dir.rotated(randf_range(-0.5, 0.5)) * randf_range(10, 50) * push + Vector2(0, -randf_range(2, 10)),

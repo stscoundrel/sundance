@@ -25,6 +25,7 @@ sounds are synthesised. Character animations are baked in parallel from key pose
 python3 -m venv tools/.venv && tools/.venv/bin/pip install -r tools/requirements.txt
 tools/.venv/bin/python tools/gen_assets.py            # everything
 tools/.venv/bin/python tools/gen_assets.py chars ui   # or just some: chars world fx ui sfx ground
+SUNDANCE_TEMPLATES=veteran tools/.venv/bin/python tools/gen_assets.py chars   # re-bake some bodies
 godot --headless --path . --import
 ```
 
@@ -33,10 +34,11 @@ godot --headless --path . --import
 ```bash
 godot --headless --path . -s tests/test_weapons.gd
 godot --headless --path . -s tests/test_level.gd
+godot --headless --path . -s tests/test_types.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_reactions.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_tactics.gd
 ```
 
 Flags go after `--`: `--skip-title`, `--at=GX,GY` (start tile), `--bot` (autopilot that shoots
-and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--alert` (trigger the close-up), `--rattle` (near-miss every bandit once), `--shot=PATH --shot-time=SECONDS` (save a
+and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--alert` (trigger the close-up), `--rattle` (near-miss every bandit once), `--freeze` (no title, bandits stand still), `--shot=PATH --shot-time=SECONDS` (save a
 screenshot and quit).

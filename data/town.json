@@ -65,12 +65,16 @@
     {"kind": "pistolero", "x": 6, "y": 21.8, "patrol": [[6, 21.8], [17, 21.8]]},
     {"kind": "redscarf", "x": 9.5, "y": 19.2, "facing": 120},
     {"kind": "rifleman", "x": 21, "y": 9.4, "facing": 90},
-    {"kind": "pistolero", "x": 19.3, "y": 16.5, "patrol": [[19.3, 16.5], [19.3, 10.5]]},
+    {"kind": "cowboy", "x": 19.3, "y": 16.5, "patrol": [[19.3, 16.5], [19.3, 10.5]]},
     {"kind": "rifleman", "x": 23.3, "y": 19.3, "facing": 180},
     {"kind": "redscarf", "x": 19.2, "y": 23.6, "patrol": [[19.2, 23.6], [23, 23.6], [23, 29], [19.2, 29]]},
-    {"kind": "pistolero", "x": 13.2, "y": 23.0, "facing": 300},
+    {"kind": "drunkard", "x": 13.2, "y": 23.0, "facing": 300},
     {"kind": "rifleman", "x": 30.5, "y": 23, "patrol": [[30.5, 23], [37, 23]]},
     {"kind": "pistolero", "x": 5, "y": 9.6, "patrol": [[5, 9.6], [17.5, 9.6]]},
-    {"kind": "jefe", "x": 34, "y": 19.4, "facing": 135}
+    {"kind": "jefe", "x": 34, "y": 19.4, "facing": 135},
+    {"kind": "gambler", "x": 6.6, "y": 17.6, "facing": 100},
+    {"kind": "saloon_girl", "x": 10.4, "y": 17.5, "facing": 70},
+    {"kind": "poacher", "x": 35.5, "y": 9.5, "facing": 150},
+    {"kind": "oldtimer", "x": 27.5, "y": 23.4, "facing": 250}
   ]
 }
