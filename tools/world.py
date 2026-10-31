@@ -622,6 +622,81 @@ def coffin():
     return m
 
 
+# ---------------------------------------------------------------- broken props
+
+# Props that shooting wears down: each gets a damaged and a wrecked look.
+BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon")
+RAW_WOOD = np.array([214, 178, 128], float)   # fresh splinters
+
+
+def damaged(m, seed):
+    """Shot up: holes torn through the boards, raw wood round them, a few splinters
+    sticking out."""
+    rng = np.random.default_rng(seed)
+    P = m.P
+    lo, hi = P.min(0), P.max(0)
+    size = hi - lo
+    keep = np.ones(len(P), bool)
+    raw = np.zeros(len(P), bool)
+    out = Cloud()
+    for _ in range(int(4 + 3 * max(1.0, size[0] * size[1]))):
+        c = P[rng.integers(len(P))]
+        r = rng.uniform(0.05, 0.11) * max(1.0, min(size[0], size[1]) * 1.2)
+        d = np.linalg.norm(P - c, axis=1)
+        keep &= d > r
+        raw |= (d > r) & (d < r * 1.7)
+        for _ in range(2):   # splinters
+            a = rng.uniform(0, 2 * math.pi)
+            tip = c + np.array([math.cos(a), math.sin(a), rng.uniform(0.0, 0.5)]) * rng.uniform(0.08, 0.16)
+            out += beam(c, tip, 0.012, tuple(RAW_WOOD))
+    C = m.C.copy()
+    C[raw] = C[raw] * 0.4 + RAW_WOOD * 0.6
+    out += Cloud(P[keep], m.N[keep], C[keep], m.S[keep])
+    return out
+
+
+def wrecked(m, kind, seed):
+    """Shot to pieces: a low heap of broken boards where it stood, in its own wood."""
+    rng = np.random.default_rng(seed)
+    lo, hi = m.P.min(0), m.P.max(0)
+    col = np.array({"trough": (116, 88, 60)}.get(kind, np.median(m.C, axis=0)), float)   # (not the water)
+    out = Cloud()
+    area = (hi[0] - lo[0]) * (hi[1] - lo[1])
+    for _ in range(int(6 + 9 * area)):
+        a = rng.uniform(0, math.pi)
+        L = rng.uniform(0.25, 0.7)
+        c = np.array([rng.uniform(lo[0], hi[0]), rng.uniform(lo[1], hi[1]), rng.uniform(0.02, 0.16)])
+        d = np.array([math.cos(a), math.sin(a), rng.uniform(-0.25, 0.25)]) * L / 2
+        shade = tuple(np.clip(col * rng.uniform(0.75, 1.15), 0, 255))
+        out += beam(c - d, c + d, rng.uniform(0.025, 0.04), shade)
+        if rng.random() < 0.4:
+            out += beam(c + d * 0.6, c + d * 0.6 + np.array([0, 0, 0.06]), 0.012, tuple(RAW_WOOD))
+    cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
+    if kind == "barrel":
+        for k in range(2):   # the hoops, fallen loose
+            ring = Cloud()
+            for i in range(24):
+                t0, t1 = i / 24 * 2 * math.pi, (i + 1) / 24 * 2 * math.pi
+                p0 = (cx + 0.3 * math.cos(t0) + k * 0.12, cy + 0.26 * math.sin(t0), 0.03 + k * 0.03)
+                p1 = (cx + 0.3 * math.cos(t1) + k * 0.12, cy + 0.26 * math.sin(t1), 0.03 + k * 0.03)
+                ring += beam(p0, p1, 0.015, (60, 54, 50))
+            out += ring
+    elif kind == "wagon":
+        out += wheel((lo[0] + 0.7, hi[1] + 0.05, 0.5), 0.52)             # one still standing
+        flat = wheel((0, 0, 0), 0.52)
+        flat.transform(np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float))   # one lying flat
+        flat.translate((hi[0] - 0.8, cy, 0.06))
+        out += flat
+    return out
+
+
+def prop_states(kind):
+    """The three looks of a breakable prop: whole, shot up, wrecked."""
+    m = BUILDINGS[kind][0]()
+    seed = sum(map(ord, kind))
+    return [m, damaged(m, seed), wrecked(m, kind, seed + 1)]
+
+
 def hitch():
     m = Cloud()
     wood = (110, 80, 54)

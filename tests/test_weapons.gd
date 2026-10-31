@@ -7,7 +7,7 @@ class MockGame:
 	var shots := 0
 	var sounds: Array[String] = []
 	func sfx(n: String, _p = null, _v := 0.0, _pv := 0.0) -> void: sounds.append(n)
-	func spawn_bullet(_o, _v, _r, _d, _s, _h, _p) -> void: shots += 1
+	func spawn_bullet(_o, _v, _r, _d, _s, _h, _p, _pi := 0) -> void: shots += 1
 	func muzzle_flash(_h, _d) -> void: pass
 	func make_noise(_p, _r, _k, _s) -> void: pass
 

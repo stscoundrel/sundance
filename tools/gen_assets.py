@@ -96,6 +96,12 @@ def gen_world(meta):
                                  "collide": collide, "fade": fade,
                                  "colliders": colliders or [[0, 0, fp[0], fp[1]]],
                                  "doors": _doorsteps(world.DOORS)}
+        if name in world.BREAKABLE:   # shot up, then shot to pieces
+            meta["objects"][name]["states"] = []
+            for i, sm in enumerate(world.prop_states(name)[1:]):
+                im, anc = render(sm, edges=True)
+                meta["objects"][name]["states"].append({"file": save(im, f"sprites/world/{name}_{i + 1}.png"),
+                                                        "anchor": list(anc)})
         if world.WINDOWS:
             meta["objects"][name]["shutters"] = _shutters(name, list(world.WINDOWS), model)
             meta["objects"][name]["paint"] = "adobe" if name.startswith("adobe") or name == "cantina" else "wood"
@@ -758,6 +764,14 @@ def gen_sfx(meta):
                                       (0.09, knock(rng, 260, 0.03, 0.12) * 1.6 + thunk(180, 0.05) * 1.4),
                                       (0.17, knock(rng, 300, 0.025, 0.12) * 1.2 + thunk(200, 0.04))]), rng, 0.09, 0.4),
           meta, 0.85, 1.4)
+    # A round into wood: a dry crack and a spray of splinters.
+    write("wood_hit", room(place(0.25, [(0, knock(rng, 1400, 0.012, 0.12) * 1.4 + thunk(900, 0.015)),
+                                        (0.006, rasp(0.06, 2500, 7000) * 0.5)]), rng, 0.05, 0.25), meta, 0.7, 1.4)
+    # A crate, barrel or wagon giving way: boards cracking and clattering down.
+    parts = [(0.0, knock(rng, 600, 0.03, 0.12) * 1.6 + thunk(300, 0.05) * 1.4)]
+    for st in (0.08, 0.15, 0.21, 0.3, 0.38):
+        parts.append((st, knock(rng, rng.uniform(700, 1500), 0.015, 0.08) * rng.uniform(0.5, 1.0)))
+    write("wood_break", room(place(0.6, parts), rng, 0.08, 0.35), meta, 0.85, 1.5)
 
 
 def main():

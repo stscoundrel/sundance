@@ -56,7 +56,15 @@ const PEEK_GAP := 1.5        # s without a shot before the next one is a new pee
 const SPOT_FORGET := 35.0    # s unused and the gang forgets it
 const SPOT_HOT := 2          # peeks before they start watching it
 const WATCHERS := 2          # at most this many on one spot; the rest keep moving
-var fire_spots: Array[Dictionary] = []   # {centre, points (newest first), peeks, kills, last_t}                # {door, sprite, squad, heat, rallied, cause, spawn_t, runner, runner_cd, fight_t, alarm}   # fresh graves: {at, mourners, done}
+var fire_spots: Array[Dictionary] = []
+# Cover that wears: crates, barrels, coffins, troughs and wagons take the rounds that
+# hit them, look shot up past half, and fall to a heap of boards (no longer cover,
+# nor in anyone's way). A damaged trough leaks. Toughness decides which rounds go
+# straight through (a Winchester through a crate, a Sharps through a barrel too).
+const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33}
+const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3}
+var props: Array[Dictionary] = []   # {kind, sprite, body, g, fp, hp, state, cells, covers}
+var _solid := {}                    # cell -> how many things block it   # {centre, points (newest first), peeks, kills, last_t}                # {door, sprite, squad, heat, rallied, cause, spawn_t, runner, runner_cd, fight_t, alarm}   # fresh graves: {at, mourners, done}
 var innocent_t := 0.0               # the town's disapproval, on screen for a moment
 const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
 const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
@@ -391,6 +399,11 @@ func _place_object(type: String, g: Vector2) -> void:
 			shutters.append(sh)
 
 	var collide: String = m["collide"]
+	var prop := {}
+	if m.has("states"):
+		prop = {"kind": type, "sprite": spr, "g": g, "fp": fp, "hp": PROP_HP[type], "state": 0,
+			"cells": [], "covers": [], "body": null}
+		props.append(prop)
 	if collide != "none":
 		var body := StaticBody2D.new()
 		body.collision_layer = {"wall": Iso.LAYER_WALL, "cover": Iso.LAYER_COVER, "post": Iso.LAYER_POST}[collide]
@@ -403,31 +416,54 @@ func _place_object(type: String, g: Vector2) -> void:
 			var poly := CollisionPolygon2D.new()
 			poly.polygon = Iso.rect_poly(x0, y0, x1, y1)
 			body.add_child(poly)
-			_block_cells(x0, y0, x1, y1, 0.22)
+			var cells := _block_cells(x0, y0, x1, y1, 0.22)
+			var covers: Array[Vector2] = []
 			if collide != "post":
-				_add_cover_points(x0, y0, x1, y1, collide == "wall")
+				covers = _add_cover_points(x0, y0, x1, y1, collide == "wall")
+			if not prop.is_empty():
+				prop["cells"].append_array(cells)
+				prop["covers"].append_array(covers)
 		statics.add_child(body)
+		if not prop.is_empty():
+			prop["body"] = body
+			body.set_meta("prop", prop)
 	if m["fade"]:
 		buildings.append({"sprite": spr, "x0": g.x, "y0": g.y, "x1": g.x + fp.x, "y1": g.y + fp.y})
 
 
-func _block_cells(x0: float, y0: float, x1: float, y1: float, pad: float) -> void:
+func _block_cells(x0: float, y0: float, x1: float, y1: float, pad: float) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
 	for i in range(int(floor((x0 - pad) * 2.0)), int(ceil((x1 + pad) * 2.0))):
 		for j in range(int(floor((y0 - pad) * 2.0)), int(ceil((y1 + pad) * 2.0))):
 			var c := Vector2i(i, j)
 			if astar.is_in_boundsv(c):
 				astar.set_point_solid(c, true)
+				_solid[c] = _solid.get(c, 0) + 1
+				out.append(c)
+	return out
 
 
-func _add_cover_points(x0: float, y0: float, x1: float, y1: float, wall: bool) -> void:
+## Free cells something no longer blocks (unless something else still does).
+func _unblock_cells(cells: Array) -> void:
+	for c in cells:
+		_solid[c] = _solid.get(c, 1) - 1
+		if _solid[c] <= 0:
+			_solid.erase(c)
+			astar.set_point_solid(c, false)
+
+
+func _add_cover_points(x0: float, y0: float, x1: float, y1: float, wall: bool) -> Array[Vector2]:
 	var o := 0.55
 	var cx := (x0 + x1) * 0.5
 	var cy := (y0 + y1) * 0.5
 	var pts := [Vector2(cx, y0 - o), Vector2(cx, y1 + o), Vector2(x0 - o, cy), Vector2(x1 + o, cy)]
 	if wall:
 		pts += [Vector2(x0 - o, y0 - o), Vector2(x1 + o, y0 - o), Vector2(x0 - o, y1 + o), Vector2(x1 + o, y1 + o)]
+	var out: Array[Vector2] = []
 	for p in pts:
 		cover_points.append(Iso.to_screen(p))
+		out.append(Iso.to_screen(p))
+	return out
 
 
 func _spawn_actors() -> void:
@@ -1260,9 +1296,11 @@ func add_shake(amount: float) -> void:
 	shake = max(shake, amount)
 
 
-func spawn_bullet(origin: Vector2, vel: Vector2, range_px: float, damage: int, shooter: Actor, height: float, pellet: bool) -> void:
+func spawn_bullet(origin: Vector2, vel: Vector2, range_px: float, damage: int, shooter: Actor, height: float,
+		pellet: bool, pierce := 0) -> void:
 	var b := Bullet.new()
 	b.setup(self, origin, vel, range_px, damage, shooter, height, pellet)
+	b.pierce = pierce
 	world.add_child(b)
 
 
@@ -1494,6 +1532,81 @@ func watch_post(e: Enemy) -> Dictionary:
 	return best
 
 
+# ------------------------------------------------------------------ cover that wears
+
+func prop_centre(prop: Dictionary) -> Vector2:
+	return Iso.to_screen(prop["g"] + prop["fp"] * 0.5)
+
+
+## A round strikes a prop: it takes the damage, and its look changes as it goes.
+## Returns true if the round carries on through (thin enough for the gun).
+func hit_prop(prop: Dictionary, dmg: int, pierce: int, at: Vector2) -> bool:
+	if prop["state"] >= 2:
+		return true
+	prop["hp"] -= dmg
+	sfx("wood_hit", at, -6.0, 0.15)
+	var full: int = PROP_HP[prop["kind"]]
+	if prop["hp"] <= 0:
+		_prop_state(prop, 2)
+		return true
+	if prop["state"] == 0 and prop["hp"] <= full * 0.55:
+		_prop_state(prop, 1)
+	return pierce >= PROP_TOUGH[prop["kind"]]
+
+
+func _prop_state(prop: Dictionary, n: int) -> void:
+	prop["state"] = n
+	var m: Dictionary = meta["objects"][prop["kind"]]
+	var st: Dictionary = m["states"][n - 1]
+	var spr: Sprite2D = prop["sprite"]
+	var base := (Iso.to_screen(prop["g"]) - spr.position) / tex_scale
+	spr.texture = tex(st["file"])
+	spr.offset = (base - Vector2(st["anchor"][0], st["anchor"][1])).round()
+	var c := prop_centre(prop)
+	if prop["kind"] == "trough":
+		_leak(c + Vector2(0, 10), 14.0 if n == 1 else 24.0)   # the water's getting out, into the street
+	if n == 2:
+		# down to a heap of boards: no cover, nothing in anyone's way
+		sfx("wood_break", c, -2.0, 0.1)
+		if prop["body"]:
+			prop["body"].queue_free()
+			prop["body"] = null
+		_unblock_cells(prop["cells"])
+		for p in prop["covers"]:
+			cover_points.erase(p)
+		spr.z_index = -1   # it lies flat now: people walk over it
+		stats["cover wrecked"] = stats.get("cover wrecked", 0) + 1
+	else:
+		stats["cover damaged"] = stats.get("cover damaged", 0) + 1
+
+
+## The cover the stranger's crouched behind, for a bandit to put rounds into: still
+## standing, right by where he was last seen, and in view and reach of this man,
+## with no more than two at it already.
+func cover_to_break(e: Enemy, near: Vector2) -> Dictionary:
+	for prop in props:
+		if prop["state"] >= 2 or prop_centre(prop).distance_to(near) > Enemy.BREAK_NEAR:
+			continue
+		var c := prop_centre(prop)
+		if e.global_position.distance_to(c) > e.weapon.d["range"] * 0.8 or not line_of_sight(e.global_position, c, false):
+			continue
+		var n := 0
+		for o in enemies:
+			n += 1 if o != e and o.alive and o.suppress_t > 0.0 and o.breaking == prop else 0
+		if n < 2:
+			return prop
+	return {}
+
+
+## A puddle spreading from a holed trough over a few seconds.
+func _leak(at: Vector2, r: float) -> void:
+	var wet := Color(0.13, 0.15, 0.18, 0.42)
+	for i in 5:
+		var tw := create_tween()
+		tw.tween_interval(i * 1.2)
+		tw.tween_callback(func(): decals.add(at + Vector2(randf_range(-8, 8), i * 2.5), r * (0.5 + 0.2 * i), wet))
+
+
 ## The stranger walks over a gun he hasn't got (a Colt, a coach gun, a Winchester):
 ## it's his. The cartridges lying by it are his to pick up as usual.
 func _pick_up_guns() -> void:
@@ -1550,7 +1663,7 @@ func anim_event(a: Actor, ev: String) -> void:
 	world.add_child(puff)
 
 
-func impact(pos: Vector2, height: float, vel: Vector2, wall: bool) -> void:
+func impact(pos: Vector2, height: float, vel: Vector2, wall: bool, hole := true) -> void:
 	var puff := Puff.new()
 	var back := -vel.normalized()
 	if wall:
@@ -1564,7 +1677,8 @@ func impact(pos: Vector2, height: float, vel: Vector2, wall: bool) -> void:
 			puff.smoke(at, back.rotated(randf_range(-0.6, 0.6)) * randf_range(8, 25), randf_range(1.0, 1.8),
 				randf_range(1.5, 2.5), Color(0.84, 0.72, 0.56, 0.5), 5.0, WIND * 0.5)
 		puff.add(at, back * 20.0, 0.07, 1.6, Color(1, 0.92, 0.6, 1))
-		puff.mark(at, 25.0, 1.4, Color(0.13, 0.09, 0.07, 0.95))
+		if hole:   # (not in a prop: it'll change, or be gone)
+			puff.mark(at, 25.0, 1.4, Color(0.13, 0.09, 0.07, 0.95))
 		if randf() < 0.3:
 			sfx("ricochet", pos, -8.0, 0.15)
 	else:

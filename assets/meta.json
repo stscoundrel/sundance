@@ -148538,7 +148538,23 @@
      0.8
     ]
    ],
-   "doors": []
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/crate_1.png",
+     "anchor": [
+      45,
+      51
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/crate_2.png",
+     "anchor": [
+      39,
+      13
+     ]
+    }
+   ]
   },
   "barrel": {
    "file": "res://assets/sprites/world/barrel.png",
@@ -148560,7 +148576,23 @@
      0.55
     ]
    ],
-   "doors": []
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/barrel_1.png",
+     "anchor": [
+      33,
+      46
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/barrel_2.png",
+     "anchor": [
+      38,
+      13
+     ]
+    }
+   ]
   },
   "wagon": {
    "file": "res://assets/sprites/world/wagon.png",
@@ -148582,7 +148614,23 @@
      1.05
     ]
    ],
-   "doors": []
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/wagon_1.png",
+     "anchor": [
+      51,
+      52
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/wagon_2.png",
+     "anchor": [
+      48,
+      11
+     ]
+    }
+   ]
   },
   "trough": {
    "file": "res://assets/sprites/world/trough.png",
@@ -148604,7 +148652,23 @@
      0.56
     ]
    ],
-   "doors": []
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/trough_1.png",
+     "anchor": [
+      33,
+      35
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/trough_2.png",
+     "anchor": [
+      19,
+      7
+     ]
+    }
+   ]
   },
   "coffin": {
    "file": "res://assets/sprites/world/coffin.png",
@@ -148626,7 +148690,23 @@
      0.56
     ]
    ],
-   "doors": []
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/coffin_1.png",
+     "anchor": [
+      34,
+      25
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/coffin_2.png",
+     "anchor": [
+      42,
+      9
+     ]
+    }
+   ]
   },
   "hitch": {
    "file": "res://assets/sprites/world/hitch.png",
@@ -148785,7 +148865,9 @@
   "sting": "res://assets/sfx/sting.wav",
   "win": "res://assets/sfx/win.wav",
   "lose": "res://assets/sfx/lose.wav",
-  "shutter": "res://assets/sfx/shutter.wav"
+  "shutter": "res://assets/sfx/shutter.wav",
+  "wood_hit": "res://assets/sfx/wood_hit.wav",
+  "wood_break": "res://assets/sfx/wood_break.wav"
  },
  "ground": {
   "file": "res://assets/sprites/ground.png",

@@ -130,7 +130,13 @@ var watch_spot: Dictionary = {}
 var watch_t := 0.0
 var watch_cd := 0.0
 var watch_look := 0.0
-var ready_t := 0.0         # he was waiting for him: a moment where nothing pulls him off the shot
+var ready_t := 0.0
+const ALERT_OVER := 130.0   # px: in a fight, he sees a crouched man over low cover this close
+# Breaking his cover: the stranger's gone to ground behind a crate (or barrel,
+# trough...) they can see: a couple of them put rounds into it.
+const BREAK_NEAR := 34.0    # px: last seen this close to it, he's behind it
+const BREAK_LINES := ["Shoot through it!", "¡Tírenle a la caja!", "Splinter that crate!", "Flush him out!"]
+var breaking: Dictionary = {}         # he was waiting for him: a moment where nothing pulls him off the shot
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -234,6 +240,8 @@ func half_fov() -> float:
 func visibility_of(pos: Vector2, low: bool, check_near := true) -> float:
 	var to := pos - global_position
 	var dist := to.length()
+	if low and st == St.COMBAT and dist < ALERT_OVER:
+		low = false   # in a fight and this close, he's watching for a head over that crate
 	var rng := view_range()
 	if dist > rng:
 		return 0.0
@@ -251,7 +259,7 @@ func _perceive(delta: float) -> void:
 	var p: Player = game.player
 	var vis := 0.0
 	if p.alive:
-		vis = visibility_of(p.global_position, p.crouched)
+		vis = visibility_of(p.global_position, p.low_profile())
 	sees_player = vis > 0.0
 	if sees_player:
 		game.report_sighting(p.global_position)
@@ -909,6 +917,9 @@ func _combat(delta: float) -> void:
 	if suppress_t > 0.0 and ready_t <= 0.0:
 		_suppress(delta, spec)
 		return
+	breaking = {}
+	if not sees_player and _break_cover():
+		return
 	if sees_player or (at_cover and fight_pos != Vector2.INF and lost_t < 4.0):
 		hunt_target = Vector2.INF   # a fresh hunt once he's lost again
 		_fight(delta, p, to, dist, spec)
@@ -958,6 +969,8 @@ func _watch(delta: float, p: Player) -> bool:
 		watch_at = post["at"]
 		watch_spot = post["spot"]
 		watch_t = 0.0
+		suppress_t = 0.0   # he holds his fire for the corner now
+		breaking = {}
 		_log("watches a corner")
 		if shout_t <= 0.0 and randf() < 0.5:
 			_say(_line("watch", WATCH_LINES))
@@ -983,6 +996,21 @@ func _watch(delta: float, p: Player) -> bool:
 	crouched = false   # up and ready, not ducking
 	aiming = true
 	desired = (watch_at - global_position).normalized()
+	return true
+
+
+## He's behind that crate: shoot the crate. Covering fire aimed at the boards.
+func _break_cover() -> bool:
+	if lost_t < 0.3 or game.staleness() > game.FRESH * 0.5:
+		return false
+	var prop: Dictionary = game.cover_to_break(self, last_known)
+	if prop.is_empty() or not suppress(game.prop_centre(prop), 4.0):
+		return false
+	suppress_at = game.prop_centre(prop)   # dead on the boards, not about the spot
+	breaking = prop
+	_log("shoots the cover")
+	if shout_t <= 0.0 and randf() < 0.4:
+		_say(_line("break", BREAK_LINES))
 	return true
 
 
@@ -1233,6 +1261,7 @@ func suppress(at: Vector2, seconds: float) -> bool:
 	if global_position.distance_to(at) > weapon.d["range"] * 0.8 or not game.line_of_sight(global_position, at, false):
 		return false
 	single_shot = false
+	breaking = {}   # (whoever wants it shot at, it's not his own crate-breaking now)
 	suppress_t = seconds
 	suppress_at = at + Vector2(randf_range(-14, 14), randf_range(-8, 8))
 	shot_cd = randf_range(0.0, 0.5)

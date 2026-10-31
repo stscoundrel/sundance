@@ -2,7 +2,8 @@ class_name Bullet
 extends Node2D
 ## A fast projectile traced along the ground plane and drawn at gun height.
 ## Low cover stops it, unless the shooter is right behind that cover or the target
-## just past it is standing (shooting over a crate).
+## just past it is standing (shooting over a crate). A crate, barrel and the like
+## takes the hit (see game.hit_prop), and a round strong enough goes on through.
 
 var game: Node
 var vel := Vector2.ZERO
@@ -11,6 +12,7 @@ var damage := 1
 var shooter: Actor
 var h := 20.0
 var pellet := false
+var pierce := 0
 var travelled := 0.0
 var exclude: Array[RID] = []
 var scared: Array[Actor] = []
@@ -51,6 +53,15 @@ func _physics_process(delta: float) -> void:
 			if hp.distance_to(shooter.global_position) < 26.0 or _standing_target_behind(hp):
 				exclude.append(col.get_rid())
 				continue
+			if col.has_meta("prop"):
+				game.impact(hp, h, vel, true, false)
+				if game.hit_prop(col.get_meta("prop"), damage, pierce, hp):
+					exclude.append(col.get_rid())   # through the boards, a little spent
+					damage = maxi(1, damage - 1)
+					continue
+				_scare_impact(hp)
+				queue_free()
+				return
 		game.impact(hp, h, vel, true)
 		_scare_impact(hp)
 		queue_free()

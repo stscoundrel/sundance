@@ -1,6 +1,7 @@
 class_name Weapon
 extends RefCounted
-## Period-authentic firearms, described by data. Three kinds of action:
+## Period-authentic firearms, described by data. "pierce" is how much wood a round
+## goes through: 1 a crate or coffin (the Winchester), 2 a barrel too (the Sharps). Three kinds of action:
 ##   revolver - Colt Single Action Army: six chambers, cocked per shot, gate loading.
 ##              A pair ("twin") holds twelve, fired right hand, left hand, in turn.
 ##              The old cap-and-ball Navy loads each chamber from the front: slow.
@@ -20,7 +21,7 @@ const DATA := {
 		"range": 380.0, "spread": 2.2, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.32,
 		"shake": 2.0, "smoke": 9,
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
-	"rifle": {"name": "WINCHESTER 1866", "action": "lever", "damage": 2, "speed": 900.0, "range": 620.0,
+	"rifle": {"name": "WINCHESTER 1866", "action": "lever", "damage": 2, "pierce": 1, "speed": 900.0, "range": 620.0,
 		"spread": 0.6, "pellets": 1, "noise": 480.0, "sfx": "rifle", "cycle": 0.45, "shake": 2.5, "smoke": 11,
 		"status": {"cycle": "LEVER", "open": "LOADING GATE", "close": ""}},
 	"coach": {"name": "COACH GUN  10 GA", "action": "breech", "barrels": 2, "volley": true,
@@ -60,7 +61,7 @@ const DATA := {
 		"status": {"cycle": "COCKING", "open": "BARRELS UP", "close": "CLOSING"}},
 	# Sharps 1874 buffalo rifle: one round, falling block, hits like a train, long reload.
 	"sharps": {"name": "SHARPS 1874", "action": "breech", "barrels": 1, "hammer": true,
-		"damage": 3, "speed": 1100.0, "range": 820.0, "spread": 0.3, "pellets": 1, "noise": 600.0,
+		"damage": 3, "pierce": 2, "speed": 1100.0, "range": 820.0, "spread": 0.3, "pellets": 1, "noise": 600.0,
 		"sfx": "sharps", "cycle": 0.45, "shake": 4.0, "smoke": 16, "smoke_push": 1.3,
 		"open": [0.4, "lever"], "eject": [0.35, "eject"], "insert": [0.55, "shell_in"], "close": [0.35, "lever"],
 		"status": {"cycle": "COCKING", "open": "BLOCK DOWN", "close": "BLOCK UP"}},
@@ -422,7 +423,7 @@ func _shoot(mult: int, extra_spread := 0.0) -> void:
 			a = randf_range(-spread, spread) * (1.25 if mult > 1 else 1.0)
 			rng *= randf_range(0.75, 1.1)
 		h.game.spawn_bullet(origin, dir.rotated(a) * d["speed"] * randf_range(0.93, 1.05), rng,
-			d["damage"], h, h.gun_height(), d["pellets"] > 1)
+			d["damage"], h, h.gun_height(), d["pellets"] > 1, int(d.get("pierce", 0)))
 	h.game.muzzle_flash(h, dir)
 	h.play_action("fire_l" if hand == 1 else "fire")
 	_snd(d["sfx"], 2.0 if mult > 1 else 0.0)

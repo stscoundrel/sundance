@@ -171,6 +171,25 @@ carried, which you collect by walking over them.
   that follows is over each man falls back in on the leader. If the leader dies, the
   next man takes over. `tests/test_posse.gd` checks they gather, stay together,
   cover most of the town and re-form after a fight.
+- **Cover that wears**: crates, coffins, barrels, water troughs and wagons stop
+  rounds, but not for long: every round that hits one is damage to it (crate 9,
+  coffin 8, barrel 12, trough 21, wagon 33; a Colt round 2, each pellet 1, so a crate
+  takes five Colt rounds, or a coach gun blast that lands square plus a little more). Below about half it looks shot up (holes,
+  raw splinters), and at nothing it's a heap of boards: no longer cover, nobody's
+  way blocked, the cover points gone. A holed trough leaks: a dark puddle spreads
+  out in front of it. Strong rounds go through thin wood, one point of damage
+  weaker for it: a Winchester through a crate or coffin, a Sharps through a barrel
+  too; troughs and wagons stop everything. Each hit cracks, and the last one brings
+  it down with a clatter.
+- **Seeing behind cover**: crouched behind something and holding still, the
+  stranger is hard to make out; firing over it gives him away for a second (he
+  rises to shoot, and there's the flash). Bandits in a fight within ~130 px see a
+  crouched man over low cover anyway: they're watching for him. Calm guards don't,
+  so creeping up behind crates still works. Once he's gone to ground behind a crate
+  (or barrel, trough...) by where he was last seen, up to two bandits who can see it
+  put rounds into it ("Splinter that crate!"); the rest carry on. `tests/test_cover.gd`
+  covers the wear, the damage looks, the leak, which rounds go through what, the
+  eyes, and the breakers.
 - **Corner watching**: the gang remembers where the stranger shoots from. Each shot
   is filed under a *spot*, a loose cluster: within ~90 px of its centre or ~50 px of
   any place he's fired from there, so the two corners of a small house, or turning

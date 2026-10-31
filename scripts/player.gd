@@ -35,6 +35,7 @@ var knife_target: Enemy = null
 var knife_quiet := false
 var knife_t := -1.0            # time into the lunge; < 0 when not lunging
 var knife_cd := 0.0
+var exposed_t := 0.0           # he's just fired: up over his cover, flash and smoke
 
 
 func setup(g: Node, pos: Vector2) -> void:
@@ -56,6 +57,7 @@ func _physics_process(delta: float) -> void:
 		return
 	var playing: bool = game.state == "play"
 	knife_cd = maxf(0.0, knife_cd - delta)
+	exposed_t = maxf(0.0, exposed_t - delta)
 	if knife_t >= 0.0:
 		_lunge(delta)
 		update_anim(delta)
@@ -260,7 +262,14 @@ func spread_radius() -> float:
 	return tan(deg_to_rad(deg)) * aim_dist
 
 
+## Crouched behind something and not shooting from it: hard to make out. A man who
+## fires rises over his cover for a moment, and the flash gives him away.
+func low_profile() -> bool:
+	return crouched and exposed_t <= 0.0
+
+
 func on_fired(shake: float) -> void:
+	exposed_t = 1.0
 	bloom += 0.7 if weapon.kind != "rifle" else 0.4
 	game.add_shake(shake)
 
