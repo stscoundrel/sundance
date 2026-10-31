@@ -119,6 +119,18 @@ var opportunist := 0.0   # 0..1: shoots while he isn't looking, wavers when he i
 var sights_t := 0.0      # how long the stranger has had her in his sights
 var waver_cd := 0.0
 var runner_to := Vector2.INF   # the den door he's running to, to fetch the reserve
+# Watching a corner: the stranger keeps peeking out of the same spot, so he holds his
+# gun on it (see game.watch_post), ready, and shoots the moment he shows there.
+const WATCH_MAX := 10.0    # s at most, then he moves again
+const WATCH_CD := 8.0      # s before he'll settle to watch again
+const WATCH_NEAR := 45.0   # px: the stranger shows this close to it and he's ready for him
+const WATCH_LINES := ["Watch that corner!", "He'll be back out there...", "¡Ojo, la esquina!", "I got him covered."]
+var watch_at := Vector2.INF
+var watch_spot: Dictionary = {}
+var watch_t := 0.0
+var watch_cd := 0.0
+var watch_look := 0.0
+var ready_t := 0.0         # he was waiting for him: a moment where nothing pulls him off the shot
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -892,7 +904,9 @@ func _combat(delta: float) -> void:
 
 	if opportunist > 0.0 and _waver(delta):
 		return
-	if suppress_t > 0.0:
+	if _watch(delta, p):
+		return   # his gun's on that corner; covering fire is for the others
+	if suppress_t > 0.0 and ready_t <= 0.0:
 		_suppress(delta, spec)
 		return
 	if sees_player or (at_cover and fight_pos != Vector2.INF and lost_t < 4.0):
@@ -927,6 +941,57 @@ func _combat(delta: float) -> void:
 				desired = Vector2.from_angle(randf() * TAU)
 
 
+## Keeping his gun on the corner the stranger keeps coming out of. Only a couple of
+## them do, and not for long: the rest keep closing in. True while he's watching.
+func _watch(delta: float, p: Player) -> bool:
+	watch_cd -= delta
+	if watch_at == Vector2.INF:
+		if sees_player or watch_cd > 0.0 or lost_t < 0.5:
+			return false
+		watch_look -= delta
+		if watch_look > 0.0:
+			return false
+		watch_look = 0.5
+		var post: Dictionary = game.watch_post(self)
+		if post.is_empty():
+			return false
+		watch_at = post["at"]
+		watch_spot = post["spot"]
+		watch_t = 0.0
+		_log("watches a corner")
+		if shout_t <= 0.0 and randf() < 0.5:
+			_say(_line("watch", WATCH_LINES))
+	if sees_player:
+		if p.global_position.distance_to(watch_at) < WATCH_NEAR:
+			# there he is, right where he was waiting for him
+			react = minf(react, 0.08)
+			aim_t = maxf(aim_t, 0.35 * reflex)
+			suppress_t = 0.0   # no more blind covering fire: he's got him
+			ready_t = 0.6
+			fight_pos = global_position   # he shoots from where he stands
+			settled = true
+			fight_repick = 2.0
+			shot_cd = minf(shot_cd, 0.0)
+			_log("was ready for him")
+		_stop_watching(WATCH_CD * 0.5)
+		return false
+	watch_t += delta
+	if watch_t > WATCH_MAX or not game.spot_hot(watch_spot):
+		_stop_watching(WATCH_CD)
+		return false
+	velocity = Vector2.ZERO
+	crouched = false   # up and ready, not ducking
+	aiming = true
+	desired = (watch_at - global_position).normalized()
+	return true
+
+
+func _stop_watching(cd: float) -> void:
+	watch_at = Vector2.INF
+	watch_spot = {}
+	watch_cd = cd
+
+
 ## The firefight itself. He picks a fighting position: cover near his own flank
 ## slot that hides him crouched but lets him shoot standing, or the bare slot if
 ## there's none. He ducks behind cover and pops up to shoot, never fires on the
@@ -952,11 +1017,16 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 		and not (opportunist > 0.0 and sights_t > 0.0) \
 		and dist < weapon.d["range"] * 0.85 and weapon.can_fire() \
 		and not game.ally_in_line(self, global_position, p.global_position)
-	if hold_t > 0.0:
+	var ready := ready_t > 0.0
+	if ready:
+		ready_t -= delta   # waiting for him at that corner: no moving, no ducking
+		velocity = Vector2.ZERO
+		crouched = false
+	elif hold_t > 0.0:
 		hold_t -= delta
 		velocity = Vector2.ZERO
 		return
-	if must_fire and sidestep_t <= 0.0 and covered_t <= 0.0:
+	elif must_fire and sidestep_t <= 0.0 and covered_t <= 0.0:
 		velocity = Vector2.ZERO
 		crouched = false
 		peek_t = max(peek_t, 0.6)
@@ -981,7 +1051,7 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 		if dist < keep.x * 0.8 and not at_cover and since_shot < 1.2 and bold < 0.5:
 			velocity = -to.normalized() * walk   # too close: fire, then give ground
 
-	if at_cover and velocity == Vector2.ZERO:
+	if at_cover and velocity == Vector2.ZERO and not ready:
 		if peek_t > 0.0:
 			peek_t -= delta
 			crouched = false

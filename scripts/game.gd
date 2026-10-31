@@ -45,7 +45,18 @@ const DEN_HEAT := 7.0        # this much heat (about a shot each) and out they c
 const DEN_COOL := 0.25       # heat lost a second
 const RUNNER_AFTER := 3.0    # seconds of fighting before someone runs for help
 const RUNNER_CD := 15.0      # after a runner falls, before another goes
-var den := {}                # {door, sprite, squad, heat, rallied, cause, spawn_t, runner, runner_cd, fight_t, alarm}   # fresh graves: {at, mourners, done}
+var den := {}
+# Where the stranger has been shooting from: spots, each a cluster of the places he
+# fired from (the corners of one small house count as one spot, as does turning
+# from side to side). Bandits who've seen him peek out of one twice hold their aim
+# on it; the kills from each are counted too.
+const SPOT_SPAN := 90.0      # px from a spot's centre that still counts as it
+const SPOT_LINK := 50.0      # or this close to any place he fired from there
+const PEEK_GAP := 1.5        # s without a shot before the next one is a new peek
+const SPOT_FORGET := 35.0    # s unused and the gang forgets it
+const SPOT_HOT := 2          # peeks before they start watching it
+const WATCHERS := 2          # at most this many on one spot; the rest keep moving
+var fire_spots: Array[Dictionary] = []   # {centre, points (newest first), peeks, kills, last_t}                # {door, sprite, squad, heat, rallied, cause, spawn_t, runner, runner_cd, fight_t, alarm}   # fresh graves: {at, mourners, done}
 var innocent_t := 0.0               # the town's disapproval, on screen for a moment
 const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
 const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
@@ -1131,6 +1142,8 @@ func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void
 			den["alarm"] = pos
 			if den["heat"] >= DEN_HEAT:
 				rally("gunfire")
+	if kind == "shot" and source == player:
+		_note_fire(player.global_position)
 	if kind == "shot":
 		player_fired = true
 		report_sighting(pos)   # his muzzle flash and the crack give him away
@@ -1165,6 +1178,8 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 
 
 func _on_enemy_died(e: Actor) -> void:
+	if e.killer == player and not spot_at(player.global_position).is_empty():
+		spot_at(player.global_position)["kills"] += 1
 	for o in enemies:
 		if o.alive and o.global_position.distance_to(e.global_position) < 180.0:
 			o.witness_death(e.global_position, player.global_position)
@@ -1417,6 +1432,66 @@ func _spill_out(delta: float) -> void:
 	if randf() < 0.5:
 		en.say_line("spot", ["¡Vámonos!"])
 	stats["reinforcements"] = stats.get("reinforcements", 0) + 1
+
+
+# ------------------------------------------------------------------ firing spots
+
+func spot_at(at: Vector2) -> Dictionary:
+	for s in fire_spots:
+		if at.distance_to(s["centre"]) < SPOT_SPAN:
+			return s
+		for p in s["points"]:
+			if at.distance_to(p) < SPOT_LINK:
+				return s
+	return {}
+
+
+func _note_fire(at: Vector2) -> void:
+	fire_spots = fire_spots.filter(func(s): return clock - s["last_t"] < SPOT_FORGET)
+	var s := spot_at(at)
+	if s.is_empty():
+		s = {"centre": at, "points": [], "peeks": 0, "kills": 0, "last_t": -100.0}
+		fire_spots.append(s)
+	if clock - s["last_t"] > PEEK_GAP:
+		s["peeks"] += 1
+	s["last_t"] = clock
+	var pts: Array = s["points"]
+	for i in pts.size():
+		if pts[i].distance_to(at) < 14.0:
+			pts.remove_at(i)
+			break
+	pts.push_front(at)
+	if pts.size() > 4:
+		pts.pop_back()
+	var c := Vector2.ZERO
+	for p in pts:
+		c += p
+	s["centre"] = c / pts.size()
+
+
+func spot_hot(s: Dictionary) -> bool:
+	return s["peeks"] >= SPOT_HOT and clock - s["last_t"] < SPOT_FORGET
+
+
+## A place for him to keep his gun on: the newest firing place he can see of a
+## spot the stranger keeps shooting from, within his gun's reach, if the spot
+## hasn't got its watchers already.
+func watch_post(e: Enemy) -> Dictionary:
+	var best: Dictionary = {}
+	for s in fire_spots:
+		if not spot_hot(s) or (not best.is_empty() and s["last_t"] < best["spot"]["last_t"]):
+			continue
+		var n := 0
+		for o in enemies:
+			n += 1 if o.alive and o != e and o.watch_spot == s else 0
+		if n >= WATCHERS:
+			continue
+		for p in s["points"]:
+			var d := e.global_position.distance_to(p)
+			if d > 30.0 and d < e.weapon.d["range"] * 0.9 and line_of_sight(e.global_position, p, false):
+				best = {"spot": s, "at": p}
+				break
+	return best
 
 
 ## The stranger walks over a gun he hasn't got (a Colt, a coach gun, a Winchester):

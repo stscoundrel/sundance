@@ -171,6 +171,22 @@ carried, which you collect by walking over them.
   that follows is over each man falls back in on the leader. If the leader dies, the
   next man takes over. `tests/test_posse.gd` checks they gather, stay together,
   cover most of the town and re-form after a fight.
+- **Corner watching**: the gang remembers where the stranger shoots from. Each shot
+  is filed under a *spot*, a loose cluster: within ~90 px of its centre or ~50 px of
+  any place he's fired from there, so the two corners of a small house, or turning
+  from side to side, are one spot. A burst counts as one *peek* (a new one needs
+  1.5 s without a shot). Once he's peeked from a spot twice, up to two bandits who
+  can see one of its firing places from where they stand, within their gun's reach,
+  hold their aim on it (sometimes calling "Watch that corner!"), standing ready
+  instead of ducking or giving covering fire. If he shows within ~45 px of it they
+  have him: almost no reaction time, already aimed, and a moment in which nothing
+  pulls them off the shot. Everyone else carries on as before (flanking, closing
+  in), a watch lasts at most 10 s, then that man moves again and won't settle to
+  watch for 8 s, and a spot unused for 35 s is forgotten. Kills from each spot are
+  counted too, for the dynamite to come. `tests/test_corners.gd` checks the loose
+  spots, that nobody watches before the second peek, that no more than two do and
+  the rest keep moving, that a watched corner is met almost at once, and that a new
+  spot has nobody ready for it.
 - **Reinforcements**: five more of the gang (two bandidos, a pistolero, a cowboy and
   a red scarf; `reserve` in the town data) drink in the saloon, out of the story
   until something brings them out. Gunfire within ~450 px of its door heats it up
