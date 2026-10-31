@@ -87,10 +87,15 @@ func _init() -> void:
 	var rifle := Weapon.new("rifle", a)
 	rifle.reserve = 5
 	g.shots = 0
+	var ejections := 0
 	for i in 20:
 		rifle.trigger()
+		if rifle.ejecting:
+			ejections += 1
 		run(rifle, 0.5)
 	check(g.shots == 13, "rifle holds 13 (got %d)" % g.shots)
+	check(ejections == 13, "a case ejected per shot fired, none when empty (got %d)" % ejections)
+	check(g.sounds.count("dry") >= 7, "empty rifle clicks dry")
 	rifle.start_reload()
 	run(rifle, 5.0)
 	check(rifle.tube == 4 and rifle.chambered, "rifle loaded 5 and levered one in (tube %d, chambered %s)" % [rifle.tube, rifle.chambered])

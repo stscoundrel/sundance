@@ -131,10 +131,8 @@ carried, which you collect by walking over them.
   holds a spot around the stranger at his weapon's range, instead of filing in behind
   the others. Comrades push apart when they get too close, and a bandit holds fire
   and sidesteps when a comrade is in his line of fire.
-- **Animation**: sheets carry named animations (idle, walk, crouch, crouch-walk,
-  point, flinch, cower with hands on the hat, hurt, firing recoil, fall, dead),
-  listed in `assets/meta.json`. Add a pose in `tools/chars.py` and a column name to
-  `COLS`, and the game picks it up.
+- **Reading the fight**: a bandit reloading is plain to see — gun raised to load,
+  the coach gun broken open — and he often shouts "¡Recargando!".
 - Enemy aim and rate of fire are tunable at the top of `scripts/enemy.gd`
   (`AIM_SPREAD`, `AIM_SPREAD_SHOTGUN`, `CADENCE_MULT`).
 - Bandit types:
@@ -176,6 +174,29 @@ carried, which you collect by walking over them.
   coach gun's hinge and snap, brass tinkling onto the boards, spurs jingling. The
   hero's own sounds play at full volume; a compressor and limiter on the master bus
   keep firefights punchy.
+
+## Animation
+
+Characters are two stacked layers: **legs** (trousers, boots, the duster's skirt)
+and **upper body** (belt and up, arms, head, hat, gun). The legs follow movement
+(idle, walk, crouch, crouch-walk, stagger, limp) and report their hip height each
+frame; the upper body sits on top at that height and plays the gun's animations,
+so walking while reloading or limping while firing needs no combined frames.
+Deaths are whole-body and the gun falls away as a separate prop, so they exist
+once per character rather than once per gun.
+
+- Upper body, per gun: aim, fire (recoil), cock / fan (Colt), lever (Winchester),
+  reload open / eject / insert / close, point, flinch, cower, and hit reactions
+  (left shoulder, right shoulder, gut).
+- Hits: where the round lands decides the reaction; a leg hit staggers him and
+  leaves him limping (slower) for several seconds.
+- Deaths: thrown back (shotgun up close), down on the knees then face down, spun
+  round, and the slow Leone slump.
+- Animations are data in `tools/chars.py`: a few key poses interpolated into
+  frames at 4-12 fps, with event frames (brass ejecting, shells) the game reacts
+  to. Frames are trimmed and packed into one atlas per character; metadata gives
+  each frame's rectangle and offset, each legs frame's hip height and each aiming
+  frame's muzzle point.
 
 ## Tech
 

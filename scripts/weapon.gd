@@ -34,6 +34,7 @@ var barrels: Array[int] = [1, 1]
 # Winchester.
 var tube := TUBE_CAP
 var chambered := true
+var ejecting := false   # this lever stroke throws out a fired case
 
 
 func _init(k: String, h: Actor) -> void:
@@ -117,12 +118,16 @@ func trigger() -> void:
 				chambered = false
 				_shoot(1)
 				_cycle(d["cycle"])
-				_snd("lever")
-			elif tube > 0:
-				_cycle(d["cycle"])
+				ejecting = true   # the lever throws out the spent case
 				_snd("lever")
 			else:
-				_dry()
+				# empty chamber: the hammer falls on nothing and he works the lever
+				# anyway, chambering a round if there is one; no case comes out
+				if tube == 0:
+					_snd("dry", 2.0)
+				_cycle(d["cycle"])
+				ejecting = false
+				_snd("lever")
 
 
 ## Right trigger on the coach gun: both barrels at once.
@@ -156,6 +161,8 @@ func start_reload() -> bool:
 	stop_requested = false
 	reload_idx = 0
 	state = S.OPEN
+	if holder.has_method("on_reload"):
+		holder.on_reload()
 	match kind:
 		"colt":
 			timer = 0.35
@@ -211,6 +218,7 @@ func _advance() -> void:
 						break
 			elif kind == "rifle" and not chambered and tube > 0:
 				_cycle(d["cycle"])
+				ejecting = false
 				_snd("lever")
 
 
@@ -320,7 +328,7 @@ func _shoot(mult: int, extra_spread := 0.0) -> void:
 		h.game.spawn_bullet(origin, dir.rotated(a) * d["speed"] * randf_range(0.93, 1.05), rng,
 			d["damage"], h, h.gun_height(), n > 1)
 	h.game.muzzle_flash(h, dir)
-	h.play_action("fire", 0.14)
+	h.play_action("fire")
 	_snd(d["sfx"], 2.0 if mult > 1 else 0.0)
 	h.game.make_noise(h.global_position, d["noise"], "shot" if h.is_player else "enemy_shot", h)
 	h.on_fired(d["shake"] * mult)

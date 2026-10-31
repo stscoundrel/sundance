@@ -35,16 +35,38 @@ def save(img, rel):
 # ---------------------------------------------------------------- sprites
 
 def gen_characters(meta):
-    sheets = [("hero_colt", "hero", "colt"), ("hero_coach", "hero", "coach"),
-              ("hero_rifle", "hero", "rifle"), ("pistolero", "pistolero", "colt"),
-              ("rifleman", "rifleman", "rifle"), ("redscarf", "redscarf", "coach"),
-              ("jefe", "jefe", "coach")]
+    """Bake every character's animations (in parallel) and pack each into one atlas."""
+    from multiprocessing import Pool
     meta["chars"] = {}
-    for key, spec, weapon in sheets:
-        print("  character", key)
-        path = save(chars.sheet(spec, weapon), f"sprites/chars/{key}.png")
-        meta["chars"][key] = {"file": path, "cell": list(chars.CELL), "anchor": list(chars.ANCHOR),
-                              "cols": len(chars.COLS), "rows": 8, "anims": chars.anims()}
+    jobs = []
+    for char in chars.SPECS:
+        jobs += chars.jobs_for(char)
+    print("  baking %d animations x 8 directions..." % len(jobs))
+    with Pool() as pool:
+        results = pool.map(chars.bake_job, jobs, chunksize=1)
+    by_char = {}
+    for char, key, info, dirs in results:
+        by_char.setdefault(char, []).append((key, info, dirs))
+    for char, anims in by_char.items():
+        entries = []
+        for key, info, dirs in anims:
+            for d, frames in enumerate(dirs):
+                for i, (img, ox, oy) in enumerate(frames):
+                    entries.append((key, d, i, img, ox, oy))
+        atlas, rects = chars.pack(entries)
+        path = save(atlas, f"sprites/chars/{char}.png")
+        out = {}
+        for key, info, dirs in anims:
+            out[key] = dict(info, frames=rects[key])
+        meta["chars"][char] = {"atlas": path, "h_ref": chars.H_REF, "loadout": chars.LOADOUT[char], "anims": out}
+        print("  %s: %d frames, atlas %dx%d" % (char, len(entries), atlas.shape[1], atlas.shape[0]))
+    # Guns dropped by the dead, lying in the dirt in four orientations.
+    meta["guns"] = {}
+    for kind in ("colt", "coach", "rifle"):
+        meta["guns"][kind] = []
+        for v in range(4):
+            img, anchor = render(chars.dropped_gun(kind, v))
+            meta["guns"][kind].append({"file": save(img, f"sprites/fx/gun_{kind}_{v}.png"), "anchor": list(anchor)})
 
 
 def gen_world(meta):

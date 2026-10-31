@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c55w2fltwof3c"
-path="res://.godot/imported/hero_coach.png-6e5a2d16b5e5870edcc48ecad20a3496.ctex"
+uid="uid://v4pjxf7p3ge5"
+path="res://.godot/imported/gun_coach_3.png-5ea9a5252bc5dc4f778f9d5af2174abc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/chars/hero_coach.png"
-dest_files=["res://.godot/imported/hero_coach.png-6e5a2d16b5e5870edcc48ecad20a3496.ctex"]
+source_file="res://assets/sprites/fx/gun_coach_3.png"
+dest_files=["res://.godot/imported/gun_coach_3.png-5ea9a5252bc5dc4f778f9d5af2174abc.ctex"]
 
 [params]
 

@@ -734,14 +734,14 @@ func muzzle_flash(holder: Actor, dir: Vector2) -> void:
 	s.centered = true
 	s.position = holder.global_position + Vector2(0, 1)
 	s.scale = Vector2.ONE * tex_scale
-	var reach: float = {"colt": 12.0, "coach": 12.0, "rifle": 15.0}[holder.weapon.kind]
-	s.offset = ((dir * reach + Vector2(0, -holder.gun_height())) / tex_scale).round()
+	var tip: Vector2 = holder.muzzle_offset() + dir * 2.0
+	s.offset = (tip / tex_scale).round()
 	world.add_child(s)
 	get_tree().create_timer(0.05, false).timeout.connect(s.queue_free)
 	# Black powder: every shot leaves a cloud that hangs and drifts off on the wind.
 	var puff := Puff.new()
 	puff.position = holder.global_position + Vector2(0, 2)
-	var base := dir * reach + Vector2(0, -holder.gun_height() - 2)
+	var base := tip + Vector2(0, -1)
 	var kind: String = holder.weapon.kind
 	var n: int = {"colt": 9, "rifle": 11, "coach": 20}[kind]
 	var push := 1.5 if kind == "coach" else 1.0
@@ -750,6 +750,42 @@ func muzzle_flash(holder: Actor, dir: Vector2) -> void:
 		puff.smoke(base + dir * randf_range(0, 8), dir.rotated(randf_range(-0.5, 0.5)) * randf_range(10, 50) * push + Vector2(0, -randf_range(2, 10)),
 			randf_range(2.5, 4.5), randf_range(1.5, 3.0), Color(shade, shade * 0.97, shade * 0.93, 0.42), randf_range(2.5, 4.5),
 			WIND + Vector2(randf_range(-3, 3), randf_range(-3, 0)))
+	world.add_child(puff)
+
+
+## A dead man's gun falls from his hand and lands in the dirt beside him.
+func drop_gun(a: Actor) -> void:
+	var kind: String = a.weapon.kind
+	var g: Dictionary = meta["guns"][kind].pick_random()
+	var s := Sprite2D.new()
+	s.texture = tex(g["file"])
+	s.centered = false
+	s.scale = Vector2.ONE * tex_scale
+	s.offset = -Vector2(g["anchor"][0], g["anchor"][1])
+	var side := a.facing.orthogonal() * randf_range(-10.0, 10.0) - a.facing * randf_range(2.0, 8.0)
+	s.position = a.global_position + side + Vector2(0, 2)
+	world.add_child(s)
+	var drop := -a.gun_height()
+	var spr_offset := s.offset
+	s.offset = spr_offset + Vector2(0, drop / tex_scale)
+	var tw := create_tween()
+	tw.tween_property(s, "offset", spr_offset, 0.35).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+
+
+## Animation events: brass flicking out of a Winchester or Colt, shells out of the
+## coach gun.
+func anim_event(a: Actor, ev: String) -> void:
+	if ev == "brass" and a.weapon and a.weapon.kind == "rifle" and not a.weapon.ejecting:
+		return   # working the lever on an empty chamber: nothing to throw out
+	var puff := Puff.new()
+	puff.position = a.global_position + Vector2(0, 2)
+	var at: Vector2 = a.muzzle_offset() - a.facing * 6.0
+	var side := a.facing.orthogonal()
+	var n := 2 if ev == "shells" else 1
+	for i in n:
+		var c := Color(0.72, 0.16, 0.12) if ev == "shells" else Color(0.9, 0.72, 0.3)
+		puff.add(at, side * randf_range(15, 35) * (1 if randf() < 0.5 else -1) + Vector2(0, -randf_range(25, 45)),
+			randf_range(1.5, 2.5), 1.0, c, 0.0, 200.0)
 	world.add_child(puff)
 
 

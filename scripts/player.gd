@@ -27,20 +27,20 @@ func setup(g: Node, pos: Vector2) -> void:
 	weapons["coach"].reserve = 10
 	weapons["rifle"].reserve = 26
 	weapon = weapons["colt"]
-	set_sheet("hero_colt")
+	set_character("hero")
 	facing = Vector2(1, -0.3).normalized()
 
 
 func _physics_process(delta: float) -> void:
 	if not alive:
-		if action_t > 0.0:
+		if dying():
 			update_anim(delta)
 		return
 	var playing: bool = game.state == "play"
 	var input := Vector2.ZERO
 	if playing:
 		input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = input * (CROUCH_WALK if crouched else WALK)
+	velocity = input * (CROUCH_WALK if crouched else WALK) * limp_factor()
 	move_and_slide()
 
 	var m := get_global_mouse_position()
@@ -103,7 +103,6 @@ func switch_to(k: String) -> void:
 	weapon.abort()
 	current = k
 	weapon = weapons[k]
-	set_sheet("hero_" + k)
 	switch_t = 0.4
 	game.sfx("close", null, -8.0)
 

@@ -248,7 +248,7 @@ def shade(cloud):
 
 
 def render(cloud, size=None, anchor=None, shadow=True, outline=True, edges=True,
-           scale=PIX, ground=None, shadow_alpha=96, pad=6):
+           scale=PIX, ground=None, shadow_alpha=96, pad=6, shadow_extra=None):
     """Render to an RGBA array. Returns (img, anchor) where anchor is the pixel of
     the model origin. ground: Cloud drawn first at ground level (pools, decals)."""
     P = cloud.P
@@ -259,7 +259,8 @@ def render(cloud, size=None, anchor=None, shadow=True, outline=True, edges=True,
 
     shp = None
     if shadow:
-        G = P - SUN[None, :] * (P[:, 2:3] / SUN[2])
+        SP_ = P if shadow_extra is None else np.concatenate([P, shadow_extra.P])
+        G = SP_ - SUN[None, :] * (SP_[:, 2:3] / SUN[2])
         gsx, gsy = project(G)
         shp = (gsx * scale, gsy * scale)
 

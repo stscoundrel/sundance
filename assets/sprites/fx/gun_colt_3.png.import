@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dpnltt6ihiwg4"
-path="res://.godot/imported/hero_rifle.png-88a452ac61ec9fb340830bc8f55672a4.ctex"
+uid="uid://c0g1h8ywaji66"
+path="res://.godot/imported/gun_colt_3.png-ced221e41901a7f6b48d8039311c0723.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/chars/hero_rifle.png"
-dest_files=["res://.godot/imported/hero_rifle.png-88a452ac61ec9fb340830bc8f55672a4.ctex"]
+source_file="res://assets/sprites/fx/gun_colt_3.png"
+dest_files=["res://.godot/imported/gun_colt_3.png-ced221e41901a7f6b48d8039311c0723.ctex"]
 
 [params]
 

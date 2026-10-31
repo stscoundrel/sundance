@@ -114,7 +114,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	max_hp = hp
 	weapon = Weapon.new(spec["weapon"], self)
 	weapon.reserve = 999
-	set_sheet(k)
+	set_character(k)
 	home = pos
 	home_facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	facing = home_facing
@@ -481,7 +481,7 @@ func _physics_process(delta: float) -> void:
 		marker_t -= delta
 	if not alive:
 		cone.queue_redraw()
-		if action_t > 0.0:
+		if dying():
 			update_anim(delta)
 		return
 	if game.state != "play" and game.state != "lost":
@@ -511,8 +511,8 @@ func _physics_process(delta: float) -> void:
 		if pending_t <= 0.0:
 			start_reaction(pending)
 			pending = ""
-	if action == "hurt" and action_t > 0.0:
-		velocity = Vector2.ZERO   # staggered by the hit
+	if is_staggered():
+		velocity = Vector2.ZERO   # reeling from the hit
 	elif reaction != "":
 		_do_reaction(delta)
 		_panic_fire()
@@ -520,6 +520,7 @@ func _physics_process(delta: float) -> void:
 		_run_state(delta)
 		if st == St.COMBAT:
 			_leader_orders()
+	velocity *= limp_factor()
 	var own_velocity := velocity
 	if st != St.GUARD:
 		_separate()
@@ -958,6 +959,15 @@ func _panic_fire() -> void:
 	if reaction != "backoff":
 		facing = run_facing
 	_log("panic shot")
+
+
+const RELOAD_LINES := ["¡Recargando!", "Reloading!", "Cover me, I'm loading!"]
+
+
+## He's out and loading: everyone should know (the stranger included).
+func on_reload() -> void:
+	if randf() < 0.6 and shout_t <= 0.0:
+		_say(RELOAD_LINES.pick_random())
 
 
 func _log(what: String) -> void:
