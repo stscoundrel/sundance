@@ -89,6 +89,8 @@ def gen_world(meta):
         print("  object", name)
         world.DOORS.clear()
         world.WINDOWS.clear()
+        world.GLAZED.clear()
+        world.LANTERNS.clear()
         model = fn()
         img, anchor = render(model, edges=True)
         path = save(img, f"sprites/world/{name}.png")
@@ -96,6 +98,13 @@ def gen_world(meta):
                                  "collide": collide, "fade": fade,
                                  "colliders": colliders or [[0, 0, fp[0], fp[1]]],
                                  "doors": _doorsteps(world.DOORS)}
+        if name in world.FRAGILE:   # each hit a step further gone
+            meta["objects"][name]["states"] = []
+            for i, sm in enumerate(world.FRAGILE[name]()[1:]):
+                im, anc = render(sm, edges=True)
+                meta["objects"][name]["states"].append({"file": save(im, f"sprites/world/{name}_{i + 1}.png"),
+                                                        "anchor": list(anc)})
+            meta["objects"][name]["fragile"] = True
         if name in world.BREAKABLE:   # shot up, then shot to pieces
             meta["objects"][name]["states"] = []
             for i, sm in enumerate(world.prop_states(name)[1:]):
@@ -105,6 +114,20 @@ def gen_world(meta):
         if world.WINDOWS:
             meta["objects"][name]["shutters"] = _shutters(name, list(world.WINDOWS), model)
             meta["objects"][name]["paint"] = "adobe" if name.startswith("adobe") or name == "cantina" else "wood"
+            panes = [i for i, g in enumerate(world.GLAZED) if g]
+            meta["objects"][name]["glass"] = _overlays(name, "glass", model,
+                                                       [[world.broken_glass(world.WINDOWS[i], i)] for i in panes])
+            for g, i in zip(meta["objects"][name]["glass"], panes):
+                g["shutter"] = i   # the shutters over it, which keep the rounds off it when shut
+                face, (u0, u1), (z0, z1), W, D = world.WINDOWS[i]
+                ends = [[u0, D], [u1, D]] if face == "+y" else [[W, u0], [W, u1]]
+                g["span"] = [[a / world.T, b / world.T] for a, b in ends]   # its foot, in tiles
+                g["z"] = [z0, z1]
+        if world.LANTERNS:
+            meta["objects"][name]["lanterns"] = _overlays(name, "lantern", model,
+                                                          [[world.lantern(l), world.lantern(l, True)] for l in world.LANTERNS])
+            for o, l in zip(meta["objects"][name]["lanterns"], world.LANTERNS):
+                o["at"] = [l[0] / world.T, l[1] / world.T]
     meta["shutter_paint"] = world.SHUTTER_PAINT
     frames = []
     for f in range(4):
@@ -139,6 +162,33 @@ def _shutters(name, windows, building):
                     "anchor": [int(anchor[0] - x0), int(anchor[1] - y0)],
                     "at": [W / world.T, (u0 + u1) / 2 / world.T] if face == "+x" else [(u0 + u1) / 2 / world.T, D / world.T],
                     "z": z0})
+    return out
+
+
+def _overlays(name, what, building, looks):
+    """Fixtures on a building that change when shot (broken panes, lanterns): for
+    each, a strip of its looks, each rendered with the building around it keeping
+    only the pixels it changes (so posts and roofs in front stay in front), anchored
+    at the building's own origin."""
+    bare, anchor = render(building, shadow=False, edges=True)
+    size = (bare.shape[1], bare.shape[0])
+    out = []
+    for i, ms in enumerate(looks):
+        frames = []
+        for extra in ms:
+            m = building.copy()
+            m += extra
+            im = render(m, size=size, anchor=anchor, shadow=False, edges=True)[0]
+            shows = np.any(im != bare, axis=2)
+            frames.append(np.where(shows[..., None], im, 0).astype(np.uint8))
+        ys, xs = np.nonzero(np.any(np.stack(frames)[..., 3] > 0, axis=0))
+        if len(xs) == 0:
+            xs, ys = np.array([0]), np.array([0])   # hidden entirely (a window round the back)
+        x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
+        strip = np.concatenate([f[y0:y1, x0:x1] for f in frames], 1)
+        out.append({"file": save(strip, f"sprites/world/{what}/{name}_{i}.png"),
+                    "cell": [int(x1 - x0), int(y1 - y0)], "frames": len(frames),
+                    "anchor": [int(anchor[0] - x0), int(anchor[1] - y0)]})
     return out
 
 
@@ -801,6 +851,24 @@ def gen_sfx(meta):
     boom = wet.copy()
     boom[:len(dry)] += dry[:, None] * [1.0, 0.95]
     write("boom", boom, meta, 0.98, 1.6)
+
+    # Breakables (again their own stream). Glass: a bright crash, then shards
+    # tinkling down for a moment.
+    grng = np.random.default_rng(92)
+    t = t_of(0.08)
+    crash = highpass(grng.normal(0, 1, len(t)), 3500) * np.exp(-t / 0.018) * 2.0
+    parts = [(0.0, crash), (0.0, tink(grng, 5800, 0.02, 1.0))]
+    for st in np.sort(grng.uniform(0.02, 0.5, 14)):
+        parts.append((st, tink(grng, grng.uniform(4200, 8200), grng.uniform(0.006, 0.02), grng.uniform(0.2, 0.8))))
+    write("glass", room(place(0.7, parts), grng, 0.05, 0.25), meta, 0.7, 1.3)
+    # Crockery: a dull clay crack and the pieces knocking down, and a splash.
+    parts = [(0.0, knock(grng, 900, 0.02, 0.05) * 1.6 + highpass(grng.normal(0, 1, int(SR * 0.05)), 1500)
+              * np.exp(-t_of(0.05) / 0.012))]
+    for st in np.sort(grng.uniform(0.04, 0.35, 6)):
+        parts.append((st, knock(grng, grng.uniform(1200, 2400), 0.01, 0.06) * grng.uniform(0.3, 0.8)))
+    splash = lowpass(grng.normal(0, 1, int(SR * 0.3)), 2500) * np.exp(-t_of(0.3) / 0.08) * 0.5
+    parts.append((0.03, splash))
+    write("crock", room(place(0.6, parts), grng, 0.06, 0.3), meta, 0.75, 1.3)
 
 
 def main():

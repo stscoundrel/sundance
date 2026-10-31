@@ -20,6 +20,7 @@ var look_t := 0.0
 var _f := 0.0             # animation position: 0 open .. last frame shut
 var _last := 3
 static var rng := RandomNumberGenerator.new()   # their own dice, so the town's stay as seeded
+var glass: Sprite2D       # the pane behind them, once it's shot out (hidden as they close over it)
 
 
 func setup(g: Node, building: Sprite2D, m: Dictionary, s: Dictionary, corner: Vector2, paint: Color) -> void:
@@ -86,3 +87,5 @@ func _animate(delta: float) -> void:
 	elif not shut and _f > 0.0:
 		_f = maxf(_f - delta * OPEN_FPS, 0.0)
 	frame = int(_f)
+	if glass and glass.has_meta("broken"):
+		glass.visible = frame <= 1

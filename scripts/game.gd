@@ -72,6 +72,10 @@ var dyn_cd := 0.0
 const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33}
 const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3}
 var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
+# Things gunfire breaks that are no cover at all: window panes, porch lanterns,
+# tables of bottles, chairs, clay jars. Each hit moves one a look further gone.
+const FRAGILE_R := {"olla": 5.0, "chair": 5.0, "table": 7.0, "lantern": 4.0}
+var fragile: Array[Dictionary] = []   # {kind, at, state, last, sprite, body, (glass: a, b, z, shutter)}
 var props: Array[Dictionary] = []   # {kind, sprite, body, g, fp, hp, state, cells, covers}
 var _solid := {}                    # cell -> how many things block it   # {centre, points (newest first), peeks, kills, last_t}                # {door, sprite, squad, heat, rallied, cause, spawn_t, runner, runner_cd, fight_t, alarm}   # fresh graves: {at, mourners, done}
 var innocent_t := 0.0               # the town's disapproval, on screen for a moment
@@ -407,9 +411,15 @@ func _place_object(type: String, g: Vector2) -> void:
 			spr.add_child(sh)
 			shutters.append(sh)
 
+	var made: Array[Shutter] = []
+	for sh in shutters.slice(shutters.size() - m.get("shutters", []).size()):
+		made.append(sh)
+	_add_fixtures(m, spr, g, made)
 	var collide: String = m["collide"]
 	var prop := {}
-	if m.has("states"):
+	if m.get("fragile", false):
+		_add_fragile(type, Iso.to_screen(g + fp * 0.5), spr, m["states"].size(), FRAGILE_R[type])["g"] = g
+	elif m.has("states"):
 		prop = {"kind": type, "sprite": spr, "g": g, "fp": fp, "hp": PROP_HP[type], "state": 0,
 			"cells": [], "covers": [], "body": null}
 		props.append(prop)
@@ -1618,6 +1628,13 @@ func blast(at: Vector2, by: Enemy) -> void:
 		var d := maxf(0.0, prop_centre(prop).distance_to(at) - 8.0)
 		if d < Dynamite.R:
 			hit_prop(prop, int(lerpf(40.0, 8.0, d / Dynamite.R)), 0, prop_centre(prop))
+	for item in fragile:
+		var near: Vector2 = item["at"] + (at - item["at"]).normalized() * 6.0   # (the near side of a pane)
+		if item["at"].distance_to(at) < Dynamite.R * 1.3 and line_of_sight(at, near, false):
+			var sh = item.get("shutter")
+			if sh == null or not sh.shut:
+				while item["state"] < item["last"]:
+					hit_fragile(item, item["at"])
 	for e in enemies:
 		if e.alive and e.global_position.distance_to(at) < Dynamite.R * 2.2:
 			e.shaken = minf(1.0, e.shaken + 0.3)
@@ -1723,6 +1740,131 @@ func cover_to_break(e: Enemy, near: Vector2) -> Dictionary:
 		if n < 2:
 			return prop
 	return {}
+
+
+## A building's breakable fixtures: its glazed panes (drawn under its shutters,
+## shown once shot out) and the lantern hung out front.
+func _add_fixtures(m: Dictionary, spr: Sprite2D, corner: Vector2, made: Array[Shutter]) -> void:
+	for gl in m.get("glass", []):
+		var ov := _overlay(m, gl, spr)
+		ov.visible = false   # (drawn over the shutters' frames: they hide it as they close)
+		var item := _add_fragile("glass", Vector2.ZERO, ov, 1, 0.0)
+		item["a"] = Iso.to_screen(corner + Vector2(gl["span"][0][0], gl["span"][0][1]))
+		item["b"] = Iso.to_screen(corner + Vector2(gl["span"][1][0], gl["span"][1][1]))
+		item["at"] = (item["a"] + item["b"]) * 0.5
+		item["z"] = Vector2(gl["z"][0], gl["z"][1]) * Actor.PZ
+		item["shutter"] = made[int(gl["shutter"])] if int(gl["shutter"]) < made.size() else null
+		if item["shutter"]:
+			item["shutter"].glass = ov
+	for la in m.get("lanterns", []):
+		var ov := _overlay(m, la, spr)
+		_add_fragile("lantern", Iso.to_screen(corner + Vector2(la["at"][0], la["at"][1])), ov, 1, FRAGILE_R["lantern"])
+
+
+func _overlay(m: Dictionary, o: Dictionary, building: Sprite2D) -> Sprite2D:
+	var ov := Sprite2D.new()
+	ov.texture = tex(o["file"])
+	ov.centered = false
+	ov.hframes = int(o["frames"])
+	ov.offset = building.offset + Vector2(m["anchor"][0] - o["anchor"][0], m["anchor"][1] - o["anchor"][1])
+	building.add_child(ov)
+	return ov
+
+
+func _add_fragile(kind: String, at: Vector2, spr: Sprite2D, last: int, radius: float) -> Dictionary:
+	var item := {"kind": kind, "at": at, "state": 0, "last": last, "sprite": spr, "body": null}
+	if radius > 0.0:
+		var body := StaticBody2D.new()
+		body.collision_layer = Iso.LAYER_FRAGILE
+		body.collision_mask = 0
+		body.position = at
+		var cs := CollisionShape2D.new()
+		var c := CircleShape2D.new()
+		c.radius = radius
+		cs.shape = c
+		body.add_child(cs)
+		body.set_meta("fragile", item)
+		statics.add_child(body)
+		item["body"] = body
+	fragile.append(item)
+	return item
+
+
+## A round strikes a wall: if that's a pane of glass at the height it flew (and
+## the shutters aren't shut over it), the pane goes.
+func glass_hit(at: Vector2, height: float) -> void:
+	for item in fragile:
+		if item["kind"] != "glass" or item["state"] > 0:
+			continue
+		var z: Vector2 = item["z"]
+		if height < z.x - 3.0 or height > z.y + 3.0:
+			continue
+		if Geometry2D.get_closest_point_to_segment(at, item["a"], item["b"]).distance_to(at) > 6.0:
+			continue
+		var sh = item["shutter"]
+		if sh != null and sh.shut:
+			return   # the shutters take it
+		hit_fragile(item, at, height)
+		return
+
+
+## Hit: one look further gone, with the glass, crockery or splinters to show it.
+func hit_fragile(item: Dictionary, at: Vector2, height := -1.0) -> void:
+	if item["state"] >= item["last"]:
+		return
+	item["state"] += 1
+	var n: int = item["state"]
+	var kind: String = item["kind"]
+	var spr: Sprite2D = item["sprite"]
+	match kind:
+		"glass":
+			spr.set_meta("broken", true)
+			spr.visible = item["shutter"] == null or item["shutter"].frame <= 1
+		"lantern":
+			spr.frame = 1
+		_:
+			var st: Dictionary = meta["objects"][kind]["states"][n - 1]
+			var base := (Iso.to_screen(item["g"]) - spr.position) / tex_scale
+			spr.texture = tex(st["file"])
+			spr.offset = (base - Vector2(st["anchor"][0], st["anchor"][1])).round()
+	var h: float = height if height >= 0.0 else {"glass": 24.0, "lantern": 36.0, "table": 13.0, "chair": 8.0,
+		"olla": 6.0}[kind]
+	var ground: Vector2 = item["at"] + (Vector2(0, 4) if kind == "glass" else Vector2.ZERO)   # (glass: onto the porch)
+	match kind:
+		"glass", "lantern":
+			_shards(ground, h, Color(0.82, 0.9, 0.96), 12)
+			sfx("glass", at, -4.0, 0.12)
+		"table":
+			if n == 1:
+				_shards(ground, h, Color(0.5, 0.7, 0.5), 10)   # the bottles
+				sfx("glass", at, -4.0, 0.12)
+				decals.add(ground + Vector2(4, 2), 4.0, Color(0.24, 0.14, 0.08, 0.4))   # whisky in the dirt
+			else:
+				impact(ground, h, Vector2.RIGHT.rotated(randf() * TAU), true, false)
+				sfx("wood_break", at, -6.0, 0.1)
+		"chair":
+			impact(ground, h, Vector2.RIGHT.rotated(randf() * TAU), true, false)
+			sfx("wood_break" if n == item["last"] else "wood_hit", at, -6.0, 0.12)
+		"olla":
+			_shards(ground, h, Color(0.69, 0.38, 0.24), 12)
+			sfx("crock", at, -4.0, 0.12)
+			decals.add(ground + Vector2(0, 2), 7.0, Color(0.16, 0.12, 0.1, 0.35))   # the water in it
+	if n >= item["last"] and item["body"]:
+		item["body"].queue_free()
+		item["body"] = null
+	stats["broken"] = stats.get("broken", 0) + 1
+	_scar(item["at"], item)
+
+
+func _shards(at: Vector2, height: float, col: Color, n: int) -> void:
+	var puff := Puff.new()
+	puff.position = at
+	for i in n:
+		puff.add(Vector2(randf_range(-2, 2), -height), Vector2(randf_range(-50, 50), -randf_range(10, 60)),
+			randf_range(0.6, 1.1), randf_range(0.6, 1.1), col * randf_range(0.85, 1.15), 0.0, 300.0)
+	world.add_child(puff)
+	for i in 4:   # it stays where it fell, glinting
+		decals.add(at + Vector2(randf_range(-7, 7), randf_range(-3, 4)), 0.7, Color(col.r, col.g, col.b, 0.8))
 
 
 ## Fresh damage (or worse damage to a wreck he's already seen) for the mayor.

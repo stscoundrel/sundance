@@ -52,6 +52,18 @@ PROPS = [
     ("hitch", 39.5, 28.9), ("hitch", 50.5, 28.6), ("coffin", 55.2, 28.8), ("coffin", 57, 29.6),
     ("coffin", 6, 54), ("coffin", 10, 57.5),
 ]
+# Things gunfire breaks but that stop nothing: tables of bottles and chairs on the
+# porches, clay water jars by the adobe doors.
+PROPS += [
+    ("table", 3.7, 28.15), ("chair", 3.2, 28.2), ("chair", 4.45, 28.25),            # saloon
+    ("table", 6.7, 28.15), ("chair", 7.45, 28.25),
+    ("chair", 28.4, 28.25), ("chair", 29.15, 28.3), ("table", 32.6, 28.15),         # hotel
+    ("chair", 33.3, 28.25),
+    ("chair", 21.1, 28.25),                                                          # sheriff
+    ("table", 15.45, 37.4), ("chair", 15.5, 38.2), ("chair", 15.45, 36.7),          # cantina
+    ("olla", 8.3, 36.0), ("olla", 25.3, 36.0), ("olla", 25.3, 38.1), ("olla", 42.8, 36.0),
+    ("olla", 52.3, 38.1), ("olla", 8.3, 17.5), ("olla", 37.3, 8.0), ("olla", 61.3, 9.0),
+]
 # crosses on boot hill
 for x, y in ((4.5, 51.5), (6.5, 55), (8.2, 52.2), (4.8, 56), (8.6, 55.6), (3.2, 54), (11, 52.5), (12, 55.5)):
     PROPS.append(("cross", x, y))

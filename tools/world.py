@@ -113,8 +113,11 @@ def solid(col):
 # Doorways at street level, recorded as buildings are modelled so townsfolk know
 # where they can run indoors: (face, centre along the face in metres, W, D).
 DOORS = []
-# Glazed windows, for shutters: (face, (u0, u1), (z0, z1), W, D).
+# Glazed windows, for shutters and broken glass: (face, (u0, u1), (z0, z1), W, D).
 WINDOWS = []
+GLAZED = []
+# Lanterns hung under a porch awning: (x, y, z of the beam), metres from the origin.
+LANTERNS = []
 
 
 # Shutter frames, open to closed: each leaf's swing from flat against the wall (pi)
@@ -122,6 +125,57 @@ WINDOWS = []
 SHUTTER_SWING = (math.pi * 0.97, math.pi * 0.6, math.pi * 0.27, 0.0)
 SHUTTER_PAINT = {"adobe": [(64, 128, 138), (58, 88, 140), (86, 124, 80), (150, 64, 48)],
                  "wood": [(118, 98, 76), (96, 108, 90), (128, 72, 58), (150, 140, 120)]}
+
+
+def broken_glass(window, seed):
+    """A shot-out pane: a dark hole where the glass was, jagged shards left in the
+    frame, catching the light. Laid just proud of the window."""
+    face, (u0, u1), (z0, z1), W, D = window
+    rng = np.random.default_rng(seed)
+    fr = 0.07
+    cu, cz = rng.uniform(u0 + 0.3, u1 - 0.3), rng.uniform(z0 + 0.3, z1 - 0.3)   # where it went in
+
+    def fn(P, N):
+        u = P[:, 0] if face == "+y" else P[:, 1]
+        z = P[:, 2]
+        ang = np.arctan2(z - cz, u - cu)
+        # the hole's ragged edge: a radius that jumps about with the angle
+        edge = 0.18 + 0.5 * hash01(np.floor((ang + math.pi) / (2 * math.pi) * 9) + seed)
+        r = np.hypot(u - cu, z - cz)
+        c = np.tile([16.0, 14, 16], (len(P), 1))            # the dark room beyond
+        shard = r > edge * (u1 - u0)
+        c[shard] = (70, 78, 92)
+        glint = shard & (((u - z * 0.7) * 9) % 1.0 < 0.18)
+        c[glint] = (150, 162, 176)
+        crack = shard & (np.abs(np.sin(ang * 5 + seed)) < 0.06)
+        c[crack] = (196, 204, 214)
+        return c
+    if face == "+y":
+        return quad((u0 + fr, D + 0.012, z0 + fr), (u1 - u0 - 2 * fr, 0, 0), (0, 0, z1 - z0 - 2 * fr), fn,
+                    normal=(0, 1, 0))
+    return quad((W + 0.012, u0 + fr, z0 + fr), (0, u1 - u0 - 2 * fr, 0), (0, 0, z1 - z0 - 2 * fr), fn,
+                normal=(1, 0, 0))
+
+
+def lantern(at, broken=False):
+    """A tin-and-glass lantern on a short chain from the awning beam; shot, the
+    glass is gone and it hangs askew from one link."""
+    x, y, top = at
+    out = Cloud()
+    z = top - 0.45
+    tilt = np.array([0.12, 0.05, 0]) if broken else np.zeros(3)
+    out += beam((x, y, top), (x, y, z + 0.32) + tilt * 0.5, 0.012, (50, 46, 44))     # the chain
+    c = np.array([x, y, z]) + tilt
+    out += frustum(c + [0, 0, 0.26], c + [0, 0, 0.34], 0.07, 0.03, (44, 40, 38))   # the cap
+    out += frustum(c + [0, 0, -0.02], c + [0, 0, 0.03], 0.075, 0.075, (44, 40, 38))  # the base
+    for a in np.linspace(0, 2 * math.pi, 4, endpoint=False):   # the tin cage
+        out += beam(c + [0.07 * math.cos(a), 0.07 * math.sin(a), 0.02],
+                    c + [0.065 * math.cos(a), 0.065 * math.sin(a), 0.27], 0.01, (44, 40, 38))
+    if not broken:
+        out += frustum(c + [0, 0, 0.03], c + [0, 0, 0.26], 0.06, 0.06, (255, 226, 150))   # glass, lit within
+    else:
+        out += frustum(c + [0, 0, 0.03], c + [0, 0, 0.09], 0.062, 0.062, (120, 130, 140))  # a jagged rim
+    return out
 
 
 def shutter(window, swing, col):
@@ -161,6 +215,7 @@ def decorate(fn, W, D, openings):
             DOORS.append((o["face"], (o["u"][0] + o["u"][1]) / 2, W, D))
         if o["kind"] == "win" or (o["kind"] == "dark" and o["z"][0] >= 0.5):
             WINDOWS.append((o["face"], tuple(o["u"]), tuple(o["z"]), W, D))
+            GLAZED.append(o["kind"] == "win")   # (an adobe's openings have no glass to break)
 
     def f(P, N):
         c = fn(P, N)
@@ -272,6 +327,7 @@ def gable_ends(W, D, z, rise, fn, along_y=True):
 
 
 def boardwalk(W, D, depth=1.2, awning=3.0, posts=4, wood=(132, 98, 66)):
+    LANTERNS.append((W / 2 - 1.15, D + depth + 0.12, awning - 0.25))   # by the door, on a hook out front
     out = Cloud()
     out += box((0, D, 0), (W, D + depth, 0.15), planks(wood, board=0.18, vertical=True, mud=0), BSP)
     for x in np.linspace(0.1, W - 0.22, posts):
@@ -622,6 +678,86 @@ def coffin():
     return m
 
 
+def olla():
+    """A big clay water jar (an olla) by an adobe door, a painted band round it."""
+    def clay(P, N):
+        c = np.tile([176.0, 98, 62], (len(P), 1))
+        band = np.abs(P[:, 2] - 0.4) < 0.04
+        c[band] = (92, 48, 34)
+        dots = (np.abs(P[:, 2] - 0.3) < 0.025) & ((np.arctan2(P[:, 1] - 0.25, P[:, 0] - 0.25) * 4) % 1.0 < 0.4)
+        c[dots] = (230, 200, 160)
+        return c
+    m = ellipsoid((0.25, 0.25, 0.28), (0.22, 0.22, 0.26), clay)
+    m += frustum((0.25, 0.25, 0.48), (0.25, 0.25, 0.6), 0.1, 0.12, clay, caps=False)
+    return m
+
+
+def olla_broken():
+    """Shards round a dark wet patch where the jar stood."""
+    rng = np.random.default_rng(7)
+    m = Cloud()
+    m += box((0.08, 0.08, 0.0), (0.42, 0.42, 0.005), solid((112, 84, 64)), skip=("-z", "-x", "-y", "+x", "+y"))
+    m += frustum((0.25, 0.25, 0.0), (0.25, 0.25, 0.12), 0.2, 0.19, solid((170, 94, 60)), caps=False)  # the bottom
+    for _ in range(9):
+        a = rng.uniform(0, 2 * math.pi)
+        r = rng.uniform(0.18, 0.4)
+        c = np.array([0.25 + r * math.cos(a), 0.25 + r * math.sin(a), 0.03])
+        d = np.array([math.cos(a + 1.4), math.sin(a + 1.4), rng.uniform(0.2, 0.8)]) * rng.uniform(0.05, 0.1)
+        m += beam(c - d, c + d, 0.03, (176, 98, 62) if rng.random() < 0.7 else (92, 48, 34))
+    return m
+
+
+def chair(over=False):
+    """A plain wooden porch chair; knocked over, it lies on its back."""
+    wood = (120, 84, 54)
+    m = Cloud()
+    m += box((0.04, 0.04, 0.42), (0.46, 0.46, 0.47), planks(wood, board=0.12, mud=0), 0.02)
+    for x in (0.06, 0.4):
+        for y in (0.06, 0.4):
+            m += box((x, y, 0), (x + 0.05, y + 0.05, 0.42), solid(wood), 0.02)
+    for x in (0.06, 0.4):
+        m += box((x, 0.04, 0.47), (x + 0.05, 0.09, 1.0), solid(wood), 0.02)
+    for z in (0.7, 0.9):
+        m += box((0.06, 0.04, z), (0.45, 0.08, z + 0.06), solid((134, 96, 62)), 0.02)
+    if over:
+        m.transform(rot_x(math.pi / 2))   # tipped back onto its backrest, legs out
+        m.translate((0, 1.0, 0.0))
+    return m
+
+
+def table(bottles=True):
+    """A small saloon table, a bottle or two and a couple of glasses on it."""
+    wood = (110, 76, 50)
+    m = Cloud()
+    m += box((0, 0, 0.72), (0.7, 0.7, 0.77), planks(wood, board=0.14, mud=0), 0.02)
+    m += box((0.3, 0.3, 0), (0.4, 0.4, 0.72), solid((90, 62, 42)), 0.02)
+    m += box((0.18, 0.18, 0), (0.52, 0.52, 0.04), solid((90, 62, 42)), 0.02)
+    if bottles:
+        for (x, y, col, h) in ((0.22, 0.3, (60, 96, 50), 0.28), (0.45, 0.22, (110, 66, 30), 0.3),
+                               (0.4, 0.5, (60, 96, 50), 0.26)):
+            m += frustum((x, y, 0.77), (x, y, 0.77 + h * 0.65), 0.04, 0.04, solid(col))
+            m += frustum((x, y, 0.77 + h * 0.65), (x, y, 0.77 + h), 0.03, 0.014, solid(col))
+        for (x, y) in ((0.55, 0.45), (0.18, 0.52)):
+            m += frustum((x, y, 0.77), (x, y, 0.84), 0.025, 0.03, solid((196, 204, 200)), caps=False)
+    else:
+        rng = np.random.default_rng(3)
+        for _ in range(10):   # broken glass and spilt whisky on the top
+            x, y = rng.uniform(0.1, 0.6, 2)
+            m += box((x, y, 0.77), (x + 0.03, y + 0.02, 0.785), solid((170, 190, 180)), 0.01)
+        m += box((0.2, 0.25, 0.77), (0.5, 0.5, 0.775), solid((92, 64, 40)), 0.02,
+                 skip=("-z", "-x", "-y", "+x", "+y"))
+    return m
+
+
+# Small things gunfire breaks that are no cover at all (bullets pass through):
+# each a list of looks, whole first; each hit moves it one look on.
+FRAGILE = {
+    "olla": lambda: [olla(), olla_broken()],
+    "chair": lambda: [chair(), chair(over=True), wrecked(chair(), "chair", 41)],
+    "table": lambda: [table(), table(bottles=False), wrecked(table(bottles=False), "table", 43)],
+}
+
+
 # ---------------------------------------------------------------- broken props
 
 # Props that shooting wears down: each gets a damaged and a wrecked look.
@@ -857,4 +993,7 @@ BUILDINGS = {
     "cactus": (cactus, (0.6, 0.6), "post", False, [[0.15, 0.15, 0.45, 0.45]]),
     "cross": (cross, (0.42, 0.2), "none", False, None),
     "mound": (mound, (1.0, 0.56), "none", False, None),
+    "olla": (olla, (0.4, 0.4), "none", False, None),
+    "chair": (chair, (0.4, 0.4), "none", False, None),
+    "table": (table, (0.56, 0.56), "none", False, None),
 }

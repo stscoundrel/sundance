@@ -181,6 +181,24 @@ carried, which you collect by walking over them.
   weaker for it: a Winchester through a crate or coffin, a Sharps through a barrel
   too; troughs and wagons stop everything. Each hit cracks, and the last one brings
   it down with a clatter.
+- **Things that break**: gunfire leaves its mark on more than the cover. Window
+  panes (the glazed ones on the wooden buildings; the adobes' openings have none)
+  shatter when a round strikes them at the height it's flying, a dark hole with
+  jagged shards left in the frame and glass glittering on the porch; shut
+  shutters take the round instead, and hide a broken pane when they close over it.
+  A lantern hangs out front of every porch, lit; shot, the glass goes and it
+  dangles askew. Tables of bottles stand on the saloon, hotel and cantina porches
+  (the bottles go first, whisky in the dirt, then the table), with chairs that go
+  over and then to pieces; clay water jars (ollas) by the adobe doors burst in a
+  wet patch of shards. None of it is cover or in anyone's way: rounds break it and
+  fly on (a separate collision layer only bullets see). Each break has its sound
+  (glass, crockery, splintering wood). Dynamite clears everything near it, windows
+  included, and it all goes on the mayor's list. Panes and lanterns are baked per
+  building like the shutters (rendered with the building around them, keeping only
+  what they change). `tests/test_fragile.gd` checks there's plenty about town and
+  none of it blocks anything, each kind breaks step by step, a pane breaks only
+  when hit at its height and not behind shut shutters, a blast clears the lot, and
+  the mayor hears about it.
 - **Seeing behind cover**: crouched behind something and holding still, the
   stranger is hard to make out; firing over it gives him away for a second (he
   rises to shoot, and there's the flash). Bandits in a fight within ~130 px see a

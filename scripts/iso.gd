@@ -8,6 +8,7 @@ const LAYER_POST := 4
 const LAYER_ACTOR := 8
 const LAYER_HURT := 16
 const LAYER_PICKUP := 32
+const LAYER_FRAGILE := 64   # things that break when shot but stop nothing (bullets only)
 
 const GUN_H := 21.0
 const GUN_H_CROUCH := 14.0

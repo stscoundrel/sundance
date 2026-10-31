@@ -4,6 +4,8 @@ extends Node2D
 ## Low cover stops it, unless the shooter is right behind that cover or the target
 ## just past it is standing (shooting over a crate). A crate, barrel and the like
 ## takes the hit (see game.hit_prop), and a round strong enough goes on through.
+## Bottles, chairs, lanterns and the like break as it passes (game.hit_fragile), and
+## a window it strikes shatters (game.glass_hit).
 
 var game: Node
 var vel := Vector2.ZERO
@@ -33,13 +35,17 @@ func setup(g: Node, origin: Vector2, v: Vector2, rng: float, dmg: int, sh: Actor
 func _physics_process(delta: float) -> void:
 	var step := vel * delta
 	var to := position + step
-	var mask := Iso.LAYER_WALL | Iso.LAYER_COVER | Iso.LAYER_HURT
+	var mask := Iso.LAYER_WALL | Iso.LAYER_COVER | Iso.LAYER_HURT | Iso.LAYER_FRAGILE
 	for i in 5:
 		var hit: Dictionary = game.ray(position, to, mask, exclude, true)
 		if hit.is_empty():
 			break
 		var col: CollisionObject2D = hit["collider"]
 		var hp: Vector2 = hit["position"]
+		if col.has_meta("fragile"):
+			game.hit_fragile(col.get_meta("fragile"), hp)
+			exclude.append(col.get_rid())   # it breaks; the round flies on
+			continue
 		if col is Area2D:
 			var a: Actor = col.get_meta("actor")
 			# bandits don't gun each other down
@@ -62,6 +68,8 @@ func _physics_process(delta: float) -> void:
 				_scare_impact(hp)
 				queue_free()
 				return
+		if col.collision_layer & Iso.LAYER_WALL:
+			game.glass_hit(hp, h)
 		game.impact(hp, h, vel, true)
 		_scare_impact(hp)
 		queue_free()
