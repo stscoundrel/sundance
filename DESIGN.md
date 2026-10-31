@@ -479,6 +479,19 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   home and into the shop. Gunfire sends him running with it (he keeps it); shot,
   he drops it, and the guns and their cartridges spill round him. Animations: the
   "smith" set (a rifle to inspect, an armful to carry).
+- **The mayor** (`role: "mayor"`, with a `stump` to speak from): top hat, a grey
+  frock coat, a red waistcoat with a gold watch chain, thumbs in its pockets. He
+  idles on the bank's porch. Gunfire he can hear sends him hurrying out to the
+  plaza by the gallows, where he harangues them all, arms wide, a hand raised to
+  heaven, palms down to calm them ("Gentlemen, please!", "Think of the election!",
+  "¡Basta ya, señores!"). It's all bluster: a round cracking past or a man dropping
+  near him and he's on his knees, hat in hands ("Don't shoot! I'm the mayor!"),
+  staying down while the shooting goes on; once there's been 3 s without a shot
+  he's back up and at it. After 8 s of quiet he steps down; after 12 he tours the
+  damage, hands behind his back, nearest first: every shot-up or wrecked crate,
+  barrel, trough or wagon and every scorch mark from the dynamite, up to four a
+  tour, tutting at each ("Who's going to pay for this?", "That was a perfectly good
+  crate."), then home. No effect on the fight. Animations: the "mayor" set.
 - **Shutters**: every glazed window on the wooden buildings and every small window
   on the adobes has a pair of shutters (weathered planks on the wood, painted
   turquoise, blue, green or oxblood on the adobes; one colour per building, picked
@@ -519,7 +532,10 @@ run at a shot (freeing the grave), and in the end mourn every grave and go home.
 `tests/test_gunsmith.gd` checks the gunsmith waits for the quiet, never takes a gun
 from under a man still lying there, carries four or five a trip, takes the
 cartridges with the guns, and that shooting him spills his armful, cartridges and
-all. `tests/test_shutters.gd` checks creeping down main street slams far fewer shutters
+all. `tests/test_mayor.gd` checks the mayor goes out to speak at gunfire, cowers
+at a near miss and stays down while it goes on, gets back up in the calm, steps
+down in the quiet and then tours every bit of damage and goes home.
+`tests/test_shutters.gd` checks creeping down main street slams far fewer shutters
 than walking it, that the far end of town stays open, that a shot slams those
 around it, and that they open again once it's quiet. `tests/test_perf.gd` times a
 firefight with and without the townsfolk.

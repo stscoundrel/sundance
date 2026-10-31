@@ -19,9 +19,15 @@ extends Actor
 ## The gunsmith ("role": "gunsmith") gathers up the guns the dead dropped, once the
 ## undertaker has the body away, four or five a trip, cartridges and all, and carries
 ## them into his shop. Shoot him and his armful spills round him.
+## The mayor ("role": "mayor", with a "stump" to speak from) is all bluster: when
+## the shooting starts he hurries out to the plaza and harangues the lot of them to
+## stop. A round cracking past or a man dropping near him, and he's down on his
+## knees, hat in hands, until it's calmer; then back to it. Once the town has gone
+## quiet he tours the damage, hands behind his back, tutting at every wrecked crate
+## and scorch mark.
 
 enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
-	TO_GUN, PICK, HAUL }
+	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -35,7 +41,7 @@ const FLEE_LINES := ["Lord help us!", "¡Corran!", "Get inside!"]
 const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
 const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios mío!"]
 const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS, St.TO_GRAVE, St.MOURN, St.TO_GUN,
-	St.PICK, St.HAUL]
+	St.PICK, St.HAUL, St.TO_STUMP, St.ORATE, St.TO_SCAR, St.SURVEY]
 const MEASURE_T := 3.5
 const BLESS_T := 4.0
 const MOURN_T := Vector2(20.0, 32.0)
@@ -43,6 +49,10 @@ const PICK_T := 2.0
 const GATHER_NEAR := 400.0   # once he has a gun in hand, he only goes on for ones this close
 const ARM := 13.0          # how far beside him she walks
 const DRAG_SPEED := 0.65   # of his walk, with a man in tow
+const HUSH := 8.0          # s of quiet and the mayor steps down
+const SURVEY_AFTER := 12.0 # s of quiet before he goes round the damage
+const SURVEY_T := 3.5      # s tutting at each
+const TOUR := 4            # wrecks a tour, then home
 
 var kind := "townsman"
 var tdata: Dictionary
@@ -78,6 +88,11 @@ var gunsmith := false
 var gun: Dictionary = {}        # the loose gun he's going for
 var carried: Array[Dictionary] = []   # what he's gathered: {kind, ammo_kind}
 var load_size := 5              # how many he'll carry this trip
+var mayor := false
+var stump := Vector2.INF        # where he makes his speeches
+var orate_t := 0.0              # till his next line
+var scar: Dictionary = {}       # the damage he's looking at
+var toured := 0
 var body: Actor              # the dead man he's seeing to
 var partner: Civilian        # the other half of a couple
 var leads := false           # he sets the way; she keeps to his arm
@@ -106,6 +121,9 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	priest = tdata.get("role", "") == "priest"
 	mourner = tdata.get("role", "") == "mourner"
 	gunsmith = tdata.get("role", "") == "gunsmith"
+	mayor = tdata.get("role", "") == "mayor"
+	if tdata.has("stump"):
+		stump = Iso.to_screen(Vector2(tdata["stump"][0], tdata["stump"][1]))
 	if undertaker:
 		anim_gun = "tools"   # empty hands plus the tape and the haul
 	elif priest:
@@ -114,6 +132,8 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		anim_gun = "grief"   # hands clasped, and a handkerchief
 	elif gunsmith:
 		anim_gun = "smith"   # a gun held up to the light, and an armful of them
+	elif mayor:
+		anim_gun = "mayor"   # thumbs in his waistcoat, arms wide on the soapbox
 	home = pos
 	facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	desired = facing
@@ -170,6 +190,9 @@ func alarm(from: Vector2, scary: bool) -> void:
 			_say(_line("calm", ["Peace, my son."]))
 		return
 	threat = from
+	if mayor:
+		_bluster(scary)
+		return
 	_drop_body()   # the dead can wait
 	_leave_grave()
 	_let_go_of_gun()
@@ -240,7 +263,13 @@ func _physics_process(delta: float) -> void:
 			pose = "cower"
 			cower_t -= delta
 			if cower_t <= 0.0:
-				_flee()
+				if not mayor:
+					_flee()
+				elif game.quiet_for() < 3.0:
+					cower_t = 1.0   # still shooting: he stays down
+				else:
+					crouched = false
+					_to_stump()   # calmer: he picks himself up and starts again
 		St.SNITCH:
 			_snitch(delta)
 		St.TO_BODY, St.MEASURE, St.DRAG:
@@ -251,6 +280,8 @@ func _physics_process(delta: float) -> void:
 			_mourn(delta)
 		St.TO_GUN, St.PICK, St.HAUL:
 			_gather(delta)
+		St.TO_STUMP, St.ORATE, St.TO_SCAR, St.SURVEY:
+			_mayor(delta)
 	if carried and pose == "":
 		pose = "carry"
 	if velocity.length() > 1.0 and not watching:
@@ -311,6 +342,13 @@ func _idle(delta: float) -> void:
 		_next_gun()
 		if st != St.IDLE:
 			return
+	if mayor:
+		if game.quiet_for() < SURVEY_AFTER:
+			toured = 0   # more damage to come, likely
+		elif toured < TOUR:
+			_next_scar()
+			if st != St.IDLE:
+				return
 	if priest and game.quiet_for() >= game.quiet_after:
 		body = game.blessing_for(self)
 		if body:
@@ -567,6 +605,89 @@ func _let_go_of_gun() -> void:
 		gun["claimed_by"] = null
 	gun = {}
 	crouched = false
+
+
+# ------------------------------------------------------------------ the mayor
+
+## Gunfire: out to his soapbox to tell them all to stop. Something close and
+## frightening, though, and he's on his knees.
+func _bluster(scary: bool) -> void:
+	if scary:
+		if st != St.COWER:
+			st = St.COWER
+			velocity = Vector2.ZERO
+			_say(_line("cower", ["Don't shoot!"]))
+			game.stats["mayor cowers"] = game.stats.get("mayor cowers", 0) + 1
+		cower_t = randf_range(2.5, 4.5)
+		return
+	if st == St.COWER or st == St.TO_STUMP or st == St.ORATE:
+		return
+	_to_stump()
+
+
+func _to_stump() -> void:
+	scar = {}
+	st = St.TO_STUMP
+	var at := stump if stump != Vector2.INF else home
+	path = game.find_path(global_position, at if game.is_free(at) else game.free_point_near(at, 20.0))
+	path_i = 0
+
+
+## Hurrying out, then holding forth; down again once it's been quiet a while. Then,
+## when it's been quiet longer, round the damage one wreck at a time.
+func _mayor(delta: float) -> void:
+	if st in [St.TO_STUMP, St.ORATE] and game.quiet_for() >= HUSH:
+		st = St.IDLE
+		wait = randf_range(2.0, 4.0)
+		return
+	match st:
+		St.TO_STUMP:
+			if _follow(run * 0.75):
+				st = St.ORATE
+				orate_t = 0.3
+		St.ORATE:
+			velocity = Vector2.ZERO
+			pose = "orate"
+			desired = (threat - global_position).normalized()
+			orate_t -= delta
+			if orate_t <= 0.0:
+				orate_t = randf_range(3.0, 4.5)
+				_say(_line("calm", ["Gentlemen, please!"]))
+				game.stats["mayor speeches"] = game.stats.get("mayor speeches", 0) + 1
+		St.TO_SCAR:
+			pose = "survey"
+			if _follow(walk):
+				st = St.SURVEY
+				work_t = SURVEY_T
+		St.SURVEY:
+			velocity = Vector2.ZERO
+			pose = "survey"
+			desired = (scar["at"] - global_position).normalized()
+			work_t -= delta
+			if work_t <= SURVEY_T - 0.6 and work_t + delta > SURVEY_T - 0.6 and randf() < 0.75:
+				_say(_line("work", ["Tsk."]))
+			if work_t <= 0.0:
+				game.stats["damage surveyed"] = game.stats.get("damage surveyed", 0) + 1
+				toured += 1
+				scar = {}
+				st = St.IDLE
+				wait = 0.5
+
+
+## The next wreck to tut over, or home when there's none (or he's seen enough).
+func _next_scar() -> void:
+	scar = game.scar_to_survey(global_position) if toured < TOUR else {}
+	if scar.is_empty():
+		if toured > 0 and global_position.distance_to(home) > 10.0:
+			path = game.find_path(global_position, home)
+			path_i = 0
+			st = St.WALK
+		toured = TOUR   # done for now
+		return
+	var at: Vector2 = scar["at"] + Vector2.from_angle(randf() * TAU) * 22.0 * Vector2(1.0, 0.5)
+	path = game.find_path(global_position, at if game.is_free(at) else game.free_point_near(at, 20.0))
+	path_i = 0
+	st = St.TO_SCAR
 
 
 # ------------------------------------------------------------------ couples

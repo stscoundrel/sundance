@@ -71,6 +71,7 @@ var dyn_cd := 0.0
 # straight through (a Winchester through a crate, a Sharps through a barrel too).
 const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33}
 const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3}
+var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
 var props: Array[Dictionary] = []   # {kind, sprite, body, g, fp, hp, state, cells, covers}
 var _solid := {}                    # cell -> how many things block it   # {centre, points (newest first), peeks, kills, last_t}                # {door, sprite, squad, heat, rallied, cause, spawn_t, runner, runner_cd, fight_t, alarm}   # fresh graves: {at, mourners, done}
 var innocent_t := 0.0               # the town's disapproval, on screen for a moment
@@ -1621,6 +1622,7 @@ func blast(at: Vector2, by: Enemy) -> void:
 		if e.alive and e.global_position.distance_to(at) < Dynamite.R * 2.2:
 			e.shaken = minf(1.0, e.shaken + 0.3)
 	_blast_fx(at)
+	_scar(at, {})
 	sfx("boom", at, 2.0, 0.08)
 	add_shake(lerpf(10.0, 2.0, clampf(player.global_position.distance_to(at) / 500.0, 0.0, 1.0)))
 	make_noise(at, 650.0, "blast", by)
@@ -1687,6 +1689,7 @@ func _prop_state(prop: Dictionary, n: int) -> void:
 	spr.texture = tex(st["file"])
 	spr.offset = (base - Vector2(st["anchor"][0], st["anchor"][1])).round()
 	var c := prop_centre(prop)
+	_scar(c, prop)
 	if prop["kind"] == "trough":
 		_leak(c + Vector2(0, 10), 14.0 if n == 1 else 24.0)   # the water's getting out, into the street
 	if n == 2:
@@ -1720,6 +1723,26 @@ func cover_to_break(e: Enemy, near: Vector2) -> Dictionary:
 		if n < 2:
 			return prop
 	return {}
+
+
+## Fresh damage (or worse damage to a wreck he's already seen) for the mayor.
+func _scar(at: Vector2, prop: Dictionary) -> void:
+	for s in scars:
+		if not prop.is_empty() and s["prop"] == prop:
+			s["seen"] = false
+			return
+	scars.append({"at": at, "seen": false, "prop": prop})
+
+
+## The nearest damage the mayor hasn't looked at yet, now looked at; or none.
+func scar_to_survey(from: Vector2) -> Dictionary:
+	var best: Dictionary = {}
+	for s in scars:
+		if not s["seen"] and (best.is_empty() or from.distance_to(s["at"]) < from.distance_to(best["at"])):
+			best = s
+	if not best.is_empty():
+		best["seen"] = true
+	return best
 
 
 ## A puddle spreading from a holed trough over a few seconds.

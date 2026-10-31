@@ -137,6 +137,8 @@ CIVILIANS = [
     {"kind": "townswoman", "x": 35.0, "y": 31.4, "facing": 0, "couple": 1},
     {"kind": "townsman", "x": 38.0, "y": 14.4, "facing": 180, "couple": 2, "wander": 150},
     {"kind": "townswoman", "x": 38.0, "y": 15.2, "facing": 180, "couple": 2},
+    # the mayor on the bank's porch; when the shooting starts he takes to the plaza
+    {"kind": "mayor", "x": 37.6, "y": 29.4, "facing": 120, "stump": [32.6, 34.4]},
     # the padre at the church door
     {"kind": "priest", "x": 31.2, "y": 9.0, "facing": 0},
     # the undertaker at his door, his apprentice up on boot hill

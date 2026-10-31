@@ -52,7 +52,8 @@ def template_guns():
         if t.get("concealed"):
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():
-        need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith"}.get(t.get("role", ""), "unarmed"))
+        need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith",
+                                  "mayor": "mayor"}.get(t.get("role", ""), "unarmed"))
     return out
 
 
@@ -120,6 +121,12 @@ def _torso_fn(look):
             buttons = front & (np.abs(np.abs(P[:, 1]) - 0.085) < 0.016) & (np.abs(P[:, 2] - 0.33) < 0.016)
             c[buttons] = BRASS
             s_[buttons] = 0
+        if look.get("chain"):
+            # a gold watch chain looped across the waistcoat, pocket to pocket
+            y = P[:, 1]
+            chain = front & (np.abs(y) < 0.1) & (np.abs(P[:, 2] - (0.2 + 5.0 * y * y)) < 0.011)
+            c[chain] = BRASS
+            s_[chain] = 0
         if look.get("suspenders"):
             for side in (-1, 1):
                 m = np.abs(P[:, 1] - side * 0.08) < 0.018
@@ -681,6 +688,24 @@ def _key_poses(w):
         k["bless_c"] = P(base, hR=V(0.42, 0.1, 0.52))
         k["bless_d"] = P(base, hR=V(0.42, -0.24, 0.52))
         return k
+    if w == "mayor":
+        # the mayor: thumbs in his waistcoat; on his soapbox, arms wide, a hand raised
+        # to heaven, palms down to calm them; and touring the damage, hands behind his
+        # back, looking this way and that
+        k = _key_poses("unarmed")
+        k["aim"] = P(k["aim"], eL=V(0.0, 0.3, 0.32), hL=V(0.12, 0.11, 0.3), eR=V(0.0, -0.3, 0.32),
+                     hR=V(0.12, -0.11, 0.3))
+        k["orate_a"] = dict(eL=V(0.14, 0.34, 0.46), hL=V(0.26, 0.48, 0.6), eR=V(0.14, -0.34, 0.46),
+                            hR=V(0.26, -0.48, 0.6), lean=-0.06, nod=-0.1)
+        k["orate_b"] = dict(eL=V(0.1, 0.3, 0.3), hL=V(0.2, 0.4, 0.2), eR=V(0.12, -0.24, 0.66),
+                            hR=V(0.2, -0.16, 0.92), lean=-0.1, nod=-0.18)
+        k["orate_c"] = dict(eL=V(0.22, 0.24, 0.36), hL=V(0.44, 0.2, 0.32), eR=V(0.22, -0.24, 0.36),
+                            hR=V(0.44, -0.2, 0.32), lean=0.1)
+        back = dict(eL=V(-0.08, 0.26, 0.24), hL=V(-0.18, 0.06, 0.1), eR=V(-0.08, -0.26, 0.24),
+                    hR=V(-0.18, -0.06, 0.1), nod=0.25)
+        k["survey_a"] = P(back, twist=0.18)
+        k["survey_b"] = P(back, twist=-0.18)
+        return k
     if w == "smith":
         # the gunsmith: empty hands; bent to the dirt for a gun, holding it up to the
         # light, and carrying an armful of them home
@@ -903,12 +928,17 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
     elif w == "prayer":
         add("bless", [k["bless_a"], k["bless_b"], k["bless_c"], k["bless_d"]], 2.5, True)
+    elif w == "mayor":
+        a_, b_, c_ = k["orate_a"], k["orate_b"], k["orate_c"]
+        add("orate", [a_, a_, lerp_pose(a_, c_, 0.5), c_, c_, lerp_pose(c_, b_, 0.5), b_, b_, lerp_pose(b_, a_, 0.5)],
+            3, True)
+        add("survey", [k["survey_a"], k["survey_a"], k["survey_b"], k["survey_b"]], 1.4, True)
     elif w == "smith":
         add("pick", [k["pick_a"], k["pick_a"], lerp_pose(k["pick_a"], k["pick_b"], 0.5), k["pick_b"], k["pick_b"]],
             2.5, True)
@@ -969,7 +999,7 @@ def upper_anims(w):
         add("reload_close", [k["break_half"], k["aim"]], 6)
     add("point", [k["point_half"], k["point"], k["point"]], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor"):
         # 7 fps: it leaves his hand on frame 4, Enemy.WINDUP (0.57 s) after lighting
         add("throw", [k["light"], k["light"], lerp_pose(k["light"], k["wind"], 0.6), k["wind"], k["lob"],
                       lerp_pose(k["lob"], k["aim"], 0.4), lerp_pose(k["lob"], k["aim"], 0.8)], 7)

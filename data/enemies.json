@@ -23,7 +23,8 @@
     "apprentice":      {"style": "vest",   "hat": "bowler",   "holsters": 0},
     "gunsmith":        {"style": "shirt",  "hat": "bowler",   "apron": true, "spectacles": true, "mustache": true, "holsters": 0},
     "widow":           {"style": "dress",  "hat": "rebozo",   "female": true, "sleeves": true},
-    "priest":          {"style": "duster", "hat": "flat",     "collar": true, "holsters": 0}
+    "priest":          {"style": "duster", "hat": "flat",     "collar": true, "holsters": 0},
+    "mayor":           {"style": "suit",   "hat": "top",      "mustache": true, "chain": true, "holsters": 0}
   },
 
   "player": {
@@ -270,6 +271,13 @@
         "shouts": {"calm": ["Peace, my son.", "Put down your guns!", "¡Basta ya!", "God sees you."], "work": ["Requiescat in pace.", "Go with God, my son.", "In nomine Patris..."]},
         "palettes": [
           {"coat": [46, 42, 48], "shirt": [40, 38, 44], "trousers": [40, 38, 44], "boots": [28, 24, 24], "hat": [34, 30, 36], "band": [34, 30, 36], "skin": [200, 150, 116], "hair": [60, 50, 44]}]},
+      "mayor": {"name": "Mayor", "template": "mayor", "role": "mayor", "snitch": 0.0,
+        "wander": 30, "speed": 0.9, "nerve": [0.3, 0.7],
+        "shouts": {"calm": ["Gentlemen, please!", "This is a respectable town!", "¡Basta ya, señores!", "Put those guns away!", "Think of the election!", "Not on Main Street!", "Let us talk like civilised men!"],
+                   "cower": ["Don't shoot! I'm the mayor!", "¡Ay, Dios mío!", "I have a family!", "Not the hat!"],
+                   "work": ["Who's going to pay for this?", "That was a perfectly good crate.", "The council will hear of this.", "¡Qué desastre!", "More taxes...", "Tsk. Tsk."]},
+        "palettes": [
+          {"coat": [148, 142, 136], "vest": [118, 32, 40], "shirt": [226, 222, 212], "trousers": [86, 84, 90], "boots": [30, 26, 26], "hat": [58, 54, 58], "band": [28, 26, 28], "accent": [30, 30, 34], "skin": [214, 164, 130], "hair": [168, 162, 156]}]},
       "saloon_girl": {"name": "Saloon girl", "template": "dress", "nerve": [0.3, 0.9], "snitch": 0.3,
         "shouts": {"flee": ["Oh!", "¡Ay, no!", "Not in here!"], "snitch": ["Boys! There's a stranger in town!"]},
         "palettes_from": "saloon_girl"}

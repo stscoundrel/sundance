@@ -50,6 +50,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_hillbilly.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_mourners.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_shutters.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_gunsmith.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_mayor.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_loadout.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_reinforcements.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_knife.gd
