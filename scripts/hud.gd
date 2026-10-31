@@ -19,6 +19,8 @@ var eyes_t := 0.0
 var message := ""
 var sub := ""
 var msg_t := 0.0
+var toast_text := ""
+var toast_t := 0.0
 
 
 func _ready() -> void:
@@ -45,6 +47,12 @@ func hide_eyes() -> void:
 	eyes_on = false
 
 
+## A line above the gun panel for a moment ("picked up").
+func toast(t: String) -> void:
+	toast_text = t
+	toast_t = 3.0
+
+
 func show_message(m: String, s: String) -> void:
 	message = m
 	sub = s
@@ -59,6 +67,7 @@ func _process(delta: float) -> void:
 		eyes_t += real
 	if message != "":
 		msg_t += real
+	toast_t = maxf(0.0, toast_t - real)
 	queue_redraw()
 
 
@@ -85,6 +94,8 @@ func _draw() -> void:
 		_draw_message()
 	if title_alpha > 0.0:
 		_draw_title()
+	if game.state == "loadout":
+		_draw_loadout(p)
 
 
 ## "!" / "?" markers, suspicion bars and shouted lines above the bandits' (and
@@ -141,6 +152,16 @@ func _draw_status(p: Player) -> void:
 
 
 func _draw_weapon(p: Player) -> void:
+	# his guns by key: the one in hand outlined, ones he hasn't got dark
+	for i in Player.ORDER.size():
+		var k: String = Player.ORDER[i]
+		var r := Rect2(592 + i * 14, 290, 11, 11)
+		var have: bool = k in p.owned
+		draw_rect(r, PANEL if have else Color(0.08, 0.05, 0.04, 0.35))
+		draw_rect(r, BRASS if k == p.current else (Color(0.5, 0.36, 0.2) if have else Color(0.3, 0.24, 0.18, 0.5)), false, 1.0)
+		_text(r.position + Vector2(3, 9), str(i + 1), 8, INK if have else Color(INK, 0.3))
+	if toast_t > 0.0:
+		_text(Vector2(0, 286), toast_text, 8, Color(0.95, 0.75, 0.35, clampf(toast_t, 0.0, 1.0)), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
 	var w := p.weapon
 	var box := Rect2(510, 304, 124, 50)
 	draw_rect(box, PANEL)
@@ -229,6 +250,55 @@ func _draw_message() -> void:
 	draw_rect(Rect2(0, 140, 640, 70), Color(0, 0, 0, 0.6 * a))
 	_text(Vector2(0, 180), message, 26, Color(0.95, 0.75, 0.35, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	_text(Vector2(0, 200), sub, 8, Color(INK, a), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+
+
+# ------------------------------------------------------------------ loadout
+
+const CARD_W := 150.0
+const CARD := Vector2(75, 112)
+const RIDE := Rect2(250, 286, 140, 26)
+
+
+func _card(i: int) -> Rect2:
+	return Rect2(CARD.x + i * (CARD_W + 20), CARD.y, CARD_W, 140)
+
+
+## What's under the cursor on the loadout screen: a gun, "ride", or nothing.
+func loadout_hit(pos: Vector2) -> String:
+	for i in Player.ORDER.size():
+		if _card(i).has_point(pos):
+			return Player.ORDER[i]
+	return "ride" if RIDE.has_point(pos) else ""
+
+
+func _draw_loadout(p: Player) -> void:
+	draw_rect(Rect2(0, 0, 640, 360), Color(0.03, 0.02, 0.02, 0.86))
+	_text(Vector2(0, 62), "CHOOSE YOUR IRONS", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	_text(Vector2(0, 84), "The guns you ride in with. Any other you'll have to take off a dead man.", 8,
+		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	var mouse := get_local_mouse_position()
+	for i in Player.ORDER.size():
+		var k: String = Player.ORDER[i]
+		var r := _card(i)
+		var on: bool = k in game.picked
+		draw_rect(r, Color(0.16, 0.1, 0.07, 0.95) if on else PANEL)
+		draw_rect(r, BRASS if on else (Color(0.5, 0.36, 0.2) if r.has_point(mouse) else Color(0.3, 0.22, 0.15)), false, 2.0 if on else 1.0)
+		var t: Texture2D = game.tex(game.meta["ui"]["guns"][k])
+		var sz := t.get_size()
+		sz *= minf(2.0, 124.0 / sz.x)
+		draw_texture_rect(t, Rect2(r.get_center() + Vector2(-sz.x / 2, -sz.y / 2 - 18), sz), false,
+			Color.WHITE if on else Color(0.6, 0.6, 0.6))
+		var name: String = p.weapons[k].d["name"]
+		_text(Vector2(r.position.x, r.end.y - 34), name, 8, INK if on else Color(INK, 0.6), null, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)
+		_text(Vector2(r.position.x, r.end.y - 14), "[%d]%s" % [i + 1, "  TAKEN" if on else ""], 10,
+			Color(0.95, 0.75, 0.35) if on else Color(INK, 0.5), font, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)
+	var ready: bool = not game.picked.is_empty()
+	draw_rect(RIDE, Color(0.22, 0.12, 0.08, 0.95) if ready else PANEL)
+	draw_rect(RIDE, BRASS if ready and RIDE.has_point(mouse) else Color(0.5, 0.36, 0.2), false, 1.0)
+	_text(Vector2(RIDE.position.x, RIDE.position.y + 18), "RIDE IN  [Enter]", 12,
+		Color(0.95, 0.75, 0.35) if ready else Color(INK, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, RIDE.size.x)
+	# the mouse is hidden in town; here it gets a small brass pointer
+	draw_colored_polygon(PackedVector2Array([mouse, mouse + Vector2(0, 11), mouse + Vector2(3, 8), mouse + Vector2(7, 8)]), BRASS)
 
 
 func _draw_title() -> void:

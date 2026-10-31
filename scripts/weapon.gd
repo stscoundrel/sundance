@@ -99,6 +99,21 @@ func _init(k: String, h: Actor) -> void:
 		barrels.append(1)
 
 
+## As a dead man left it: some of it fired off.
+func part_spent() -> void:
+	match action:
+		"revolver":
+			for i in chambers.size():
+				if randf() < 0.5:
+					chambers[i] = 2
+		"breech":
+			for i in barrels.size():
+				if randf() < 0.5:
+					barrels[i] = 2
+		"lever":
+			tube = randi_range(0, TUBE_CAP)
+
+
 ## A shotgun: a hip-carried scattergun throwing a fistful of shot.
 func is_shotgun() -> bool:
 	return int(d["pellets"]) > 1

@@ -45,7 +45,10 @@ var shutters: Array[Shutter] = []
 var cover_points := PackedVector2Array()
 var astar := AStarGrid2D.new()
 
-var state := "title"   # title, play, won, lost
+var state := "title"   # title, loadout, play, won, lost
+const LOADOUT_SIZE := 3   # all three for now, for testing
+static var picked: Array[String] = ["colt", "coach"]   # the loadout screen's choice, kept across restarts
+var start_guns: Array = Player.ORDER   # what he rides in with (tests: all three)
 var shake := 0.0
 var hurt_fx := 0.0
 var alerted_once := false
@@ -103,6 +106,8 @@ func _ready() -> void:
 	wind.finished.connect(wind.play)
 	wind.play()
 	sfx("bell", null, -4.0, 0.0)
+	if _args.has("guns"):
+		start_guns = Array(_args["guns"].split(",")).filter(func(k): return k in Player.ORDER)
 	if _args.has("skip-title"):
 		begin()
 	elif _args.has("freeze"):
@@ -178,8 +183,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().quit()
 	elif state == "title" and (event is InputEventMouseButton or event is InputEventKey) and event.is_pressed():
 		if Time.get_ticks_msec() - start_time > 600:
-			begin()
+			_to_loadout()
 			get_viewport().set_input_as_handled()
+	elif state == "loadout" and event.is_pressed():
+		_loadout_input(event)
+		get_viewport().set_input_as_handled()
 	elif (state == "won" or state == "lost") and event.is_action_pressed("restart"):
 		Engine.time_scale = 1.0
 		get_tree().reload_current_scene()
@@ -191,10 +199,54 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func begin() -> void:
-	if state != "title":
+	if state != "title" and state != "loadout":
 		return
+	if not start_guns.is_empty():
+		player.arm(start_guns)
 	state = "play"
 	hud.hide_title()
+
+
+## The title card gives way to choosing his guns.
+func _to_loadout() -> void:
+	state = "loadout"
+	hud.hide_title()
+
+
+## 1 2 3 or a click on a gun picks it or puts it back (up to LOADOUT_SIZE; past
+## that a new pick replaces the first); Enter, Space or "ride in" starts with them.
+func _loadout_input(event: InputEvent) -> void:
+	var k := ""
+	if event is InputEventKey:
+		match event.keycode:
+			KEY_1, KEY_2, KEY_3:
+				k = Player.ORDER[event.keycode - KEY_1]
+			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
+				_ride_in()
+				return
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		var hit: String = hud.loadout_hit(hud.get_local_mouse_position())
+		if hit == "ride":
+			_ride_in()
+			return
+		k = hit
+	if k == "":
+		return
+	if k in picked:
+		picked.erase(k)
+	else:
+		picked.append(k)
+		if picked.size() > LOADOUT_SIZE:
+			picked.pop_front()
+	sfx("close", null, -10.0)
+
+
+func _ride_in() -> void:
+	if picked.is_empty():
+		sfx("dry", null, -6.0)
+		return
+	start_guns = picked.duplicate()
+	begin()
 
 
 # ------------------------------------------------------------------ world
@@ -417,7 +469,7 @@ func _build_overlay() -> void:
 func _process(delta: float) -> void:
 	var now := Time.get_ticks_msec()
 	if state == "title" and now - start_time > 5500 and not _args.has("freeze"):
-		begin()
+		_to_loadout()
 	if closeup_left > 0.0:
 		closeup_left -= delta / maxf(Engine.time_scale, 0.01)
 		if closeup_left <= 0.0:
@@ -832,6 +884,7 @@ func _physics_process(delta: float) -> void:
 		return
 	clock += delta
 	innocent_t = maxf(0.0, innocent_t - delta)
+	_pick_up_guns()
 	_quiet = clock - last_gunfire
 	for e in enemies:
 		if e.alive and e.st == Enemy.St.COMBAT:
@@ -1249,6 +1302,22 @@ func claim_gun(by: Civilian, from: Vector2, within := INF) -> Dictionary:
 	if not best.is_empty():
 		best["claimed_by"] = by
 	return best
+
+
+## The stranger walks over a gun he hasn't got (a Colt, a coach gun, a Winchester):
+## it's his. The cartridges lying by it are his to pick up as usual.
+func _pick_up_guns() -> void:
+	if not player.alive:
+		return
+	for g in loose_guns:
+		var k: String = g["kind"]
+		if k in Player.ORDER and not k in player.owned and player.global_position.distance_to(g["at"]) < 12.0:
+			loose_guns.erase(g)
+			g["sprite"].queue_free()
+			player.take_up(k)
+			hud.toast("%s  picked up  [%d]" % [player.weapons[k].d["name"], Player.ORDER.find(k) + 1])
+			stats["guns picked up"] = stats.get("guns picked up", 0) + 1
+			return
 
 
 ## Picked up: off the ground, and the cartridges lying with it go too.

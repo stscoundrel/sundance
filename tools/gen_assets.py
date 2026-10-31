@@ -296,6 +296,14 @@ def gen_ui(meta):
     # portrait
     p = chars.portrait()
     meta["ui"]["portrait"] = save(p, "sprites/ui/portrait.png")
+    # the hero's guns side-on, for the loadout screen
+    meta["ui"]["guns"] = {}
+    for kind in ("colt", "coach", "rifle"):
+        L = chars.GUN_LEN[kind]
+        d = np.array([1.0, -1.0, 0.0]) / math.sqrt(2)   # along the screen, muzzle to the right
+        img, _ = render(chars.weapon_model(kind, -d * L / 2, d), scale=PIX * (2.4 if kind == "colt" else 1.2),
+                        shadow=False)
+        meta["ui"]["guns"][kind] = save(img, f"sprites/ui/gun_{kind}.png")
 
     # extreme close-up of the hero's eyes
     K = UI_PIX

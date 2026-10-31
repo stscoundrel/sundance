@@ -30,7 +30,7 @@ Win when every bandit is dead, lose when the hero dies. Restart instantly.
 | RMB | Revolver: fan the hammer (hold) · Coach gun: fire both barrels |
 | C / Ctrl | Toggle crouch |
 | R | Reload (press fire to stop a partial reload) |
-| 1 / 2 / 3, wheel | Colt / coach gun / Yellow Boy |
+| 1 / 2 / 3, wheel | Colt / coach gun / Yellow Boy (the ones he has) |
 | Enter | Restart after win or loss |
 | Esc | Quit |
 
@@ -42,6 +42,18 @@ he survives two clean hits. No health pickups.
 
 Crouching: half speed, silent footsteps, tighter spread and a smaller visual
 profile (see Stealth).
+
+**Loadout and loot.** After the title card the stranger chooses his irons: any of
+the Colt, the coach gun and the Winchester, at least one (1 2 3 or a click to take
+or put back; Enter or "ride in"; all three are allowed for now, for testing, and
+`LOADOUT_SIZE` in `game.gd` limits it). The choice is kept across restarts. He
+rides in with those and their belts of cartridges. Any of the three a dead man
+drops is his for walking over it, part-spent as it was left; a gun he already has,
+or one he can't use yet (derringer, Sharps, howdah, sawn-off), stays where it lies,
+and the gunsmith may get to it first. Cartridges for a gun he hasn't got still go
+in his belt, ready for when he finds one. Three small slots over the gun panel show
+which he has (the one in hand outlined), and a line there says what he picked up.
+`tests/test_loadout.gd` covers the screen, the switching, and picking guns up.
 
 ## Weapons (period-authentic)
 

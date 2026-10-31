@@ -1,12 +1,16 @@
 class_name Player
 extends Actor
-## The gunslinger: WASD to move, mouse to aim, three guns.
+## The gunslinger: WASD to move, mouse to aim. He rides in with the guns picked on
+## the loadout screen and takes up any of the others a dead man drops by walking
+## over it; cartridges go in his belt whether he has the gun for them yet or not.
 
 const ORDER := ["colt", "coach", "rifle"]
+const RESERVE := {"colt": 30, "coach": 10, "rifle": 26}   # what he rides in with, per gun
 const WALK := 46.0
 const CROUCH_WALK := 22.0
 
 var weapons := {}
+var owned: Array[String] = []   # the guns he has, in ORDER
 var current := "colt"
 var switch_t := 0.0
 var step_t := 0.0
@@ -23,10 +27,7 @@ func setup(g: Node, pos: Vector2) -> void:
 	max_hp = 6
 	for k in ORDER:
 		weapons[k] = Weapon.new(k, self)
-	weapons["colt"].reserve = 30
-	weapons["coach"].reserve = 10
-	weapons["rifle"].reserve = 26
-	weapon = weapons["colt"]
+	arm(ORDER)
 	set_character(g.enemy_data["player"]["template"], g.enemy_data["player"]["palette"])
 	facing = Vector2(1, -0.3).normalized()
 
@@ -93,12 +94,36 @@ func _handle_actions() -> void:
 		weapon.alt_trigger()
 
 
+## The guns he rides in with (at least one), each with its belt of cartridges.
+func arm(guns: Array) -> void:
+	owned.clear()
+	for k in ORDER:
+		weapons[k] = Weapon.new(k, self)
+		if k in guns:
+			owned.append(k)
+			weapons[k].reserve = RESERVE[k]
+	current = owned[0]
+	weapon = weapons[current]
+
+
+## A dead man's gun, picked up off the ground with whatever he left in it.
+func take_up(k: String) -> void:
+	var w := Weapon.new(k, self)
+	w.reserve = weapons[k].reserve   # cartridges he picked up before he had the gun
+	w.part_spent()
+	weapons[k] = w
+	owned.append(k)
+	owned.sort_custom(func(a, b): return ORDER.find(a) < ORDER.find(b))
+	game.sfx("pickup", null, 0.0)
+	game.sfx("close", null, -6.0)
+
+
 func cycle_weapon(step: int) -> void:
-	switch_to(ORDER[posmod(ORDER.find(current) + step, ORDER.size())])
+	switch_to(owned[posmod(owned.find(current) + step, owned.size())])
 
 
 func switch_to(k: String) -> void:
-	if k == current or not alive:
+	if k == current or not alive or not k in owned:
 		return
 	weapon.abort()
 	current = k

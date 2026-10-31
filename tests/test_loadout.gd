@@ -1,0 +1,90 @@
+extends SceneTree
+## The loadout screen and picking guns up. From the title the stranger chooses his
+## guns (any of the three, at least one); he rides in with only those and can't
+## switch to the other. Cartridges for it still go in his belt. Walking over that gun
+## lying in the dirt makes it his (part-spent, as a dead man left it); a gun he
+## already has, or one he can't use yet (a sawn-off), stays where it lies:
+##   godot --headless --path . --fixed-fps 60 -s tests/test_loadout.gd
+
+var game: Node
+var frame := 0
+var failures := 0
+var at := Vector2.ZERO
+var coach: Dictionary
+var colt: Dictionary
+var sawn: Dictionary
+
+
+func _initialize() -> void:
+	Engine.set_meta("fixed_seed", true)
+	Engine.set_meta("no_civilians", true)
+	seed(1)
+	game = load("res://scenes/main.tscn").instantiate()
+	root.add_child(game)
+
+
+func check(cond: bool, msg: String) -> void:
+	if not cond:
+		failures += 1
+		print("FAIL: ", msg)
+
+
+func _key(k: Key) -> void:
+	var e := InputEventKey.new()
+	e.keycode = k
+	e.pressed = true
+	game._loadout_input(e)
+
+
+func _process(_delta: float) -> bool:
+	frame += 1
+	var p: Player = game.player
+	if frame == 3:
+		game.picked.assign(["colt", "coach"])
+		game._to_loadout()
+		check(game.state == "loadout", "the title should lead to the loadout screen")
+		_key(KEY_3)
+		check(game.picked == ["colt", "coach", "rifle"], "all three should go (%s)" % [game.picked])
+		_key(KEY_2)
+		check(game.picked == ["colt", "rifle"], "picking a gun again should put it back (%s)" % [game.picked])
+		_key(KEY_ENTER)
+		check(game.state == "play", "Enter should ride in")
+		check(p.owned == ["colt", "rifle"], "he should ride in with the two he picked (%s)" % [p.owned])
+		p.switch_to("coach")
+		check(p.current != "coach", "he switched to a gun he hasn't got")
+		for e in game.enemies:
+			e.process_mode = Node.PROCESS_MODE_DISABLED
+		at = Iso.to_screen(Vector2(26.0, 31.4))
+		p.global_position = at
+		# cartridges for the coach gun go in his belt all the same
+		var before: int = p.weapons["coach"].reserve
+		var shells := Pickup.new()
+		shells.setup(game, at, "coach")
+		game.world.add_child(shells)
+		p.global_position = at + Vector2(0, 1)
+		# guns lying further down the street
+		coach = game._place_gun("coach", at + Vector2(60, 0), 0.0)
+		colt = game._place_gun("colt", at + Vector2(90, 0), 0.0)
+		sawn = game._place_gun("sawnoff", at + Vector2(120, 0), 0.0)
+		set_meta("before", before)
+	if frame <= 3:
+		return false
+	if frame == 10:
+		check(p.weapons["coach"].reserve > get_meta("before"), "coach shells should go in his belt without the gun")
+	# he walks down the street over all three
+	if frame > 10 and frame < 200:
+		p.global_position = at + Vector2(float(frame - 10), 0)
+	if frame == 200:
+		check("coach" in p.owned, "walking over the coach gun should make it his")
+		check(not game.loose_guns.has(coach), "the coach gun is still lying there")
+		check(p.weapons["coach"].reserve > 0, "the shells he'd picked up should be his to load it with")
+		check(game.loose_guns.has(colt), "he picked up a Colt he already had")
+		check(game.loose_guns.has(sawn), "he picked up a sawn-off (not his to use yet)")
+		check(game.hud.toast_text.contains("COACH"), "no word that he picked it up (%s)" % game.hud.toast_text)
+		p.switch_to("coach")
+		check(p.current == "coach", "he can't switch to the coach gun he picked up")
+		print("owned %s, coach loaded %d, reserve %d" % [p.owned, p.weapon.loaded(), p.weapon.reserve])
+		print("loadout test: ", "OK" if failures == 0 else "%d failures" % failures)
+		quit(1 if failures else 0)
+		return true
+	return false

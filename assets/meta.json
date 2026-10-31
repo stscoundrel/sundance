@@ -140708,6 +140708,11 @@
  },
  "ui": {
   "portrait": "res://assets/sprites/ui/portrait.png",
+  "guns": {
+   "colt": "res://assets/sprites/ui/gun_colt.png",
+   "coach": "res://assets/sprites/ui/gun_coach.png",
+   "rifle": "res://assets/sprites/ui/gun_rifle.png"
+  },
   "eyes": "res://assets/sprites/ui/eyes.png",
   "title": "res://assets/sprites/ui/title.png"
  },
