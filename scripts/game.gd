@@ -19,6 +19,7 @@ var world: Node2D
 var decals: Decals
 var cone_layer: Node2D
 var statics: Node2D
+var ghost_layer: Node2D
 var camera: Camera2D
 var hud: Hud
 var post: ColorRect
@@ -197,6 +198,9 @@ func _build_world() -> void:
 	add_child(world)
 	statics = Node2D.new()
 	add_child(statics)
+	ghost_layer = Node2D.new()
+	ghost_layer.z_index = 40   # silhouettes of hidden characters, above everything in the world
+	add_child(ghost_layer)
 
 	astar.region = Rect2i(0, 0, size * 2, size * 2)
 	astar.cell_size = Vector2(1, 1)
@@ -322,6 +326,9 @@ func _spawn_actors() -> void:
 		en.died.connect(_on_enemy_died)
 		enemies.append(en)
 	player.died.connect(_on_player_died)
+	player.make_ghost(ghost_layer, Color(0.92, 0.95, 1.0, 0.6))
+	for en in enemies:
+		en.make_ghost(ghost_layer, Color(1.0, 0.36, 0.26, 0.5))
 	camera.position = player.global_position
 
 
@@ -382,12 +389,42 @@ func _process(delta: float) -> void:
 func _update_fades(delta: float) -> void:
 	if not player:
 		return
+	# A building fades when it hides the hero or when he's aiming at it. Anyone else
+	# it hides shows through as a silhouette.
 	var g := Iso.to_grid(player.global_position)
+	var cursor := get_global_mouse_position()
 	for b in buildings:
 		var spr: Sprite2D = b["sprite"]
 		var behind: bool = g.x < b["x1"] and g.y < b["y1"] and not (g.x > b["x0"] and g.y > b["y0"])
-		var target := 0.35 if behind and _covers(b, player.global_position) else 1.0
+		var hides_hero := behind and _covers(b, player.global_position)
+		var target := 0.35 if hides_hero or (state == "play" and _covers_point(b, cursor)) else 1.0
 		spr.modulate.a = move_toward(spr.modulate.a, target, delta * 4.0)
+	var actors: Array = [player]
+	actors.append_array(enemies)
+	for a in actors:
+		a.occluded = false
+		if not a.alive:
+			continue
+		var ag := Iso.to_grid(a.global_position)
+		for b in buildings:
+			var spr: Sprite2D = b["sprite"]
+			if spr.modulate.a < 0.6:
+				continue   # already see-through
+			if ag.x < b["x1"] and ag.y < b["y1"] and not (ag.x > b["x0"] and ag.y > b["y0"]) \
+					and _covers(b, a.global_position):
+				a.occluded = true
+				break
+
+
+## Is this point on the building's artwork (not its shadow)?
+func _covers_point(b: Dictionary, p: Vector2) -> bool:
+	var spr: Sprite2D = b["sprite"]
+	if not b.has("image"):
+		b["image"] = spr.texture.get_image()
+	var img: Image = b["image"]
+	var ip := Vector2i(((p - (spr.position + spr.offset * tex_scale)) / tex_scale))
+	return ip.x >= 0 and ip.y >= 0 and ip.x < img.get_width() and ip.y < img.get_height() \
+		and img.get_pixelv(ip).a > 0.9
 
 
 ## Does the building's actual artwork (not its shadow) cover the hero's body?

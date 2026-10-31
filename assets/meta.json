@@ -83820,6 +83820,132 @@
     ]
    ]
   },
+  "hotel": {
+   "file": "res://assets/sprites/world/hotel.png",
+   "anchor": [
+    344,
+    268
+   ],
+   "footprint": [
+    7,
+    6
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     7,
+     6
+    ]
+   ]
+  },
+  "barber": {
+   "file": "res://assets/sprites/world/barber.png",
+   "anchor": [
+    248,
+    172
+   ],
+   "footprint": [
+    4,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     4,
+     4
+    ]
+   ]
+  },
+  "undertaker": {
+   "file": "res://assets/sprites/world/undertaker.png",
+   "anchor": [
+    296,
+    181
+   ],
+   "footprint": [
+    4,
+    5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     4,
+     5
+    ]
+   ]
+  },
+  "assay": {
+   "file": "res://assets/sprites/world/assay.png",
+   "anchor": [
+    248,
+    182
+   ],
+   "footprint": [
+    5,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     5,
+     4
+    ]
+   ]
+  },
+  "feed": {
+   "file": "res://assets/sprites/world/feed.png",
+   "anchor": [
+    296,
+    201
+   ],
+   "footprint": [
+    5,
+    5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     5,
+     5
+    ]
+   ]
+  },
+  "cantina": {
+   "file": "res://assets/sprites/world/cantina.png",
+   "anchor": [
+    247,
+    183
+   ],
+   "footprint": [
+    6,
+    5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     6,
+     5
+    ]
+   ]
+  },
   "crate": {
    "file": "res://assets/sprites/world/crate.png",
    "anchor": [
@@ -84056,7 +84182,7 @@
  "ground": {
   "file": "res://assets/sprites/ground.png",
   "origin": [
-   -896,
+   -1280,
    -128
   ]
  },

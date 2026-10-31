@@ -93,103 +93,124 @@ def gen_world(meta):
     meta["tumbleweed"] = {"file": path, "cell": [24 * PIX, 24 * PIX], "anchor": [12 * PIX, 18 * PIX], "frames": 4}
 
 
+def _hash(ix, iy, seed):
+    """Deterministic 0..1 noise for integer lattice points (any shape)."""
+    h = (ix.astype(np.int64) * 374761393 + iy.astype(np.int64) * 668265263 + seed * 2246822519) & 0xFFFFFFFF
+    h = ((h ^ (h >> 13)) * 1274126177) & 0xFFFFFFFF
+    return ((h ^ (h >> 16)) & 0xFFFF).astype(np.float32) / 65535.0
+
+
+def lnoise(xs, ys, scale, seed):
+    """Smooth value noise in [0,1] at absolute pixel positions, so the ground can be
+    built strip by strip without seams. xs: (W,), ys: (H,) -> (H, W)."""
+    fx, fy = xs / scale, ys / scale
+    x0, y0 = np.floor(fx), np.floor(fy)
+    tx, ty = fx - x0, fy - y0
+    tx, ty = tx * tx * (3 - 2 * tx), ty * ty * (3 - 2 * ty)
+    X0, Y0 = np.meshgrid(x0, y0)
+    a = _hash(X0, Y0, seed)
+    b = _hash(X0 + 1, Y0, seed)
+    c = _hash(X0, Y0 + 1, seed)
+    d = _hash(X0 + 1, Y0 + 1, seed)
+    top = a + (b - a) * tx[None, :]
+    bot = c + (d - c) * tx[None, :]
+    return (top + (bot - top) * ty[:, None]).astype(np.float32)
+
+
 def gen_ground(meta, level):
+    """The ground: sand, streets with wheel ruts, mud and puddles, boot hill, scrub,
+    fading to haze beyond town. Built in horizontal strips to keep memory flat."""
     N = level["size"]
     M = 8
     span = N + 2 * M
     K = PIX
     W, H = span * 32 * K, span * 16 * K
     ox, oy = span * 16, 2 * M * 8          # world position of the image's top-left corner (negated)
-    py, px = np.mgrid[0:H, 0:W].astype(np.float32)
-    sx, sy = (px + 0.5) / K - ox, (py + 0.5) / K - oy
-    del px, py
-    gx = (sx / 16 + sy / 8) / 2
-    gy = (sy / 8 - sx / 16) / 2
-    rng = np.random.default_rng(7)
+    out = np.zeros((H, W, 3), np.uint8)
+    sand = np.array([[166, 124, 84], [182, 140, 96], [196, 156, 108], [210, 172, 122]], np.float32)
+    dirt = np.array([[132, 96, 66], [146, 108, 74], [158, 118, 82], [170, 130, 90]], np.float32)
+    mud = np.array([[74, 52, 38], [88, 62, 44], [102, 74, 52]], np.float32)
+    xs = np.arange(W, dtype=np.float32)
+    band = 256
+    for y_start in range(0, H, band):
+        ys = np.arange(y_start, min(H, y_start + band), dtype=np.float32)
+        h = len(ys)
+        PXg, PYg = np.meshgrid(xs, ys)
+        sx, sy = (PXg + 0.5) / K - ox, (PYg + 0.5) / K - oy
+        gx = (sx / 16 + sy / 8) / 2
+        gy = (sy / 8 - sx / 16) / 2
+        n_big = lnoise(xs, ys, 90 * K, 1)
+        n_mid = lnoise(xs, ys, 24 * K, 2)
+        n_small = lnoise(xs, ys, 6 * K, 3)
+        fine = _hash(PXg.astype(np.int64), PYg.astype(np.int64), 4)
+        tone = 0.25 * n_big + 0.15 + 0.3 * n_mid + 0.15 * n_small + 0.1 * fine
+        img = sand[np.clip((tone - 0.25) / 0.5 * 4, 0, 3.99).astype(int)]
+        inside = (gx >= 0) & (gx < N) & (gy >= 0) & (gy < N)
 
-    n_big = noise2(H, W, 90 * K, 1)
-    n_mid = noise2(H, W, 24 * K, 2)
-    n_small = noise2(H, W, 6 * K, 3)
-    fine = rng.random((H, W))
-    tone = 0.25 * n_big + 0.15 + 0.3 * n_mid + 0.15 * n_small + 0.1 * fine
+        for bx0, by0, bx1, by1 in level.get("boothills", [level["boothill"]] if "boothill" in level else []):
+            bh = (gx > bx0) & (gx < bx1) & (gy > by0) & (gy < by1)
+            img[bh] = img[bh] * 0.9 + np.array([170, 100, 70]) * 0.1
 
-    sand = np.array([[166, 124, 84], [182, 140, 96], [196, 156, 108], [210, 172, 122]], float)
-    q = np.clip((tone - 0.25) / 0.5 * 4, 0, 3.99).astype(int)
-    img = sand[q]
+        road = np.zeros((h, W), bool)
+        rut = np.zeros((h, W), bool)
+        edge_n = (n_mid - 0.5) * 0.9 + (n_small - 0.5) * 0.4
+        for x0, y0, x1, y1 in level["streets"]:
+            dd = np.maximum.reduce([x0 - gx, gx - x1, y0 - gy, gy - y1])
+            road |= dd < edge_n * 0.8
+            inrect = (gx > x0) & (gx < x1) & (gy > y0) & (gy < y1)
+            if (x1 - x0) > (y1 - y0):
+                c = (y0 + y1) / 2
+                offs = (-0.85, 0.85, -2.1, 2.1) if (y1 - y0) >= 4.5 else (-0.85, 0.85)
+                for off in offs:
+                    rut |= inrect & (np.abs(gy - c - off - (n_mid - 0.5) * 0.3) < 0.07)
+            else:
+                c = (x0 + x1) / 2
+                for off in (-0.85, 0.85):
+                    rut |= inrect & (np.abs(gx - c - off - (n_mid - 0.5) * 0.3) < 0.07)
+        rq = np.clip((0.6 * n_small + 0.4 * fine - 0.2) / 0.6 * 4, 0, 3.99).astype(int)
+        img[road] = dirt[rq[road]]
+        img[rut & road] *= 0.8
+        img[road & (fine > 0.985)] *= 0.75            # hoof prints
 
-    inside = (gx >= 0) & (gx < N) & (gy >= 0) & (gy < N)
+        for cx, cy, r in level["mud"]:
+            dd = np.hypot(gx - cx, gy - cy) / r + (n_small - 0.5) * 0.5 + (n_mid - 0.5) * 0.4
+            core = dd < 1.0
+            if not core.any():
+                continue
+            img[core] = mud[np.clip((n_small * 0.7 + fine * 0.3) * 3, 0, 2.99).astype(int)[core]]
+            rim = (dd >= 1.0) & (dd < 1.18)
+            img[rim] *= 0.82
+            puddle = dd < 0.3 - (n_small - 0.5) * 0.4
+            img[puddle] = np.array([104, 104, 94], np.float32) * (0.9 + 0.15 * n_small[puddle])[:, None]
+            img[puddle & (fine > 0.93)] = (150, 150, 136)
 
-    # boot hill: reddish dirt
-    bx0, by0, bx1, by1 = level["boothill"]
-    bh = (gx > bx0) & (gx < bx1) & (gy > by0) & (gy < by1)
-    img[bh] = img[bh] * 0.9 + np.array([170, 100, 70]) * 0.1
+        img[(fine > 0.992) & ~road] *= 0.7               # pebbles
+        peb2 = fine < 0.006
+        img[peb2] = np.minimum(img[peb2] * 1.18, 255)
 
-    # streets
-    road = np.zeros((H, W), bool)
-    rut = np.zeros((H, W), bool)
-    edge_n = (n_mid - 0.5) * 0.9 + (n_small - 0.5) * 0.4
-    for x0, y0, x1, y1 in level["streets"]:
-        d = np.maximum.reduce([x0 - gx, gx - x1, y0 - gy, gy - y1])
-        road |= d < edge_n * 0.8
-        horiz = (x1 - x0) > (y1 - y0)
-        inrect = (gx > x0) & (gx < x1) & (gy > y0) & (gy < y1)
-        if horiz:
-            c = (y0 + y1) / 2
-            for off in (-0.85, 0.85, -2.1, 2.1):
-                rut |= inrect & (np.abs(gy - c - off - (n_mid - 0.5) * 0.3) < 0.07)
-        else:
-            c = (x0 + x1) / 2
-            for off in (-0.85, 0.85):
-                rut |= inrect & (np.abs(gx - c - off - (n_mid - 0.5) * 0.3) < 0.07)
-    dirt = np.array([[132, 96, 66], [146, 108, 74], [158, 118, 82], [170, 130, 90]], float)
-    rq = np.clip((0.6 * n_small + 0.4 * fine - 0.2) / 0.6 * 4, 0, 3.99).astype(int)
-    img[road] = dirt[rq[road]]
-    img[rut & road] = img[rut & road] * 0.8
+        dist = np.maximum.reduce([-gx, gx - N, -gy, gy - N, np.zeros_like(gx)])
+        fade = np.clip(dist / M, 0, 1)
+        img = img * (1 - 0.35 * fade[..., None]) + np.array([150, 112, 80]) * 0.35 * fade[..., None]
+        border = inside & ((np.minimum.reduce([gx, N - gx, gy, N - gy])) < 0.06)
+        img[border] *= 0.9
+        out[y_start:y_start + h] = np.clip(img, 0, 255).astype(np.uint8)
 
-    # hoof prints and horse dung
-    hp = road & (fine > 0.985)
-    img[hp] *= 0.75
+        # tufts of dry grass, away from the streets
+        tuft = (_hash(PXg.astype(np.int64), PYg.astype(np.int64), 9) > 1 - 0.0015 / (K * K)) & ~road
+        tuft &= ~inside | (n_big > 0.55)
+        rng = np.random.default_rng(y_start)
+        for y, x in zip(*np.nonzero(tuft)):
+            y += y_start
+            for _ in range(rng.integers(4, 10)):
+                dx = int(rng.integers(-2 * K, 2 * K + 1))
+                hgt = int(rng.integers(1, 3 * K + 1))
+                col = (134, 128, 66) if rng.random() < 0.5 else (110, 104, 56)
+                for j in range(hgt):
+                    yy, xx = y - j, x + dx + (j * np.sign(dx) if hgt > 2 else 0)
+                    if 0 <= yy < H and 0 <= xx < W:
+                        out[yy, xx] = col
 
-    # mud patches (Corbucci)
-    mud = np.array([[74, 52, 38], [88, 62, 44], [102, 74, 52]], float)
-    for cx, cy, r in level["mud"]:
-        d = np.hypot(gx - cx, (gy - cy) * 1.0) / r + (n_small - 0.5) * 0.5 + (n_mid - 0.5) * 0.4
-        core = d < 1.0
-        mq = np.clip((n_small * 0.7 + fine * 0.3) * 3, 0, 2.99).astype(int)
-        img[core] = mud[mq[core]]
-        rim = (d >= 1.0) & (d < 1.18)
-        img[rim] = img[rim] * 0.82
-        puddle = d < 0.3 - (n_small - 0.5) * 0.4
-        img[puddle] = np.array([104, 104, 94]) * (0.9 + 0.15 * n_small[puddle])[:, None]
-        glint = puddle & (fine > 0.93)
-        img[glint] = (150, 150, 136)
-
-    # pebbles and dry grass
-    peb = (fine > 0.992) & ~road
-    img[peb] = img[peb] * 0.7
-    peb2 = (fine < 0.006)
-    img[peb2] = np.minimum(img[peb2] * 1.18, 255)
-    tuft_seed = (rng.random((H, W)) > 1 - 0.0015 / (K * K)) & ~road
-    tuft_seed &= ~inside | (n_big > 0.55)
-    ys, xs = np.nonzero(tuft_seed)
-    for y, x in zip(ys, xs):
-        for k in range(rng.integers(4, 10)):
-            dx = int(rng.integers(-2 * K, 2 * K + 1))
-            hgt = int(rng.integers(1, 3 * K + 1))
-            col = (134, 128, 66) if rng.random() < 0.5 else (110, 104, 56)
-            for j in range(hgt):
-                yy, xx = y - j, x + dx + (j * np.sign(dx) if hgt > 2 else 0)
-                if 0 <= yy < H and 0 <= xx < W:
-                    img[yy, xx] = col
-
-    # outside the town limits the land fades into haze
-    dist = np.maximum.reduce([-gx, gx - N, -gy, gy - N, np.zeros_like(gx)])
-    fade = np.clip(dist / M, 0, 1)
-    img = img * (1 - 0.35 * fade[..., None]) + np.array([150, 112, 80]) * 0.35 * fade[..., None]
-    border = inside & ((np.minimum.reduce([gx, N - gx, gy, N - gy])) < 0.06)
-    img[border] = img[border] * 0.9
-
-    path = save(np.clip(img, 0, 255).astype(np.uint8), "sprites/ground.png")
+    path = save(out, "sprites/ground.png")
     meta["ground"] = {"file": path, "origin": [-ox, -oy]}
     meta["tex_scale"] = 1.0 / K
 

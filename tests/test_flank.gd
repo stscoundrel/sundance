@@ -4,8 +4,8 @@ extends SceneTree
 ## SEED=n picks the random seed; NO_FLANK=1 is the control run with no flanking.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_flank.gd
 
-const TARGET := Vector2(26.5, 10.6)    # behind the sheriff: up the side street or the alley by the bank
-const HIDE_AT := Vector2(1.5, 37.5)
+const TARGET := Vector2(31.0, 19.2)    # the yard behind the hotel: an alley on either side, or the north street
+const HIDE_AT := Vector2(1.0, 62.5)
 
 var game: Node
 var frame := 0

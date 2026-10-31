@@ -150,10 +150,15 @@ carried, which you collect by walking over them.
   and shown through a close camera (about 13 tiles across) in a 1280×720 view, scaled up by whole numbers with no smoothing, in a
   maximised window.
 - Buildings are solid (no interiors in v1). They fade when the hero walks behind them.
-- **Town**: a main street crossed by a side street. On it: a false-front saloon,
-  general store, sheriff's office, bank, adobe houses, a church with a bell tower,
-  stable, water tower, gallows, and a boot hill with crosses and a coffin.
-  Wagons, crates, barrels, hitching posts, troughs, cacti, tumbleweeds, mud.
+- **Town** (64x64 tiles, laid out by `tools/make_town.py`): a main street, north and
+  south streets, two cross streets, a plaza with the gallows and alleys between the
+  buildings. Saloon, hotel, bank, sheriff, general store, barber, undertaker,
+  assay office, feed store, an adobe cantina, a church with a bell tower, stables,
+  a water tower, adobe houses and boot hill; wagons, crates, barrels, troughs,
+  hitching rails, cacti, tumbleweeds and mud. 24 bandits.
+- **Seeing through buildings**: a building fades when it hides the hero or when
+  he aims at it; anyone else hidden behind a building shows through as a
+  silhouette (red for bandits, pale for the hero).
 
 ## Look and feel
 

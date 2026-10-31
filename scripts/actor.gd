@@ -9,6 +9,7 @@ signal died(actor: Actor)
 
 const PZ := 15.7   # world px per metre of height
 const PALETTE_SHADER := preload("res://shaders/palette.gdshader")
+const SILHOUETTE_SHADER := preload("res://shaders/silhouette.gdshader")
 const HITS := ["hit_l", "hit_r", "hit_gut"]
 
 var game: Node
@@ -35,6 +36,8 @@ var _move_t := 0.0    # distance-driven clock for walk cycles
 var _layers := {}     # layer -> [anim key, start time, last frame]
 var _clock := 0.0
 var _death := ""
+var ghost: Node2D          # his silhouette, shown over buildings that hide him
+var occluded := false
 
 
 func setup_body(g: Node, pos: Vector2) -> void:
@@ -70,6 +73,40 @@ func setup_body(g: Node, pos: Vector2) -> void:
 			legs_spr = s
 		else:
 			upper_spr = s
+
+
+## A silhouette copy of him on a layer above the buildings, shown while he's hidden.
+func make_ghost(layer: Node2D, tint: Color) -> void:
+	ghost = Node2D.new()
+	layer.add_child(ghost)
+	var mat := ShaderMaterial.new()
+	mat.shader = SILHOUETTE_SHADER
+	mat.set_shader_parameter("tint", tint)
+	for s in [legs_spr, upper_spr]:
+		var g := Sprite2D.new()
+		g.centered = false
+		g.region_enabled = true
+		g.texture = s.texture
+		g.scale = s.scale
+		g.material = mat
+		ghost.add_child(g)
+	ghost.visible = false
+
+
+func _sync_ghost() -> void:
+	if ghost == null:
+		return
+	ghost.visible = occluded and alive
+	if not ghost.visible:
+		return
+	ghost.position = global_position
+	var src := [legs_spr, upper_spr]
+	for i in 2:
+		var g: Sprite2D = ghost.get_child(i)
+		g.visible = src[i].visible
+		g.region_rect = src[i].region_rect
+		g.offset = src[i].offset
+		g.position = src[i].position
 
 
 ## Use a body template's atlas ("hero", "poncho", "suit", ...) painted with a palette
@@ -212,6 +249,7 @@ func update_anim(delta: float) -> void:
 		_show(upper_spr, r[0], r[1], dir)
 		upper_spr.position = Vector2.ZERO
 		legs_spr.visible = false
+		_sync_ghost()
 		return
 
 	var l := _advance("legs", _legs_choice(moving))
@@ -220,6 +258,7 @@ func update_anim(delta: float) -> void:
 	upper_spr.position = Vector2(0, (float(cdata["h_ref"]) - hip) * PZ)
 	var u := _advance("upper", _upper_key(_upper_choice()))
 	_show(upper_spr, u[0], u[1], dir)
+	_sync_ghost()
 
 	if flash_t > 0.0:
 		flash_t -= delta

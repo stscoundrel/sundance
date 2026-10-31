@@ -17,6 +17,9 @@ FONT = {
     "O": ["###", "#.#", "#.#", "#.#", "###"], "R": ["##.", "#.#", "##.", "#.#", "#.#"],
     "S": [".##", "#..", ".#.", "..#", "##."], "T": ["###", ".#.", ".#.", ".#.", ".#."],
     "U": ["#.#", "#.#", "#.#", "#.#", "###"], " ": ["...", "...", "...", "...", "..."],
+    "C": [".##", "#..", "#..", "#..", ".##"], "D": ["##.", "#.#", "#.#", "#.#", "##."],
+    "M": ["#.#", "###", "###", "#.#", "#.#"], "P": ["##.", "#.#", "##.", "#..", "#.."],
+    "W": ["#.#", "#.#", "###", "###", "#.#"], "Y": ["#.#", "#.#", ".#.", ".#.", ".#."],
 }
 
 
@@ -622,6 +625,56 @@ def tumbleweed(frame, seed=4):
     return m
 
 
+def frontier(w, h, wall_h, front_h, wall, sign, sign_col, ink=(232, 214, 170), floors=1,
+             roof_col=(100, 84, 72), step=0.0, extras=None):
+    """A generic false-front building facing +y: plank or brick walls, windows per
+    floor, a sign on the false front, boardwalk and awning."""
+    W, D = w * T, h * T
+    ops = [dict(face="+y", u=(W / 2 - 0.55, W / 2 + 0.55), z=(0.15, 2.3), kind="door")]
+    n = max(1, int(W // 2.2))
+    for f in range(floors):
+        z0 = 0.9 + f * 2.6
+        for i in range(n):
+            cx = (i + 0.5) * W / n
+            if f == 0 and abs(cx - W / 2) < 1.0:
+                continue
+            ops.append(dict(face="+y", u=(cx - 0.55, cx + 0.55), z=(z0, z0 + 1.3), kind="win"))
+        for i in range(max(1, int(D // 2.4))):
+            cy = (i + 0.5) * D / max(1, int(D // 2.4))
+            ops.append(dict(face="+x", u=(cy - 0.5, cy + 0.5), z=(z0 + 0.1, z0 + 1.2), kind="win"))
+    ops.append(dict(face="+y", u=(0.4, W - 0.4), z=(wall_h + 0.15, front_h - 0.15), kind="sign",
+                    text=sign, color=sign_col, ink=ink))
+    fn = decorate(wall, W, D, ops)
+    m = box((0, 0, 0), (W, D, wall_h), fn, BSP, skip=("-z",))
+    m += gable_roof(W, D, wall_h, 1.0, roofing(roof_col))
+    m += gable_ends(W, D, wall_h, 1.0, wall)
+    m += false_front(W, D, wall_h, front_h, step, fn)
+    m += boardwalk(W, D, awning=2.8, posts=max(2, int(W // 2.4) + 1))
+    if extras:
+        m += extras(W, D)
+    return m
+
+
+def _barber_pole(W, D):
+    def stripes(P, N):
+        c = np.tile([226.0, 220, 210], (len(P), 1))
+        red = ((P[:, 2] * 6 + np.arctan2(P[:, 1] - (D + 0.1), P[:, 0] - (W * 0.3)) / math.pi) % 1.0) < 0.5
+        c[red] = (170, 36, 30)
+        return c
+    return frustum((W * 0.3, D + 0.1, 1.2), (W * 0.3, D + 0.1, 2.4), 0.08, 0.08, stripes)
+
+
+def cantina():
+    """An adobe cantina with its name painted on the wall."""
+    W, D = 6 * T, 5 * T
+    m = adobe_house(6, 5, (214, 176, 132), 3.4, 41)
+    ops = [dict(face="+y", u=(1.0, W - 1.0), z=(2.2, 3.0), kind="sign", text="CANTINA",
+                color=(176, 60, 40), ink=(236, 216, 160), frame=(176, 60, 40))]
+    fn = decorate(adobe((214, 176, 132), 41), W, D, ops)
+    m += box((0, D, 0), (W, D + 0.02, 3.4), fn, BSP, skip=("-z", "+z", "-x", "+x", "-y"))
+    return m
+
+
 BUILDINGS = {
     # name: (builder, footprint (tiles), collision type, fade, colliders (tiles, relative))
     "saloon": (saloon, (7, 6), "wall", True, None),
@@ -636,6 +689,17 @@ BUILDINGS = {
                     [[0.16, 0.16, 0.4, 0.4], [1.6, 0.16, 1.84, 0.4], [0.16, 1.6, 0.4, 1.84],
                      [1.6, 1.6, 1.84, 1.84]]),
     "gallows": (gallows, (3, 3), "cover", True, None),
+    "hotel": (lambda: frontier(7, 6, 5.4, 7.0, planks((150, 156, 134), seed=17), "HOTEL", (60, 50, 44),
+                               floors=2, step=0.5), (7, 6), "wall", True, None),
+    "barber": (lambda: frontier(4, 4, 3.4, 4.6, planks((190, 182, 160), seed=19), "BARBER", (40, 60, 90),
+                                extras=_barber_pole), (4, 4), "wall", True, None),
+    "undertaker": (lambda: frontier(4, 5, 3.6, 4.8, planks((70, 62, 58), seed=23), "UNDERTAKER", (24, 22, 22),
+                                    ink=(210, 200, 180)), (4, 5), "wall", True, None),
+    "assay": (lambda: frontier(5, 4, 3.6, 4.8, bricks((168, 150, 120), (210, 196, 170)), "ASSAY", (80, 60, 40)),
+              (5, 4), "wall", True, None),
+    "feed": (lambda: frontier(5, 5, 4.0, 5.4, planks((140, 96, 60), seed=29), "FEED", (230, 210, 160),
+                              ink=(120, 40, 30), step=0.4), (5, 5), "wall", True, None),
+    "cantina": (cantina, (6, 5), "wall", True, None),
     "crate": (crate, (0.8, 0.8), "cover", False, None),
     "barrel": (barrel, (0.55, 0.55), "cover", False, None),
     "wagon": (wagon, (2.4, 1.2), "cover", False, [[0.2, 0.15, 2.2, 1.05]]),

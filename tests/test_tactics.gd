@@ -16,7 +16,7 @@ var worst_who := ""
 var shots := 0
 var blocked_time := 0.0
 const FIGHT := 25.0
-const HIDE_AT := Vector2(1.5, 37.5)   # the far corner, out of everyone's sight
+const HIDE_AT := Vector2(1.0, 62.5)   # the far corner, out of everyone's sight
 var resighted := 0
 var hidden_shots := [0, 0, 0]          # shots 0-5 s, 5-12 s and 12-20 s after he vanished
 var failures := 0
@@ -39,7 +39,7 @@ func _process(delta: float) -> bool:
 	frame += 1
 	if frame == 3:
 		game.begin()
-		game.player.global_position = Iso.to_screen(Vector2(20.5, 20.5))
+		game.player.global_position = Iso.to_screen(Vector2(26.0, 31.4))
 		game.player.hp = 1000000
 		for e in game.enemies:
 			e.enter_combat(game.player.global_position, true, false)
