@@ -618,6 +618,19 @@ def cross():
     return m
 
 
+def mound():
+    """A fresh grave: a long heap of turned earth, darker than the dust round it."""
+    def earth(P, N):
+        c = np.tile(np.array([92.0, 64, 42]), (len(P), 1))
+        clod = hash01(np.floor(P[:, 0] * 14), np.floor(P[:, 1] * 14)) > 0.8
+        c[clod] = (70, 48, 32)
+        return c
+    m = ellipsoid((0.5, 0.28, 0.0), (0.5, 0.26, 0.16), earth)
+    for x, y in ((0.12, 0.08), (0.86, 0.5), (0.95, 0.12)):
+        m += ellipsoid((x, y, 0.02), (0.06, 0.05, 0.04), solid((84, 58, 38)))
+    return m
+
+
 def tumbleweed(frame, seed=4):
     rng = np.random.default_rng(seed)
     m = Cloud()
@@ -717,4 +730,5 @@ BUILDINGS = {
     "hitch": (hitch, (1.6, 0.2), "none", False, None),
     "cactus": (cactus, (0.6, 0.6), "post", False, [[0.15, 0.15, 0.45, 0.45]]),
     "cross": (cross, (0.42, 0.2), "none", False, None),
+    "mound": (mound, (1.0, 0.56), "none", False, None),
 }

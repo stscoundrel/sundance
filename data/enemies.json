@@ -16,7 +16,9 @@
     "buckskin":        {"style": "buckskin", "hat": "fur",    "beard": true},
     "veteran":         {"style": "duster", "hat": "slouch",   "beard": true, "mustache": true},
     "gunslinger":      {"style": "vest",   "hat": "flat",     "scarf": true, "mustache": true, "holsters": 2},
-    "peon":            {"style": "shirt",  "hat": "sombrero", "mustache": true, "holsters": 0}
+    "peon":            {"style": "shirt",  "hat": "sombrero", "mustache": true, "holsters": 0},
+    "undertaker":      {"style": "duster", "hat": "top",      "mustache": true, "holsters": 0},
+    "apprentice":      {"style": "vest",   "hat": "bowler",   "holsters": 0}
   },
 
   "player": {
@@ -190,6 +192,16 @@
       "gentleman": {"name": "Gentleman", "template": "suit", "nerve": [0.4, 0.9],
         "shouts": {"flee": ["Good heavens!", "I say!"], "snitch": ["Gentlemen! A ruffian!"]},
         "palettes_from": "gambler"},
+      "undertaker": {"name": "Undertaker", "template": "undertaker", "role": "undertaker", "snitch": 0.0,
+        "wander": 0, "speed": 0.9, "nerve": [0.5, 0.9],
+        "shouts": {"flee": ["Not before the funeral!", "Business can wait!"], "work": ["Six foot one. Pine.", "A fine fit.", "Rest easy, friend."]},
+        "palettes": [
+          {"coat": [30, 28, 32], "shirt": [214, 210, 200], "trousers": [36, 34, 38], "boots": [24, 20, 20], "hat": [24, 22, 26], "band": [90, 88, 92], "skin": [212, 182, 160], "hair": [150, 146, 140]}]},
+      "apprentice": {"name": "Undertaker's apprentice", "template": "apprentice", "role": "undertaker", "snitch": 0.0,
+        "wander": 0, "speed": 1.05, "nerve": [0.2, 0.7],
+        "shouts": {"flee": ["Mister Coffin!", "Wait for me!"], "work": ["Heavy one.", "Up you get, mister.", "Five foot ten?"]},
+        "palettes": [
+          {"vest": [70, 66, 66], "shirt": [200, 194, 182], "trousers": [96, 82, 64], "boots": [56, 40, 30], "hat": [44, 40, 40], "band": [70, 60, 50], "skin": [214, 166, 132], "hair": [140, 90, 50]}]},
       "saloon_girl": {"name": "Saloon girl", "template": "dress", "nerve": [0.3, 0.9], "snitch": 0.3,
         "shouts": {"flee": ["Oh!", "¡Ay, no!", "Not in here!"], "snitch": ["Boys! There's a stranger in town!"]},
         "palettes_from": "saloon_girl"}

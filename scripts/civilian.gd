@@ -7,9 +7,11 @@ extends Actor
 ## so is a snitch, and a sharp eye can tell: honest folk glance at the stranger and
 ## look away, a snitch keeps staring and edges off towards the bandits. Given a good
 ## long look he hurries to the nearest one, points him out and shouts, then makes
-## himself scarce.
+## himself scarce. Once the town has been quiet a while they come back out.
+## The undertaker and his apprentice ("role": "undertaker") work the quiet: each
+## claims a dead bandit, measures him, and drags him to boot hill to be buried.
 
-enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE }
+enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -22,6 +24,9 @@ const GLANCE := 0.9      # how long anyone else looks before averting his eyes
 const FLEE_LINES := ["Lord help us!", "¡Corran!", "Get inside!"]
 const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
 const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios mío!"]
+const WORK := [St.TO_BODY, St.MEASURE, St.DRAG]
+const MEASURE_T := 3.5
+const DRAG_SPEED := 0.65   # of his walk, with a man in tow
 
 var kind := "townsman"
 var tdata: Dictionary
@@ -45,6 +50,15 @@ var cower_t := 0.0
 var tell: Enemy          # the bandit a snitch is running to
 var told_t := 0.0
 var repath_t := 0.0
+var hid_at := Vector2.ZERO   # the door he went in by, and comes back out of
+var back_after := 0.0        # extra quiet he waits for before coming out
+var inside_t := 0.0          # how long he's been indoors
+var fade: Tween
+var undertaker := false
+var body: Enemy              # the dead man he's seeing to
+var work_t := 0.0
+var grave := Vector2.ZERO
+var trail := Vector2.ZERO    # where the last smear went down
 var shout := ""
 var shout_t := 0.0
 var t := 0.0
@@ -63,6 +77,9 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	run = RUN * float(tdata["speed"])
 	nerve = randf_range(tdata["nerve"][0], tdata["nerve"][1])
 	snitch = randf() < float(tdata["snitch"])
+	undertaker = tdata.get("role", "") == "undertaker"
+	if undertaker:
+		anim_gun = "tools"   # empty hands plus the tape and the haul
 	home = pos
 	facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	desired = facing
@@ -110,6 +127,7 @@ func alarm(from: Vector2, scary: bool) -> void:
 	if not alive or st in [St.FLEE, St.GONE]:
 		return
 	threat = from
+	_drop_body()   # the dead can wait
 	if st == St.COWER:
 		return
 	var freeze := (1.0 - nerve) * (0.7 if scary else 0.4)
@@ -124,7 +142,8 @@ func alarm(from: Vector2, scary: bool) -> void:
 func _flee() -> void:
 	st = St.FLEE
 	crouched = false
-	path = game.find_path(global_position, game.refuge_for(global_position, threat))
+	hid_at = game.refuge_for(global_position, threat)
+	path = game.find_path(global_position, hid_at)
 	path_i = 0
 	if randf() < 0.5:
 		_say(_line("flee", FLEE_LINES))
@@ -140,6 +159,9 @@ func _physics_process(delta: float) -> void:
 			update_anim(delta)
 		return
 	if st == St.GONE:
+		inside_t += delta
+		if game.state == "play" and inside_t > 10.0 and game.quiet_for() >= game.quiet_after + back_after:
+			_come_out()
 		return
 	shout_t = max(0.0, shout_t - delta)
 	if game.state != "play" and game.state != "lost":
@@ -169,6 +191,8 @@ func _physics_process(delta: float) -> void:
 				_flee()
 		St.SNITCH:
 			_snitch(delta)
+		St.TO_BODY, St.MEASURE, St.DRAG:
+			_work(delta)
 	if velocity.length() > 1.0 and not watching:
 		desired = velocity.normalized()
 	facing = facing.rotated(clamp(facing.angle_to(desired), -3.0 * delta, 3.0 * delta))
@@ -178,9 +202,9 @@ func _physics_process(delta: float) -> void:
 
 func _perceive(delta: float) -> void:
 	var p: Player = game.player
-	if not p.alive or st in [St.FLEE, St.COWER, St.SNITCH]:
-		return
 	watching = false
+	if not p.alive or st in [St.FLEE, St.COWER, St.SNITCH] or st in WORK:
+		return
 	sidle = Vector2.ZERO
 	if sees(p.global_position):
 		saw_t += delta
@@ -213,6 +237,13 @@ func _perceive(delta: float) -> void:
 func _idle(delta: float) -> void:
 	velocity = sidle * walk * 0.6
 	wait -= delta
+	if undertaker and game.quiet_for() >= game.quiet_after:
+		body = game.claim_body(self)
+		if body:
+			st = St.TO_BODY
+			path = game.find_path(global_position, body.global_position)
+			path_i = 0
+			return
 	if not watching and not looked_away:
 		desired = facing.rotated(sin(t * 0.4) * 0.02)
 	if wait <= 0.0:
@@ -242,10 +273,80 @@ func _go_inside() -> void:
 	set_deferred("collision_layer", 0)
 	set_deferred("collision_mask", 0)
 	hurtbox.set_deferred("collision_layer", 0)
-	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, 0.4)
-	tw.tween_callback(func(): visible = false)
+	fade = create_tween()
+	fade.tween_property(self, "modulate:a", 0.0, 0.4)
+	fade.tween_callback(func(): visible = false)
+	inside_t = 0.0
+	back_after = randf_range(0.0, 15.0)   # they don't all come out at once
 	game.stats["civilian hides"] = game.stats.get("civilian hides", 0) + 1
+
+
+## The town's been quiet long enough: back out the way he went in, and home.
+func _come_out() -> void:
+	st = St.WALK
+	visible = true
+	crouched = false
+	saw_t = 0.0
+	looked_away = false
+	snitch = randf() < float(tdata["snitch"])
+	collision_layer = Iso.LAYER_ACTOR
+	collision_mask = Iso.LAYER_WALL | Iso.LAYER_COVER | Iso.LAYER_POST | Iso.LAYER_ACTOR
+	hurtbox.collision_layer = Iso.LAYER_HURT
+	if fade:
+		fade.kill()
+	fade = create_tween()
+	fade.tween_property(self, "modulate:a", 1.0, 0.5)
+	path = game.find_path(global_position, home)
+	path_i = 0
+	game.stats["civilian returns"] = game.stats.get("civilian returns", 0) + 1
+
+
+# ------------------------------------------------------------------ the undertaker
+
+func _work(delta: float) -> void:
+	if body == null or body.has_meta("buried"):
+		_drop_body()
+		st = St.IDLE
+		return
+	match st:
+		St.TO_BODY:
+			if global_position.distance_to(body.global_position) < 14.0 or _follow(walk):
+				st = St.MEASURE
+				work_t = MEASURE_T
+				velocity = Vector2.ZERO
+				if randf() < 0.6:
+					_say(_line("work", ["Hm."]))
+		St.MEASURE:
+			# the tape out over him, head to boots
+			velocity = Vector2.ZERO
+			pose = "measure"
+			desired = (body.global_position - global_position).normalized()
+			work_t -= delta
+			if work_t <= 0.0:
+				grave = game.grave_spot()
+				path = game.find_path(global_position, grave)
+				path_i = 0
+				trail = body.global_position
+				st = St.DRAG
+		St.DRAG:
+			pose = "drag"
+			var there := _follow(walk * DRAG_SPEED)
+			if velocity.length() > 1.0:
+				body.global_position = global_position - velocity.normalized() * 16.0
+			if body.global_position.distance_to(trail) > 9.0:
+				trail = body.global_position
+				game.decals.add(trail, randf_range(1.2, 2.2), Color(0.34, 0.07, 0.05, 0.4))
+			if there:
+				game.bury(body, grave)
+				body = null
+				st = St.IDLE
+				wait = randf_range(2.0, 4.0)
+
+
+func _drop_body() -> void:
+	if body and body.get_meta("claimed_by", null) == self:
+		body.remove_meta("claimed_by")
+	body = null
 
 
 # ------------------------------------------------------------------ snitching

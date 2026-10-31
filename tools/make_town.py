@@ -122,6 +122,9 @@ CIVILIANS = [
     {"kind": "townswoman", "x": 31.4, "y": 10.4, "facing": 140},
     {"kind": "peon", "x": 48.2, "y": 47.2, "facing": 0},
     {"kind": "townswoman", "x": 22.6, "y": 47.0, "facing": 330},
+    # the undertaker at his door, his apprentice up on boot hill
+    {"kind": "undertaker", "x": 56.4, "y": 30.6, "facing": 90},
+    {"kind": "apprentice", "x": 9.6, "y": 50.4, "facing": 45},
 ]
 
 PLAYER = {"x": 63.2, "y": 63.2}   # the lower-right corner, hidden behind the stable and adobes

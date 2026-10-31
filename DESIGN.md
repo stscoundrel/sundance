@@ -291,6 +291,21 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   with a white "!" over his head, points the way and shouts, and the bandit raises
   the alarm. Then he runs indoors. Stopping him means shooting an unarmed man, or
   getting out of his sight before he's done looking.
+- **Coming back out**: once the town is quiet (no gunfire and no bandit fighting
+  for `quiet_after` seconds, 45 for now, in `game.gd`), those who hid come back
+  out of the door they went in by, a few at a time, at least 10 s after hiding, and
+  walk home. Snitches are re-rolled, so the one who told last time may not again.
+- **The undertaker and his apprentice** (`role: "undertaker"`): the undertaker
+  waits at his shop on main street, the apprentice up on boot hill. When the town
+  is quiet each claims the nearest dead bandit nobody else is seeing to, walks over,
+  bends to measure him with a tape ("Six foot one. Pine."), then hauls him by the
+  boots up to boot hill, leaving a smear in the dirt. There he's buried under a
+  heap of fresh earth with a cross at its head (so new graves stand out from the
+  old ones) and is gone: a buried man is nothing for the bandits to find. A
+  bandit who sees a comrade being dragged past still finds the body. Gunfire
+  makes them let go and run indoors like anyone else; the body stays where it
+  dropped until they come back out. They see only to bandits for now. Their
+  animations are the "tools" set: empty hands plus measuring and dragging.
 - **Innocents**: townsfolk are hit by stray rounds from either side, and bandits
   hold fire when one is in the line. If the hero kills one, the town notices: "AN
   INNOCENT - the town will remember", witnesses shout "Murderer!" and run, and the
@@ -308,7 +323,10 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
 off carry on; that a snitch stares (and hasn't run yet) after 1.8 s, then reaches a
 bandit and starts the fight; that an honest townsman looks away; that concealed
 bandits pass as townsfolk, let the stranger stand a few paces off, and draw when he
-walks right up; and that a dead townsman counts as an innocent. `tests/test_perf.gd` times a firefight with and without the townsfolk.
+walks right up; and that a dead townsman counts as an innocent.
+`tests/test_aftermath.gd` (with a shortened quiet period) checks the undertakers
+bury every body, wait for the quiet, drop a body and run at a shot, come back out
+and finish, and that buried men are no longer found. `tests/test_perf.gd` times a firefight with and without the townsfolk.
 
 ## Animation
 
@@ -318,7 +336,10 @@ and **upper body** (belt and up, arms, head, hat, gun). The legs follow movement
 frame; the upper body sits on top at that height and plays the gun's animations,
 so walking while reloading or limping while firing needs no combined frames.
 Deaths are whole-body and the gun falls away as a separate prop, so they exist
-once per character rather than once per gun.
+once per character rather than once per gun. The blood pool is separate too:
+baked once per death and direction (`pools` in `assets/meta.json`, the same for
+every body) and laid on the ground as the body comes to rest, spreading over a few
+seconds. A body dragged away leaves it behind.
 
 - Upper body, per gun: aim, fire (recoil), cock / fan (Colt), lever (Winchester),
   reload open / eject / insert / close, point, flinch, cower, and hit reactions

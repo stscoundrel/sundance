@@ -49,7 +49,7 @@ def template_guns():
         if t.get("concealed"):
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():
-        need(t["template"], "unarmed")
+        need(t["template"], "tools" if t.get("role") == "undertaker" else "unarmed")
     return out
 
 
@@ -515,6 +515,8 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         h = np.array(up["hL"], float)
         with look.tag("skin"):
             m += beam(h + [0.03, 0, 0], h + [0.12, -0.01, 0.01], 0.014, look.c("skin"))
+    if up.get("tape"):   # the undertaker's tape measure, stretched between his hands
+        m += beam(np.array(up["hL"], float), np.array(up["hR"], float), 0.009, (226, 204, 120))
 
     muzzle = muzzle2 = None
     g = up.get("gun")
@@ -581,6 +583,16 @@ def _key_poses(w):
         return k
     if w == "colts":
         return _twin_poses()
+    if w == "tools":
+        # the undertaker's trade on top of empty hands: bent over a body with the tape,
+        # and hauling one along behind him by the boots
+        k = _key_poses("unarmed")
+        k["measure_a"] = dict(eL=V(0.16, 0.27, 0.14), hL=V(0.38, 0.2, -0.12), eR=V(0.16, -0.27, 0.14),
+                              hR=V(0.38, -0.2, -0.12), lean=0.5, nod=0.35, tape=True)
+        k["measure_b"] = P(k["measure_a"], hL=V(0.4, 0.36, -0.14), eL=V(0.18, 0.32, 0.12), hR=V(0.34, -0.12, -0.1))
+        k["drag"] = dict(eL=V(-0.12, 0.24, 0.14), hL=V(-0.32, 0.12, -0.2), eR=V(-0.12, -0.24, 0.14),
+                         hR=V(-0.32, -0.12, -0.2), lean=0.3, nod=0.1)
+        return k
     if w == "unarmed":
         # arms easy at his sides; the shared poses (point, flinch, cower, hits) do the rest
         aim = dict(eR=V(-0.02, -0.25, 0.2), hR=V(0.03, -0.23, -0.04), **HANG_L)
@@ -756,10 +768,13 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w != "unarmed":
+    if w not in ("unarmed", "tools"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
+    elif w == "tools":
+        add("measure", [k["measure_a"], k["measure_b"]], 2, True)
+        add("drag", [k["drag"]], 1, True)
     elif w == "sharps":
         add("cock", [k["cock"], k["aim"]], 5)
         add("reload_open", _frames([k["aim"], k["load"]], 2), 6)
@@ -920,6 +935,25 @@ def blood_pool(seed):
     return Cloud(Pt, np.tile([0, 0, 1.0], (len(Pt), 1)), C)
 
 
+def pool_sprite(death, d):
+    """The blood under a body that died `death` facing direction d, on its own so the
+    game can lay it on the ground (and leave it there if the body is moved).
+    Returns (img, anchor): the same pixels the body's last frame used to carry."""
+    from render3d import project, PIX
+    pool = blood_pool(d + 7 * len(death))
+    pool.transform(rot_z(yaw_for_dir(d)))
+    sx, sy = project(pool.P)
+    sx, sy = sx * PIX, sy * PIX
+    x0, y0 = math.floor(sx.min()) - 1, math.floor(sy.min()) - 1
+    W, H = math.ceil(sx.max()) - x0 + 2, math.ceil(sy.max()) - y0 + 2
+    img = np.zeros((H, W, 4), np.uint8)
+    px = np.floor(sx - x0).astype(int)
+    py = np.floor(sy - y0).astype(int)
+    img[py, px, :3] = pool.C.astype(np.uint8)
+    img[py, px, 3] = 235
+    return img, (-x0, -y0)
+
+
 def _trim(img, slots_):
     a = img[..., 3]
     ys, xs = np.nonzero(a)
@@ -964,9 +998,6 @@ def bake_job(job):
             ground = shadow_extra = None
             if layer == "legs":
                 shadow_extra = extra.copy().transform(R)     # the whole man casts the shadow
-            if layer == "full" and i == len(models) - 1:
-                ground = blood_pool(d + 7 * len(name))
-                ground.transform(R)
             img, _, slots_ = render(c, size=CANVAS, anchor=ANCHOR, ground=ground, want_slots=True,
                                     shadow=layer != "upper", shadow_extra=shadow_extra)
             frames.append(_trim(img, slots_))

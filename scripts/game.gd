@@ -29,6 +29,10 @@ var enemies: Array[Enemy] = []
 var civilians: Array[Civilian] = []
 var doors := PackedVector2Array()   # doorsteps townsfolk can run inside from
 var innocents := 0                  # townsfolk the hero has shot
+var quiet_after := 45.0             # seconds without gunfire or a fight before the town stirs again
+var last_gunfire := -1e9
+var _quiet := 0.0
+var graves := PackedVector2Array()
 var innocent_t := 0.0               # the town's disapproval, on screen for a moment
 const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
 const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
@@ -796,6 +800,11 @@ func _physics_process(delta: float) -> void:
 		return
 	clock += delta
 	innocent_t = maxf(0.0, innocent_t - delta)
+	_quiet = clock - last_gunfire
+	for e in enemies:
+		if e.alive and e.st == Enemy.St.COMBAT:
+			_quiet = 0.0
+			break
 	if posse:
 		posse.update(delta)
 	# Knowledge gone stale: the shooting dies down to the odd harassing shot at his
@@ -873,7 +882,88 @@ func enemy_type(kind: String, overrides := {}) -> Dictionary:
 	return t
 
 
+## Seconds since the last shot, as long as nobody is fighting.
+func quiet_for() -> float:
+	return _quiet
+
+
+## The nearest dead bandit nobody is seeing to yet, now claimed by this undertaker.
+func claim_body(by: Civilian) -> Enemy:
+	var best: Enemy = null
+	var best_d := INF
+	for e in enemies:
+		if e.alive or e.dying() or e.has_meta("buried"):
+			continue
+		var owner: Civilian = e.get_meta("claimed_by", null)
+		if owner and owner.alive and owner.body == e:
+			continue
+		var d := by.global_position.distance_to(e.global_position)
+		if d < best_d:
+			best_d = d
+			best = e
+	if best:
+		best.set_meta("claimed_by", by)
+	return best
+
+
+## A free plot on boot hill, a little apart from the other new graves.
+func grave_spot() -> Vector2:
+	var r: Array = level["boothills"][0]
+	var p := Vector2.ZERO
+	for i in 30:
+		p = Iso.to_screen(Vector2(randf_range(r[0] + 1.0, r[2] - 1.0), randf_range(r[1] + 1.0, r[3] - 1.0)))
+		if not is_free(p):
+			continue
+		var apart := true
+		for g in graves:
+			apart = apart and g.distance_to(p) > 16.0
+		if apart:
+			break
+	graves.append(p)
+	return p
+
+
+## The blood under a body, laid on the ground as he comes to rest and spreading a
+## little. It's apart from the body's sprite, so it stays put if he's dragged off.
+func lay_pool(a: Actor) -> void:
+	var pools: Dictionary = meta.get("pools", {})
+	if not pools.has(a._death):
+		return
+	var info: Dictionary = pools[a._death][Iso.dir8(a.facing)]
+	var s := Sprite2D.new()
+	s.texture = tex(info["file"])
+	s.centered = false
+	s.offset = -Vector2(info["anchor"][0], info["anchor"][1])
+	s.position = a.global_position
+	s.scale = Vector2.ONE * tex_scale * 0.4
+	s.modulate.a = 0.0
+	decals.add_child(s)
+	var land := a.anim("full/" + a._death)
+	var t: float = land["frames"][0].size() / float(land["fps"]) * 0.8
+	var tw := create_tween()
+	tw.tween_interval(t)
+	tw.tween_property(s, "modulate:a", 1.0, 0.3)
+	tw.parallel().tween_property(s, "scale", Vector2.ONE * tex_scale, 3.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+## Into the ground: the body's gone (no longer anything for the bandits to find)
+## and a fresh cross marks the spot.
+func bury(body: Enemy, at: Vector2) -> void:
+	body.visible = false
+	body.set_meta("buried", true)
+	body.remove_meta("claimed_by")
+	# a heap of fresh earth with the cross at its head, unlike the old graves
+	var g := Iso.to_grid(at)
+	var mf: Array = meta["objects"]["mound"]["footprint"]
+	_place_object("mound", g - Vector2(mf[0], mf[1]) * 0.5)
+	var cf: Array = meta["objects"]["cross"]["footprint"]
+	_place_object("cross", g - Vector2(mf[0] * 0.5 + cf[0] * 0.6, cf[1] * 0.5))
+	stats["burials"] = stats.get("burials", 0) + 1
+
+
 func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void:
+	if kind in ["shot", "enemy_shot"]:
+		last_gunfire = clock
 	if kind == "shot":
 		player_fired = true
 		report_sighting(pos)   # his muzzle flash and the crack give him away

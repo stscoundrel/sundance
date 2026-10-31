@@ -354,6 +354,7 @@ func die(from_dir: Vector2, shooter: Actor = null) -> void:
 		weapon.abort()
 		game.drop_gun(self)
 	update_anim(0.0)
+	game.lay_pool(self)
 	died.emit(self)
 
 

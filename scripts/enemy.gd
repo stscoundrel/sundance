@@ -233,7 +233,7 @@ func _perceive(delta: float) -> void:
 	else:
 		suspicion = max(0.0, suspicion - 0.15 * delta)
 	for e in game.enemies:
-		if not e.alive and e != self and not known_corpses.has(e):
+		if not e.alive and e != self and not known_corpses.has(e) and not e.has_meta("buried"):
 			if visibility_of(e.global_position, true, false) > 0.0:
 				known_corpses.append(e)
 				_found_corpse(e)

@@ -67,6 +67,13 @@ def gen_characters(meta):
                                    "guns": guns.get(template, ["colt"]), "anims": out}
         print("  %s: %d frames, atlas %dx%d" % (template, len(entries), atlas.shape[1], atlas.shape[0]))
     meta["neutral"] = chars.NEUTRAL[0]
+    # Blood pools, apart from the bodies: by death and direction, for every body.
+    meta["pools"] = {}
+    for death in chars.DEATH_FPS:
+        meta["pools"][death] = []
+        for d in range(8):
+            img, anchor = chars.pool_sprite(death, d)
+            meta["pools"][death].append({"file": save(img, f"sprites/fx/pool_{death}_{d}.png"), "anchor": list(anchor)})
     # Guns dropped by the dead, lying in the dirt in four orientations.
     meta["guns"] = {}
     for kind in chars.GUN_LEN:

@@ -1077,6 +1077,18 @@
    "x": 22.6,
    "y": 47.0,
    "facing": 330
+  },
+  {
+   "kind": "undertaker",
+   "x": 56.4,
+   "y": 30.6,
+   "facing": 90
+  },
+  {
+   "kind": "apprentice",
+   "x": 9.6,
+   "y": 50.4,
+   "facing": 45
   }
  ]
 }
