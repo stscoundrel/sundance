@@ -355,6 +355,18 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   a handkerchief to her eyes ("Descanse en paz."), for 20-30 s; then she goes home
   and in. Gunfire scatters them like anyone, and a grave left unmourned waits for
   the next to come out. Animations: the "grief" set.
+- **The gunsmith** (`role: "gunsmith"`): spectacles, bowler and a leather apron; his
+  shop sits between the bank and the store, a big carved rifle over the door. Every
+  bandit drops the gun in his hand when he falls (a man who draws his sidearm throws
+  his empty long gun down), and the cartridges the stranger could take lie with it.
+  Once the town is quiet the gunsmith goes out for them: the nearest first, then
+  only ones close by (~400 px), four or five a trip, down on one knee for each and
+  holding it up to the light ("Needs a new spring."). He leaves a gun lying under a
+  body until the undertaker has the man buried or dragged away. Whatever he takes,
+  its cartridges go with it, so loot left lying is loot lost. He carries the armful
+  home and into the shop. Gunfire sends him running with it (he keeps it); shot,
+  he drops it, and the guns and their cartridges spill round him. Animations: the
+  "smith" set (a rifle to inspect, an armful to carry).
 - **Shutters**: every glazed window on the wooden buildings and every small window
   on the adobes has a pair of shutters (weathered planks on the wood, painted
   turquoise, blue, green or oxblood on the adobes; one colour per building, picked
@@ -392,7 +404,10 @@ unblessed one. `tests/test_couples.gd` checks couples stay together on a stroll 
 scatter at a shot. `tests/test_mourners.gd` checks nobody in black comes out
 before there's a grave, that mourners stand at the fresh graves once it's quiet,
 run at a shot (freeing the grave), and in the end mourn every grave and go home.
-`tests/test_shutters.gd` checks creeping down main street slams far fewer shutters
+`tests/test_gunsmith.gd` checks the gunsmith waits for the quiet, never takes a gun
+from under a man still lying there, carries four or five a trip, takes the
+cartridges with the guns, and that shooting him spills his armful, cartridges and
+all. `tests/test_shutters.gd` checks creeping down main street slams far fewer shutters
 than walking it, that the far end of town stays open, that a shot slams those
 around it, and that they open again once it's quiet. `tests/test_perf.gd` times a
 firefight with and without the townsfolk.

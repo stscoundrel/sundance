@@ -10,7 +10,7 @@ relative to the hip; legs poses are relative to the feet.
 """
 import math
 import numpy as np
-from render3d import (Cloud, ellipsoid, frustum, disc, box, beam, rot_x, rot_y, rot_z, render,
+from render3d import (Cloud, ellipsoid, frustum, disc, box, beam, quad, rot_x, rot_y, rot_z, render,
                       PX, PY, hash01, slot)
 
 STEEL = (70, 72, 78)
@@ -52,14 +52,14 @@ def template_guns():
         if t.get("concealed"):
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():
-        need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief"}.get(t.get("role", ""), "unarmed"))
+        need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith"}.get(t.get("role", ""), "unarmed"))
     return out
 
 
 GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6}
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
 # in the left hand (pose key "gun2").
-GUN_ART = {"colts": "colt"}
+GUN_ART = {"colts": "colt", "smith": "rifle"}   # the gunsmith looks over a rifle
 
 
 class Look:
@@ -107,6 +107,11 @@ def _torso_fn(look):
             paint(P[:, 2] > 0.4, "skin")                                                  # neckline
             lace = front & (np.abs(P[:, 1]) < 0.03) & (P[:, 2] < 0.38) & ((P[:, 2] * 40) % 1.0 < 0.35)
             paint(lace, "accent")
+        if look.get("apron"):
+            # a leather apron up to the chest, on a strap round the neck
+            ap = (front & (np.abs(P[:, 1]) < 0.13) & (P[:, 2] < 0.38)) | \
+                 (front & (np.abs(np.abs(P[:, 1]) - 0.06) < 0.018) & (P[:, 2] >= 0.38))
+            paint(ap, "accent")
         if look.get("bib"):
             # bib overalls: a denim bib up the front, straps over the shoulders
             bib = (front & (np.abs(P[:, 1]) < 0.11) & (P[:, 2] < 0.34)) | \
@@ -436,6 +441,11 @@ def build_legs(look, lp):
         if style not in ("dress", "suit"):
             m += frustum(ankle + [-0.09 * toe, -0.012, -0.03], ankle + [-0.09 * toe, 0.012, -0.03],
                          0.03, 0.03, (176, 176, 168))  # spur rowel
+    if look.get("apron"):
+        with look.tag("accent"):
+            for x, n in ((0.1, 1.0), (0.085, -1.0)):
+                m += quad((x, -0.15, H + 0.02), (0, 0.3, 0), (0.02, 0, -0.5 if not crouch else -0.3),
+                          tuple(int(c * 0.92) for c in look.c("accent")), normal=(n, 0, 0))
     if style == "buckskin":
         bottom = H - 0.24 if not crouch else H - 0.2
         with look.tag("coat"):
@@ -523,6 +533,10 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
             head += ellipsoid(hc + [0.065, 0, -0.1], (0.065, 0.085, 0.085), look.c("hair"))
             head += ellipsoid(hc + [0.1, 0, -0.19], (0.05, 0.075, 0.08), look.c("hair"))
             head += ellipsoid(hc + [0.13, 0, -0.27], (0.035, 0.05, 0.06), look.c("hair"))
+    if look.get("spectacles"):
+        for side in (-1, 1):
+            head += ellipsoid(hc + [0.088, side * 0.036, 0.012], (0.008, 0.02, 0.016), (210, 220, 226))
+        head += beam(hc + [0.094, -0.016, 0.014], hc + [0.094, 0.016, 0.014], 0.005, (120, 110, 90))
     if look.get("cigar"):
         head += beam(hc + [0.08, 0.02, -0.06], hc + [0.16, 0.035, -0.075], 0.011, (196, 180, 150))
         head += ellipsoid(hc + [0.165, 0.036, -0.076], (0.014, 0.014, 0.014), (255, 120, 40))
@@ -553,6 +567,12 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         h = np.array(up["hL"], float)
         m += box(tuple(h + [-0.03, -0.05, -0.02]), tuple(h + [0.04, 0.03, 0.11]), (34, 26, 24))
         m += box(tuple(h + [-0.031, -0.01, 0.03]), tuple(h + [0.041, -0.005, 0.07]), (200, 170, 80))
+    if up.get("armful"):   # guns gathered up, cradled across his chest
+        c = (np.array(up["hL"], float) + np.array(up["hR"], float)) / 2
+        for i, (kind, d) in enumerate((("rifle", (0.25, 1.0, 0.25)), ("coach", (0.2, 1.0, 0.45)),
+                                        ("colt", (0.1, 1.0, 0.0)))):
+            dv = np.array(d) / np.linalg.norm(d)
+            m += weapon_model(kind, c + [0.03 * i, 0, 0.03 * i] - dv * GUN_LEN[kind] * 0.5, dv)
     if up.get("hanky"):   # a white handkerchief pressed to her eyes
         h = np.array(up["hR"], float)
         m += box(tuple(h + [-0.02, -0.03, -0.04]), tuple(h + [0.03, 0.03, 0.03]), (232, 228, 220))
@@ -635,6 +655,18 @@ def _key_poses(w):
         k["bless_b"] = P(base, hR=V(0.44, -0.06, 0.36), eR=V(0.2, -0.22, 0.32))
         k["bless_c"] = P(base, hR=V(0.42, 0.1, 0.52))
         k["bless_d"] = P(base, hR=V(0.42, -0.24, 0.52))
+        return k
+    if w == "smith":
+        # the gunsmith: empty hands; bent to the dirt for a gun, holding it up to the
+        # light, and carrying an armful of them home
+        k = _key_poses("unarmed")
+        k["pick_a"] = dict(eL=V(0.18, 0.24, 0.12), hL=V(0.4, 0.1, -0.16), eR=V(0.18, -0.24, 0.12),
+                           hR=V(0.4, -0.08, -0.16), lean=0.45, nod=0.3, gun=None)
+        k["pick_b"] = dict(eL=V(0.2, 0.22, 0.26), hL=V(0.42, 0.08, 0.4), eR=V(0.06, -0.26, 0.26),
+                           hR=V(0.22, -0.12, 0.36), nod=0.15,
+                           gun=G((0.14, -0.14, 0.34), (0.95, 0.28, 0.12)))
+        k["carry"] = dict(eL=V(0.1, 0.24, 0.22), hL=V(0.26, 0.12, 0.3), eR=V(0.1, -0.24, 0.22),
+                          hR=V(0.26, -0.12, 0.3), armful=True, gun=None)
         return k
     if w == "grief":
         # empty hands clasped before her, head bowed; now and then a handkerchief
@@ -837,12 +869,16 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
     elif w == "prayer":
         add("bless", [k["bless_a"], k["bless_b"], k["bless_c"], k["bless_d"]], 2.5, True)
+    elif w == "smith":
+        add("pick", [k["pick_a"], k["pick_a"], lerp_pose(k["pick_a"], k["pick_b"], 0.5), k["pick_b"], k["pick_b"]],
+            2.5, True)
+        add("carry", [k["carry"]], 1, True)
     elif w == "grief":
         a_, b_ = k["mourn_a"], k["mourn_b"]
         add("mourn", [a_, a_, a_, a_, lerp_pose(a_, b_, 0.5), b_, b_, b_, lerp_pose(a_, b_, 0.5)], 1.5, True)

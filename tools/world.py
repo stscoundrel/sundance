@@ -725,6 +725,16 @@ def _barber_pole(W, D):
     return frustum((W * 0.3, D + 0.1, 1.2), (W * 0.3, D + 0.1, 2.4), 0.08, 0.08, stripes)
 
 
+def _gun_sign(W, D):
+    """The gunsmith's trade sign: a rifle twice the size of life, carved and painted,
+    mounted on the false front just above the awning."""
+    import chars   # the rifle itself is the one the characters carry
+    butt = np.array([W / 2 - 1.1, D + 0.06, 3.36])
+    sign = chars.weapon_model("rifle", butt, (1.0, 0, 0.0))
+    sign.P = (sign.P - butt) * 2.0 + butt
+    return sign
+
+
 def cantina():
     """An adobe cantina with its name painted on the wall."""
     W, D = 6 * T, 5 * T
@@ -760,6 +770,8 @@ BUILDINGS = {
               (5, 4), "wall", True, None),
     "feed": (lambda: frontier(5, 5, 4.0, 5.4, planks((140, 96, 60), seed=29), "FEED", (230, 210, 160),
                               ink=(120, 40, 30), step=0.4), (5, 5), "wall", True, None),
+    "gunsmith": (lambda: frontier(3, 4, 3.4, 4.6, planks((112, 72, 54), seed=37), "GUNSMITH", (34, 30, 28),
+                                  ink=(214, 180, 96), extras=_gun_sign), (3, 4), "wall", True, None),
     "cantina": (cantina, (6, 5), "wall", True, None),
     "crate": (crate, (0.8, 0.8), "cover", False, None),
     "barrel": (barrel, (0.55, 0.55), "cover", False, None),

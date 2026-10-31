@@ -33,7 +33,10 @@ var quiet_after := 45.0             # seconds without gunfire or a fight before 
 var last_gunfire := -1e9
 var _quiet := 0.0
 var graves := PackedVector2Array()
-var to_mourn: Array[Dictionary] = []   # fresh graves: {at, mourners, done}
+var to_mourn: Array[Dictionary] = []
+# Guns lying about: {kind, sprite, at, under (the body it fell with, or null),
+# ammo (the cartridges dropped beside it: a Pickup, or null), ammo_kind, claimed_by}
+var loose_guns: Array[Dictionary] = []   # fresh graves: {at, mourners, done}
 var innocent_t := 0.0               # the town's disapproval, on screen for a moment
 const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
 const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
@@ -1085,9 +1088,12 @@ func _on_enemy_died(e: Actor) -> void:
 		print("%.1fs  %s down, %d left" % [(Time.get_ticks_msec() - start_time) / 1000.0, e.kind, alive_enemies()])
 	var ammo: String = e.weapon.d.get("ammo", e.weapon.kind)
 	if player.weapons.has(ammo):   # nothing to take from a derringer
-		var p := Pickup.new()
-		p.setup(self, e.global_position + Vector2(randf_range(-6, 6), 4), ammo)
-		world.add_child.call_deferred(p)
+		var p := _drop_ammo(ammo, e.global_position + Vector2(randf_range(-6, 6), 4))
+		for g in loose_guns:
+			if g["under"] == e:
+				g["ammo"] = p   # it goes with his gun
+				g["ammo_kind"] = ammo
+				break
 	if posse == null and alive_enemies() <= Posse.SIZE and alive_enemies() > 0:
 		posse = Posse.new(self)
 		posse.form()
@@ -1106,6 +1112,8 @@ func _innocents_line() -> String:
 
 ## A townsman down. If the hero did it, the town takes note (and so do we).
 func _on_civilian_died(c: Actor) -> void:
+	if c is Civilian and c.carried:
+		spill_guns(c)
 	var murder: bool = c.killer != null and c.killer.is_player
 	if murder:
 		innocents += 1
@@ -1183,27 +1191,87 @@ func muzzle_flash(holder: Actor, dir: Vector2) -> void:
 	world.add_child(puff)
 
 
-## A dead man's gun falls from his hand and lands in the dirt beside him.
+## A dead man's gun falls from his hand and lands in the dirt beside him (or a
+## living one throws his empty long gun down).
 func drop_gun(a: Actor) -> void:
 	for kind in a.weapon.d.get("drops", [a.weapon.kind]):
-		_drop_one(a, kind)
+		var side := a.facing.orthogonal() * randf_range(-10.0, 10.0) - a.facing * randf_range(2.0, 8.0)
+		var g := _place_gun(kind, a.global_position + side + Vector2(0, 2), a.gun_height())
+		g["under"] = null if a.alive else a
 
 
-func _drop_one(a: Actor, kind: String) -> void:
+func _place_gun(kind: String, at: Vector2, fall: float) -> Dictionary:
 	var g: Dictionary = meta["guns"][kind].pick_random()
 	var s := Sprite2D.new()
 	s.texture = tex(g["file"])
 	s.centered = false
 	s.scale = Vector2.ONE * tex_scale
 	s.offset = -Vector2(g["anchor"][0], g["anchor"][1])
-	var side := a.facing.orthogonal() * randf_range(-10.0, 10.0) - a.facing * randf_range(2.0, 8.0)
-	s.position = a.global_position + side + Vector2(0, 2)
+	s.position = at
 	world.add_child(s)
-	var drop := -a.gun_height()
 	var spr_offset := s.offset
-	s.offset = spr_offset + Vector2(0, drop / tex_scale)
+	s.offset = spr_offset + Vector2(0, -fall / tex_scale)
 	var tw := create_tween()
 	tw.tween_property(s, "offset", spr_offset, 0.35).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	var gun := {"kind": kind, "sprite": s, "at": at, "under": null, "ammo": null, "ammo_kind": "", "claimed_by": null}
+	loose_guns.append(gun)
+	return gun
+
+
+## Cartridges for the stranger's guns, dropped by the dead (or spilled).
+func _drop_ammo(kind: String, at: Vector2) -> Pickup:
+	var p := Pickup.new()
+	p.setup(self, at, kind)
+	world.add_child.call_deferred(p)
+	return p
+
+
+## A gun the gunsmith may have: not lying under a body still waiting on the
+## undertaker (once he's buried or dragged off, it's free), and nobody else's.
+func gun_free(g: Dictionary, by: Civilian) -> bool:
+	var who = g["claimed_by"]
+	if who != null and who != by and is_instance_valid(who) and who.alive and who.gun == g:
+		return false
+	var under = g["under"]
+	return under == null or not is_instance_valid(under) or under.has_meta("buried") \
+		or under.global_position.distance_to(g["at"]) > 40.0
+
+
+## The nearest free gun (within `within` of `from`, if given), now claimed by him.
+func claim_gun(by: Civilian, from: Vector2, within := INF) -> Dictionary:
+	var best: Dictionary = {}
+	var best_d := within
+	for g in loose_guns:
+		var d: float = from.distance_to(g["at"])
+		if d < best_d and gun_free(g, by):
+			best_d = d
+			best = g
+	if not best.is_empty():
+		best["claimed_by"] = by
+	return best
+
+
+## Picked up: off the ground, and the cartridges lying with it go too.
+func take_gun(g: Dictionary) -> void:
+	loose_guns.erase(g)
+	g["sprite"].queue_free()
+	var ammo = g["ammo"]
+	if ammo != null and is_instance_valid(ammo):
+		ammo.queue_free()
+	else:
+		g["ammo_kind"] = ""   # the stranger already had those
+	stats["guns gathered"] = stats.get("guns gathered", 0) + 1
+
+
+## The gunsmith goes down with an armful: it all spills round him, cartridges too.
+func spill_guns(c: Civilian) -> void:
+	for item in c.carried:
+		var at := c.global_position + Vector2.from_angle(randf() * TAU) * randf_range(6.0, 16.0)
+		var g := _place_gun(item["kind"], at, 14.0)
+		if item["ammo_kind"] != "":
+			g["ammo_kind"] = item["ammo_kind"]
+			g["ammo"] = _drop_ammo(item["ammo_kind"], at + Vector2(randf_range(-5, 5), 4))
+	c.carried.clear()
 
 
 ## Animation events: brass flicking out of a Winchester or Colt, shells out of the

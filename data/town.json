@@ -150,6 +150,11 @@
    "y": 22
   },
   {
+   "type": "gunsmith",
+   "x": 44,
+   "y": 24
+  },
+  {
    "type": "store",
    "x": 48,
    "y": 23
@@ -306,8 +311,8 @@
   },
   {
    "type": "trough",
-   "x": 44,
-   "y": 28.6
+   "x": 42.2,
+   "y": 29.4
   },
   {
    "type": "trough",
@@ -1036,6 +1041,12 @@
   }
  ],
  "civilians": [
+  {
+   "kind": "gunsmith",
+   "x": 45.5,
+   "y": 28.6,
+   "facing": 90
+  },
   {
    "kind": "mourner",
    "x": 8.4,

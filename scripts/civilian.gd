@@ -16,8 +16,12 @@ extends Actor
 ## arm while all is calm, and scatter separately when it isn't. Mourners ("role":
 ## "mourner", placed "indoors") stay inside until there's a fresh grave and the town
 ## is quiet, then come out in black to stand at it a while, and go home again.
+## The gunsmith ("role": "gunsmith") gathers up the guns the dead dropped, once the
+## undertaker has the body away, four or five a trip, cartridges and all, and carries
+## them into his shop. Shoot him and his armful spills round him.
 
-enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN }
+enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
+	TO_GUN, PICK, HAUL }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -30,10 +34,13 @@ const GLANCE := 0.9      # how long anyone else looks before averting his eyes
 const FLEE_LINES := ["Lord help us!", "¡Corran!", "Get inside!"]
 const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
 const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios mío!"]
-const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS, St.TO_GRAVE, St.MOURN]
+const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS, St.TO_GRAVE, St.MOURN, St.TO_GUN,
+	St.PICK, St.HAUL]
 const MEASURE_T := 3.5
 const BLESS_T := 4.0
 const MOURN_T := Vector2(20.0, 32.0)
+const PICK_T := 2.0
+const GATHER_NEAR := 400.0   # once he has a gun in hand, he only goes on for ones this close
 const ARM := 13.0          # how far beside him she walks
 const DRAG_SPEED := 0.65   # of his walk, with a man in tow
 
@@ -67,6 +74,10 @@ var undertaker := false
 var priest := false
 var mourner := false
 var mourning: Dictionary = {}   # the grave she's going to, or standing at
+var gunsmith := false
+var gun: Dictionary = {}        # the loose gun he's going for
+var carried: Array[Dictionary] = []   # what he's gathered: {kind, ammo_kind}
+var load_size := 5              # how many he'll carry this trip
 var body: Actor              # the dead man he's seeing to
 var partner: Civilian        # the other half of a couple
 var leads := false           # he sets the way; she keeps to his arm
@@ -94,12 +105,15 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	undertaker = tdata.get("role", "") == "undertaker"
 	priest = tdata.get("role", "") == "priest"
 	mourner = tdata.get("role", "") == "mourner"
+	gunsmith = tdata.get("role", "") == "gunsmith"
 	if undertaker:
 		anim_gun = "tools"   # empty hands plus the tape and the haul
 	elif priest:
 		anim_gun = "prayer"  # a book in one hand, a blessing in the other
 	elif mourner:
 		anim_gun = "grief"   # hands clasped, and a handkerchief
+	elif gunsmith:
+		anim_gun = "smith"   # a gun held up to the light, and an armful of them
 	home = pos
 	facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	desired = facing
@@ -158,6 +172,7 @@ func alarm(from: Vector2, scary: bool) -> void:
 	threat = from
 	_drop_body()   # the dead can wait
 	_leave_grave()
+	_let_go_of_gun()
 	if st == St.COWER:
 		return
 	var freeze := (1.0 - nerve) * (0.7 if scary else 0.4)
@@ -234,6 +249,10 @@ func _physics_process(delta: float) -> void:
 			_bless(delta)
 		St.TO_GRAVE, St.MOURN:
 			_mourn(delta)
+		St.TO_GUN, St.PICK, St.HAUL:
+			_gather(delta)
+	if carried and pose == "":
+		pose = "carry"
 	if velocity.length() > 1.0 and not watching:
 		desired = velocity.normalized()
 	facing = facing.rotated(clamp(facing.angle_to(desired), -3.0 * delta, 3.0 * delta))
@@ -287,6 +306,10 @@ func _idle(delta: float) -> void:
 			st = St.TO_BODY
 			path = game.find_path(global_position, body.global_position)
 			path_i = 0
+			return
+	if gunsmith and game.quiet_for() >= game.quiet_after:
+		_next_gun()
+		if st != St.IDLE:
 			return
 	if priest and game.quiet_for() >= game.quiet_after:
 		body = game.blessing_for(self)
@@ -480,6 +503,70 @@ func _leave_grave() -> void:
 	if not mourning.is_empty():
 		mourning["mourners"] -= 1
 		mourning = {}
+
+
+# ------------------------------------------------------------------ the gunsmith
+
+## On to the next gun: the nearest one going, then only ones close by; with his
+## arms full, or nothing more nearby, home with the lot.
+func _next_gun() -> void:
+	if carried.is_empty():
+		load_size = randi_range(4, 5)
+	if carried.size() < load_size:
+		gun = game.claim_gun(self, global_position, INF if carried.is_empty() else GATHER_NEAR)
+		if not gun.is_empty():
+			st = St.TO_GUN
+			path = game.find_path(global_position, gun["at"])
+			path_i = 0
+			return
+	if carried:
+		st = St.HAUL
+		path = game.find_path(global_position, home)
+		path_i = 0
+
+
+func _gather(delta: float) -> void:
+	match st:
+		St.TO_GUN:
+			if not game.loose_guns.has(gun):
+				_let_go_of_gun()
+				st = St.IDLE
+			elif global_position.distance_to(gun["at"]) < 12.0 or _follow(walk):
+				st = St.PICK
+				work_t = PICK_T
+				velocity = Vector2.ZERO
+		St.PICK:
+			# down on one knee for it, then holding it up to the light
+			velocity = Vector2.ZERO
+			crouched = true
+			pose = "pick"
+			if not game.loose_guns.has(gun):
+				_let_go_of_gun()
+				st = St.IDLE
+				return
+			desired = (gun["at"] - global_position).normalized()
+			work_t -= delta
+			if work_t <= 0.0:
+				game.take_gun(gun)
+				carried.append({"kind": gun["kind"], "ammo_kind": gun["ammo_kind"]})
+				if randf() < 0.3:
+					_say(_line("work", ["Hm."]))
+				gun = {}
+				crouched = false
+				st = St.IDLE
+				wait = 0.3
+		St.HAUL:
+			if _follow(walk):
+				game.stats["guns stored"] = game.stats.get("guns stored", 0) + carried.size()
+				carried.clear()
+				_go_inside(false)   # into the shop with them
+
+
+func _let_go_of_gun() -> void:
+	if not gun.is_empty() and gun.get("claimed_by") == self:
+		gun["claimed_by"] = null
+	gun = {}
+	crouched = false
 
 
 # ------------------------------------------------------------------ couples

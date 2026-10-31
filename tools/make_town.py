@@ -32,7 +32,7 @@ STREETS = [
 BUILDINGS_AT = [
     # north side of main street, facing it (fronts at y = 28)
     ("saloon", 2, 22), ("barber", 11.5, 24), ("sheriff", 20.5, 23), ("hotel", 27.5, 22),
-    ("bank", 36.5, 22), ("store", 48, 23), ("undertaker", 54.5, 23), ("adobe_b", 59.5, 24),
+    ("bank", 36.5, 22), ("gunsmith", 44, 24), ("store", 48, 23), ("undertaker", 54.5, 23), ("adobe_b", 59.5, 24),
     # back yards between main and north street
     ("adobe_a", 3, 16.5), ("feed", 20.5, 16.5), ("assay", 37, 16.5), ("stable", 47.5, 16.5),
     # north of the north street
@@ -47,7 +47,7 @@ BUILDINGS_AT = [
 
 PROPS = [
     ("wagon", 12, 29.2), ("wagon", 31, 30.4), ("wagon", 50, 29.0), ("wagon", 34.2, 38.9),
-    ("wagon", 24, 46.0), ("trough", 6, 28.6), ("trough", 23, 28.7), ("trough", 44, 28.6),
+    ("wagon", 24, 46.0), ("trough", 6, 28.6), ("trough", 23, 28.7), ("trough", 42.2, 29.4),
     ("trough", 28.5, 34), ("trough", 56, 46.2), ("hitch", 14.3, 28.7), ("hitch", 29, 28.9),
     ("hitch", 39.5, 28.9), ("hitch", 50.5, 28.6), ("coffin", 55.2, 28.8), ("coffin", 57, 29.6),
     ("coffin", 6, 54), ("coffin", 10, 57.5),
@@ -112,6 +112,7 @@ ENEMIES = [
 
 # Townsfolk, near the doors they'd run for. Fewer than the bandits.
 CIVILIANS = [
+    {"kind": "gunsmith", "x": 45.5, "y": 28.6, "facing": 90},
     # mourners, indoors in black until there's a fresh grave on boot hill
     {"kind": "mourner", "x": 8.4, "y": 37.4, "facing": 270, "indoors": True},
     {"kind": "mourner", "x": 25.4, "y": 37.4, "facing": 270, "indoors": True},
