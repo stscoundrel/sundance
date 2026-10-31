@@ -13,7 +13,7 @@ var h := 20.0
 var pellet := false
 var travelled := 0.0
 var exclude: Array[RID] = []
-var scared: Array[Enemy] = []
+var scared: Array[Actor] = []
 
 
 func setup(g: Node, origin: Vector2, v: Vector2, rng: float, dmg: int, sh: Actor, height: float, is_pellet: bool) -> void:
@@ -57,6 +57,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if shooter.is_player:
 		_scare(position, to)
+	_scare_town(position, to)
 	travelled += step.length()
 	position = to
 	if travelled >= range_left:
@@ -77,6 +78,17 @@ func _scare(a: Vector2, b: Vector2) -> void:
 		if p.distance_to(e.global_position) < 55.0 and game.line_of_sight(e.global_position, p, false):
 			scared.append(e)
 			e.near_miss(shooter.global_position)
+
+
+## Townsfolk dive for it whoever's shooting.
+func _scare_town(a: Vector2, b: Vector2) -> void:
+	for c in game.civilians:
+		if not c.alive or c.gone() or scared.has(c):
+			continue
+		var p := Geometry2D.get_closest_point_to_segment(c.global_position, a, b)
+		if p.distance_to(c.global_position) < 55.0 and game.line_of_sight(c.global_position, p, false):
+			scared.append(c)
+			c.near_miss(shooter.global_position)
 
 
 func _scare_impact(p: Vector2) -> void:

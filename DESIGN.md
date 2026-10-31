@@ -182,7 +182,8 @@ carried, which you collect by walking over them.
   hitching rails, cacti, tumbleweeds and mud. 25 bandits.
 - **Seeing through buildings**: a building fades when it hides the hero or when
   he aims at it; anyone else hidden behind a building shows through as a
-  silhouette (red for bandits, pale for the hero).
+  silhouette: red for known bandits, pale for the hero, and a neutral bone
+  colour for townsfolk and for anyone still passing as one.
 
 ## Look and feel
 
@@ -265,6 +266,49 @@ lever, or breech for anything that opens to load), stats, smoke, and for breech 
 the barrel count and each reload step's time and sound. A new breech gun is a data
 entry plus a model and poses in `tools/chars.py`. `tests/test_types.gd`
 checks the type data against the baked art.
+
+## Townsfolk
+
+A dozen unarmed townsfolk (fewer than the bandits) go about their business in
+town: townsmen, peones in white, townswomen, gentlemen in frock coats and saloon
+girls. They are data too, under `civilians` in `data/enemies.json` (template,
+palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
+`shouts`), placed by `tools/make_town.py`.
+
+- **Life**: each idles near home and strolls about within `wander` px of it.
+- **Panic**: gunfire within ~110 px, or in view within ~320 px, a round cracking
+  past (whoever fired it), or a man dropping in front of him sends him running.
+  He heads for the nearest doorway that doesn't take him towards the shooting, or
+  off the edge of town if that's nearer, and fades through it: out of the story.
+  Doorways are recorded from the building models when the art is generated
+  (`doors` per object in `assets/meta.json`). Short on nerve or caught close, he
+  cowers on the spot for a few seconds first.
+- **Snitches**: one in five (`snitch` 0.2; saloon girls 0.3), decided at random
+  when the town is built. Nothing marks them, but a sharp eye can tell: honest
+  folk glance at the stranger for about a second and look away; a snitch keeps
+  staring, turns his head to follow him, and starts edging off towards the nearest
+  bandit. After about 2.5 s with the stranger in view he hurries to that bandit
+  with a white "!" over his head, points the way and shouts, and the bandit raises
+  the alarm. Then he runs indoors. Stopping him means shooting an unarmed man, or
+  getting out of his sight before he's done looking.
+- **Innocents**: townsfolk are hit by stray rounds from either side, and bandits
+  hold fire when one is in the line. If the hero kills one, the town notices: "AN
+  INNOCENT - the town will remember", witnesses shout "Murderer!" and run, and the
+  end card counts them ("innocents shot: 2"). No other penalty yet.
+- **Bandits passing as townsfolk**: types marked `concealed` (the armed saloon girl
+  and the gambler) look like the unarmed ones: hands empty (they're baked with the
+  unarmed set too), no vision cone, no suspicion bar, and a neutral silhouette.
+  They are never the ones to start anything: they ignore footsteps, glimpses of the
+  stranger, distant shots and bodies. They drop the act (gun out, cone on, red
+  silhouette) only when the fight comes to them (gunfire close by, a comrade's
+  alarm, a snitch, the posse forming), or when the stranger walks right up to them
+  (within ~40 px), and then they draw on him.
+
+`tests/test_civilians.gd` checks townsfolk near a shot run indoors while those far
+off carry on; that a snitch stares (and hasn't run yet) after 1.8 s, then reaches a
+bandit and starts the fight; that an honest townsman looks away; that concealed
+bandits pass as townsfolk, let the stranger stand a few paces off, and draw when he
+walks right up; and that a dead townsman counts as an innocent. `tests/test_perf.gd` times a firefight with and without the townsfolk.
 
 ## Animation
 

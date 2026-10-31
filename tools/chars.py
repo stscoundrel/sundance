@@ -35,13 +35,21 @@ NEUTRAL = (200, 200, 200)   # recolourable parts are baked in grey; a shader pai
 
 
 def template_guns():
-    """Which guns each body template must be baked holding (every gun its types carry)."""
+    """Which guns each body template must be baked holding (every gun its types carry).
+    Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     out = {"hero": ["colt", "coach", "rifle"]}
+
+    def need(template, g):
+        out.setdefault(template, [])
+        if g not in out[template]:
+            out[template].append(g)
     for t in _DATA["types"].values():
         for g in t["loadout"]:
-            out.setdefault(t["template"], [])
-            if g not in out[t["template"]]:
-                out[t["template"]].append(g)
+            need(t["template"], g)
+        if t.get("concealed"):
+            need(t["template"], "unarmed")
+    for t in _DATA["civilians"]["types"].values():
+        need(t["template"], "unarmed")
     return out
 
 
@@ -432,7 +440,8 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     if style != "dress":
         m += frustum((0, 0, -0.05), (0, 0, 0.06), 0.168, 0.168, LEATHER, su=0.74)
         m += box((0.11, -0.03, -0.03), (0.135, 0.03, 0.04), BRASS)  # buckle
-        m += box((-0.05, -0.2, -0.22), (-0.05 + 0.1, -0.16, -0.02), LEATHER)  # holster
+        if look.get("holsters", 1) > 0:
+            m += box((-0.05, -0.2, -0.22), (-0.05 + 0.1, -0.16, -0.02), LEATHER)  # holster
         if look.get("holsters", 1) > 1:
             m += box((-0.05, 0.16, -0.22), (-0.05 + 0.1, 0.2, -0.02), LEATHER)
     m += frustum((0, 0, 0.04), (0, 0, 0.5), 0.15 if style != "dress" else 0.13, 0.19, _torso_fn(look), su=0.62)
@@ -572,6 +581,12 @@ def _key_poses(w):
         return k
     if w == "colts":
         return _twin_poses()
+    if w == "unarmed":
+        # arms easy at his sides; the shared poses (point, flinch, cower, hits) do the rest
+        aim = dict(eR=V(-0.02, -0.25, 0.2), hR=V(0.03, -0.23, -0.04), **HANG_L)
+        k = {"aim": aim, "low": aim, "up": {"gun": None}, "cower": {"gun": None}, "clutch_r": {"gun": None},
+             "belly": dict(eR=V(0.08, -0.27, 0.2), hR=V(0.17, -0.07, 0.08))}
+        return _shared_poses(k)
     if w == "derringer":
         k = _key_poses("colt")
         for name in ("load", "eject_a", "eject_b", "insert_a", "insert_b"):
@@ -741,8 +756,11 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
-    if w == "sharps":
+    if w != "unarmed":
+        add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
+    if w == "unarmed":
+        pass
+    elif w == "sharps":
         add("cock", [k["cock"], k["aim"]], 5)
         add("reload_open", _frames([k["aim"], k["load"]], 2), 6)
         add("reload_eject", [k["eject_a"], k["eject_b"]], 6, events={1: "brass"})

@@ -15,6 +15,7 @@ var now := 0.0
 
 
 func _initialize() -> void:
+	Engine.set_meta("fixed_seed", true)
 	seed(7)
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
@@ -45,16 +46,16 @@ func _process(delta: float) -> bool:
 				counts[r] = counts.get(r, 0) + 1
 			current[e] = [r, now]
 	if frame == 700:
-		# a death in their midst: everyone near must react
+		# a death in their midst: everyone near who sees it must react
 		var victim: Enemy = game.enemies[1]
 		var near := 0
 		for e in game.enemies:
-			if e != victim and e.alive and e.global_position.distance_to(victim.global_position) < 180.0:
+			if e != victim and e.alive and _sees_body(e, victim):
 				near += 1
 		victim.take_hit(99, Vector2.RIGHT, game.player)
 		var reacting := 0
 		for e in game.enemies:
-			if e != victim and e.alive and e.global_position.distance_to(victim.global_position) < 180.0 and (e.pending != "" or e.reaction != ""):
+			if e != victim and e.alive and _sees_body(e, victim) and (e.pending != "" or e.reaction != ""):
 				reacting += 1
 		if reacting < near:
 			failures += 1
@@ -76,3 +77,8 @@ func _process(delta: float) -> bool:
 	print("reactions test: ", "OK" if failures == 0 else "%d failures" % failures)
 	Engine.time_scale = 1.0
 	return true
+
+
+func _sees_body(e: Enemy, victim: Enemy) -> bool:
+	return e.global_position.distance_to(victim.global_position) < 180.0 \
+		and game.line_of_sight(e.global_position, victim.global_position, false)

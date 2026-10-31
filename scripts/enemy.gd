@@ -22,6 +22,7 @@ const FLEE_LINES := ["¡Vámonos!", "I'm getting out!", "¡Corre!", "He's the de
 const VIEW := 200.0
 const NEAR := 95.0
 const FOV := deg_to_rad(70.0)
+const UNMASK := 40.0   # a concealed bandit only gives herself away to a hero this close
 const LOCAL := 150.0   # within this, a fight is close enough to rattle him unseen
 
 var kind := "pistolero"
@@ -107,6 +108,7 @@ var shout_t := 0.0
 var flank := 0.0
 var flank_dir := Vector2.RIGHT
 var sidestep_t := 0.0
+var revealed := true     # false while a concealed type passes as one of the townsfolk
 var in_posse := false    # one of the last few, riding the town together (see Posse)
 var posse_slot := 0
 var posse_repath := 0.0
@@ -150,6 +152,22 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	cone = VisionCone.new()
 	cone.enemy = self
 	g.cone_layer.add_child(cone)
+	if tdata["concealed"]:
+		# looks like any other townsman: gun out of sight, no tell-tale view cone
+		revealed = false
+		anim_gun = "unarmed"
+		cone.visible = false
+
+
+## Drops the act: gun out, and from now on he's plainly one of them.
+func reveal() -> void:
+	if revealed:
+		return
+	revealed = true
+	anim_gun = ""
+	cone.visible = true
+	set_ghost_tint(game.GHOST_THREAT)
+	_log("reveals himself")
 
 
 # ------------------------------------------------------------------ senses
@@ -193,6 +211,14 @@ func _perceive(delta: float) -> void:
 		else:
 			lost_t += delta
 		return
+	if not revealed:
+		# Passing as townsfolk she never starts anything herself: no suspicion, no
+		# looking into noises or bodies. Only a stranger walking right up to her makes
+		# her draw (or the fight coming to her: comrades, gunfire, a snitch).
+		if p.alive and global_position.distance_to(p.global_position) < UNMASK \
+				and game.line_of_sight(global_position, p.global_position, false):
+			enter_combat(p.global_position, true, true)
+		return
 	if sees_player:
 		var rate := 0.8 + 2.4 * vis
 		if st == St.INVESTIGATE or wary:
@@ -228,6 +254,8 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 			elif d < radius * 0.6:
 				enter_combat(pos, false, true)
 				queue_reaction(pos, false)
+			elif not revealed:
+				pass   # a distant shot: let someone else go and look
 			else:
 				suspicion = max(suspicion, 0.6)
 				start_investigate(pos, true)
@@ -235,6 +263,8 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 			if st != St.COMBAT and source is Enemy:
 				enter_combat(source.last_known, false, false)
 		"step":
+			if not revealed:
+				return   # footsteps are no business of a townsman's
 			if st != St.COMBAT and st != St.INVESTIGATE:
 				suspicion = min(0.9, suspicion + 0.3)
 				desired = (pos - global_position).normalized()
@@ -248,6 +278,7 @@ func alert_to(pos: Vector2) -> void:
 
 
 func enter_combat(pos: Vector2, spotted: bool, propagate: bool) -> void:
+	reveal()
 	var was := st
 	st = St.COMBAT
 	last_known = pos
@@ -274,6 +305,7 @@ func enter_combat(pos: Vector2, spotted: bool, propagate: bool) -> void:
 
 
 func start_investigate(pos: Vector2, run: bool) -> void:
+	reveal()
 	if st == St.COMBAT:
 		return
 	st = St.INVESTIGATE
@@ -541,6 +573,8 @@ func _physics_process(delta: float) -> void:
 
 	pose = ""
 	aiming = false
+	if not revealed and st in [St.INVESTIGATE, St.COMBAT, St.SEARCH]:
+		reveal()   # something's up: the act is over
 	if pending != "":
 		pending_t -= delta
 		if pending_t <= 0.0:
@@ -671,6 +705,7 @@ func _go_back() -> void:
 
 ## Called when the posse forms. A man in a fight or a search finishes it first.
 func join_posse(slot: int) -> void:
+	reveal()
 	in_posse = true
 	posse_slot = slot
 	wary = true
@@ -927,7 +962,7 @@ func _pick_fight_pos(target: Vector2, keep: Vector2) -> void:
 
 
 ## Step sideways: away from the comrade in the way, if that's the reason.
-func _sidestep(away_from: Enemy = null) -> void:
+func _sidestep(away_from: Actor = null) -> void:
 	sidestep_t = randf_range(0.6, 1.1) * (1.0 + bold)
 	strafe_dir = [-1.0, 1.0].pick_random()
 	# a bold man closes in as he goes, down to the near end of his range

@@ -77,6 +77,8 @@ func _draw() -> void:
 		_draw_status(p)
 		_draw_weapon(p)
 		_draw_crosshair(p)
+	if game.innocent_t > 0.0:
+		_draw_innocent()
 	if eyes_on:
 		_draw_eyes()
 	if message != "":
@@ -85,12 +87,15 @@ func _draw() -> void:
 		_draw_title()
 
 
-## "!" / "?" markers, suspicion bars and shouted lines above the bandits' heads,
-## drawn here in screen space so the text stays crisp.
+## "!" / "?" markers, suspicion bars and shouted lines above the bandits' (and
+## townsfolk's) heads, drawn here in screen space so the text stays crisp.
 func _draw_enemy_marks() -> void:
 	var to_local := get_global_transform_with_canvas().affine_inverse()
-	for e in game.enemies:
-		if not e.alive:
+	var people: Array = []
+	people.append_array(game.enemies)
+	people.append_array(game.civilians)
+	for e in people:
+		if not e.alive or (e is Civilian and e.gone()):
 			continue
 		var head: Vector2 = to_local * (e.get_global_transform_with_canvas() * Vector2(0, -40))
 		if head.x < -50 or head.x > 690 or head.y < -20 or head.y > 380:
@@ -105,6 +110,12 @@ func _draw_enemy_marks() -> void:
 			draw_colored_polygon(PackedVector2Array([Vector2(head.x - 3, y - 8), Vector2(head.x + 3, y - 8), Vector2(head.x, y - 4)]), Color(0.95, 0.9, 0.78, 0.9 * a))
 			draw_string(font, Vector2(r.position.x + 4, y - 11), e.shout, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.25, 0.08, 0.05, a))
 			y -= 16
+		if e is Civilian:
+			if e.st == Civilian.St.SNITCH and e.told_t <= 0.0:
+				_text(Vector2(head.x - 3, y - 6), "!", 14, Color(0.95, 0.95, 0.85), font)   # off to tell them
+			continue
+		if not e.revealed:
+			continue   # passing as townsfolk: nothing gives him away
 		if e.marker_t > 0.0 and e.marker != "":
 			var c := Color(1, 0.85, 0.3) if e.marker == "?" else Color(1, 0.25, 0.15)
 			_text(Vector2(head.x - 3, y - 6), e.marker, 14, c, font)
@@ -204,6 +215,13 @@ func _draw_eyes() -> void:
 	draw_rect(Rect2(0, 360 - bar, 640, bar), Color.BLACK)
 	var slide := (1.0 - a) * 640.0
 	draw_texture_rect(game.tex(game.meta["ui"]["eyes"]), Rect2(slide, 116, 640, 128), false, Color(1, 1, 1, a))
+
+
+## The town's verdict when the hero shoots one of its own.
+func _draw_innocent() -> void:
+	var a: float = clamp(game.innocent_t, 0.0, 1.0)
+	_text(Vector2(0, 52), "AN INNOCENT", 14, Color(0.9, 0.3, 0.22, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	_text(Vector2(0, 64), "the town will remember", 8, Color(INK, a * 0.9), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
 
 
 func _draw_message() -> void:

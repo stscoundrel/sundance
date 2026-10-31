@@ -80,17 +80,31 @@ def gen_world(meta):
     meta["objects"] = {}
     for name, (fn, fp, collide, fade, colliders) in world.BUILDINGS.items():
         print("  object", name)
+        world.DOORS.clear()
         img, anchor = render(fn(), edges=True)
         path = save(img, f"sprites/world/{name}.png")
         meta["objects"][name] = {"file": path, "anchor": list(anchor), "footprint": list(fp),
                                  "collide": collide, "fade": fade,
-                                 "colliders": colliders or [[0, 0, fp[0], fp[1]]]}
+                                 "colliders": colliders or [[0, 0, fp[0], fp[1]]],
+                                 "doors": _doorsteps(world.DOORS)}
     frames = []
     for f in range(4):
         img, anchor = render(world.tumbleweed(f), size=(24 * PIX, 24 * PIX), anchor=(12 * PIX, 18 * PIX))
         frames.append(img)
     path = save(np.concatenate(frames, 1), "sprites/world/tumbleweed.png")
     meta["tumbleweed"] = {"file": path, "cell": [24 * PIX, 24 * PIX], "anchor": [12 * PIX, 18 * PIX], "frames": 4}
+
+
+def _doorsteps(doors):
+    """Doorways as tile points just outside the building, relative to its corner."""
+    out = []
+    for face, u, W, D in doors:
+        T, o = world.T, 0.4
+        p = {"+y": (u / T, D / T + o), "-y": (u / T, -o), "+x": (W / T + o, u / T), "-x": (-o, u / T)}[face]
+        p = [round(p[0], 2), round(p[1], 2)]
+        if p not in out:
+            out.append(p)
+    return out
 
 
 def _hash(ix, iy, seed):

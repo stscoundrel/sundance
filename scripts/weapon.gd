@@ -32,6 +32,10 @@ const DATA := {
 		"speed": 650.0, "range": 340.0, "spread": 3.0, "pellets": 1, "noise": 380.0, "sfx": "colt",
 		"cycle": 0.16, "shake": 2.0, "smoke": 9, "ammo": "colt", "drops": ["colt", "colt"],
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
+	# Empty hands: townsfolk. Never fires; drops nothing.
+	"unarmed": {"name": "", "action": "none", "damage": 0, "speed": 0.0, "range": 0.0, "spread": 0.0,
+		"pellets": 0, "noise": 0.0, "sfx": "", "cycle": 0.0, "shake": 0.0, "smoke": 0, "drops": [],
+		"status": {"cycle": "", "open": "", "close": ""}},
 	# Remington double derringer: two stacked barrels, cocked per shot, short and weak.
 	"derringer": {"name": "REMINGTON DERRINGER", "action": "breech", "barrels": 2, "hammer": true,
 		"damage": 1, "speed": 550.0, "range": 160.0, "spread": 3.0, "pellets": 1, "noise": 280.0,
@@ -99,12 +103,16 @@ func can_fire() -> bool:
 			return cocked and chambers[cur] == 1
 		"breech":
 			return barrels.has(1)
+		"none":
+			return false
 		_:
 			return chambered
 
 
 func needs_reload() -> bool:
 	match action:
+		"none":
+			return false
 		"revolver":
 			return not chambers.has(1)
 		"breech":

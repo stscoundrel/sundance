@@ -1,5 +1,5 @@
 {
-  "_doc": "Bandit types. 'templates' are body shapes, baked once each. 'types' combine a template with palettes, a loadout and behaviour knobs; town.json places them and may override any type field per bandit. Palette slots are listed in 'slots'; any slot left out keeps a neutral grey.",
+  "_doc": "Bandit types (and, under 'civilians', the townsfolk). 'templates' are body shapes, baked once each. 'types' combine a template with palettes, a loadout and behaviour knobs; town.json places them and may override any type field per bandit. Palette slots are listed in 'slots'; any slot left out keeps a neutral grey.",
 
   "slots": ["coat", "shirt", "vest", "trousers", "boots", "hat", "band", "accent", "skin", "hair",
             "poncho_a", "poncho_b", "poncho_c", "dress"],
@@ -15,7 +15,8 @@
     "dress":           {"style": "dress",  "hat": "none",     "female": true},
     "buckskin":        {"style": "buckskin", "hat": "fur",    "beard": true},
     "veteran":         {"style": "duster", "hat": "slouch",   "beard": true, "mustache": true},
-    "gunslinger":      {"style": "vest",   "hat": "flat",     "scarf": true, "mustache": true, "holsters": 2}
+    "gunslinger":      {"style": "vest",   "hat": "flat",     "scarf": true, "mustache": true, "holsters": 2},
+    "peon":            {"style": "shirt",  "hat": "sombrero", "mustache": true, "holsters": 0}
   },
 
   "player": {
@@ -27,7 +28,7 @@
   "defaults": {
     "hp": 2, "range": [70, 170], "cadence": [0.7, 1.3], "aim": 1.0, "speed": 1.0,
     "reflex": [0.6, 1.8], "nerve": [0.15, 0.9], "rank": 0, "cover_call": 0.5,
-    "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "bold": 0.0, "shouts": {}
+    "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "bold": 0.0, "concealed": false, "shouts": {}
   },
 
   "types": {
@@ -99,7 +100,7 @@
       ]
     },
     "gambler": {
-      "name": "Gambler", "template": "suit", "loadout": ["derringer"],
+      "name": "Gambler", "template": "suit", "loadout": ["derringer"], "concealed": true,
       "range": [40, 120], "cadence": [0.5, 0.9], "aim": 0.8, "reflex": [0.5, 1.0], "nerve": [0.5, 0.95],
       "shouts": {"spot": ["Well now.", "Bad hand, stranger.", "Gentlemen..."],
                  "reload": ["One moment."], "scare": ["Steady..."]},
@@ -155,7 +156,7 @@
       ]
     },
     "saloon_girl": {
-      "name": "Saloon girl", "template": "dress", "loadout": ["colt"],
+      "name": "Saloon girl", "template": "dress", "loadout": ["colt"], "concealed": true,
       "range": [60, 150], "cadence": [0.8, 1.4], "aim": 1.3, "reflex": [0.7, 1.6], "nerve": [0.3, 0.8],
       "cover_call": 0.3,
       "shouts": {"spot": ["There he is, boys!", "¡Allí, allí!"], "scare": ["Oh!"], "reload": ["Cover me, boys!"]},
@@ -164,6 +165,34 @@
         {"dress": [40, 90, 70], "accent": [210, 190, 150], "boots": [40, 30, 26], "skin": [200, 150, 116], "hair": [150, 90, 40]},
         {"dress": [90, 50, 110], "accent": [20, 20, 24], "boots": [30, 24, 22], "skin": [180, 124, 92], "hair": [20, 16, 14]}
       ]
+    }
+  }
+  ,
+  "civilians": {
+    "_doc": "Unarmed townsfolk. 'nerve': 0 freezes and cowers, 1 keeps his head and runs for a door. 'snitch': chance he runs to tell the bandits when he sees the stranger. 'palettes_from' borrows a bandit type's palettes, so an innocent can look exactly like an armed one.",
+    "defaults": {"speed": 1.0, "nerve": [0.2, 0.9], "snitch": 0.2, "wander": 40, "shouts": {}},
+    "types": {
+      "townsman": {"name": "Townsman", "template": "shirt",
+        "shouts": {"flee": ["Lord help us!", "Get inside!", "Not again!"], "snitch": ["He's over there!", "A stranger with a gun!"]},
+        "palettes": [
+          {"shirt": [214, 206, 186], "trousers": [96, 88, 76], "boots": [60, 44, 32], "hat": [120, 104, 80], "band": [70, 60, 50], "skin": [206, 156, 120], "hair": [110, 80, 50]},
+          {"shirt": [160, 120, 96], "trousers": [70, 70, 80], "boots": [50, 38, 30], "hat": [90, 80, 70], "band": [40, 36, 32], "skin": [196, 140, 104], "hair": [60, 44, 32]}]},
+      "peon": {"name": "Peón", "template": "peon", "speed": 0.95,
+        "shouts": {"flee": ["¡Ay, Dios mío!", "¡Corran!", "¡Escóndanse!"], "snitch": ["¡Patrón! ¡Un gringo!", "¡Allá, allá!"]},
+        "palettes": [
+          {"shirt": [226, 220, 204], "trousers": [220, 214, 196], "boots": [110, 80, 54], "hat": [196, 168, 110], "band": [120, 50, 34], "skin": [168, 110, 76], "hair": [30, 24, 20]},
+          {"shirt": [214, 206, 186], "trousers": [200, 190, 170], "boots": [100, 72, 48], "hat": [176, 150, 98], "band": [60, 70, 110], "skin": [160, 104, 72], "hair": [36, 28, 22]}]},
+      "townswoman": {"name": "Townswoman", "template": "dress", "nerve": [0.1, 0.8],
+        "shouts": {"flee": ["Oh, my Lord!", "¡Mis hijos!", "Help!"], "snitch": ["Over there! He's got a gun!"]},
+        "palettes": [
+          {"dress": [70, 80, 110], "accent": [220, 214, 196], "boots": [40, 30, 26], "skin": [214, 170, 140], "hair": [90, 60, 36]},
+          {"dress": [110, 96, 80], "accent": [160, 40, 34], "boots": [40, 30, 26], "skin": [180, 124, 92], "hair": [30, 22, 18]}]},
+      "gentleman": {"name": "Gentleman", "template": "suit", "nerve": [0.4, 0.9],
+        "shouts": {"flee": ["Good heavens!", "I say!"], "snitch": ["Gentlemen! A ruffian!"]},
+        "palettes_from": "gambler"},
+      "saloon_girl": {"name": "Saloon girl", "template": "dress", "nerve": [0.3, 0.9], "snitch": 0.3,
+        "shouts": {"flee": ["Oh!", "¡Ay, no!", "Not in here!"], "snitch": ["Boys! There's a stranger in town!"]},
+        "palettes_from": "saloon_girl"}
     }
   }
 }

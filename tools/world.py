@@ -110,10 +110,18 @@ def solid(col):
     return lambda P, N: np.tile(np.array(col, float), (len(P), 1))
 
 
+# Doorways at street level, recorded as buildings are modelled so townsfolk know
+# where they can run indoors: (face, centre along the face in metres, W, D).
+DOORS = []
+
+
 def decorate(fn, W, D, openings):
     """Paint windows, doors and signs onto faces. openings: dicts with face ('+x','+y'),
     u=(u0,u1), z=(z0,z1), kind and optional text/color."""
     planes = {"+x": (0, W, 1), "-x": (0, 0, 1), "+y": (1, D, 0), "-y": (1, 0, 0)}
+    for o in openings:
+        if o["kind"] in ("door", "batwing", "arch", "dark") and o["z"][0] < 0.5:
+            DOORS.append((o["face"], (o["u"][0] + o["u"][1]) / 2, W, D))
 
     def f(P, N):
         c = fn(P, N)
@@ -442,6 +450,7 @@ def stable():
                (z > 3.6) & (z < 4.5)
         c[loft] = (30, 22, 18)
         return c
+    DOORS.append(("+y", 3.75, W, D))
     m = box((0, 0, 0), (W, D, Hh), doors, BSP, skip=("-z",))
     m += gable_roof(W, D, Hh, 1.8, roofing((98, 76, 62), along_y=False), along_y=False)
     m += gable_ends(W, D, Hh, 1.8, doors, along_y=False)

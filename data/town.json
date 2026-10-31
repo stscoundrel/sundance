@@ -761,8 +761,8 @@
   }
  ],
  "player": {
-  "x": 1.8,
-  "y": 62.2
+  "x": 63.2,
+  "y": 63.2
  },
  "enemies": [
   {
@@ -1003,6 +1003,80 @@
    "x": 49,
    "y": 49,
    "facing": 200
+  }
+ ],
+ "civilians": [
+  {
+   "kind": "saloon_girl",
+   "x": 6.6,
+   "y": 29.8,
+   "facing": 60
+  },
+  {
+   "kind": "townsman",
+   "x": 15.2,
+   "y": 30.2,
+   "facing": 300
+  },
+  {
+   "kind": "townsman",
+   "x": 29.4,
+   "y": 29.4,
+   "facing": 120
+  },
+  {
+   "kind": "gentleman",
+   "x": 41.6,
+   "y": 30.2,
+   "facing": 200
+  },
+  {
+   "kind": "townswoman",
+   "x": 52.0,
+   "y": 30.6,
+   "facing": 250
+  },
+  {
+   "kind": "townsman",
+   "x": 58.6,
+   "y": 30.8,
+   "facing": 160
+  },
+  {
+   "kind": "peon",
+   "x": 28.6,
+   "y": 39.8,
+   "facing": 20
+  },
+  {
+   "kind": "peon",
+   "x": 35.6,
+   "y": 34.6,
+   "facing": 200
+  },
+  {
+   "kind": "peon",
+   "x": 17.4,
+   "y": 38.6,
+   "facing": 90
+  },
+  {
+   "kind": "townswoman",
+   "x": 31.4,
+   "y": 10.4,
+   "facing": 140
+  },
+  {
+   "kind": "peon",
+   "x": 48.2,
+   "y": 47.2,
+   "facing": 0
+  },
+  {
+   "kind": "townswoman",
+   "x": 22.6,
+   "y": 47.0,
+   "facing": 330
   }
  ]
 }

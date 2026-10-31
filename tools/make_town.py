@@ -108,7 +108,23 @@ ENEMIES = [
     {"kind": "redscarf", "x": 49, "y": 49, "facing": 200},
 ]
 
-PLAYER = {"x": 1.8, "y": 62.2}
+# Townsfolk, near the doors they'd run for. Fewer than the bandits.
+CIVILIANS = [
+    {"kind": "saloon_girl", "x": 6.6, "y": 29.8, "facing": 60},
+    {"kind": "townsman", "x": 15.2, "y": 30.2, "facing": 300},
+    {"kind": "townsman", "x": 29.4, "y": 29.4, "facing": 120},
+    {"kind": "gentleman", "x": 41.6, "y": 30.2, "facing": 200},
+    {"kind": "townswoman", "x": 52.0, "y": 30.6, "facing": 250},
+    {"kind": "townsman", "x": 58.6, "y": 30.8, "facing": 160},
+    {"kind": "peon", "x": 28.6, "y": 39.8, "facing": 20},
+    {"kind": "peon", "x": 35.6, "y": 34.6, "facing": 200},
+    {"kind": "peon", "x": 17.4, "y": 38.6, "facing": 90},
+    {"kind": "townswoman", "x": 31.4, "y": 10.4, "facing": 140},
+    {"kind": "peon", "x": 48.2, "y": 47.2, "facing": 0},
+    {"kind": "townswoman", "x": 22.6, "y": 47.0, "facing": 330},
+]
+
+PLAYER = {"x": 63.2, "y": 63.2}   # the lower-right corner, hidden behind the stable and adobes
 
 
 def footprint(kind, x, y):
@@ -130,7 +146,7 @@ def main():
         for o2, r2 in solid[i + 1:]:
             if overlaps(r, r2, 0.1):
                 errors.append(f"{o['type']} at {o['x']},{o['y']} overlaps {o2['type']} at {o2['x']},{o2['y']}")
-    for e in ENEMIES:
+    for e in ENEMIES + CIVILIANS:
         for p in [(e["x"], e["y"])] + [tuple(q) for q in e.get("patrol", [])]:
             pt = (p[0] - 0.35, p[1] - 0.35, p[0] + 0.35, p[1] + 0.35)
             for o, r in solid:
@@ -148,10 +164,12 @@ def main():
         "objects": objects,
         "player": PLAYER,
         "enemies": ENEMIES,
+        "civilians": CIVILIANS,
     }
     with open(os.path.join(ROOT, "data", "town.json"), "w") as f:
         json.dump(town, f, indent=1)
-    print("town: %d buildings, %d props, %d bandits" % (len(BUILDINGS_AT), len(PROPS), len(ENEMIES)))
+    print("town: %d buildings, %d props, %d bandits, %d townsfolk" % (
+        len(BUILDINGS_AT), len(PROPS), len(ENEMIES), len(CIVILIANS)))
 
 
 if __name__ == "__main__":

@@ -26,6 +26,12 @@ var post: ColorRect
 
 var player: Player
 var enemies: Array[Enemy] = []
+var civilians: Array[Civilian] = []
+var doors := PackedVector2Array()   # doorsteps townsfolk can run inside from
+var innocents := 0                  # townsfolk the hero has shot
+var innocent_t := 0.0               # the town's disapproval, on screen for a moment
+const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
+const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
 var buildings: Array[Dictionary] = []
 var cover_points := PackedVector2Array()
 var astar := AStarGrid2D.new()
@@ -227,6 +233,12 @@ func _build_world() -> void:
 		edge.add_child(cs)
 	statics.add_child(edge)
 
+	# doorsteps, nudged onto open ground
+	for o in level["objects"]:
+		for d in meta["objects"][o["type"]].get("doors", []):
+			var p := Iso.to_screen(Vector2(o["x"] + d[0], o["y"] + d[1]))
+			doors.append(p if is_free(p) else free_point_near(p, 20.0))
+
 	# keep only cover points that are reachable and off obstacles
 	var good := PackedVector2Array()
 	for p in cover_points:
@@ -326,10 +338,23 @@ func _spawn_actors() -> void:
 		en.setup(self, e["kind"], Iso.to_screen(Vector2(e["x"], e["y"])), patrol, facing_deg, overrides)
 		en.died.connect(_on_enemy_died)
 		enemies.append(en)
+	if not Engine.has_meta("no_civilians"):
+		for c in level.get("civilians", []):
+			var cv := Civilian.new()
+			world.add_child(cv)
+			var overrides := {}
+			for key in c:
+				if not key in ["kind", "x", "y", "facing"]:
+					overrides[key] = c[key]
+			cv.setup(self, c["kind"], Iso.to_screen(Vector2(c["x"], c["y"])), c.get("facing", 90.0), overrides)
+			cv.died.connect(_on_civilian_died)
+			civilians.append(cv)
 	player.died.connect(_on_player_died)
 	player.make_ghost(ghost_layer, Color(0.92, 0.95, 1.0, 0.6))
 	for en in enemies:
-		en.make_ghost(ghost_layer, Color(1.0, 0.36, 0.26, 0.5))
+		en.make_ghost(ghost_layer, GHOST_THREAT if en.revealed else GHOST_TOWN)
+	for cv in civilians:
+		cv.make_ghost(ghost_layer, GHOST_TOWN)
 	camera.position = player.global_position
 
 
@@ -402,6 +427,9 @@ func _update_fades(delta: float) -> void:
 		spr.modulate.a = move_toward(spr.modulate.a, target, delta * 4.0)
 	var actors: Array = [player]
 	actors.append_array(enemies)
+	for c in civilians:
+		if not c.gone():
+			actors.append(c)
 	for a in actors:
 		a.occluded = false
 		if not a.alive:
@@ -679,9 +707,14 @@ func ally_in_line(shooter: Enemy, a: Vector2, b: Vector2) -> bool:
 	return blocking_ally(shooter, a, b) != null
 
 
-## The comrade standing in the line of fire from a to b, if any.
-func blocking_ally(shooter: Enemy, a: Vector2, b: Vector2) -> Enemy:
-	for e in enemies:
+## The comrade (or townsman) standing in the line of fire from a to b, if any.
+func blocking_ally(shooter: Enemy, a: Vector2, b: Vector2) -> Actor:
+	var people: Array[Actor] = []
+	people.append_array(enemies)
+	for c in civilians:
+		if not c.gone():
+			people.append(c)
+	for e in people:
 		if e == shooter or not e.alive:
 			continue
 		var p := Geometry2D.get_closest_point_to_segment(e.global_position, a, b)
@@ -751,6 +784,7 @@ func _physics_process(delta: float) -> void:
 	if state != "play":
 		return
 	clock += delta
+	innocent_t = maxf(0.0, innocent_t - delta)
 	if posse:
 		posse.update(delta)
 	# Knowledge gone stale: the shooting dies down to the odd harassing shot at his
@@ -777,6 +811,49 @@ func is_free(p: Vector2) -> bool:
 	return not astar.is_point_solid(_cell(p))
 
 
+## A townsfolk type, the same way; 'palettes_from' borrows a bandit type's palettes.
+func civilian_type(kind: String, overrides := {}) -> Dictionary:
+	var c: Dictionary = enemy_data["civilians"]
+	var t: Dictionary = c["defaults"].duplicate(true)
+	t.merge(c["types"][kind], true)
+	t.merge(overrides, true)
+	if t.has("palettes_from"):
+		t["palettes"] = enemy_data["types"][t["palettes_from"]]["palettes"]
+	return t
+
+
+## Where a frightened townsman runs: the nearest doorway that doesn't take him
+## towards the shooting, or the edge of town if that's nearer.
+func refuge_for(from: Vector2, threat: Vector2) -> Vector2:
+	var away := (from - threat).normalized()
+	var best := Vector2.INF
+	var best_score := INF
+	for d in doors:
+		var to := d - from
+		var score := to.length()
+		if to.length() > 8.0 and to.normalized().dot(away) < -0.3 and threat.distance_to(d) < from.distance_to(d):
+			score += 400.0   # past the gunman: only if there's nothing else
+		score += maxf(0.0, 90.0 - threat.distance_to(d)) * 4.0
+		if score < best_score:
+			best_score = score
+			best = d
+	var g := Iso.to_grid(from)
+	var edge := g
+	var m := minf(minf(g.x, g.y), minf(size - g.x, size - g.y))
+	if m == g.x:
+		edge.x = 0.6
+	elif m == g.y:
+		edge.y = 0.6
+	elif m == size - g.x:
+		edge.x = size - 0.6
+	else:
+		edge.y = size - 0.6
+	var e := Iso.to_screen(edge)
+	if is_free(e) and from.distance_to(e) + maxf(0.0, 90.0 - threat.distance_to(e)) * 4.0 < best_score:
+		return e
+	return best if best != Vector2.INF else point_away(from, threat, 200.0)
+
+
 ## A bandit type: the defaults, then the type, then any per-placement overrides.
 func enemy_type(kind: String, overrides := {}) -> Dictionary:
 	var t: Dictionary = enemy_data["defaults"].duplicate(true)
@@ -792,6 +869,9 @@ func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void
 	for e in enemies:
 		if e.alive:
 			e.hear(pos, radius, kind, source)
+	for c in civilians:
+		if c.alive:
+			c.hear(pos, radius, kind, source)
 
 
 func alert_allies(caller: Enemy, radius: float, target: Vector2) -> void:
@@ -820,6 +900,8 @@ func _on_enemy_died(e: Actor) -> void:
 	for o in enemies:
 		if o.alive and o.global_position.distance_to(e.global_position) < 180.0:
 			o.witness_death(e.global_position, player.global_position)
+	for c in civilians:
+		c.witness_death(e.global_position)
 	if _args.has("bot"):
 		print("%.1fs  %s down, %d left" % [(Time.get_ticks_msec() - start_time) / 1000.0, e.kind, alive_enemies()])
 	var ammo: String = e.weapon.d.get("ammo", e.weapon.kind)
@@ -833,8 +915,29 @@ func _on_enemy_died(e: Actor) -> void:
 	if alive_enemies() == 0 and state == "play":
 		state = "won"
 		end_time = Time.get_ticks_msec()
-		hud.show_message("THE TOWN IS QUIET", "press Enter to ride again")
+		hud.show_message("THE TOWN IS QUIET", _innocents_line() + "press Enter to ride again")
 		sfx("win", null, -2.0, 0.0)
+
+
+func _innocents_line() -> String:
+	if innocents == 0:
+		return ""
+	return "innocents shot: %d   -   " % innocents
+
+
+## A townsman down. If the hero did it, the town takes note (and so do we).
+func _on_civilian_died(c: Actor) -> void:
+	var murder: bool = c.killer != null and c.killer.is_player
+	if murder:
+		innocents += 1
+		innocent_t = 3.5
+		stats["innocents"] = innocents
+	for o in civilians:
+		if o != c:
+			if murder:
+				o.witness_murder(c.global_position)
+			else:
+				o.witness_death(c.global_position)
 
 
 func _on_player_died(_p: Actor) -> void:
@@ -843,7 +946,7 @@ func _on_player_died(_p: Actor) -> void:
 	state = "lost"
 	end_time = Time.get_ticks_msec()
 	Engine.time_scale = 0.35
-	hud.show_message("ADIOS, AMIGO", "press Enter to ride again")
+	hud.show_message("ADIOS, AMIGO", _innocents_line() + "press Enter to ride again")
 	sfx("lose", null, -2.0, 0.0)
 
 

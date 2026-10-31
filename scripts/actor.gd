@@ -38,6 +38,8 @@ var _clock := 0.0
 var _death := ""
 var ghost: Node2D          # his silhouette, shown over buildings that hide him
 var occluded := false
+var anim_gun := ""         # play another gun's upper-body set ("unarmed": hiding his)
+var killer: Actor          # who shot him dead
 
 
 func setup_body(g: Node, pos: Vector2) -> void:
@@ -93,6 +95,11 @@ func make_ghost(layer: Node2D, tint: Color) -> void:
 	ghost.visible = false
 
 
+func set_ghost_tint(tint: Color) -> void:
+	if ghost:
+		(ghost.get_child(0) as Sprite2D).material.set_shader_parameter("tint", tint)
+
+
 func _sync_ghost() -> void:
 	if ghost == null:
 		return
@@ -144,7 +151,7 @@ func has_anim(key: String) -> bool:
 
 
 func _upper_key(name: String) -> String:
-	return "upper/%s/%s" % [weapon.kind, name]
+	return "upper/%s/%s" % [anim_gun if anim_gun != "" else weapon.kind, name]
 
 
 ## Length in seconds of an upper-body animation for the current gun.
@@ -322,6 +329,7 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 
 func die(from_dir: Vector2, shooter: Actor = null) -> void:
 	alive = false
+	killer = shooter
 	crouched = false
 	flash_t = 0.0
 	legs_spr.modulate = Color.WHITE
