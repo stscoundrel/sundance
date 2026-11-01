@@ -140,6 +140,10 @@ var alerted_once := false
 var player_fired := false
 var title_t := 0.0
 var closeup_left := 0.0   # seconds of the stand-off still to run, in unscaled frame time
+const FINISHERS := 2      # at most this many walking up to finish the stranger off
+var down_slow := 0.0      # the moment he goes down, slowed (unscaled seconds left)
+var heart_t := 0.0
+var finish_cd := 3.0
 var last_twang := -100000
 var end_time := 0
 var start_time := 0
@@ -796,6 +800,10 @@ func _process(delta: float) -> void:
 		title_t += delta   # frame time, not the wall clock: a slow load doesn't skip the title
 		if title_t > 5.5 and not _args.has("freeze"):
 			_to_levels()
+	if down_slow > 0.0:
+		down_slow -= delta / maxf(Engine.time_scale, 0.01)
+		if down_slow <= 0.0 and state == "play":
+			Engine.time_scale = 1.0
 	if closeup_left > 0.0:
 		closeup_left -= delta / maxf(Engine.time_scale, 0.01)
 		if closeup_left <= 0.0:
@@ -815,6 +823,17 @@ func _process(delta: float) -> void:
 	var mat := post.material as ShaderMaterial
 	mat.set_shader_parameter("time_s", now / 1000.0)
 	mat.set_shader_parameter("hurt", hurt_fx)
+	if player and player.down:
+		# the colour going out of it as he bleeds, and his heart, slowing
+		var bled: float = player.down_t / Player.STAND_BLEED
+		mat.set_shader_parameter("desat", 0.35 + 0.5 * bled)
+		heart_t -= delta
+		if heart_t <= 0.0 and state == "play":
+			heart_t = lerpf(0.9, 1.7, bled)
+			sfx("heart", null, -4.0, 0.0)
+			hurt_fx = maxf(hurt_fx, 0.45)
+	elif state == "play" and player:
+		mat.set_shader_parameter("desat", 0.0)
 	if state == "lost":
 		var t: float = clamp((now - end_time) / 1500.0, 0.0, 1.0)
 		mat.set_shader_parameter("desat", t * 0.8)
@@ -1263,6 +1282,11 @@ func _physics_process(delta: float) -> void:
 	if alarm_cd <= 0.0:
 		alarm_cd = 0.5
 		_gang_alarm(0.5)
+	if player.down:
+		finish_cd -= delta
+		if finish_cd <= 0.0:
+			finish_cd = 3.0
+			call_finishers()
 	innocent_t = maxf(0.0, innocent_t - delta)
 	dyn_cd = maxf(0.0, dyn_cd - delta)
 	_pick_up_guns()
@@ -1559,6 +1583,14 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 
 func _on_enemy_died(e: Actor) -> void:
 	fallen += 1
+	if e.killer == player:
+		stats["his kills"] = stats.get("his kills", 0) + 1
+		if player.down:   # from the dirt: and a man coming to finish him, or an officer, is a blow to them
+			stats["kills while down"] = stats.get("kills while down", 0) + 1
+			if e is Enemy and (e.finishing or e.rank >= 2):
+				for o in enemies:
+					if o.alive and o.global_position.distance_to(e.global_position) < 200.0:
+						o.shaken = minf(1.0, o.shaken + 0.4)
 	raise_alarm(5.0)
 	if e is Enemy and e.tdata.get("coordinator", false):
 		lose_the_head(e)
@@ -1591,8 +1623,18 @@ func _on_enemy_died(e: Actor) -> void:
 	if alive_enemies() == 0 and state == "play" and not coming:
 		state = "won"
 		end_time = Time.get_ticks_msec()
-		hud.show_message("THE TOWN IS QUIET", _innocents_line() + "press Enter to ride again")
+		hud.show_message("THE TOWN IS QUIET" if not player.down else "FROM THE DIRT", _tally() + "press Enter to ride again")
 		sfx("win", null, -2.0, 0.0)
+
+
+## The end screen's count: how many of them he put down (and how many of those from
+## the dirt), and any townsfolk.
+func _tally() -> String:
+	var n: int = stats.get("his kills", 0)
+	var line := "%d of the gang by your hand" % n if n > 0 else "not one of the gang by your hand"
+	if stats.get("kills while down", 0) > 0:
+		line += " (%d from the dirt)" % stats["kills while down"]
+	return line + "   -   " + _innocents_line()
 
 
 func _innocents_line() -> String:
@@ -1624,8 +1666,48 @@ func _on_player_died(_p: Actor) -> void:
 	state = "lost"
 	end_time = Time.get_ticks_msec()
 	Engine.time_scale = 0.35
-	hud.show_message("ADIOS, AMIGO", _innocents_line() + "press Enter to ride again")
+	hud.show_message("ADIOS, AMIGO", _tally() + "press Enter to ride again")
 	sfx("lose", null, -2.0, 0.0)
+
+
+## The shot that should have killed him has put him down instead: the moment
+## slowed, a sting, the gang calling it, and the boldest of them walking up.
+func on_player_down(shooter: Actor) -> void:
+	stats["last stand"] = 1
+	hurt_fx = 1.0
+	add_shake(6.0)
+	sfx("sting", null, -2.0, 0.0)
+	Engine.time_scale = 0.5
+	down_slow = 0.6
+	heart_t = 0.8
+	hud.toast("Down! Shoot from the dirt, or B to bandage")
+	var caller: Enemy = null
+	for e in enemies:
+		if e.alive and e.revealed and line_of_sight(e.global_position, player.global_position, false) and \
+				(caller == null or e.global_position.distance_to(player.global_position) < caller.global_position.distance_to(player.global_position)):
+			caller = e
+	if caller:
+		caller.say_line("down", ["¡Ya cayó!", "He's down!", "¡Lo tenemos!", "Finish him!"])
+	call_finishers()
+
+
+## The bold ones who can see him lying there walk up to finish it (no more than a
+## couple at once; when one falls, another may try).
+func call_finishers() -> void:
+	if not player.down:
+		return
+	var n := enemies.filter(func(e): return e.alive and e.finishing).size()
+	var near: Array = enemies.filter(func(e): return e.alive and not e.finishing and e.revealed and not e.panic \
+		and e.st == Enemy.St.COMBAT and line_of_sight(e.global_position, player.global_position, false))
+	near.sort_custom(func(a, b): return a.global_position.distance_to(player.global_position) < b.global_position.distance_to(player.global_position))
+	for e in near:
+		if n >= FINISHERS:
+			break
+		if randf() < float(e.tdata["finish"]):
+			e.finishing = true
+			n += 1
+			stats["walk up to finish"] = stats.get("walk up to finish", 0) + 1
+			e.say_line("finish", ["Stay down, gringo.", "Adiós, amigo.", "¡Ahora sí!", "I'll do it."])
 
 
 func on_player_hurt() -> void:

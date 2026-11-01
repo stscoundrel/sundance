@@ -983,6 +983,14 @@ def gen_sfx(meta):
     parts = [(0.0, scrape(0.3, 1800, 6500) * 0.5), (0.3, knock(arng, 700, 0.02, 0.1) * 1.4 + metal(arng, 1300, 1.2, 0.1) * 0.4),
              (0.52, knock(arng, 700, 0.02, 0.1) * 1.2), (0.62, scrape(0.25, 2200, 7000) * 0.4)]
     write("ram", room(place(0.95, parts), arng, 0.05, 0.25), meta, 0.65, 1.3)
+    # A heartbeat, for the stranger bleeding in the dirt: lub-dub, low and muffled.
+    hrng3 = np.random.default_rng(98)
+
+    def beat(f, amp):
+        tt = t_of(0.16)
+        return (np.sin(2 * np.pi * f * tt * (1 - 0.3 * tt / 0.16)) * np.exp(-tt / 0.045)
+                + lowpass(hrng3.normal(0, 1, len(tt)), 160) * np.exp(-tt / 0.02) * 0.6) * amp
+    write("heart", place(0.5, [(0.0, beat(52, 1.0)), (0.18, beat(46, 0.7))]), meta, 0.8, 1.2)
 
 
 def main():

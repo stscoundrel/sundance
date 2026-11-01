@@ -32,6 +32,17 @@ const DRAG_GRAB := 0.35     # s of holding E before he takes hold (a tap is the 
 const DRAG_SPEED := 0.4
 const DRAG_SMEAR := 9.0     # px between smears
 const CROUCH_WALK := 22.0
+# The last stand: once a level, the shot that would have killed him puts him down in
+# the dirt instead, propped on an elbow with a revolver (his Colt, or one from his
+# boot), unable to move. A bandage gets him up; otherwise he shoots till he bleeds
+# out or they finish him, and if the last of them falls first, he's won.
+const STAND_BLEED := 25.0     # s before he bleeds out
+const STAND_BANDAGE_T := 5.0  # s to bind it lying there, gun down
+const STAND_ARC := 1.05       # rad either side of the way he fell: as far as he can turn the gun
+const STAND_TURN := 1.6       # rad/s he can swing it round
+const STAND_SLOW := 1.5       # one-handed, flat on his back: everything takes this much longer
+const STAND_GUN_H := 6.0      # px: the gun's height off the dirt
+const BOOT_GUNS := ["colt", "navy"]
 
 var weapons := {}
 var owned: Array[String] = []   # the guns he has, in ORDER
@@ -54,6 +65,13 @@ var smear_at := Vector2.ZERO
 var exposed_t := 0.0           # he's just fired: up over his cover, flash and smoke
 var bandages := 1
 var bandage_t := -1.0          # time into bandaging; < 0 when not at it
+var down := false              # in his last stand
+var stand_used := false        # (once a level)
+var down_t := 0.0              # bleeding out
+var lie_facing := Vector2.RIGHT   # the way his boots point, lying there
+var held_before := ""          # the gun he had in hand when he fell
+var boot: Weapon = null        # the revolver from his boot, if he had no Colt
+var _bot_down_t := 0.0
 
 
 func setup(g: Node, pos: Vector2) -> void:
@@ -72,6 +90,10 @@ func _physics_process(delta: float) -> void:
 	if not alive:
 		if dying():
 			update_anim(delta)
+		return
+	if down:
+		_down_tick(delta)
+		update_anim(delta)
 		return
 	var playing: bool = game.state == "play"
 	knife_cd = maxf(0.0, knife_cd - delta)
@@ -239,6 +261,13 @@ func start_bandage() -> bool:
 	if bandages <= 0:
 		game.hud.toast("No bandages left")
 		return false
+	if down:   # flat on his back, the gun put down, binding it
+		weapon.abort()
+		bandage_t = 0.0
+		_pose_stand("gasp_sink")
+		game.sfx("tear", global_position, -6.0, 0.1)
+		game.make_noise(global_position, 45.0, "step", self)
+		return true
 	if hp >= max_hp and limp_t <= 0.0 and not bleeding:
 		return false
 	crouched = true
@@ -273,6 +302,8 @@ func stop_bandage() -> void:
 		return
 	bandage_t = -1.0
 	pose = ""
+	if down:
+		_pose_stand("gasp_rise")   # (back up on his elbow)
 	game.hud.toast("Bandaging broken off")
 	game.stats["bandaging broken off"] = game.stats.get("bandaging broken off", 0) + 1
 
@@ -407,17 +438,178 @@ func low_profile() -> bool:
 
 
 func on_fired(shake: float) -> void:
+	if down:
+		_pose_stand("gasp_fire")
 	exposed_t = 1.0
 	bloom += 0.7 if weapon.kind != "rifle" else 0.4
 	game.add_shake(shake)
 
 
+func gun_height() -> float:
+	return STAND_GUN_H if down else super()
+
+
 func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 	stop_bandage()
 	drop_body()   # (a round in him: he lets go)
+	if alive and not down and hp - dmg <= 0 and _goes_down(dmg, shooter):
+		flash_t = 0.12
+		game.blood(global_position, from_dir, gun_height())
+		game.sfx("hit", global_position, -2.0)
+		_go_down(from_dir, shooter)
+		return
 	super(dmg, from_dir, shooter)
 	if alive:
 		game.on_player_hurt()
+
+
+func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
+	if down:   # where he lies, the gun falling from his hand
+		how = weapon.kind + "/gasp_die"
+		from_dir = -lie_facing
+		down = false
+		propped = false
+	super(from_dir, shooter, how)
+
+
+# ------------------------------------------------------------------ the last stand
+
+## Not twice in a level, and not from what nobody gets up from: the heart of a
+## blast, or a scattergun at arm's length.
+func _goes_down(dmg: int, shooter: Actor) -> bool:
+	if stand_used or Engine.has_meta("no_last_stand"):
+		return false
+	if blasted and dmg >= 8:
+		return false
+	if shooter and shooter.weapon and shooter.weapon.is_shotgun() \
+			and shooter.global_position.distance_to(global_position) < 60.0:
+		return false
+	return true
+
+
+func _go_down(from_dir: Vector2, shooter: Actor) -> void:
+	stand_used = true
+	down = true
+	down_t = 0.0
+	hp = 1
+	bleeding = true
+	knife_t = -1.0
+	crouched = true   # (low: low cover between him and them stops everything)
+	velocity = Vector2.ZERO
+	weapon.abort()
+	weapon.fanning = false
+	held_before = current
+	if "colt" in owned:
+		switch_to("colt")
+		switch_t = 0.0
+	else:   # a revolver out of his boot, loaded, and his Colt cartridges if he's picked any up
+		boot = Weapon.new(BOOT_GUNS.pick_random(), self)
+		boot.reserve = weapons["colt"].reserve if boot.kind == "colt" else 0
+		weapon = boot
+	weapon.slow = STAND_SLOW
+	lie_facing = -from_dir if from_dir.length() > 0.1 else facing
+	facing = lie_facing
+	propped = true
+	_pose_stand("gasp_rise")
+	game.on_player_down(shooter)
+
+
+func _pose_stand(anim_name: String) -> void:
+	_death = weapon.kind + "/" + anim_name
+	_layers.erase("full")
+	lie_dir = -1
+	_lay_hurtbox()
+
+
+func _down_tick(delta: float) -> void:
+	velocity = Vector2.ZERO
+	var playing: bool = game.state == "play"
+	if playing:
+		down_t += delta
+		if down_t >= STAND_BLEED:
+			game.stats["bled out"] = 1
+			die(-lie_facing, null)
+			return
+	weapon.update(delta)
+	if bandage_t >= 0.0:
+		bandage_t += delta
+		if playing and not game._args.has("bot"):
+			for a in ["fire", "reload"]:
+				if Input.is_action_just_pressed(a):
+					stop_bandage()
+					return
+		if bandage_t >= STAND_BANDAGE_T:
+			_get_up()
+		return
+	if (_death.ends_with("gasp_rise") or _death.ends_with("gasp_fire")) and not dying():
+		_pose_stand("gasp_aim")
+	# the gun swung round, slowly, as far as he can turn lying there
+	var want := facing
+	if game._args.has("bot"):
+		var near := _bot_target()
+		if near:
+			want = (near.global_position - global_position).normalized()
+	else:
+		var m := get_global_mouse_position()
+		aim_target = game.enemy_under(m)
+		var target := aim_target.aim_point() if aim_target else m
+		aim_dist = global_position.distance_to(target)
+		if aim_dist > 3.0:
+			want = (target - global_position).normalized()
+	var off := clampf(lie_facing.angle_to(want), -STAND_ARC, STAND_ARC)
+	var now := lie_facing.angle_to(facing)
+	var d8 := Iso.dir8(facing)
+	facing = lie_facing.rotated(move_toward(now, off, STAND_TURN * delta))
+	if Iso.dir8(facing) != d8:
+		lie_dir = -1
+		_lay_hurtbox()
+	bloom = max(0.0, bloom - delta * 2.0)
+	if not playing or _death.ends_with("gasp_rise"):
+		return
+	if game._args.has("bot"):
+		_bot_down_t -= delta
+		if weapon.needs_reload() and not weapon.is_reloading():
+			weapon.start_reload()
+		elif _bot_target() and _bot_down_t <= 0.0:
+			_bot_down_t = 0.6
+			weapon.trigger()
+		return
+	if Input.is_action_just_pressed("bandage"):
+		start_bandage()
+	elif Input.is_action_just_pressed("reload"):
+		weapon.start_reload()
+	elif Input.is_action_just_pressed("fire"):
+		weapon.trigger()
+
+
+## Bound up: back on his feet, one bar of him left and a limp, the gun he had.
+func _get_up() -> void:
+	down = false
+	propped = false
+	bandage_t = -1.0
+	bandages -= 1
+	hp = 1
+	bleeding = false
+	limp_t = 6.0
+	weapon.slow = 1.0
+	boot = null
+	current = held_before
+	weapon = weapons[held_before]
+	_death = ""
+	_layers.erase("full")
+	legs_spr.visible = true
+	_stand_hurtbox()
+	game.hud.toast("Back on your feet")
+	game.stats["got up"] = game.stats.get("got up", 0) + 1
+
+
+func _bot_target() -> Enemy:
+	var best: Enemy = null
+	for e in game.enemies:
+		if e.alive and game.line_of_sight(global_position, e.global_position, false) and \
+				(best == null or e.global_position.distance_to(global_position) < best.global_position.distance_to(global_position)):
+			best = e
+	return best
 
 
 ## Debug autopilot (--bot): shoots the nearest bandit it can see, reloads, cycles guns.

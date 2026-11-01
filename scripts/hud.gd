@@ -175,10 +175,16 @@ func _draw_status(p: Player) -> void:
 		draw_rect(Rect2(bx + i * 9, 345, 7, 6), Color(0.92, 0.9, 0.84))
 		draw_line(Vector2(bx + i * 9 + 2, 345), Vector2(bx + i * 9 + 2, 351), Color(0.7, 0.66, 0.6), 1.0)
 	if p.bandage_t >= 0.0:
-		var f: float = p.bandage_t / Player.BANDAGE_T
+		var f: float = p.bandage_t / (Player.STAND_BANDAGE_T if p.down else Player.BANDAGE_T)
 		_text(Vector2(54, 338), "BANDAGING", 8, INK)
 		draw_rect(Rect2(104, 332, 40, 5), Color(0.1, 0.06, 0.05, 0.85))
 		draw_rect(Rect2(105, 333, 38 * f, 3), Color(0.92, 0.9, 0.84))
+	elif p.down:   # the last stand: his blood running out, a bar draining
+		var left: float = 1.0 - p.down_t / Player.STAND_BLEED
+		var pulse := 0.7 + 0.3 * sin(Time.get_ticks_msec() / 140.0)
+		_text(Vector2(54, 338), "BLEEDING OUT", 8, Color(1, 0.35, 0.25, pulse))
+		draw_rect(Rect2(116, 332, 40, 5), Color(0.1, 0.06, 0.05, 0.85))
+		draw_rect(Rect2(117, 333, 38 * left, 3), Color(0.75, 0.12, 0.08))
 	elif p.crouched:
 		_text(Vector2(54, 338), "CROUCHED", 8, INK)
 	var n: int = game.alive_enemies()

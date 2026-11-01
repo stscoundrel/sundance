@@ -1495,7 +1495,8 @@ def jobs_for(template, guns):
     for w in guns:
         jobs += [(template, "upper", w, n) for n in upper_anims(w)]
     jobs += [(template, "full", None, n) for n in DEATH_FPS]
-    for w in guns:
+    # the stranger's last stand: his Colt, or a revolver from his boot if he rode in without one
+    for w in dict.fromkeys(list(guns) + (["colt", "navy"] if template == "hero" else [])):
         if w in PISTOLS:
             jobs += [(template, "gasp", w, n) for n in gasp_anims()]
     return jobs

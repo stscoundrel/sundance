@@ -43,6 +43,9 @@ var ghost: Node2D          # his silhouette, shown over buildings that hide him
 var occluded := false
 var anim_gun := ""         # play another gun's upper-body set ("unarmed": hiding his)
 var killer: Actor          # who shot him dead
+var propped := false       # alive, but down in the dirt: drawn whole from _death like the dead
+var lie_dir := -1          # which way his hurtbox is laid along him, lying there
+var stand_shape: Shape2D   # (and the one he had on his feet)
 var blasted := false       # being hit by dynamite (just for the length of the hit)
 # Wounded, he bleeds till he's bandaged: a drop in the dirt every few steps (and
 # now and then where he stands), a trail anyone can follow.
@@ -269,7 +272,7 @@ func update_anim(delta: float) -> void:
 	if bleeding and alive:
 		_bleed(delta)
 
-	if not alive:
+	if not alive or propped:
 		var r := _advance("full", "full/" + _death)
 		_show(upper_spr, r[0], r[1], dir)
 		upper_spr.position = Vector2.ZERO
@@ -305,7 +308,7 @@ func _bleed(delta: float) -> void:
 ## Where the muzzle is, relative to his feet, in the frame now showing (the left
 ## gun's, of a pair, after it fired).
 func muzzle_offset() -> Vector2:
-	var st: Array = _layers.get("upper" if alive else "full", [])
+	var st: Array = _layers.get("upper" if alive and not propped else "full", [])
 	if not st.is_empty():
 		var a := anim(st[0])
 		var key := "muzzle2" if weapon and weapon.hand == 1 and a.has("muzzle2") else "muzzle"
@@ -321,6 +324,45 @@ func gun_height() -> float:
 	if weapon and weapon.is_shotgun():
 		h -= 3.0   # carried at the hip
 	return h
+
+
+## His body on the ground, end to end, in screen space (by how he fell and which
+## way he's lying).
+func lie_line() -> PackedVector2Array:
+	var l: Array = game.meta["lie"]["gasp" if "/" in _death else _death][Iso.dir8(facing)]
+	return PackedVector2Array([global_position + Vector2(l[0][0], l[0][1]) * game.tex_scale,
+		global_position + Vector2(l[1][0], l[1][1]) * game.tex_scale])
+
+
+## Down, his hurtbox goes from round his boots to the length of him in the dirt (a
+## round aimed at the body as drawn should find it).
+func _lay_hurtbox() -> void:
+	var d := Iso.dir8(facing)
+	if d == lie_dir:
+		return
+	lie_dir = d
+	var l := lie_line()
+	var a := l[0] - global_position
+	var b := l[1] - global_position
+	var hs: CollisionShape2D = hurtbox.get_child(0)
+	if stand_shape == null:
+		stand_shape = hs.shape
+	var c := CapsuleShape2D.new()
+	c.radius = 6.0
+	c.height = a.distance_to(b) + c.radius * 2.0
+	hs.set_deferred("shape", c)
+	hs.set_deferred("position", (a + b) / 2.0)
+	hs.set_deferred("rotation", (b - a).angle() - PI / 2.0)   # (a capsule stands upright)
+
+
+func _stand_hurtbox() -> void:
+	lie_dir = -1
+	if stand_shape == null:
+		return
+	var hs: CollisionShape2D = hurtbox.get_child(0)
+	hs.set_deferred("shape", stand_shape)
+	hs.set_deferred("position", Vector2.ZERO)
+	hs.set_deferred("rotation", 0.0)
 
 
 ## Spread multiplier applied to the weapon's base spread.
@@ -398,7 +440,7 @@ func _pick_death(shooter: Actor) -> String:
 
 ## Still playing his death (so the body keeps moving)?
 func dying() -> bool:
-	if alive or _death == "":
+	if alive and not propped or _death == "":
 		return false
 	var a := anim("full/" + _death)
 	return _clock - float(_layers.get("full", ["", _clock])[1]) < a["frames"][0].size() / float(a["fps"]) + 0.1

@@ -90,6 +90,8 @@ var duck_t := 0.0
 var peek_t := 0.0
 var aim_t := 0.0
 var since_shot := 99.0   # seconds since he last fired
+var finishing := false   # the stranger's down: he's walking up to finish him
+var finish_repath := 0.0
 var pinned_t := 0.0      # >0 while rounds are landing near him
 # Suppressive fire: blazing away at where the stranger probably is.
 var suppress_t := 0.0
@@ -196,6 +198,7 @@ const GASP_LOST := 3.0      # s the stranger can be out of sight before he gives
 const GASP_PERISH := 0.5    # chance the effort is the end of him
 const GASP_COST := 12.0     # s off his clock if it isn't
 const PISTOLS := ["colt", "colts", "navy", "derringer", "howdah"]
+const FINISH_NEAR := 34.0    # px: as close as a man walking up to finish the stranger comes
 const GASP_LINES := ["You first, gringo...", "¡Hasta el infierno!", "Not... alone...", "¡Muere, cabrón!",
 	"Come here... stranger..."]
 static var gasp_rng := RandomNumberGenerator.new()   # (his own dice: the rest of the fight stays as seeded)
@@ -207,8 +210,6 @@ var gasp_look := 0.0
 var gasp_rolls := 0          # (he makes up his mind once, and once more when it's nearly over)
 var gasp_close_rolled := false   # (and once more if the stranger comes right up on him)
 var gasp_lost := 0.0
-var lie_dir := -1            # which way his hurtbox is laid along him, lying there
-var stand_shape: Shape2D     # (and the one he had on his feet)
 var work_t := 0.0
 # The gang's alarm (see game._gang_alarm): how he's answering it, if he is.
 const UNEASY_LINES := ["¿Qué pasa allá?", "That's a lot of shooting...", "Hear that?", "Something's wrong."]
@@ -1192,6 +1193,11 @@ func _combat(delta: float) -> void:
 	var to := p.global_position - global_position
 	var dist := to.length()
 	var spec: Dictionary = stats
+	if finishing and not (p.down and revealed and not panic and reaction == ""):
+		finishing = false
+	if finishing and not weapon.is_reloading():
+		_finish(delta, p, to, dist)
+		return
 
 	# Reloading: get behind cover and crouch. A bold man with a pair of guns comes
 	# back out as soon as one of them is full.
@@ -1478,51 +1484,12 @@ func go_down(from_dir: Vector2, shooter: Actor) -> void:
 	_log("goes down")
 
 
-## His body on the ground, end to end, in screen space (by how he fell and which
-## way he's lying).
-func lie_line() -> PackedVector2Array:
-	var l: Array = game.meta["lie"]["gasp" if "/" in _death else _death][Iso.dir8(facing)]
-	return PackedVector2Array([global_position + Vector2(l[0][0], l[0][1]) * game.tex_scale,
-		global_position + Vector2(l[1][0], l[1][1]) * game.tex_scale])
-
-
 ## Where to put a round in him: his middle, lying or standing.
 func aim_point() -> Vector2:
 	if downed:
 		var l := lie_line()
 		return (l[0] + l[1]) / 2.0
 	return global_position
-
-
-## Down, his hurtbox goes from round his boots to the length of him in the dirt (a
-## round aimed at the body as drawn should find it).
-func _lay_hurtbox() -> void:
-	var d := Iso.dir8(facing)
-	if d == lie_dir:
-		return
-	lie_dir = d
-	var l := lie_line()
-	var a := l[0] - global_position
-	var b := l[1] - global_position
-	var hs: CollisionShape2D = hurtbox.get_child(0)
-	if stand_shape == null:
-		stand_shape = hs.shape
-	var c := CapsuleShape2D.new()
-	c.radius = 6.0
-	c.height = a.distance_to(b) + c.radius * 2.0
-	hs.set_deferred("shape", c)
-	hs.set_deferred("position", (a + b) / 2.0)
-	hs.set_deferred("rotation", (b - a).angle() - PI / 2.0)   # (a capsule stands upright)
-
-
-func _stand_hurtbox() -> void:
-	lie_dir = -1
-	if stand_shape == null:
-		return
-	var hs: CollisionShape2D = hurtbox.get_child(0)
-	hs.set_deferred("shape", stand_shape)
-	hs.set_deferred("position", Vector2.ZERO)
-	hs.set_deferred("rotation", 0.0)
 
 
 func _downed_tick(delta: float) -> void:
@@ -1938,6 +1905,31 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 				_sidestep()
 		elif weapon.state == Weapon.S.READY:
 			weapon.trigger()
+
+
+## The stranger's down in the dirt: he walks up (no hurry, no cover, gun on him)
+## and puts one in him from close. It's when he's most use to a man lying there
+## with a pistol.
+func _finish(delta: float, p: Player, to: Vector2, dist: float) -> void:
+	desired = to.normalized()
+	aiming = true
+	crouched = false
+	shot_cd -= delta
+	finish_repath -= delta
+	if dist > FINISH_NEAR:
+		if finish_repath <= 0.0 or path_i >= path.size():
+			finish_repath = 0.6
+			path_to(p.global_position)
+		follow_path(walk)
+		return
+	velocity = Vector2.ZERO
+	if weapon.needs_reload():
+		weapon.start_reload()
+	elif shot_cd <= 0.0 and absf(facing.angle_to(to)) < 0.2 and weapon.can_fire():
+		weapon.trigger()
+		since_shot = 0.0
+		shot_cd = randf_range(0.7, 1.1)
+		_log("fires down at the stranger")
 
 
 ## An opportunist turns his gun her way (or comes close) and she loses her nerve:

@@ -107,6 +107,7 @@ var timer := 0.0
 var reserve := 0
 var stop_requested := false
 var reload_idx := 0
+var slow := 1.0   # every action takes this much longer (the stranger shooting from the dirt)
 
 # Revolver: 0 empty, 1 live, 2 spent. `cur` is the chamber under the hammer.
 var chambers: Array[int] = [1, 1, 1, 1, 1, 1]
@@ -294,6 +295,7 @@ func start_reload() -> bool:
 			_snd(d["open"][1])
 		_:
 			timer = 0.25
+	timer *= slow
 	return true
 
 
@@ -392,7 +394,7 @@ func _reload_step() -> void:
 
 func _step(s: S, t: float, snd: String) -> void:
 	state = s
-	timer = t
+	timer = t * slow
 	_snd(snd)
 
 
@@ -407,11 +409,12 @@ func _close() -> void:
 			_snd(d["close"][1])
 		_:
 			timer = 0.15
+	timer *= slow
 
 
 func _cycle(t: float) -> void:
 	state = S.CYCLE
-	timer = t
+	timer = t * slow
 
 
 ## The hero's own gun is heard up close at full volume; a bandit's is placed in the

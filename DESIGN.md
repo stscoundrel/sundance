@@ -152,6 +152,26 @@ the gang's memory of where he fought fades, they drift into searching, and the t
 starts going about its business again. A HUD bar shows the progress, and the
 tearing cloth can be heard close by.
 
+**The last stand** (`tests/test_laststand.gd`). Once a level, the shot that would
+kill him puts him down instead (not the heart of a blast, nor a scattergun at arm's
+length): the moment slows, a sting, and the colour starts going out of it. He lies
+propped on an elbow, boots towards whoever dropped him, in the same poses as the
+gang's last gasp, with one bar left. He can't move; he can swing the gun about 60
+degrees either way, slowly. It's his Colt if he rode in with one; if not, a revolver
+comes out of his boot (a Colt or a Navy, loaded). Everything takes half as long again
+one-handed in the dirt (no fanning), and lying flat he's a small target: his hurtbox
+lies along him, and he counts as crouched, so low cover stops everything. A heartbeat
+slows and the screen greys as he bleeds; "BLEEDING OUT" drains in 25 s. The only way
+up is a bandage (B, 5 s lying flat with the gun down; fire breaks it off): up he gets
+with one bar, a limp and the gun he had. With none, he shoots till he bleeds out or
+they finish him; and if the last of them falls first, it's a win ("FROM THE DIRT").
+The gang calls it ("¡Ya cayó!"), and the bold ones in sight walk up to finish him
+(`"finish"` per type: El Jefe, El General and the gunslinger always, the hillbilly,
+coronel and pistolero often; no more than two at once, rechecked every 3 s): no
+running, no cover, then a round into him from close. That's when a man lying there
+with a pistol is most use: dropping one of them, or an officer, from the dirt shakes
+the men round him.
+
 **Blood trails**. Any wounded man bleeds till he's bandaged: a drop in the dirt
 every few steps, and now and then where he stands. A bandit who comes across
 fresh drops of the stranger's blood (under 45 s old, in view within ~170 px)
@@ -859,6 +879,9 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   hold fire when one is in the line. If the hero kills one, the town notices: "AN
   INNOCENT - the town will remember", witnesses shout "Murderer!" and run, and the
   end card counts them ("innocents shot: 2"). No other penalty yet.
+- **His tally**: every end card, won or lost, counts the gang he put down ("12 of
+  the gang by your hand", "(3 from the dirt)" for any shot from his last stand).
+  A man downed counts when he drops.
 - **Bandits passing as townsfolk**: types marked `concealed` (the armed saloon girl
   and the gambler) look like the unarmed ones: hands empty (they're baked with the
   unarmed set too), no vision cone, no suspicion bar, and a neutral silhouette.
