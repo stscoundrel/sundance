@@ -178,6 +178,33 @@ var rescuer: Enemy = null    # who's come for him
 var rescuing: Enemy = null   # (as the rescuer) who he's come for
 var rescue_phase := ""       # "go", "drag", "treat"
 var smear := Vector2.ZERO
+# The last gasp: downed, a pistol to hand and the stranger in sight, he may push
+# himself up on an arm and get a shot or three off, slowly, before he sinks back.
+const GASP_RANGE := 230.0   # px: the stranger this close, and in sight
+const GASP_CLOSE := 120.0   # px: the stranger this close and he doesn't wait for help
+const GASP_CLOSE_MULT := 1.6   # (and is that much likelier to try it)
+const GASP_HOPE := 0.6      # x the chance while a comrade is near enough to come for him
+const GASP_HOLD := 0.8      # s on aim before the first shot
+const GASP_EVERY := 2.4     # s between shots: a dying man is slow on the hammer
+const GASP_SHOTS := [1, 1, 1, 1, 2, 2, 3]   # how many he gets off (mostly the one)
+const GASP_SPREAD := 2.0    # x his usual spread: on his back and bleeding
+const GASP_LOST := 3.0      # s the stranger can be out of sight before he gives it up
+const GASP_PERISH := 0.5    # chance the effort is the end of him
+const GASP_COST := 12.0     # s off his clock if it isn't
+const PISTOLS := ["colt", "colts", "navy", "derringer", "howdah"]
+const GASP_LINES := ["You first, gringo...", "¡Hasta el infierno!", "Not... alone...", "¡Muere, cabrón!",
+	"Come here... stranger..."]
+static var gasp_rng := RandomNumberGenerator.new()   # (his own dice: the rest of the fight stays as seeded)
+var gasp := ""               # "", "rise", "aim", "sink"
+var gasp_t := 0.0
+var gasp_gun := ""
+var gasp_left := 0           # shots still in him
+var gasp_look := 0.0
+var gasp_rolls := 0          # (he makes up his mind once, and once more when it's nearly over)
+var gasp_close_rolled := false   # (and once more if the stranger comes right up on him)
+var gasp_lost := 0.0
+var lie_dir := -1            # which way his hurtbox is laid along him, lying there
+var stand_shape: Shape2D     # (and the one he had on his feet)
 var work_t := 0.0
 # The gang's alarm (see game._gang_alarm): how he's answering it, if he is.
 const UNEASY_LINES := ["¿Qué pasa allá?", "That's a lot of shooting...", "Hear that?", "Something's wrong."]
@@ -807,7 +834,7 @@ func _physics_process(delta: float) -> void:
 		cone.queue_redraw()
 		if downed and game.state in ["play", "won"]:
 			_downed_tick(delta)
-		if dying():
+		if dying() or gasp != "":
 			update_anim(delta)
 		return
 	if game.state != "play" and game.state != "lost":
@@ -1353,12 +1380,68 @@ func go_down(from_dir: Vector2, shooter: Actor) -> void:
 	down_t = 0.0
 	groan_t = randf_range(1.0, 2.5)
 	hurtbox.set_deferred("collision_layer", Iso.LAYER_HURT)   # (after die()'s: a man can still shoot him)
+	_lay_hurtbox()
 	set_meta("was_down", true)
+	gasp_look = gasp_rng.randf_range(1.5, 3.0)   # (just hit: it takes him a moment)
 	_log("goes down")
 
 
+## His body on the ground, end to end, in screen space (by how he fell and which
+## way he's lying).
+func lie_line() -> PackedVector2Array:
+	var l: Array = game.meta["lie"]["gasp" if "/" in _death else _death][Iso.dir8(facing)]
+	return PackedVector2Array([global_position + Vector2(l[0][0], l[0][1]) * game.tex_scale,
+		global_position + Vector2(l[1][0], l[1][1]) * game.tex_scale])
+
+
+## Where to put a round in him: his middle, lying or standing.
+func aim_point() -> Vector2:
+	if downed:
+		var l := lie_line()
+		return (l[0] + l[1]) / 2.0
+	return global_position
+
+
+## Down, his hurtbox goes from round his boots to the length of him in the dirt (a
+## round aimed at the body as drawn should find it).
+func _lay_hurtbox() -> void:
+	var d := Iso.dir8(facing)
+	if d == lie_dir:
+		return
+	lie_dir = d
+	var l := lie_line()
+	var a := l[0] - global_position
+	var b := l[1] - global_position
+	var hs: CollisionShape2D = hurtbox.get_child(0)
+	if stand_shape == null:
+		stand_shape = hs.shape
+	var c := CapsuleShape2D.new()
+	c.radius = 6.0
+	c.height = a.distance_to(b) + c.radius * 2.0
+	hs.set_deferred("shape", c)
+	hs.set_deferred("position", (a + b) / 2.0)
+	hs.set_deferred("rotation", (b - a).angle() - PI / 2.0)   # (a capsule stands upright)
+
+
+func _stand_hurtbox() -> void:
+	lie_dir = -1
+	if stand_shape == null:
+		return
+	var hs: CollisionShape2D = hurtbox.get_child(0)
+	hs.set_deferred("shape", stand_shape)
+	hs.set_deferred("position", Vector2.ZERO)
+	hs.set_deferred("rotation", 0.0)
+
+
 func _downed_tick(delta: float) -> void:
+	_lay_hurtbox()   # (dragged, he may come to lie another way)
 	shout_t = maxf(0.0, shout_t - delta)
+	if gasp != "":
+		_gasp_tick(delta)
+		if not downed:
+			return
+	else:
+		_think_gasp(delta)
 	if rescuer != null and (not is_instance_valid(rescuer) or not rescuer.alive or rescuer.rescuing != self):
 		rescuer = null
 	var held := rescuer != null and rescuer.rescue_phase in ["drag", "treat"]
@@ -1372,8 +1455,155 @@ func _downed_tick(delta: float) -> void:
 	if groan_t <= 0.0:
 		groan_t = randf_range(3.0, 6.0)
 		game.sfx("groan", global_position, -10.0, 0.12)
-		if shout_t <= 0.0 and randf() < 0.6 and not held:
+		if shout_t <= 0.0 and randf() < 0.6 and not held and gasp == "":
 			_say(_line("downed", DOWN_LINES))
+
+
+## Is he going to try it? He looks about now and then: a pistol to hand (his own,
+## lying by him, or one still holstered), the stranger close and in sight.
+func _think_gasp(delta: float) -> void:
+	gasp_look -= delta
+	if gasp_look > 0.0:
+		return
+	gasp_look = 1.0
+	if rescuer != null and rescuer.rescue_phase in ["drag", "treat"]:
+		return   # being got clear: no call for it
+	var gun := _gasp_gun()
+	var p: Player = game.player
+	var dist := global_position.distance_to(p.global_position)
+	if gun == "" or not p.alive or not p.visible or dist > GASP_RANGE \
+			or not game.line_of_sight(global_position, p.global_position, p.crouched):
+		return
+	var close := dist < GASP_CLOSE
+	if close and not gasp_close_rolled:
+		gasp_close_rolled = true   # the stranger right on him: help or no help, now or never
+	elif rescuer != null or gasp_rolls >= 2:
+		return   # help's on the way: he'll wait for it
+	elif gasp_rolls == 1 and down_t < BLEED_T * 0.6:
+		return   # (the second thought comes when nobody's come and it's nearly over)
+	else:
+		gasp_rolls += 1
+	if gasp_rng.randf() < gasp_chance(close):
+		if rescuer != null and is_instance_valid(rescuer):
+			rescuer._end_rescue()
+		rescuer = null
+		_start_gasp(gun)
+
+
+## Not all of them: it's likely to be the end of him, and a man who can hope for a
+## comrade to come and drag him clear would rather wait for it, unless the stranger
+## is right on him.
+func gasp_chance(close := false) -> float:
+	if Engine.has_meta("always_gasp") or game._args.has("gasp"):
+		return 1.0
+	if Engine.has_meta("no_gasp"):
+		return 0.0
+	var c := float(tdata["gasp"])
+	if close:
+		return minf(0.95, c * GASP_CLOSE_MULT)
+	for e in game.enemies:
+		if e.alive and e.revealed and not e.panic and e.global_position.distance_to(global_position) < RESCUE_NEAR:
+			return c * GASP_HOPE
+	return c
+
+
+## The pistol he'd use: the one he dropped, if it's still lying by him; else one
+## he never drew. Rifles and scatterguns don't count: no man fires those one-handed.
+func _gasp_gun() -> String:
+	var held: String = weapon.kind if weapon else ""
+	if held in PISTOLS and game.loose_guns.any(func(g): return g["under"] == self):
+		return held
+	for w in loadout:
+		if w != held and w in PISTOLS:
+			return w
+	return ""
+
+
+func _start_gasp(gun: String) -> void:
+	if gun == weapon.kind:
+		game.take_back_gun(self)
+	gasp_gun = gun
+	weapon = Weapon.new("colt" if gun == "colts" else gun, self)
+	weapon.reserve = 999
+	gasp_left = GASP_SHOTS[gasp_rng.randi() % GASP_SHOTS.size()]
+	if not weapon.barrels.is_empty():
+		gasp_left = mini(gasp_left, weapon.barrels.size())
+	gasp = "rise"
+	gasp_t = 0.0
+	gasp_lost = 0.0
+	facing = (game.player.global_position - global_position).normalized()
+	_pose_gasp("gasp_rise")
+	game.sfx("groan", global_position, -6.0, 0.12)
+	_log("last gasp")
+
+
+func _pose_gasp(anim_name: String) -> void:
+	_death = gasp_gun + "/" + anim_name
+	_layers.erase("full")
+	lie_dir = -1
+	_lay_hurtbox()
+
+
+func _gasp_tick(delta: float) -> void:
+	gasp_t += delta
+	var p: Player = game.player
+	match gasp:
+		"rise":
+			if not dying():
+				gasp = "aim"
+				gasp_t = GASP_EVERY - GASP_HOLD
+				_pose_gasp("gasp_aim")
+				weapon._snd("cock", -2.0)
+				_say(_line("gasp", GASP_LINES))
+		"aim":
+			var sees: bool = p.alive and p.visible and game.line_of_sight(global_position, p.global_position, p.crouched)
+			gasp_lost = 0.0 if sees else gasp_lost + delta
+			if sees:
+				var to := (p.global_position - global_position).normalized()
+				if Iso.dir8(to) != Iso.dir8(facing):
+					facing = to
+					_lay_hurtbox()
+			if gasp_left <= 0 and gasp_t >= 1.0 or gasp_lost > GASP_LOST or not p.alive:
+				_end_gasp()
+				return
+			if _death.ends_with("gasp_fire") and not dying():
+				_pose_gasp("gasp_aim")
+			if gasp_left > 0 and gasp_t - delta < GASP_EVERY * 0.6 and gasp_t >= GASP_EVERY * 0.6 and gasp_t < GASP_EVERY:
+				weapon._snd("cock", -4.0)   # thumbing the hammer back for the next
+			if gasp_left > 0 and gasp_t >= GASP_EVERY and sees:
+				gasp_t = 0.0
+				gasp_left -= 1
+				_gasp_shot()
+		"sink":
+			if not dying():
+				gasp = ""
+				if gasp_rng.randf() < GASP_PERISH:
+					_log("dies of the effort")
+					finish(null)
+				else:
+					down_t += GASP_COST
+
+
+func _gasp_shot() -> void:
+	var d: Dictionary = weapon.d
+	var dir := facing
+	_pose_gasp("gasp_fire")
+	var spread := deg_to_rad(float(d["spread"]) * accuracy_mult() * GASP_SPREAD)
+	var a := clampf(gasp_rng.randfn(0.0, spread * 0.5), -spread * 1.5, spread * 1.5)
+	game.spawn_bullet(global_position + dir * 5.0, dir.rotated(a) * float(d["speed"]), float(d["range"]),
+		int(d["damage"]), self, -muzzle_offset().y, false, int(d.get("pierce", 0)))
+	game.muzzle_flash(self, dir)
+	weapon._snd(d["sfx"])
+	game.make_noise(global_position, d["noise"], "enemy_shot", self)
+	_log("last gasp shot")
+
+
+## Spent: he sinks back into the dirt and lets the gun go.
+func _end_gasp() -> void:
+	gasp = "sink"
+	gasp_t = 0.0
+	_pose_gasp("gasp_sink")
+	game.drop_gun(self)
 
 
 ## Dead for good, lying where he is.
@@ -1385,11 +1615,18 @@ func finish(by: Actor) -> void:
 		killer = by
 	hurtbox.set_deferred("collision_layer", 0)
 	shout_t = 0.0
+	var gasping := gasp in ["rise", "aim"]
+	if gasping:   # dropped where he's propped, the gun falling from his hand
+		_pose_gasp("gasp_die")
+		game.drop_gun(self)
+	gasp = ""
 	if rescuer and is_instance_valid(rescuer):
 		rescuer._end_rescue()
 	rescuer = null
 	game.sfx("hit", global_position, -6.0)
-	if by and by.is_player:
+	if by and by.is_player and gasping:
+		_log("shot with his gun up")   # (fair: he was shooting back)
+	elif by and by.is_player:
 		game.stats["wounded men shot"] = game.stats.get("wounded men shot", 0) + 1   # (hidden, for now)
 	_log("finished")
 
@@ -1411,6 +1648,7 @@ func revive() -> void:
 	collision_layer = Iso.LAYER_ACTOR
 	collision_mask = Iso.LAYER_WALL | Iso.LAYER_COVER | Iso.LAYER_POST | Iso.LAYER_ACTOR
 	hurtbox.set_deferred("collision_layer", Iso.LAYER_HURT)
+	_stand_hurtbox()
 	game.take_back_gun(self)
 	weapon = Weapon.new(loadout[0], self)
 	weapon.reserve = 999

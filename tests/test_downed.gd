@@ -10,6 +10,8 @@ extends SceneTree
 ##   dropped - the rescuer shot dead mid-drag: he's left there, the clock running.
 ##   knife   - the knife finishes a downed man, quietly.
 ##   once    - a man who's been down and got up dies from the next one.
+##   body    - however he fell and whichever way he lies, a round aimed at his body as
+##             drawn hits him (not just one at his boots), and the cursor finds him there.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_downed.gd
 
 const SPOT := Vector2(26.0, 31.4)   # open main street
@@ -209,3 +211,65 @@ func _once() -> void:
 	check(a.alive, "revive failed")
 	a.take_hit(5, Vector2.RIGHT, game.player)
 	check(not a.alive and not a.downed, "down once and up again: the next one kills him")
+	_body_cases = []
+	for death in ["death_back", "death_knees", "death_spin", "death_slump"]:
+		for dir in [Vector2.RIGHT, Vector2(1, 1).normalized(), Vector2(-1, -0.4).normalized()]:
+			_body_cases.append([death, dir])
+	_body()
+
+
+var _body_cases: Array = []
+
+
+## The middle of the body as drawn: the solid pixels of the frame he's lying in.
+func _drawn_centre(e: Enemy) -> Vector2:
+	var spr: Sprite2D = e.upper_spr
+	var img := spr.texture.get_image()
+	var r := spr.region_rect
+	var sum := Vector2.ZERO
+	var n := 0
+	for y in range(int(r.position.y), int(r.end.y)):
+		for x in range(int(r.position.x), int(r.end.x)):
+			if img.get_pixel(x, y).a > 0.9:
+				sum += Vector2(x - r.position.x, y - r.position.y)
+				n += 1
+	return spr.get_global_transform() * (spr.offset + sum / maxf(n, 1))
+
+
+func _body() -> void:
+	step = "body"
+	if _body_cases.is_empty():
+		return
+	var c: Array = _body_cases.pop_front()
+	_away()
+	a = null
+	for x in game.enemies:
+		if x.alive and not x in used:
+			a = x
+			used.append(x)
+			break
+	if a == null:
+		check(false, "ran out of men")
+		return
+	_put(a, _here())
+	a.go_down(c[1], null)
+	a._death = c[0]
+	a.lie_dir = -1
+	a._lay_hurtbox()
+	a.update_anim(0.0)
+	a.update_anim(5.0)   # (on to the last frame: how he lies)
+	var p: Player = game.player
+	var aim := _drawn_centre(a)
+	var what := "%s facing %s" % [c[0], c[1]]
+	check(game.enemy_under(aim) == a, "the cursor on his body (%s) doesn't find him, %s" % [aim - a.global_position, what])
+	queue.append([0.1, func():
+		var from := Vector2.INF
+		for o in [Vector2(-150, 40), Vector2(150, 40), Vector2(-150, -40), Vector2(150, -40), Vector2(0, 120)]:
+			if game.ray(a.global_position + o, aim, Iso.LAYER_WALL | Iso.LAYER_COVER | Iso.LAYER_FRAGILE).is_empty():
+				from = a.global_position + o   # (a clear line to him)
+				break
+		check(from != Vector2.INF, "no clear line to him")
+		game.spawn_bullet(from, (aim - from).normalized() * 900.0, 400.0, 5, p, p.gun_height(), false)])
+	queue.append([0.5, func():
+		check(not a.downed, "a round at his body (%s from his boots) missed, %s" % [aim - a.global_position, what])
+		_body()])

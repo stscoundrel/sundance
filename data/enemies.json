@@ -1,5 +1,5 @@
 {
-  "_doc": "Bandit types (and, under 'civilians', the townsfolk). 'templates' are body shapes, baked once each. 'types' combine a template with palettes, a loadout and behaviour knobs; town.json places them and may override any type field per bandit. 'dynamite': sticks he carries (thrown at a place the stranger keeps killing from); 'fumble': chance he throws it short or drops it at his feet; 'bandages': how many he can patch himself up with when wounded; 'patch': how likely he is to break off and do it (scaled by his fear). Palette slots are listed in 'slots'; any slot left out keeps a neutral grey.",
+  "_doc": "Bandit types (and, under 'civilians', the townsfolk). 'templates' are body shapes, baked once each. 'types' combine a template with palettes, a loadout and behaviour knobs; town.json places them and may override any type field per bandit. 'dynamite': sticks he carries (thrown at a place the stranger keeps killing from); 'fumble': chance he throws it short or drops it at his feet; 'bandages': how many he can patch himself up with when wounded; 'patch': how likely he is to break off and do it (scaled by his fear); 'gasp': how likely, downed with a pistol to hand and the stranger in sight, he props himself up for a last shot or three (less if he can hope a comrade will come for him). Palette slots are listed in 'slots'; any slot left out keeps a neutral grey.",
 
   "slots": ["coat", "shirt", "vest", "trousers", "boots", "hat", "band", "accent", "skin", "hair",
             "poncho_a", "poncho_b", "poncho_c", "dress"],
@@ -40,12 +40,12 @@
     "hp": 2, "range": [70, 170], "cadence": [0.7, 1.3], "aim": 1.0, "speed": 1.0,
     "reflex": [0.6, 1.8], "nerve": [0.15, 0.9], "rank": 0, "cover_call": 0.5,
     "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "bold": 0.0, "opportunist": 0.0,
-    "concealed": false, "dynamite": 0, "fumble": 0.0, "bandages": 1, "patch": 0.6, "shouts": {}
+    "concealed": false, "dynamite": 0, "fumble": 0.0, "bandages": 1, "patch": 0.6, "gasp": 0.0, "shouts": {}
   },
 
   "types": {
     "pistolero": {
-      "name": "Pistolero", "template": "poncho", "dynamite": 1, "loadout": ["colt"],
+      "name": "Pistolero", "gasp": 0.55, "template": "poncho", "dynamite": 1, "loadout": ["colt"],
       "loadouts": [{"guns": ["colt"], "weight": 9},
                    {"guns": ["sawnoff"], "weight": 1, "range": [25, 80], "fires_on_move": true, "flank": 0.75}],
       "palettes": [
@@ -61,7 +61,7 @@
       ]
     },
     "rifleman": {
-      "name": "Rifleman", "template": "duster_bowler", "dynamite": 1, "loadout": ["rifle", "colt"],
+      "name": "Rifleman", "gasp": 0.45, "template": "duster_bowler", "dynamite": 1, "loadout": ["rifle", "colt"],
       "range": [130, 320], "cadence": [1.1, 1.8], "aim": 0.85, "nerve": [0.3, 0.9],
       "rank": 1, "cover_call": 1.0, "draw_sidearm": 0.6,
       "palettes": [
@@ -72,7 +72,7 @@
       ]
     },
     "redscarf": {
-      "name": "Red Scarf", "template": "vest", "dynamite": 1, "loadout": ["coach", "colt"],
+      "name": "Red Scarf", "gasp": 0.45, "template": "vest", "dynamite": 1, "loadout": ["coach", "colt"],
       "range": [25, 80], "cadence": [0.5, 1.0], "speed": 1.05, "nerve": [0.2, 0.9], "flank": 0.8,
       "fires_on_move": true, "draw_sidearm": 0.5,
       "palettes": [
@@ -81,7 +81,7 @@
       ]
     },
     "cowboy": {
-      "name": "Cowboy", "template": "vest", "loadout": ["colt"], "range": [70, 180], "nerve": [0.2, 0.85],
+      "name": "Cowboy", "gasp": 0.45, "template": "vest", "loadout": ["colt"], "range": [70, 180], "nerve": [0.2, 0.85],
       "palettes": [
         {"vest": [118, 96, 70], "shirt": [120, 140, 170], "trousers": [70, 74, 96], "boots": [76, 50, 32],
          "hat": [150, 120, 84], "band": [70, 50, 36], "accent": [60, 80, 130], "skin": [200, 146, 106], "hair": [120, 84, 50]},
@@ -92,7 +92,7 @@
       ]
     },
     "jefe": {
-      "name": "El Jefe", "template": "duster_sombrero", "loadout": ["coach", "colt"],
+      "name": "El Jefe", "gasp": 0.65, "template": "duster_sombrero", "loadout": ["coach", "colt"],
       "hp": 4, "range": [30, 95], "cadence": [0.45, 0.9], "nerve": [0.95, 0.95],
       "rank": 2, "cover_call": 1.0, "fires_on_move": true, "draw_sidearm": 0.8, "flank": 0.4,
       "palettes": [
@@ -101,7 +101,7 @@
       ]
     },
     "drunkard": {
-      "name": "Drunkard", "template": "shirt", "bandages": 0, "dynamite": 1, "fumble": 0.4, "loadout": ["colt"],
+      "name": "Drunkard", "gasp": 0.25, "template": "shirt", "bandages": 0, "dynamite": 1, "fumble": 0.4, "loadout": ["colt"],
       "range": [50, 140], "cadence": [0.9, 1.8], "aim": 2.2, "speed": 0.85,
       "reflex": [1.2, 2.2], "nerve": [0.0, 0.3], "cover_call": 0.2, "flank": 0.1,
       "shouts": {"spot": ["Hic! Who'zat?", "You... you there!", "¡Ay, gringo!"],
@@ -114,7 +114,7 @@
       ]
     },
     "gambler": {
-      "name": "Gambler", "template": "suit", "loadout": ["derringer"], "concealed": true,
+      "name": "Gambler", "gasp": 0.5, "template": "suit", "loadout": ["derringer"], "concealed": true,
       "range": [40, 120], "cadence": [0.5, 0.9], "aim": 0.8, "reflex": [0.5, 1.0], "nerve": [0.5, 0.95],
       "shouts": {"spot": ["Well now.", "Bad hand, stranger.", "Gentlemen..."],
                  "reload": ["One moment."], "scare": ["Steady..."]},
@@ -141,7 +141,7 @@
       ]
     },
     "oldtimer": {
-      "name": "Old timer", "template": "veteran", "dynamite": 1, "loadout": ["howdah"],
+      "name": "Old timer", "gasp": 0.6, "template": "veteran", "dynamite": 1, "loadout": ["howdah"],
       "hp": 3, "range": [50, 150], "cadence": [0.9, 1.6], "aim": 0.9, "speed": 0.75,
       "reflex": [1.1, 1.8], "nerve": [0.75, 1.0], "cover_call": 0.2, "flank": 0.2,
       "shouts": {"spot": ["Seen worse at Shiloh!", "Come on then, sonny!", "Back in '47..."],
@@ -155,7 +155,7 @@
       ]
     },
     "bandido": {
-      "name": "Bandido", "template": "bandido", "bandages": 0, "dynamite": 1, "loadout": ["navy"],
+      "name": "Bandido", "gasp": 0.5, "template": "bandido", "bandages": 0, "dynamite": 1, "loadout": ["navy"],
       "hp": 1, "range": [60, 170], "cadence": [0.9, 1.7], "aim": 1.7, "speed": 1.0,
       "reflex": [0.9, 2.0], "nerve": [0.0, 0.45], "cover_call": 0.4, "flank": 0.35,
       "shouts": {"spot": ["¡Ey! ¡Gringo!", "¡Allí, allí!", "¡Mátenlo!"],
@@ -187,7 +187,7 @@
       ]
     },
     "gunslinger": {
-      "name": "Gunslinger", "template": "gunslinger", "loadout": ["colts"],
+      "name": "Gunslinger", "gasp": 0.75, "template": "gunslinger", "loadout": ["colts"],
       "range": [45, 130], "cadence": [0.35, 0.6], "aim": 1.1, "speed": 1.12,
       "reflex": [0.4, 0.9], "nerve": [0.8, 1.0], "rank": 1, "cover_call": 0.3, "flank": 0.75,
       "fires_on_move": true, "bold": 0.8,
@@ -202,7 +202,7 @@
       ]
     },
     "saloon_girl": {
-      "name": "Saloon girl", "template": "dress", "loadout": ["derringer"], "concealed": true,
+      "name": "Saloon girl", "gasp": 0.4, "template": "dress", "loadout": ["derringer"], "concealed": true,
       "loadouts": [{"guns": ["derringer"], "weight": 3}, {"guns": ["colt"], "weight": 1}],
       "range": [50, 140], "cadence": [0.6, 1.1], "aim": 1.2, "reflex": [0.6, 1.4], "nerve": [0.1, 0.5],
       "cover_call": 0.3, "opportunist": 0.85, "flank": 0.5,

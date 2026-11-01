@@ -263,10 +263,33 @@ carried, which you collect by walking over them.
   1 HP, shaken and limping, his own gun back in hand. Shoot the rescuer and the
   man's left lying there, clock running again. Another round (or the knife,
   quietly) finishes a downed man; the stranger's tally of such is kept, unseen, for
-  a later honour system. The undertaker, padre and gunsmith leave him be till he's
+  a later honour system. His hurtbox lies along his body as drawn (the bake records
+  where each fall leaves him, by direction: `meta.json` "lie"), so a round or the
+  cursor on any part of him finds him, not just the spot where his boots were. The
+  undertaker, padre and gunsmith leave him be till he's
   dead. `tests/test_downed.gd` covers going down, bleeding out, finishing him, a
   rescue (the clock stopped while he's held, up again with his gun), the rescuer
-  shot mid-drag, the knife, and no second time down.
+  shot mid-drag, the knife, no second time down, and real rounds aimed at the
+  drawn body hitting it however he fell.
+- **The last gasp**: a downed man with a pistol to hand (his own, if it's still lying
+  by him, or a Colt he never drew; never a rifle or a scattergun) and the stranger
+  close (~230 px) and in sight may push himself up on a straight arm, feet towards
+  him, and fire. Slowly: over a second to come up, the hammer cocked audibly, then a
+  round every 2.4 s, wide (twice his usual spread). One shot mostly, two or three now
+  and then (no more than a derringer or howdah holds). Then he sinks back and lets
+  the gun go: half the time it's the end of him, otherwise he's still down with 12 s
+  gone off his clock and can still be saved. Not all of them try it: a chance per type
+  ("gasp": gunslinger 0.75, El Jefe 0.65, the old timer 0.6, pistolero 0.55, bandido
+  0.5 (there are so many of them), cowboy 0.45, down to a drunk at 0.25), cut to 0.6x
+  while a comrade is near enough to come for him, and not tried at all while one is
+  on his way, since a man who can hope to be dragged clear would rather wait. He makes
+  up his mind when the stranger first comes in sight, and once more late, when nobody's
+  come. But walk right up on him (~120 px) and he doesn't wait for anyone: help coming
+  or not, he gets one more think, 1.6x as likely (at most 0.95), and a comrade on his
+  way is let off. Play with `-- --gasp` to have every man who can try it. A round
+  while he's up finishes him and isn't counted as shooting a wounded man. The
+  propped-up poses are baked per pistol into each template's "full" animations
+  (`full/<gun>/gasp_rise|aim|fire|sink|die`). `tests/test_lastgasp.gd`.
 - **Hens** (for Corbucci, whose gunfights always had animals running through them):
   five hen houses stand in the back yards, two hens pecking about each, and crates
   of hens for market sit by the store, the feed store and the plaza. A round into

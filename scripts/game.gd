@@ -133,9 +133,11 @@ func _ready() -> void:
 		randomize()
 		Shutter.rng.randomize()
 		Chicken.rng.randomize()
+		Enemy.gasp_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
+		Enemy.gasp_rng.seed = 13
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -944,14 +946,18 @@ func enemy_under(screen_point: Vector2) -> Enemy:
 	for e in enemies:
 		if not e.alive and not e.downed:
 			continue
-		var r := Rect2(e.global_position + Vector2(-8, -36), Vector2(16, 38))
-		if e.downed:
-			r = Rect2(e.global_position + Vector2(-14, -12), Vector2(28, 16))   # lying in the dirt
-		if r.has_point(screen_point):
-			var d := e.global_position.distance_to(screen_point)
-			if d < bd:
-				bd = d
-				best = e
+		var d := e.global_position.distance_to(screen_point)
+		if e.downed:   # lying in the dirt: anywhere along him
+			var l: PackedVector2Array = e.lie_line()
+			var p := screen_point + Vector2(0, 2)   # (the body has a little height to it)
+			d = Geometry2D.get_closest_point_to_segment(p, l[0], l[1]).distance_to(p)
+			if d > 9.0:
+				continue
+		elif not Rect2(e.global_position + Vector2(-8, -36), Vector2(16, 38)).has_point(screen_point):
+			continue
+		if d < bd:
+			bd = d
+			best = e
 	return best
 
 
@@ -2141,7 +2147,7 @@ func take_back_gun(e: Enemy) -> void:
 ## will: they don't leave their own in the dirt).
 func _send_rescuers() -> void:
 	for d in enemies:
-		if not d.downed or d.rescuer != null:
+		if not d.downed or d.rescuer != null or d.gasp != "":
 			continue
 		var best: Enemy = null
 		var best_d := Enemy.RESCUE_NEAR

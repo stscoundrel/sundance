@@ -74,6 +74,8 @@ def gen_characters(meta):
         for d in range(8):
             img, anchor = chars.pool_sprite(death, d)
             meta["pools"][death].append({"file": save(img, f"sprites/fx/pool_{death}_{d}.png"), "anchor": list(anchor)})
+    # Where each body lies (for hitting a man who's down): its two ends, by death and direction.
+    meta["lie"] = {death: [chars.lie_line(death, d) for d in range(8)] for death in [*chars.DEATH_FPS, "gasp"]}
     # Guns dropped by the dead, lying in the dirt in four orientations.
     meta["guns"] = {}
     for kind in chars.GUN_LEN:

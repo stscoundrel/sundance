@@ -82,7 +82,7 @@ func _physics_process(delta: float) -> void:
 	aim_target = game.enemy_under(m)
 	var target := m + Vector2(0, gun_height())
 	if aim_target:
-		target = aim_target.global_position
+		target = aim_target.aim_point()
 	var to := target - global_position
 	if to.length() > 3.0 and playing:
 		facing = to.normalized()

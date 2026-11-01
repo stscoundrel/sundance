@@ -1173,6 +1173,64 @@ def death_anims(look):
 DEATH_FPS = {"death_back": 9, "death_knees": 6, "death_spin": 8, "death_slump": 4.5}
 
 
+# ---------------------------------------------------------------- the last gasp
+
+# A downed man with a pistol to hand may prop himself up on an elbow, feet towards
+# the stranger, and get a round or two off before he sinks back. One-handed guns only.
+PISTOLS = ("colt", "colts", "navy", "derringer", "howdah")
+LYING = {"H": 0.13, "sway": 0.0, "crouch": True,
+         "legs": [((0, 0.1, 0.13), (0.42, 0.13, 0.12), (0.82, 0.15, 0.08)),
+                  ((0, -0.1, 0.13), (0.38, -0.12, 0.2), (0.76, -0.17, 0.08))]}   # one knee half up
+
+
+def _propped(lean, eR, hR, gun_d, eL, hL, nod=0.0):
+    """An upper-body pose for a man lying back at `lean`, his joints given as they
+    end up (hip-relative, after the lean), so arms can be put on the ground."""
+    R = rot_y(lean).T
+    hR = V(*hR)
+    return dict(lean=lean, nod=nod, eR=R @ V(*eR), hR=R @ hR, eL=R @ V(*eL), hL=R @ V(*hL),
+                gun=G(R @ (hR + V(-0.03, 0, -0.05)), R @ V(*gun_d)))
+
+
+GASP_POSES = {
+    # flat on his back, the gun in the hand by his side
+    "flat": _propped(-1.45, (-0.25, -0.3, -0.08), (0.0, -0.32, -0.09), (1, -0.1, -0.1),
+                     (-0.25, 0.3, -0.08), (0.0, 0.32, -0.09)),
+    # up on the left elbow, the gun coming up
+    "half": _propped(-1.15, (-0.36, -0.3, 0.06), (-0.1, -0.28, 0.12), (1, 0, 0.3),
+                     (-0.5, 0.3, -0.05), (-0.3, 0.3, -0.11), nod=0.35),
+    # pushed up on a straight left arm, the right out at the stranger over his boots
+    "aim": _propped(-0.8, (-0.08, -0.17, 0.4), (0.18, -0.12, 0.42), (1, 0, 0.04),
+                    (-0.43, 0.3, 0.07), (-0.52, 0.32, -0.11), nod=0.5),
+    "kick": _propped(-0.88, (-0.1, -0.17, 0.44), (0.12, -0.12, 0.52), (0.6, 0, 0.45),
+                     (-0.43, 0.3, 0.07), (-0.52, 0.32, -0.11), nod=0.45),
+}
+
+
+def gasp_anims():
+    """{name: (poses, fps, loop)}: up onto the elbow (slowly: he's dying), holding
+    the aim, a shot, sinking back down after, and dropping where he's hit."""
+    k = GASP_POSES
+    return {
+        "gasp_rise": ([k["flat"], lerp_pose(k["flat"], k["half"], 0.5), k["half"],
+                       lerp_pose(k["half"], k["aim"], 0.5), k["aim"]], 4, False),
+        "gasp_aim": ([k["aim"]], 1, True),
+        "gasp_fire": ([k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 8, False),
+        "gasp_sink": ([k["aim"], k["half"], lerp_pose(k["half"], k["flat"], 0.5), k["flat"]], 3, False),
+        "gasp_die": ([k["kick"], k["half"], k["flat"]], 7, False),
+    }
+
+
+def gasp_body(look, weapon, up):
+    """The whole man lying propped up with his pistol. Returns (cloud, muzzle)."""
+    m = build_legs(look, LYING)
+    u, muzzle = build_upper(look, GUN_ART.get(weapon, weapon), up, LYING["H"])
+    m += u
+    lift = max(0.0, -m.P[:, 2].min())
+    m.translate((0, 0, lift))
+    return m, muzzle + [0, 0, lift]
+
+
 # ---------------------------------------------------------------- baking
 
 def yaw_for_dir(d):
@@ -1218,6 +1276,24 @@ def pool_sprite(death, d):
     return img, (-x0, -y0)
 
 
+def lie_line(death, d):
+    """Where a body that died `death` facing direction d lies on the ground: the two
+    ends of it (texels from his feet), so the game can put his hurtbox on the body.
+    "gasp" is a man propped up for a last shot."""
+    look = Look(next(iter(TEMPLATES)))
+    if death == "gasp":
+        body = gasp_body(look, "colt", GASP_POSES["aim"])[0]
+    else:
+        body = death_anims(look)[death][-1]
+    body = body.copy().transform(rot_z(yaw_for_dir(d)))
+    xy = body.P[:, :2]
+    mid = xy.mean(0)
+    axis = np.linalg.svd(xy - mid, full_matrices=False)[2][0]
+    t = (xy - mid) @ axis
+    lo, hi = np.percentile(t, 4), np.percentile(t, 96)
+    return [_project([*(mid + axis * k), 0.0]) for k in (lo, hi)]
+
+
 def _trim(img, slots_):
     a = img[..., 3]
     ys, xs = np.nonzero(a)
@@ -1249,6 +1325,10 @@ def bake_job(job):
         info = {"fps": anim["fps"], "loop": anim["loop"], "events": {str(k): v for k, v in anim["events"].items()}}
         extras = [{} for _ in anim["poses"]]
         models = [build_upper(look, weapon, p, extra=x) for p, x in zip(anim["poses"], extras)]
+    elif layer == "gasp":
+        poses, fps, loop = gasp_anims()[name]
+        info = {"fps": fps, "loop": loop}
+        models = [gasp_body(look, weapon, p) for p in poses]
     else:
         bodies = death_anims(look)[name]
         info = {"fps": DEATH_FPS[name], "loop": False}
@@ -1265,18 +1345,21 @@ def bake_job(job):
             img, _, slots_ = render(c, size=CANVAS, anchor=ANCHOR, ground=ground, want_slots=True,
                                     shadow=layer != "upper", shadow_extra=shadow_extra)
             frames.append(_trim(img, slots_))
-            if layer == "upper":
+            if layer in ("upper", "gasp"):
                 mz.append(_project(R @ extra) if extra is not None else None)
+            if layer == "upper":
                 m2 = extras[i].get("muzzle2")
                 mz2.append(_project(R @ m2) if m2 is not None else None)
         dirs.append(frames)
         muzzles.append(mz)
         muzzles2.append(mz2)
+    if layer == "gasp":
+        info["muzzle"] = muzzles
     if layer == "upper":
         info["muzzle"] = muzzles
         if any(m is not None for mz in muzzles2 for m in mz):
             info["muzzle2"] = muzzles2
-    key = f"{layer}/{name}" if layer != "upper" else f"upper/{weapon}/{name}"
+    key = {"upper": f"upper/{weapon}/{name}", "gasp": f"full/{weapon}/{name}"}.get(layer, f"{layer}/{name}")
     return template, key, info, dirs
 
 
@@ -1285,6 +1368,9 @@ def jobs_for(template, guns):
     for w in guns:
         jobs += [(template, "upper", w, n) for n in upper_anims(w)]
     jobs += [(template, "full", None, n) for n in DEATH_FPS]
+    for w in guns:
+        if w in PISTOLS:
+            jobs += [(template, "gasp", w, n) for n in gasp_anims()]
     return jobs
 
 

@@ -305,7 +305,7 @@ func _bleed(delta: float) -> void:
 ## Where the muzzle is, relative to his feet, in the frame now showing (the left
 ## gun's, of a pair, after it fired).
 func muzzle_offset() -> Vector2:
-	var st: Array = _layers.get("upper", [])
+	var st: Array = _layers.get("upper" if alive else "full", [])
 	if not st.is_empty():
 		var a := anim(st[0])
 		var key := "muzzle2" if weapon and weapon.hand == 1 and a.has("muzzle2") else "muzzle"
