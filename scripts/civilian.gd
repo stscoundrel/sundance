@@ -25,9 +25,15 @@ extends Actor
 ## knees, hat in hands, until it's calmer; then back to it. Once the town has gone
 ## quiet he tours the damage, hands behind his back, tutting at every wrecked crate
 ## and scorch mark.
+## Once it's quiet the town puts itself right. The carpenter ("role": "carpenter")
+## mends whatever wood is broken (crates, barrels, troughs, wagons, chairs, coops),
+## the mayor's list first, and cover is cover again. The saloon keeper ("keeper")
+## sets his own tables and chairs back up, bottles and all. Sweepers ("sweeper")
+## sweep blood, glass and scorch into the dirt, the stranger's trail with it. Hen
+## women ("henwife") shoo strays back home to the coops.
 
 enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
-	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY }
+	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY, TO_FIX, FIX, TO_SWEEP, SWEEP, HERD }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -41,7 +47,8 @@ const FLEE_LINES := ["Lord help us!", "¡Corran!", "Get inside!"]
 const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
 const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios mío!"]
 const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS, St.TO_GRAVE, St.MOURN, St.TO_GUN,
-	St.PICK, St.HAUL, St.TO_STUMP, St.ORATE, St.TO_SCAR, St.SURVEY]
+	St.PICK, St.HAUL, St.TO_STUMP, St.ORATE, St.TO_SCAR, St.SURVEY, St.TO_FIX, St.FIX, St.TO_SWEEP, St.SWEEP,
+	St.HERD]
 const MEASURE_T := 3.5
 const BLESS_T := 4.0
 const MOURN_T := Vector2(20.0, 32.0)
@@ -53,6 +60,9 @@ const HUSH := 8.0          # s of quiet and the mayor steps down
 const SURVEY_AFTER := 12.0 # s of quiet before he goes round the damage
 const SURVEY_T := 3.5      # s tutting at each
 const TOUR := 4            # wrecks a tour, then home
+const FIX_T := 12.0        # s at a broken crate, barrel, wagon...
+const MEND_T := 6.0        # s at a chair, table or coop
+const SWEEP_T := 4.0       # s sweeping a spot
 
 var kind := "townsman"
 var tdata: Dictionary
@@ -93,6 +103,14 @@ var stump := Vector2.INF        # where he makes his speeches
 var orate_t := 0.0              # till his next line
 var scar: Dictionary = {}       # the damage he's looking at
 var toured := 0
+var carpenter := false
+var keeper := false
+var sweeper := false
+var henwife := false
+var job: Dictionary = {}        # the broken thing he's mending
+var dirt := Vector2.INF         # the mess she's sweeping
+var hen: Chicken                # the stray she's shooing home
+var knock_t := 0.0
 var body: Actor              # the dead man he's seeing to
 var partner: Civilian        # the other half of a couple
 var leads := false           # he sets the way; she keeps to his arm
@@ -122,6 +140,10 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	mourner = tdata.get("role", "") == "mourner"
 	gunsmith = tdata.get("role", "") == "gunsmith"
 	mayor = tdata.get("role", "") == "mayor"
+	carpenter = tdata.get("role", "") == "carpenter"
+	keeper = tdata.get("role", "") == "keeper"
+	sweeper = tdata.get("role", "") == "sweeper"
+	henwife = tdata.get("role", "") == "henwife"
 	if tdata.has("stump"):
 		stump = Iso.to_screen(Vector2(tdata["stump"][0], tdata["stump"][1]))
 	if undertaker:
@@ -134,6 +156,12 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		anim_gun = "smith"   # a gun held up to the light, and an armful of them
 	elif mayor:
 		anim_gun = "mayor"   # thumbs in his waistcoat, arms wide on the soapbox
+	elif carpenter:
+		anim_gun = "carpentry"   # a hammer in hand
+	elif keeper:
+		anim_gun = "keeper"      # a towel over his arm
+	elif sweeper or henwife:
+		anim_gun = "broom"
 	home = pos
 	facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	desired = facing
@@ -196,6 +224,7 @@ func alarm(from: Vector2, scary: bool) -> void:
 	_drop_body()   # the dead can wait
 	_leave_grave()
 	_let_go_of_gun()
+	_drop_job()
 	if st == St.COWER:
 		return
 	var freeze := (1.0 - nerve) * (0.7 if scary else 0.4)
@@ -282,6 +311,12 @@ func _physics_process(delta: float) -> void:
 			_gather(delta)
 		St.TO_STUMP, St.ORATE, St.TO_SCAR, St.SURVEY:
 			_mayor(delta)
+		St.TO_FIX, St.FIX:
+			_mend(delta)
+		St.TO_SWEEP, St.SWEEP:
+			_sweep(delta)
+		St.HERD:
+			_herd(delta)
 	if carried and pose == "":
 		pose = "carry"
 	if velocity.length() > 1.0 and not watching:
@@ -349,6 +384,8 @@ func _idle(delta: float) -> void:
 			_next_scar()
 			if st != St.IDLE:
 				return
+	if game.quiet_for() >= game.quiet_after and _find_work():
+		return
 	if priest and game.quiet_for() >= game.quiet_after:
 		body = game.blessing_for(self)
 		if body:
@@ -688,6 +725,145 @@ func _next_scar() -> void:
 	path = game.find_path(global_position, at if game.is_free(at) else game.free_point_near(at, 20.0))
 	path_i = 0
 	st = St.TO_SCAR
+
+
+# ------------------------------------------------------------------ the town tidies up
+
+## The quiet's back: anything for him to see to?
+func _find_work() -> bool:
+	if carpenter or keeper:
+		job = game.repair_job(self)
+		if not job.is_empty():
+			var at: Vector2 = game.job_at(job)
+			var stand := at + (global_position - at).normalized() * 16.0
+			path = game.find_path(global_position, stand if game.is_free(stand) else game.free_point_near(stand, 16.0))
+			path_i = 0
+			st = St.TO_FIX
+			return true
+	if sweeper:
+		dirt = game.dirt_job(self)
+		if dirt != Vector2.INF:
+			path = game.find_path(global_position, dirt if game.is_free(dirt) else game.free_point_near(dirt, 12.0))
+			path_i = 0
+			st = St.TO_SWEEP
+			return true
+	if henwife:
+		hen = game.stray_hen(self)
+		if hen:
+			st = St.HERD
+			work_t = 40.0   # (she gives up on one that won't be shooed)
+			repath_t = 0.0
+			return true
+	return false
+
+
+func _mend(delta: float) -> void:
+	if job.is_empty() or job["state"] == 0:
+		_drop_job()
+		st = St.IDLE
+		return
+	match st:
+		St.TO_FIX:
+			if _follow(walk):
+				st = St.FIX
+				work_t = MEND_T if keeper or not job.has("hp") else FIX_T
+				knock_t = 0.0
+		St.FIX:
+			velocity = Vector2.ZERO
+			desired = (game.job_at(job) - global_position).normalized()
+			if keeper:
+				pose = "tidy"
+			else:
+				crouched = true
+				pose = "hammer"
+				knock_t -= delta
+				if knock_t <= 0.0:
+					knock_t = 1.1
+					game.sfx("hammer", global_position, -12.0, 0.1)
+			work_t -= delta
+			if work_t > 0.0:
+				return
+			if game.in_the_way(job, self):
+				work_t = 1.0   # someone's standing right there
+				return
+			game.repair(job)
+			job = {}
+			crouched = false
+			if randf() < 0.5:
+				_say(_line("work", ["There."]))
+			st = St.IDLE
+			wait = 0.4
+
+
+func _sweep(delta: float) -> void:
+	match st:
+		St.TO_SWEEP:
+			if _follow(walk):
+				st = St.SWEEP
+				work_t = SWEEP_T
+				knock_t = 0.0
+		St.SWEEP:
+			velocity = Vector2.ZERO
+			pose = "sweep"
+			desired = (dirt - global_position).normalized() if global_position.distance_to(dirt) > 4.0 else desired
+			knock_t -= delta
+			if knock_t <= 0.0:
+				knock_t = 0.9
+				game.sfx("sweep", global_position, -14.0, 0.15)
+			work_t -= delta
+			if work_t <= 0.0:
+				game.sweep_at(dirt, self)
+				dirt = Vector2.INF
+				if randf() < 0.2:
+					_say(_line("work", ["..."]))
+				st = St.IDLE
+				wait = 0.3
+
+
+## Round behind the stray, broom up, and on towards the coop she goes.
+func _herd(delta: float) -> void:
+	work_t -= delta
+	if hen == null or not is_instance_valid(hen) or not hen in game.hens or work_t <= 0.0:
+		_drop_job()
+		st = St.IDLE
+		wait = 0.5
+		return
+	if hen.st != Chicken.S.HERD and hen.herder != self:
+		_drop_job()
+		st = St.IDLE
+		return
+	var coop: Dictionary = game.coop_for(hen.position)
+	var ahead: Vector2 = hen.heading() if hen.st == Chicken.S.HERD else coop["at"]
+	var behind: Vector2 = hen.position + (hen.position - ahead).normalized() * 16.0
+	if global_position.distance_to(behind) > 12.0:
+		repath_t -= delta
+		if repath_t <= 0.0 or path_i >= path.size():
+			repath_t = 0.8
+			path = game.find_path(global_position, behind if game.is_free(behind) else hen.position)
+			path_i = 0
+		_follow(run * 0.55 if hen.st == Chicken.S.HERD else walk * 1.2)
+	else:
+		velocity = (behind - global_position) * 2.0
+	pose = "shoo"
+	if hen.st != Chicken.S.HERD and global_position.distance_to(hen.position) < 26.0:
+		hen.herd(coop)
+		if shout_t <= 0.0 and randf() < 0.5:
+			_say(_line("work", ["¡Fuera!"]))
+
+
+## Frightened off (or done): whatever he'd taken on is free for someone else.
+func _drop_job() -> void:
+	if not job.is_empty() and job.get("fixer") == self:
+		job["fixer"] = null
+	job = {}
+	if dirt != Vector2.INF:
+		game.sweeping.erase(self)
+		dirt = Vector2.INF
+	if hen and is_instance_valid(hen) and hen.herder == self:
+		hen.herder = null
+		if hen.st == Chicken.S.HERD:
+			hen.st = Chicken.S.PECK
+	hen = null
 
 
 # ------------------------------------------------------------------ couples

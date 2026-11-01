@@ -60,6 +60,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_cover.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_fragile.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_hens.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_bandage.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_crew.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_dynamite.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_perf.gd
 ```

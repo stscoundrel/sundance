@@ -550,6 +550,30 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   barrel, trough or wagon and every scorch mark from the dynamite, up to four a
   tour, tutting at each ("Who's going to pay for this?", "That was a perfectly good
   crate."), then home. No effect on the fight. Animations: the "mayor" set.
+- **The town puts itself right** once it's been quiet a while, like the undertaker:
+  - *The carpenter* (`role: "carpenter"`, hammer in hand, apron) mends whatever
+    wood is broken: crates, barrels, coffins, troughs, wagons, chairs, tables,
+    coops, crates of hens. Whatever the mayor has tutted over comes first (as the
+    undertaker prefers blessed bodies), then the nearest. Down on one knee
+    hammering, 12 s for cover, 6 s for furniture; a wreck comes back whole,
+    solid and cover again (he waits if someone's standing in the way). So cover
+    shot to pieces doesn't stay gone if the stranger lets the town settle.
+  - *The saloon keeper* (`keeper`, slicked hair, towel over his arm) keeps to his
+    own porch: his tables (fresh bottles and all) and chairs, nobody's orders.
+  - *Two sweepers* (`sweeper`, peones with brooms) sweep the nearest mess into the
+    dirt, a broom's reach at a time: blood (drops, pools once the body's gone),
+    glass, crockery, scorch marks, spilt water. The stranger's blood trail goes
+    with it, so a swept trail can't be followed. They keep apart from each other.
+  - *Two hen women* (`henwife`, rebozo and apron, a broom) go after any hen well
+    away from a coop (~80 px), get round behind her and shoo her home along the
+    streets ("¡Fuera, fuera!"): into the coop if there's room, else she pecks
+    about outside it. Hens don't mind them.
+  All of them run from gunfire like anyone else and leave the job for later;
+  shooting one is shooting an innocent. Animations: "carpentry", "keeper" and
+  "broom" (sweep, shoo) sets. `tests/test_crew.gd` checks the mending (the
+  mayor's list first, the crate solid and cover again, the keeper's own things by
+  the keeper), the sweeping (blood trail and glass gone), the hens shooed home,
+  and the carpenter dropping his job at a shot.
 - **Shutters**: every glazed window on the wooden buildings and every small window
   on the adobes has a pair of shutters (weathered planks on the wood, painted
   turquoise, blue, green or oxblood on the adobes; one colour per building, picked

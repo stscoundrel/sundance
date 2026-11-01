@@ -53,7 +53,8 @@ def template_guns():
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():
         need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith",
-                                  "mayor": "mayor"}.get(t.get("role", ""), "unarmed"))
+                                  "mayor": "mayor", "carpenter": "carpentry", "sweeper": "broom",
+                                  "henwife": "broom", "keeper": "keeper"}.get(t.get("role", ""), "unarmed"))
     return out
 
 
@@ -317,6 +318,11 @@ def _hat(look, z):
     kind = look.get("hat")
     col, band = look.c("hat"), look.c("band")
     under = tuple(int(c * 0.6) for c in col)
+    if kind == "slick":
+        # no hat: hair slicked down flat with pomade, a parting
+        with look.tag("hair"):
+            out += ellipsoid((-0.01, 0, z - 0.06), (0.1, 0.095, 0.05), look.c("hair"))
+        return out
     if kind == "none":
         # hair up in a bun, with a flower
         with look.tag("hair"):
@@ -609,6 +615,23 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         e, h = np.array(up["eL"], float), np.array(up["hL"], float)
         m += frustum(e + (h - e) * 0.45, e + (h - e) * 0.8, 0.058, 0.052, (232, 228, 216))
         m += ellipsoid(np.array(up["hR"], float) + [0.02, 0, 0], (0.035, 0.035, 0.035), (240, 236, 226))
+    if up.get("hammer"):   # a claw hammer in the right hand, head across the end of the haft
+        e, h = np.array(up["eR"], float), np.array(up["hR"], float)
+        d = (h - e) / np.linalg.norm(h - e)
+        end = h + d * 0.2
+        side = np.cross(d, [0, 0, 1.0])
+        side = side / (np.linalg.norm(side) + 1e-6) if np.linalg.norm(side) > 0.1 else np.array([0, 1.0, 0])
+        m += beam(h - d * 0.04, end, 0.014, (120, 84, 52))
+        m += beam(end - side * 0.06, end + side * 0.05, 0.022, (70, 70, 76))
+    if up.get("broom") is not None:   # a broom: straw head at `broom`, the haft up through his hand
+        head = np.array(up["broom"], float)
+        grip = np.array(up["hR"], float)
+        d = (grip - head) / np.linalg.norm(grip - head)
+        m += frustum(head, head + d * 0.2, 0.08, 0.03, (206, 176, 106))
+        m += beam(head + d * 0.18, head + d * 1.3, 0.016, (150, 112, 70))
+    if up.get("towel"):   # a bar towel over his arm
+        h = np.array(up["hL"], float)
+        m += box(tuple(h + [-0.05, -0.04, -0.12]), tuple(h + [0.04, 0.04, 0.02]), (232, 228, 214))
     if up.get("hanky"):   # a white handkerchief pressed to her eyes
         h = np.array(up["hR"], float)
         m += box(tuple(h + [-0.02, -0.03, -0.04]), tuple(h + [0.03, 0.03, 0.03]), (232, 228, 220))
@@ -691,6 +714,39 @@ def _key_poses(w):
         k["bless_b"] = P(base, hR=V(0.44, -0.06, 0.36), eR=V(0.2, -0.22, 0.32))
         k["bless_c"] = P(base, hR=V(0.42, 0.1, 0.52))
         k["bless_d"] = P(base, hR=V(0.42, -0.24, 0.52))
+        return k
+    if w == "carpentry":
+        # the carpenter: a hammer in hand; down at a job, steadying it with the left
+        # and driving nails with the right
+        k = _key_poses("unarmed")
+        k["aim"] = P(k["aim"], hammer=True)
+        base = dict(eL=V(0.2, 0.22, 0.2), hL=V(0.44, 0.08, 0.06), lean=0.35, nod=0.3, hammer=True)
+        k["hammer_a"] = P(base, eR=V(0.08, -0.26, 0.4), hR=V(0.3, -0.12, 0.56))
+        k["hammer_b"] = P(base, eR=V(0.22, -0.24, 0.22), hR=V(0.46, -0.05, 0.1))
+        return k
+    if w == "broom":
+        # a broom: carried upright; swept side to side along the dirt; or raised and
+        # swatted down to shoo hens along
+        k = _key_poses("unarmed")
+        g = -H_REF + 0.04   # the ground, from the hip
+        k["aim"] = P(k["aim"], eR=V(0.02, -0.26, 0.22), hR=V(0.12, -0.2, 0.3), broom=V(0.16, -0.24, g))
+        sweep = dict(eL=V(0.14, 0.2, 0.3), hL=V(0.26, 0.04, 0.34), eR=V(0.12, -0.2, 0.14),
+                     lean=0.25, nod=0.25)
+        k["sweep_a"] = P(sweep, hR=V(0.28, -0.04, 0.08), broom=V(0.62, 0.32, g))
+        k["sweep_m"] = P(sweep, hR=V(0.3, -0.06, 0.08), broom=V(0.68, 0.02, g))
+        k["sweep_b"] = P(sweep, hR=V(0.28, -0.1, 0.08), broom=V(0.6, -0.3, g))
+        shoo = dict(eL=V(0.16, 0.2, 0.42), hL=V(0.3, 0.04, 0.56), eR=V(0.14, -0.2, 0.36))
+        k["shoo_a"] = P(shoo, hR=V(0.3, -0.06, 0.5), broom=V(0.5, 0.0, 1.2), lean=-0.1)
+        k["shoo_b"] = P(shoo, hR=V(0.36, -0.04, 0.34), broom=V(0.95, 0.0, -0.3), lean=0.2)
+        return k
+    if w == "keeper":
+        # the saloon keeper: a towel over his arm; bent over a table setting it right
+        k = _key_poses("unarmed")
+        k["aim"] = P(k["aim"], eL=V(0.08, 0.26, 0.28), hL=V(0.22, 0.1, 0.3), eR=V(0.08, -0.26, 0.28),
+                     hR=V(0.22, -0.08, 0.32), towel=True)
+        base = dict(eL=V(0.24, 0.22, 0.26), eR=V(0.24, -0.22, 0.26), lean=0.38, nod=0.3, towel=True)
+        k["tidy_a"] = P(base, hL=V(0.48, 0.14, 0.1), hR=V(0.5, -0.1, 0.14))
+        k["tidy_b"] = P(base, hL=V(0.44, 0.2, 0.06), hR=V(0.54, -0.02, 0.1))
         return k
     if w == "mayor":
         # the mayor: thumbs in his waistcoat; on his soapbox, arms wide, a hand raised
@@ -937,12 +993,19 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
     elif w == "prayer":
         add("bless", [k["bless_a"], k["bless_b"], k["bless_c"], k["bless_d"]], 2.5, True)
+    elif w == "carpentry":
+        add("hammer", [k["hammer_a"], k["hammer_a"], lerp_pose(k["hammer_a"], k["hammer_b"], 0.6), k["hammer_b"]], 6, True)
+    elif w == "broom":
+        add("sweep", [k["sweep_a"], k["sweep_m"], k["sweep_b"], k["sweep_m"]], 3.5, True)
+        add("shoo", [k["shoo_a"], lerp_pose(k["shoo_a"], k["shoo_b"], 0.5), k["shoo_b"], k["shoo_b"]], 4, True)
+    elif w == "keeper":
+        add("tidy", [k["tidy_a"], k["tidy_a"], k["tidy_b"], k["tidy_b"]], 2, True)
     elif w == "mayor":
         a_, b_, c_ = k["orate_a"], k["orate_b"], k["orate_c"]
         add("orate", [a_, a_, lerp_pose(a_, c_, 0.5), c_, c_, lerp_pose(c_, b_, 0.5), b_, b_, lerp_pose(b_, a_, 0.5)],
@@ -1008,7 +1071,7 @@ def upper_anims(w):
         add("reload_close", [k["break_half"], k["aim"]], 6)
     add("point", [k["point_half"], k["point"], k["point"]], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper"):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
                         lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         # 7 fps: it leaves his hand on frame 4, Enemy.WINDUP (0.57 s) after lighting

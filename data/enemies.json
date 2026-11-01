@@ -24,7 +24,10 @@
     "gunsmith":        {"style": "shirt",  "hat": "bowler",   "apron": true, "spectacles": true, "mustache": true, "holsters": 0},
     "widow":           {"style": "dress",  "hat": "rebozo",   "female": true, "sleeves": true},
     "priest":          {"style": "duster", "hat": "flat",     "collar": true, "holsters": 0},
-    "mayor":           {"style": "suit",   "hat": "top",      "mustache": true, "chain": true, "holsters": 0}
+    "mayor":           {"style": "suit",   "hat": "top",      "mustache": true, "chain": true, "holsters": 0},
+    "carpenter":       {"style": "shirt",  "hat": "slouch",   "apron": true, "beard": true, "holsters": 0},
+    "barkeep":         {"style": "vest",   "hat": "slick",    "mustache": true, "apron": true, "holsters": 0},
+    "henwife":         {"style": "dress",  "hat": "rebozo",   "female": true, "apron": true}
   },
 
   "player": {
@@ -278,6 +281,28 @@
                    "work": ["Who's going to pay for this?", "That was a perfectly good crate.", "The council will hear of this.", "¡Qué desastre!", "More taxes...", "Tsk. Tsk."]},
         "palettes": [
           {"coat": [148, 142, 136], "vest": [118, 32, 40], "shirt": [226, 222, 212], "trousers": [86, 84, 90], "boots": [30, 26, 26], "hat": [58, 54, 58], "band": [28, 26, 28], "accent": [30, 30, 34], "skin": [214, 164, 130], "hair": [168, 162, 156]}]},
+      "carpenter": {"name": "Carpenter", "template": "carpenter", "role": "carpenter", "snitch": 0.0, "wander": 20,
+        "speed": 0.9, "nerve": [0.3, 0.8],
+        "shouts": {"flee": ["Not my good saw!", "¡Ay, mi madre!"], "work": ["Good as new.", "Hm. Needs a nail.", "Who keeps doing this?", "Measure twice..."]},
+        "palettes": [
+          {"shirt": [196, 176, 140], "trousers": [96, 82, 64], "accent": [146, 116, 80], "boots": [64, 46, 32], "hat": [110, 92, 70], "band": [70, 58, 46], "skin": [196, 146, 110], "hair": [120, 86, 54]}]},
+      "sweeper": {"name": "Sweeper", "template": "peon", "role": "sweeper", "snitch": 0.0, "wander": 30, "speed": 0.9,
+        "nerve": [0.1, 0.6],
+        "shouts": {"flee": ["¡Ay, no, otra vez!", "¡Corran!"], "work": ["Tanta sangre...", "Ay, Dios.", "¡Qué cochinada!", "..."]},
+        "palettes": [
+          {"shirt": [226, 220, 204], "trousers": [220, 214, 196], "boots": [110, 80, 54], "hat": [196, 168, 110], "band": [120, 50, 34], "skin": [168, 110, 76], "hair": [40, 30, 24]},
+          {"shirt": [200, 186, 160], "trousers": [150, 130, 104], "boots": [90, 66, 46], "hat": [170, 140, 92], "band": [60, 70, 110], "skin": [150, 98, 66], "hair": [30, 24, 20]}]},
+      "keeper": {"name": "Saloon keeper", "template": "barkeep", "role": "keeper", "snitch": 0.0, "wander": 15, "speed": 0.95,
+        "nerve": [0.3, 0.8],
+        "shouts": {"flee": ["Not in my saloon!", "Mind the mirror!"], "work": ["Who's paying for this?", "On the house... not.", "There.", "Good whisky, wasted."]},
+        "palettes": [
+          {"vest": [70, 40, 40], "shirt": [232, 228, 218], "trousers": [50, 48, 54], "accent": [226, 222, 210], "boots": [30, 26, 26], "skin": [210, 160, 124], "hair": [36, 28, 24]}]},
+      "henwife": {"name": "Hen woman", "template": "henwife", "role": "henwife", "snitch": 0.0, "wander": 20, "speed": 0.95,
+        "nerve": [0.2, 0.7],
+        "shouts": {"flee": ["¡Mis gallinas!", "¡Ay, Dios!"], "work": ["¡Fuera, fuera!", "¡Pollos tontos!", "Back in, you silly birds!", "Shoo! Shoo!"]},
+        "palettes": [
+          {"dress": [120, 70, 50], "accent": [214, 206, 186], "hat": [70, 90, 110], "boots": [50, 36, 28], "skin": [170, 112, 80], "hair": [40, 30, 26]},
+          {"dress": [70, 96, 80], "accent": [220, 210, 190], "hat": [140, 60, 44], "boots": [50, 36, 28], "skin": [190, 130, 96], "hair": [60, 44, 34]}]},
       "saloon_girl": {"name": "Saloon girl", "template": "dress", "nerve": [0.3, 0.9], "snitch": 0.3,
         "shouts": {"flee": ["Oh!", "¡Ay, no!", "Not in here!"], "snitch": ["Boys! There's a stranger in town!"]},
         "palettes_from": "saloon_girl"}

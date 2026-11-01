@@ -1305,6 +1305,46 @@
    ]
   },
   {
+   "kind": "carpenter",
+   "x": 23.0,
+   "y": 22.4,
+   "facing": 90
+  },
+  {
+   "kind": "keeper",
+   "x": 5.6,
+   "y": 29.4,
+   "facing": 60
+  },
+  {
+   "kind": "sweeper",
+   "x": 17.6,
+   "y": 31.0,
+   "facing": 30,
+   "palette": 0
+  },
+  {
+   "kind": "sweeper",
+   "x": 45.8,
+   "y": 31.2,
+   "facing": 200,
+   "palette": 1
+  },
+  {
+   "kind": "henwife",
+   "x": 6.8,
+   "y": 41.6,
+   "facing": 300,
+   "palette": 0
+  },
+  {
+   "kind": "henwife",
+   "x": 51.2,
+   "y": 41.6,
+   "facing": 250,
+   "palette": 1
+  },
+  {
    "kind": "priest",
    "x": 31.2,
    "y": 9.0,

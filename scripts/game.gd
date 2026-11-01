@@ -435,9 +435,10 @@ func _place_object(type: String, g: Vector2) -> void:
 		var item := _add_fragile(type, Iso.to_screen(g + fp * 0.5), spr, m["states"].size(), FRAGILE_R[type])
 		item["g"] = g
 		item["hens"] = HENS_IN.get(type, 0)
+		item["look0"] = [spr.texture, spr.offset]   # as it was, for whoever puts it right
 	elif m.has("states"):
 		prop = {"kind": type, "sprite": spr, "g": g, "fp": fp, "hp": PROP_HP[type], "state": 0,
-			"cells": [], "covers": [], "body": null}
+			"cells": [], "covers": [], "body": null, "look0": [spr.texture, spr.offset]}
 		props.append(prop)
 	if collide != "none":
 		var body := StaticBody2D.new()
@@ -1794,20 +1795,24 @@ func _overlay(m: Dictionary, o: Dictionary, building: Sprite2D) -> Sprite2D:
 func _add_fragile(kind: String, at: Vector2, spr: Sprite2D, last: int, radius: float) -> Dictionary:
 	var item := {"kind": kind, "at": at, "state": 0, "last": last, "sprite": spr, "body": null}
 	if radius > 0.0:
-		var body := StaticBody2D.new()
-		body.collision_layer = Iso.LAYER_FRAGILE
-		body.collision_mask = 0
-		body.position = at
-		var cs := CollisionShape2D.new()
-		var c := CircleShape2D.new()
-		c.radius = radius
-		cs.shape = c
-		body.add_child(cs)
-		body.set_meta("fragile", item)
-		statics.add_child(body)
-		item["body"] = body
+		_fragile_body(item, radius)
 	fragile.append(item)
 	return item
+
+
+func _fragile_body(item: Dictionary, radius: float) -> void:
+	var body := StaticBody2D.new()
+	body.collision_layer = Iso.LAYER_FRAGILE
+	body.collision_mask = 0
+	body.position = item["at"]
+	var cs := CollisionShape2D.new()
+	var c := CircleShape2D.new()
+	c.radius = radius
+	cs.shape = c
+	body.add_child(cs)
+	body.set_meta("fragile", item)
+	statics.add_child(body)
+	item["body"] = body
 
 
 ## A round strikes a wall: if that's a pane of glass at the height it flew (and
@@ -1890,8 +1895,8 @@ func hit_fragile(item: Dictionary, at: Vector2, height := -1.0) -> void:
 ## A hen near `at` (her own dice: the town's stay as seeded).
 func _add_hen(at: Vector2, spread: float) -> Chicken:
 	var p := at
-	for i in 8:
-		var q := at + Vector2.from_angle(Chicken.rng.randf() * TAU) * Chicken.rng.randf_range(4.0, spread)
+	for i in 24:   # (wider and wider: a crate on a porch has the boards round it)
+		var q := at + Vector2.from_angle(Chicken.rng.randf() * TAU) * Chicken.rng.randf_range(4.0, spread + i * 3.0)
 		if is_free(q):
 			p = q
 			break
@@ -1950,6 +1955,190 @@ func trail_lead(e: Enemy, newer: float) -> Dictionary:
 		if on_it and dist < TRAIL_CLOSE and line_of_sight(e.global_position, d["at"], true):
 			return d
 	return {}
+
+
+# ------------------------------------------------------------------ the town tidies up
+
+const WOOD := ["crate", "barrel", "coffin", "trough", "wagon", "chair", "table", "coop", "hencrate"]
+const KEEPS := 160.0   # px round the saloon keeper's door: his tables and chairs, not the carpenter's
+const SWEEP_R := 26.0  # px a sweeper's broom clears at a go
+const STRAY := 80.0    # px from the nearest coop: a hen this far off wants shooing home
+var sweeping := {}     # sweeper -> the spot he's sweeping
+
+
+## Something broken for this man to put right, now his: the saloon keeper's own
+## tables and chairs for him; anything wooden for the carpenter, the ones the mayor
+## has tutted over first (like the undertaker and the padre's blessed), then the
+## nearest.
+func repair_job(by: Civilian) -> Dictionary:
+	var keepers: Array = civilians.filter(func(c): return c.keeper and c.alive)
+	var best: Dictionary = {}
+	var best_d := INF
+	for item in props + fragile:
+		if item["state"] == 0 or not item["kind"] in WOOD:
+			continue
+		var f = item.get("fixer")
+		if f != null and f != by and is_instance_valid(f) and f.alive and not f.gone():
+			continue
+		var at: Vector2 = item["at"] if item.has("at") else prop_centre(item)
+		var his: bool = keepers.any(func(k): return k.home.distance_to(at) < KEEPS) and item["kind"] in ["table", "chair"]
+		if by.keeper != his or (by.keeper and by.home.distance_to(at) >= KEEPS):
+			continue
+		var d := by.global_position.distance_to(at)
+		if not by.keeper and scars.any(func(s): return s["prop"] == item and s["seen"]):
+			d -= 100000.0   # on the mayor's list
+		if d < best_d:
+			best_d = d
+			best = item
+	if not best.is_empty():
+		best["fixer"] = by
+	return best
+
+
+func job_at(item: Dictionary) -> Vector2:
+	return item["at"] if item.has("at") else prop_centre(item)
+
+
+## Somebody standing where it'll be put back: wait.
+func in_the_way(item: Dictionary, by: Civilian) -> bool:
+	if not item.has("hp"):
+		return false   # nothing anyone could be stuck in
+	var at := job_at(item)
+	var all: Array = [player]
+	all.append_array(enemies)
+	all.append_array(civilians)
+	return all.any(func(a): return a != by and a.alive and a.visible and a.global_position.distance_to(at) < 18.0)
+
+
+## Good as new: its old look back, and (a wreck) solid again, cover again.
+func repair(item: Dictionary) -> void:
+	var was: int = item["state"]
+	var spr: Sprite2D = item["sprite"]
+	spr.texture = item["look0"][0]
+	spr.offset = item["look0"][1]
+	spr.z_index = 0
+	item["state"] = 0
+	item["fixer"] = null
+	if item.has("hp"):
+		item["hp"] = PROP_HP[item["kind"]]
+		if was >= 2:
+			_rebuild(item)
+	elif item["body"] == null:
+		_fragile_body(item, FRAGILE_R[item["kind"]])
+	scars = scars.filter(func(s): return s["prop"] != item)
+	stats["repaired"] = stats.get("repaired", 0) + 1
+
+
+func _rebuild(prop: Dictionary) -> void:
+	var m: Dictionary = meta["objects"][prop["kind"]]
+	var g: Vector2 = prop["g"]
+	var body := StaticBody2D.new()
+	body.collision_layer = Iso.LAYER_COVER
+	body.collision_mask = 0
+	prop["cells"] = []
+	for r in m["colliders"]:
+		var poly := CollisionPolygon2D.new()
+		poly.polygon = Iso.rect_poly(g.x + r[0], g.y + r[1], g.x + r[2], g.y + r[3])
+		body.add_child(poly)
+		prop["cells"].append_array(_block_cells(g.x + r[0], g.y + r[1], g.x + r[2], g.y + r[3], 0.22))
+	for p in prop["covers"]:
+		var c := _cell(p)
+		if not astar.is_point_solid(c) and not p in cover_points:
+			cover_points.append(p)
+	body.set_meta("prop", prop)
+	statics.add_child(body)
+	prop["body"] = body
+
+
+## The nearest mess for a sweeper (blood, glass, scorch, spilt water), not under a
+## body still lying there and not where the other sweeper's at; or INF.
+func dirt_job(by: Civilian) -> Vector2:
+	var lying: Array = []
+	var all: Array = []
+	all.append_array(enemies)
+	all.append_array(civilians)
+	for a in all:
+		if not a.alive and not a.has_meta("buried") and a.visible:
+			lying.append(a.global_position)
+	var others: Array = []
+	for s in sweeping:
+		if s != by and is_instance_valid(s) and s.alive:
+			others.append(sweeping[s])
+	var best := Vector2.INF
+	var best_d := INF
+	var spots: Array = decals.splats.map(func(s): return s[0])
+	for c in decals.get_children():
+		spots.append(c.position)
+	for p in spots:
+		var d: float = by.global_position.distance_to(p)
+		if d >= best_d:
+			continue
+		if lying.any(func(b): return b.distance_to(p) < 24.0) or others.any(func(o): return o.distance_to(p) < 60.0):
+			continue
+		best_d = d
+		best = p
+	if best != Vector2.INF:
+		sweeping[by] = best
+	return best
+
+
+## Swept into the dirt: every mark within a broom's reach, and the blood trail too.
+func sweep_at(at: Vector2, by: Civilian) -> void:
+	var n: int = decals.splats.size()
+	decals.splats = decals.splats.filter(func(s): return s[0].distance_to(at) > SWEEP_R)
+	for c in decals.get_children():
+		if c.position.distance_to(at) < SWEEP_R:
+			c.queue_free()
+			n += 1
+	trails = trails.filter(func(d): return d["at"].distance_to(at) > SWEEP_R)
+	decals.queue_redraw()
+	sweeping.erase(by)
+	stats["swept"] = stats.get("swept", 0) + n - decals.splats.size()
+
+
+## A hen astray (well away from any coop), for a hen woman to shoo home; now hers.
+func stray_hen(by: Civilian) -> Chicken:
+	var best: Chicken = null
+	var best_d := INF
+	for h in hens:
+		if h.herder != null and h.herder != by and is_instance_valid(h.herder) and h.herder.alive and not h.herder.gone():
+			continue
+		var coop := coop_for(h.position)
+		if coop.is_empty() or h.position.distance_to(coop["at"]) < STRAY:
+			continue
+		var d := by.global_position.distance_to(h.position)
+		if d < best_d:
+			best_d = d
+			best = h
+	if best:
+		best.herder = by
+	return best
+
+
+## The coop a hen there belongs back in: the nearest one standing, or any.
+func coop_for(at: Vector2) -> Dictionary:
+	var best: Dictionary = {}
+	for item in fragile:
+		if item["kind"] != "coop":
+			continue
+		if best.is_empty() or (item["state"] == 0 and best["state"] != 0) \
+				or (item["state"] == best["state"] and at.distance_to(item["at"]) < at.distance_to(best["at"])):
+			best = item
+	return best
+
+
+## Shooed all the way home: in through the hatch, or (no room, or the coop's in
+## pieces) she pecks about outside it.
+func hen_home(h: Chicken, coop: Dictionary) -> void:
+	h.herder = null
+	if coop["state"] == 0 and coop["hens"] < HENS_IN["coop"]:
+		coop["hens"] += 1
+		hens.erase(h)
+		h.queue_free()
+		stats["hens cooped"] = stats.get("hens cooped", 0) + 1
+	else:
+		h.home = coop["at"]   # she pecks about it from now on
+		stats["hens home"] = stats.get("hens home", 0) + 1
 
 
 ## Fresh damage (or worse damage to a wreck he's already seen) for the mayor.

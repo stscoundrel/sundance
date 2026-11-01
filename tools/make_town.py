@@ -155,6 +155,13 @@ CIVILIANS = [
     {"kind": "townswoman", "x": 38.0, "y": 15.2, "facing": 180, "couple": 2},
     # the mayor on the bank's porch; when the shooting starts he takes to the plaza
     {"kind": "mayor", "x": 37.6, "y": 29.4, "facing": 120, "stump": [32.6, 34.4]},
+    # the town's odd-job folk, who put things right once it's quiet
+    {"kind": "carpenter", "x": 23.0, "y": 22.4, "facing": 90},
+    {"kind": "keeper", "x": 5.6, "y": 29.4, "facing": 60},
+    {"kind": "sweeper", "x": 17.6, "y": 31.0, "facing": 30, "palette": 0},
+    {"kind": "sweeper", "x": 45.8, "y": 31.2, "facing": 200, "palette": 1},
+    {"kind": "henwife", "x": 6.8, "y": 41.6, "facing": 300, "palette": 0},
+    {"kind": "henwife", "x": 51.2, "y": 41.6, "facing": 250, "palette": 1},
     # the padre at the church door
     {"kind": "priest", "x": 31.2, "y": 9.0, "facing": 0},
     # the undertaker at his door, his apprentice up on boot hill

@@ -927,6 +927,14 @@ def gen_sfx(meta):
         rip = bandpass(trng.normal(0, 1, n), 900, 6000) * (0.5 + 0.5 * (trng.random(n) < 0.35))
         parts.append((st, rip * np.sin(np.linspace(0, np.pi, n)) ** 0.6))
     write("tear", room(place(0.5, parts), trng, 0.04, 0.2), meta, 0.6, 1.3)
+    # The town's odd-job men. A hammer driving a nail home: three sharp knocks.
+    wrng = np.random.default_rng(95)
+    parts = [(st, knock(wrng, 1800, 0.008, 0.05) * 1.4 + tink(wrng, 2600, 0.01, 0.4, 0.05)) for st in (0.0, 0.22, 0.4)]
+    write("hammer", room(place(0.6, parts), wrng, 0.05, 0.3), meta, 0.6, 1.3)
+    # A broom across the dirt: a soft, dry swish.
+    n = int(SR * 0.45)
+    sw = bandpass(wrng.normal(0, 1, n), 1500, 7000) * np.sin(np.linspace(0, np.pi, n)) ** 1.5
+    write("sweep", sw, meta, 0.35, 1.0)
 
 
 def main():
