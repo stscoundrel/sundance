@@ -1178,6 +1178,276 @@ def cantina():
     return m
 
 
+# ---------------------------------------------------------------- Cruz Verde
+
+# A revolutionary garrison's walled town: a thick adobe perimeter with gates and
+# breaches, a chapel with a bell wall, barracks, the general's house; a village of
+# jacales outside, and a great cemetery beside it.
+FORT_ADOBE = (206, 172, 128)
+
+
+def fort_wall(L, along_x=True, seed=51, height=3.4):
+    """A length of the fort's wall, `L` tiles along x (or y) and a tile thick:
+    crenellated, with drain spouts, too tall to see over."""
+    W, D = (L * T, T) if along_x else (T, L * T)
+    wall = adobe(FORT_ADOBE, seed)
+    m = box((0, 0, 0), (W, D, height), wall, BSP, skip=("-z",))
+    run = W if along_x else D
+    for i in range(int(run / 0.9)):
+        a = i * 0.9 + 0.2
+        lo, hi = (a, 0.0), (a + 0.5, D)
+        if not along_x:
+            lo, hi = (0.0, a), (W, a + 0.5)
+        m += box((lo[0], lo[1], height), (hi[0], hi[1], height + 0.45), wall, 0.03, skip=("-z",))
+    for i in range(1, int(run / 2.5)):   # canales: wooden spouts out through the parapet
+        a = i * 2.5
+        if along_x:
+            m += beam((a, D - 0.1, height - 0.2), (a, D + 0.35, height - 0.25), 0.06, (110, 78, 50))
+        else:
+            m += beam((W - 0.1, a, height - 0.2), (W + 0.35, a, height - 0.25), 0.06, (110, 78, 50))
+    return m
+
+
+def fort_gate(along_x=True):
+    """A gateway: two thick piers and the beam across them, the great doors swung
+    wide back against the wall."""
+    W, D = (5 * T, T) if along_x else (T, 5 * T)
+    wall = adobe(FORT_ADOBE, 53)
+    m = Cloud()
+    pier = 1.0 * T
+    span = 5 * T
+    for a in (0.0, span - pier):
+        lo, hi = ((a, 0, 0), (a + pier, D, 4.2)) if along_x else ((0, a, 0), (W, a + pier, 4.2))
+        m += box(lo, hi, wall, BSP, skip=("-z",))
+    wood = planks((110, 76, 50), board=0.22, vertical=True, seed=5)
+    if along_x:
+        m += box((pier, 0.1, 3.4), (span - pier, D - 0.1, 3.75), solid((100, 70, 46)), 0.03)
+        for x0, x1 in ((pier, pier + 0.12), (span - pier - 0.12, span - pier)):   # the doors, folded back
+            m += box((x0, D, 0.0), (x1, D + 1.4, 3.2), wood, 0.03)
+    else:
+        m += box((0.1, pier, 3.4), (W - 0.1, span - pier, 3.75), solid((100, 70, 46)), 0.03)
+        for y0, y1 in ((pier, pier + 0.12), (span - pier - 0.12, span - pier)):
+            m += box((W, y0, 0.0), (W + 1.4, y1, 3.2), wood, 0.03)
+    return m
+
+
+def bastion():
+    """A squat corner tower, taller than the walls, a dark loophole on each face."""
+    W = 2 * T
+    wall = adobe(tuple(c * 0.96 for c in FORT_ADOBE), 57)
+    ops = [dict(face="+x", u=(W / 2 - 0.12, W / 2 + 0.12), z=(2.6, 3.3), kind="dark"),
+           dict(face="+y", u=(W / 2 - 0.12, W / 2 + 0.12), z=(2.6, 3.3), kind="dark")]
+    fn = decorate(wall, W, W, ops)
+    m = box((0, 0, 0), (W, W, 4.6), fn, BSP, skip=("-z",))
+    for i in range(4):
+        a = i * 0.65 + 0.12
+        for lo, hi in (((a, 0), (a + 0.4, 0.3)), ((a, W - 0.3), (a + 0.4, W)), ((0, a), (0.3, a + 0.4)),
+                       ((W - 0.3, a), (W, a + 0.4))):
+            m += box((lo[0], lo[1], 4.6), (hi[0], hi[1], 5.05), wall, 0.03, skip=("-z",))
+    return m
+
+
+def rubble():
+    """Where the wall's been knocked through: a heap of broken adobe blocks."""
+    rng = np.random.default_rng(61)
+    m = Cloud()
+    wall = adobe(FORT_ADOBE, 63)
+    for i in range(34):
+        x, y = rng.uniform(0.0, 1.7), rng.uniform(0.0, 0.95)
+        z = rng.uniform(0.0, 0.75) * max(0.0, 1.0 - abs(x - 0.9) / 1.0) * max(0.0, 1.0 - abs(y - 0.5) / 0.7)
+        w, d, h = rng.uniform(0.25, 0.5), rng.uniform(0.2, 0.4), rng.uniform(0.15, 0.3)
+        m += box((x, y, z), (x + w, y + d, z + h), wall, 0.03)
+    return m
+
+
+def chapel():
+    """A whitewashed chapel, its bell wall (espadaña) over the door with two bells."""
+    W, D, Hh = 5 * T, 6 * T, 4.2
+    white = adobe((226, 214, 190), 71)
+    ops = [dict(face="+y", u=(W / 2 - 0.6, W / 2 + 0.6), z=(0, 2.6), kind="arch", color=(84, 54, 36)),
+           dict(face="+x", u=(2.0, 2.5), z=(2.2, 3.3), kind="arch", color=(30, 24, 22)),
+           dict(face="+x", u=(5.0, 5.5), z=(2.2, 3.3), kind="arch", color=(30, 24, 22))]
+    fn = decorate(white, W, D, ops)
+    m = box((0, 0, 0), (W, D, Hh), fn, BSP, skip=("-z",))
+    # the espadana: a wall rising over the front, two openings with their bells
+    y0, y1 = D - 0.35, D
+    def bellwall(P, N):
+        c = white(P, N)
+        for cx, cz in ((W / 2 - 0.7, Hh + 1.2), (W / 2 + 0.7, Hh + 1.2)):
+            hole = (np.abs(P[:, 0] - cx) < 0.32) & (P[:, 2] > cz - 0.45) & \
+                   ((P[:, 2] < cz + 0.1) | (np.hypot(P[:, 0] - cx, P[:, 2] - cz - 0.1) < 0.32))
+            c[hole] = (40, 32, 28)
+        return c
+    m += box((W / 2 - 1.5, y0, Hh), (W / 2 + 1.5, y1, Hh + 1.9), bellwall, BSP)
+    m += box((W / 2 - 0.4, y0, Hh + 1.9), (W / 2 + 0.4, y1, Hh + 2.4), white, BSP)
+    for cx in (W / 2 - 0.7, W / 2 + 0.7):
+        m += ellipsoid((cx, (y0 + y1) / 2, Hh + 1.05), (0.22, 0.22, 0.26), (150, 112, 52), zmin=Hh + 0.85)
+    m += box((W / 2 - 0.04, y1 - 0.25, Hh + 2.4), (W / 2 + 0.04, y1 - 0.12, Hh + 3.0), solid((70, 52, 38)), 0.02)
+    m += box((W / 2 - 0.22, y1 - 0.25, Hh + 2.75), (W / 2 + 0.22, y1 - 0.12, Hh + 2.84), solid((70, 52, 38)), 0.02)
+    return m
+
+
+def barracks():
+    """The garrison's quarters: a long low adobe with a portal of rough posts along
+    the front, CUARTEL painted over the doors."""
+    W, D, Hh = 10 * T, 4 * T, 3.2
+    wall = adobe((196, 160, 118), 73)
+    ops = [dict(face="+y", u=(x - 0.5, x + 0.5), z=(0, 2.2), kind="arch", color=(70, 46, 32)) for x in (2.5, 6.25, 10.0)]
+    ops += [dict(face="+y", u=(x - 0.35, x + 0.35), z=(1.2, 1.9), kind="dark") for x in (4.4, 8.1)]
+
+    ops += [dict(face="+x", u=(D / 2 - 0.35, D / 2 + 0.35), z=(1.2, 1.9), kind="dark")]
+    fn = decorate(wall, W, D, ops)
+    m = box((0, 0, 0), (W, D, Hh), fn, BSP, skip=("-z", "+z"))
+    m += box((0, 0, Hh), (W, D, Hh + 0.01), adobe((170, 136, 100), 74), BSP, skip=("-z", "-x", "-y", "+x", "+y"))
+    for (a, b) in (((0, 0), (W, 0.2)), ((0, D - 0.2), (W, D)), ((0, 0), (0.2, D)), ((W - 0.2, 0), (W, D))):
+        m += box((a[0], a[1], Hh), (b[0], b[1], Hh + 0.35), wall, 0.03, skip=("-z",))
+    # a raised parapet over the middle, CUARTEL painted on it above the portal's shade
+    front = decorate(wall, W, D, [dict(face="+y", u=(W / 2 - 3.0, W / 2 + 3.0), z=(Hh + 0.05, Hh + 0.85), kind="sign",
+                                       text="CUARTEL", color=(190, 158, 116), ink=(120, 40, 30), frame=(190, 158, 116))])
+    m += box((W / 2 - 3.2, D - 0.25, Hh), (W / 2 + 3.2, D, Hh + 0.95), front, BSP, skip=("-z",))
+    # the portal: posts, a beam, a shade of poles and brush
+    for x in np.linspace(0.2, W - 0.35, 6):
+        m += box((x, D + 1.0, 0), (x + 0.15, D + 1.15, 2.7), solid((112, 80, 54)), 0.02)
+    m += box((0, D + 1.0, 2.7), (W, D + 1.15, 2.85), solid((100, 72, 48)), 0.03)
+    m += quad((0, D, 2.95), (W, 0, 0), (0, 1.25, -0.15), roofing((150, 120, 80), along_y=False, row=0.12), BSP)
+    return m
+
+
+def casa_grande():
+    """The general's house: two storeys of ochre adobe, a wooden balcony over the
+    great door, barred windows."""
+    W, D, Hh = 8 * T, 6 * T, 6.0
+    wall = adobe((200, 150, 98), 77)
+    ops = [dict(face="+y", u=(W / 2 - 0.8, W / 2 + 0.8), z=(0, 2.8), kind="arch", color=(78, 44, 28))]
+    for z0 in (1.0, 3.9):
+        for x in (1.6, W - 1.6) + ((W / 2,) if z0 > 2 else ()):
+            ops.append(dict(face="+y", u=(x - 0.45, x + 0.45), z=(z0, z0 + 1.3), kind="barred"))
+        for y in (2.0, D - 2.0):
+            ops.append(dict(face="+x", u=(y - 0.45, y + 0.45), z=(z0, z0 + 1.3), kind="barred"))
+    fn = decorate(wall, W, D, ops)
+    m = box((0, 0, 0), (W, D, Hh), fn, BSP, skip=("-z", "+z"))
+    m += box((0, 0, Hh), (W, D, Hh + 0.01), adobe((176, 128, 84), 78), BSP, skip=("-z", "-x", "-y", "+x", "+y"))
+    for (a, b) in (((0, 0), (W, 0.25)), ((0, D - 0.25), (W, D)), ((0, 0), (0.25, D)), ((W - 0.25, 0), (W, D))):
+        m += box((a[0], a[1], Hh), (b[0], b[1], Hh + 0.5), wall, 0.03, skip=("-z",))
+    # the balcony
+    x0, x1 = W / 2 - 1.6, W / 2 + 1.6
+    m += box((x0, D, 3.6), (x1, D + 1.0, 3.75), solid((104, 70, 44)), 0.03)
+    for x in np.linspace(x0, x1, 12):
+        m += beam((x, D + 0.95, 3.75), (x, D + 0.95, 4.6), 0.02, (80, 54, 34))
+    m += box((x0, D + 0.9, 4.6), (x1, D + 1.0, 4.68), solid((90, 60, 38)), 0.02)
+    for x in (x0 + 0.2, x1 - 0.2):
+        m += beam((x, D, 3.2), (x, D + 0.9, 3.6), 0.05, (90, 60, 38))   # corbels
+    return m
+
+
+def jacal(seed=81):
+    """A villager's hut: daubed wattle walls under a steep thatch, a blanket for a door."""
+    W, D, Hh = 3 * T, 3 * T, 2.3
+    rng = np.random.default_rng(seed)
+    mud = adobe((176, 140, 102), seed)
+    ops = [dict(face="+y", u=(W / 2 - 0.45, W / 2 + 0.45), z=(0, 1.8), kind="door", color=(150, 50, 40)),
+           dict(face="+x", u=(D / 2 - 0.3, D / 2 + 0.3), z=(1.0, 1.5), kind="dark")]
+    fn = decorate(mud, W, D, ops)
+    m = box((0, 0, 0), (W, D, Hh), fn, BSP, skip=("-z", "+z"))
+    def thatch(P, N):
+        c = np.tile([176.0, 150, 98], (len(P), 1)) * (0.8 + 0.3 * hash01(np.floor(P[:, 0] * 20 + P[:, 1] * 3)))[:, None]
+        return c
+    o = 0.35
+    apex = (W / 2, D / 2, Hh + 1.6)
+    for a, b in (((-o, -o), (W + o, -o)), ((W + o, -o), (W + o, D + o)), ((W + o, D + o), (-o, D + o)),
+                 ((-o, D + o), (-o, -o))):
+        m += tri((a[0], a[1], Hh - 0.15), (b[0], b[1], Hh - 0.15), apex, thatch)
+    if rng.random() < 0.6:   # a bench by the door
+        m += box((W - 1.1, D + 0.1, 0.0), (W - 0.2, D + 0.4, 0.45), solid((120, 90, 60)), 0.02)
+    return m
+
+
+def well():
+    """The plaza well: a stone ring, a timber frame, a rope and bucket."""
+    stone = lambda P, N: np.tile([150.0, 140, 124], (len(P), 1)) * (0.8 + 0.3 * hash01(np.floor(P[:, 2] * 8),
+                                  np.floor(np.arctan2(P[:, 1] - 0.75, P[:, 0] - 0.75) * 4)))[:, None]
+    m = frustum((0.75, 0.75, 0), (0.75, 0.75, 0.8), 0.7, 0.66, stone)
+    m += ellipsoid((0.75, 0.75, 0.79), (0.55, 0.55, 0.02), (20, 24, 28))
+    for x in (0.12, 1.38):
+        m += box((x - 0.06, 0.69, 0.6), (x + 0.06, 0.81, 2.1), solid((104, 74, 50)), 0.02)
+    m += beam((0.06, 0.75, 2.0), (1.44, 0.75, 2.0), 0.06, (96, 68, 46))
+    m += beam((0.75, 0.75, 2.0), (0.75, 0.75, 1.35), 0.01, (190, 176, 140))
+    m += frustum((0.75, 0.75, 1.1), (0.75, 0.75, 1.35), 0.12, 0.14, solid((110, 80, 54)))
+    return m
+
+
+def sandbags(along_x=True):
+    """A breastwork of sandbags, three courses high: good low cover."""
+    m = Cloud()
+    L = 2.0 * T
+    for row in range(3):
+        n = 5 - (row == 2)
+        for i in range(n):
+            a = (i + 0.5 + 0.5 * (row % 2)) * (L / 5.2)
+            c = (a, 0.36, 0.13 + row * 0.22) if along_x else (0.36, a, 0.13 + row * 0.22)
+            r = (0.27, 0.2, 0.12) if along_x else (0.2, 0.27, 0.12)
+            m += ellipsoid(c, r, solid((172 - row * 6, 150 - row * 6, 104)))
+    return m
+
+
+def cannon():
+    """An old bronze field gun on its wooden carriage: a relic, but good cover."""
+    m = Cloud()
+    wood = solid((100, 70, 46))
+    m += box((0.3, 0.32, 0.45), (2.2, 0.88, 0.62), wood, 0.03)
+    m += box((2.0, 0.42, 0.0), (2.4, 0.78, 0.5), wood, 0.03)   # the trail on the ground
+    m += wheel((0.9, 0.2, 0.62), 0.6, axis="y")
+    m += wheel((0.9, 1.0, 0.62), 0.6, axis="y")
+    m += frustum((0.0, 0.6, 0.85), (1.9, 0.6, 0.78), 0.12, 0.19, solid((150, 110, 50)))
+    m += ellipsoid((1.95, 0.6, 0.78), (0.14, 0.19, 0.19), (150, 110, 50))
+    return m
+
+
+def flagpole():
+    """The garrison's flag, the tricolour, on a tall pole."""
+    m = box((0.1, 0.1, 0), (0.2, 0.2, 7.0), solid((90, 70, 52)), 0.02)
+    for i, col in enumerate(((40, 120, 70), (232, 226, 210), (190, 40, 36))):
+        m += quad((0.2 + i * 0.5, 0.15, 6.0), (0.5, 0.05 * (i + 1), 0.0), (0, 0, 0.9), col, normal=(0, 1, 0))
+    return m
+
+
+def headstone(seed=0):
+    """A stone at a grave's head, worn and leaning a little: low cover."""
+    rng = np.random.default_rng(91 + seed)
+    stone = lambda P, N: np.tile([150.0, 144, 132], (len(P), 1)) * (0.8 + 0.25 * hash01(np.floor(P[:, 2] * 10), seed))[:, None]
+    m = box((0.05, 0.05, 0), (0.55, 0.22, 0.55), stone, 0.02)
+    m += ellipsoid((0.3, 0.135, 0.55), (0.25, 0.085, 0.14), stone, zmin=0.55)
+    m.transform(rot_x(rng.uniform(-0.12, 0.12)), pivot=(0.3, 0.13, 0))
+    return m
+
+
+def stone_circle():
+    """The cemetery's heart: a ring of flat paving stones round bare ground, the
+    crosses all about it."""
+    rng = np.random.default_rng(97)
+    m = Cloud()
+    c = 3.0 * T
+    for k in range(64):
+        a = k / 64 * 2 * math.pi + rng.uniform(-0.02, 0.02)
+        r = 3.3 + rng.uniform(-0.1, 0.1)
+        x, y = c + r * math.cos(a), c + r * math.sin(a)
+        m += box((x - 0.18, y - 0.18, 0.0), (x + 0.18, y + 0.18, 0.05), solid((168 - k % 3 * 8, 160 - k % 3 * 8, 146)), 0.03)
+    return m
+
+
+def agave(seed=0):
+    """A spiky rosette of agave leaves."""
+    rng = np.random.default_rng(101 + seed)
+    m = Cloud()
+    for i in range(14):
+        a = i / 14 * 2 * math.pi + rng.uniform(-0.2, 0.2)
+        L = rng.uniform(0.45, 0.7)
+        up = rng.uniform(0.4, 1.0)
+        m += beam((0.3, 0.3, 0.05), (0.3 + L * math.cos(a) * 0.8, 0.3 + L * math.sin(a) * 0.8, 0.05 + L * up), 0.035,
+                  (96, 124, 104) if i % 2 else (84, 112, 94))
+    return m
+
+
 BUILDINGS = {
     # name: (builder, footprint (tiles), collision type, fade, colliders (tiles, relative))
     "saloon": (saloon, (7, 6), "wall", True, None),
@@ -1213,6 +1483,29 @@ BUILDINGS = {
     "hitch": (hitch, (1.6, 0.2), "none", False, None),
     "cactus": (cactus, (0.6, 0.6), "post", False, [[0.15, 0.15, 0.45, 0.45]]),
     "cross": (cross, (0.42, 0.2), "none", False, None),
+    # Cruz Verde
+    "wall_x8": (lambda: fort_wall(8, True, 51), (8, 1), "wall", True, None),
+    "wall_x4": (lambda: fort_wall(4, True, 52), (4, 1), "wall", True, None),
+    "wall_y8": (lambda: fort_wall(8, False, 54), (1, 8), "wall", True, None),
+    "wall_y4": (lambda: fort_wall(4, False, 55), (1, 4), "wall", True, None),
+    "gate_x": (lambda: fort_gate(True), (5, 1), "wall", True, [[0, 0, 1, 1], [4, 0, 5, 1]]),
+    "gate_y": (lambda: fort_gate(False), (1, 5), "wall", True, [[0, 0, 1, 1], [0, 4, 1, 5]]),
+    "bastion": (bastion, (2, 2), "wall", True, None),
+    "rubble": (rubble, (1.6, 1.0), "cover", False, None),
+    "chapel": (chapel, (5, 6), "wall", True, None),
+    "barracks": (barracks, (10, 4), "wall", True, None),
+    "casa_grande": (casa_grande, (8, 6), "wall", True, None),
+    "jacal": (lambda: jacal(81), (3, 3), "wall", True, None),
+    "jacal_b": (lambda: jacal(83), (3, 3), "wall", True, None),
+    "well": (well, (1.2, 1.2), "cover", False, [[0.15, 0.15, 1.05, 1.05]]),
+    "sandbags_x": (lambda: sandbags(True), (2.0, 0.6), "cover", False, None),
+    "sandbags_y": (lambda: sandbags(False), (0.6, 2.0), "cover", False, None),
+    "cannon": (cannon, (2.0, 1.0), "cover", False, None),
+    "flagpole": (flagpole, (0.3, 0.3), "post", False, None),
+    "headstone": (lambda: headstone(0), (0.5, 0.25), "cover", False, None),
+    "headstone_b": (lambda: headstone(1), (0.5, 0.25), "cover", False, None),
+    "stone_circle": (stone_circle, (6, 6), "none", False, None),
+    "agave": (lambda: agave(0), (0.6, 0.6), "none", False, None),
     "mound": (mound, (1.0, 0.56), "none", False, None),
     "olla": (olla, (0.4, 0.4), "none", False, None),
     "chair": (chair, (0.4, 0.4), "none", False, None),

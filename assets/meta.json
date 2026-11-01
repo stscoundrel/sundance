@@ -231487,6 +231487,670 @@
      "kind": "longjohns"
     }
    ]
+  },
+  "wall_x8": {
+   "file": "res://assets/sprites/world/wall_x8.png",
+   "anchor": [
+    54,
+    184
+   ],
+   "footprint": [
+    8,
+    1
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     8,
+     1
+    ]
+   ],
+   "doors": []
+  },
+  "wall_x4": {
+   "file": "res://assets/sprites/world/wall_x4.png",
+   "anchor": [
+    54,
+    184
+   ],
+   "footprint": [
+    4,
+    1
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     4,
+     1
+    ]
+   ],
+   "doors": []
+  },
+  "wall_y8": {
+   "file": "res://assets/sprites/world/wall_y8.png",
+   "anchor": [
+    390,
+    184
+   ],
+   "footprint": [
+    1,
+    8
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     1,
+     8
+    ]
+   ],
+   "doors": []
+  },
+  "wall_y4": {
+   "file": "res://assets/sprites/world/wall_y4.png",
+   "anchor": [
+    198,
+    184
+   ],
+   "footprint": [
+    1,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     1,
+     4
+    ]
+   ],
+   "doors": []
+  },
+  "gate_x": {
+   "file": "res://assets/sprites/world/gate_x.png",
+   "anchor": [
+    60,
+    204
+   ],
+   "footprint": [
+    5,
+    1
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     1,
+     1
+    ],
+    [
+     4,
+     0,
+     5,
+     1
+    ]
+   ],
+   "doors": []
+  },
+  "gate_y": {
+   "file": "res://assets/sprites/world/gate_y.png",
+   "anchor": [
+    246,
+    204
+   ],
+   "footprint": [
+    1,
+    5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     1,
+     1
+    ],
+    [
+     0,
+     4,
+     1,
+     5
+    ]
+   ],
+   "doors": []
+  },
+  "bastion": {
+   "file": "res://assets/sprites/world/bastion.png",
+   "anchor": [
+    102,
+    242
+   ],
+   "footprint": [
+    2,
+    2
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     2,
+     2
+    ]
+   ],
+   "doors": [],
+   "shutters": [
+    {
+     "file": "res://assets/sprites/world/shutters/bastion_0.png",
+     "cell": [
+      30,
+      52
+     ],
+     "frames": 4,
+     "anchor": [
+      -36,
+      91
+     ],
+     "at": [
+      2.0,
+      1.0
+     ],
+     "z": 2.6
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/bastion_1.png",
+     "cell": [
+      30,
+      52
+     ],
+     "frames": 4,
+     "anchor": [
+      66,
+      91
+     ],
+     "at": [
+      1.0,
+      2.0
+     ],
+     "z": 2.6
+    }
+   ],
+   "paint": "wood",
+   "glass": []
+  },
+  "rubble": {
+   "file": "res://assets/sprites/world/rubble.png",
+   "anchor": [
+    41,
+    19
+   ],
+   "footprint": [
+    1.6,
+    1.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.6,
+     1.0
+    ]
+   ],
+   "doors": []
+  },
+  "chapel": {
+   "file": "res://assets/sprites/world/chapel.png",
+   "anchor": [
+    294,
+    204
+   ],
+   "footprint": [
+    5,
+    6
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     5,
+     6
+    ]
+   ],
+   "doors": [
+    [
+     2.5,
+     6.4
+    ]
+   ]
+  },
+  "barracks": {
+   "file": "res://assets/sprites/world/barracks.png",
+   "anchor": [
+    246,
+    174
+   ],
+   "footprint": [
+    10,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     10,
+     4
+    ]
+   ],
+   "doors": [
+    [
+     2.0,
+     4.4
+    ],
+    [
+     5.0,
+     4.4
+    ],
+    [
+     8.0,
+     4.4
+    ]
+   ],
+   "shutters": [
+    {
+     "file": "res://assets/sprites/world/shutters/barracks_0.png",
+     "cell": [
+      66,
+      65
+     ],
+     "frames": 4,
+     "anchor": [
+      61,
+      -81
+     ],
+     "at": [
+      3.5200000000000005,
+      4.0
+     ],
+     "z": 1.2
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/barracks_1.png",
+     "cell": [
+      57,
+      65
+     ],
+     "frames": 4,
+     "anchor": [
+      -81,
+      -152
+     ],
+     "at": [
+      6.4799999999999995,
+      4.0
+     ],
+     "z": 1.2
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/barracks_2.png",
+     "cell": [
+      66,
+      71
+     ],
+     "frames": 4,
+     "anchor": [
+      -356,
+      -182
+     ],
+     "at": [
+      10.0,
+      2.0
+     ],
+     "z": 1.2
+    }
+   ],
+   "paint": "wood",
+   "glass": []
+  },
+  "casa_grande": {
+   "file": "res://assets/sprites/world/casa_grande.png",
+   "anchor": [
+    294,
+    313
+   ],
+   "footprint": [
+    8,
+    6
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     8,
+     6
+    ]
+   ],
+   "doors": [
+    [
+     4.0,
+     6.4
+    ]
+   ]
+  },
+  "jacal": {
+   "file": "res://assets/sprites/world/jacal.png",
+   "anchor": [
+    177,
+    121
+   ],
+   "footprint": [
+    3,
+    3
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     3,
+     3
+    ]
+   ],
+   "doors": [
+    [
+     1.5,
+     3.4
+    ]
+   ],
+   "shutters": [
+    {
+     "file": "res://assets/sprites/world/shutters/jacal_0.png",
+     "cell": [
+      59,
+      57
+     ],
+     "frames": 4,
+     "anchor": [
+      -47,
+      -23
+     ],
+     "at": [
+      3.0,
+      1.5
+     ],
+     "z": 1.0
+    }
+   ],
+   "paint": "wood",
+   "glass": []
+  },
+  "jacal_b": {
+   "file": "res://assets/sprites/world/jacal_b.png",
+   "anchor": [
+    177,
+    121
+   ],
+   "footprint": [
+    3,
+    3
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     3,
+     3
+    ]
+   ],
+   "doors": [
+    [
+     1.5,
+     3.4
+    ]
+   ],
+   "shutters": [
+    {
+     "file": "res://assets/sprites/world/shutters/jacal_b_0.png",
+     "cell": [
+      59,
+      57
+     ],
+     "frames": 4,
+     "anchor": [
+      -47,
+      -23
+     ],
+     "at": [
+      3.0,
+      1.5
+     ],
+     "z": 1.0
+    }
+   ],
+   "paint": "wood",
+   "glass": []
+  },
+  "well": {
+   "file": "res://assets/sprites/world/well.png",
+   "anchor": [
+    45,
+    91
+   ],
+   "footprint": [
+    1.2,
+    1.2
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.15,
+     0.15,
+     1.05,
+     1.05
+    ]
+   ],
+   "doors": []
+  },
+  "sandbags_x": {
+   "file": "res://assets/sprites/world/sandbags_x.png",
+   "anchor": [
+    24,
+    30
+   ],
+   "footprint": [
+    2.0,
+    0.6
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     2.0,
+     0.6
+    ]
+   ],
+   "doors": []
+  },
+  "sandbags_y": {
+   "file": "res://assets/sprites/world/sandbags_y.png",
+   "anchor": [
+    98,
+    30
+   ],
+   "footprint": [
+    0.6,
+    2.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.6,
+     2.0
+    ]
+   ],
+   "doors": []
+  },
+  "cannon": {
+   "file": "res://assets/sprites/world/cannon.png",
+   "anchor": [
+    34,
+    45
+   ],
+   "footprint": [
+    2.0,
+    1.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     2.0,
+     1.0
+    ]
+   ],
+   "doors": []
+  },
+  "flagpole": {
+   "file": "res://assets/sprites/world/flagpole.png",
+   "anchor": [
+    10,
+    332
+   ],
+   "footprint": [
+    0.3,
+    0.3
+   ],
+   "collide": "post",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.3,
+     0.3
+    ]
+   ],
+   "doors": []
+  },
+  "headstone": {
+   "file": "res://assets/sprites/world/headstone.png",
+   "anchor": [
+    14,
+    32
+   ],
+   "footprint": [
+    0.5,
+    0.25
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.5,
+     0.25
+    ]
+   ],
+   "doors": []
+  },
+  "headstone_b": {
+   "file": "res://assets/sprites/world/headstone_b.png",
+   "anchor": [
+    13,
+    33
+   ],
+   "footprint": [
+    0.5,
+    0.25
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.5,
+     0.25
+    ]
+   ],
+   "doors": []
+  },
+  "stone_circle": {
+   "file": "res://assets/sprites/world/stone_circle.png",
+   "anchor": [
+    203,
+    -38
+   ],
+   "footprint": [
+    6,
+    6
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     6,
+     6
+    ]
+   ],
+   "doors": []
+  },
+  "agave": {
+   "file": "res://assets/sprites/world/agave.png",
+   "anchor": [
+    31,
+    42
+   ],
+   "footprint": [
+    0.6,
+    0.6
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.6,
+     0.6
+    ]
+   ],
+   "doors": []
   }
  },
  "tumbleweed": {
@@ -232525,6 +233189,13 @@
      15.0
     ]
    ]
+  ]
+ },
+ "ground_cruz_verde": {
+  "file": "res://assets/sprites/ground_cruz_verde.png",
+  "origin": [
+   -1280,
+   -128
   ]
  }
 }

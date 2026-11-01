@@ -276,9 +276,10 @@ def lnoise(xs, ys, scale, seed):
     return (top + (bot - top) * ty[:, None]).astype(np.float32)
 
 
-def gen_ground(meta, level):
+def gen_ground(meta, level, key="ground"):
     """The ground: sand, streets with wheel ruts, mud and puddles, boot hill, scrub,
-    fading to haze beyond town. Built in horizontal strips to keep memory flat."""
+    fading to haze beyond town. Built in horizontal strips to keep memory flat. Each
+    map bakes its own under its "ground" key (San Miguel's is plain "ground")."""
     N = level["size"]
     M = 8
     span = N + 2 * M
@@ -313,7 +314,7 @@ def gen_ground(meta, level):
         road = np.zeros((h, W), bool)
         rut = np.zeros((h, W), bool)
         edge_n = (n_mid - 0.5) * 0.9 + (n_small - 0.5) * 0.4
-        for x0, y0, x1, y1 in level["streets"]:
+        for x0, y0, x1, y1 in level.get("streets", []):
             dd = np.maximum.reduce([x0 - gx, gx - x1, y0 - gy, gy - y1])
             road |= dd < edge_n * 0.8
             inrect = (gx > x0) & (gx < x1) & (gy > y0) & (gy < y1)
@@ -331,7 +332,7 @@ def gen_ground(meta, level):
         img[rut & road] *= 0.8
         img[road & (fine > 0.985)] *= 0.75            # hoof prints
 
-        for cx, cy, r in level["mud"]:
+        for cx, cy, r in level.get("mud", []):
             dd = np.hypot(gx - cx, gy - cy) / r + (n_small - 0.5) * 0.5 + (n_mid - 0.5) * 0.4
             core = dd < 1.0
             if not core.any():
@@ -369,8 +370,8 @@ def gen_ground(meta, level):
                     if 0 <= yy < H and 0 <= xx < W:
                         out[yy, xx] = col
 
-    path = save(out, "sprites/ground.png")
-    meta["ground"] = {"file": path, "origin": [-ox, -oy]}
+    path = save(out, f"sprites/{key}.png")
+    meta[key] = {"file": path, "origin": [-ox, -oy]}
     meta["tex_scale"] = 1.0 / K
 
 
@@ -981,6 +982,13 @@ def main():
     if not only or "ground" in only:
         print("  ground")
         gen_ground(meta, level)
+        for name in sorted(os.listdir(os.path.join(ROOT, "data"))):   # and every other map with a ground of its own
+            if name.endswith(".json") and name != "town.json":
+                with open(os.path.join(ROOT, "data", name)) as f:
+                    other = json.load(f)
+                if "ground" in other and "size" in other:
+                    print("  ground for", other.get("name", name))
+                    gen_ground(meta, other, other["ground"])
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=1)
     print("Done.")

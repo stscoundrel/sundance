@@ -7,11 +7,19 @@ extends Node
 ## its entries, where the roads cross its edge. A countdown shows the next; a little
 ## before, word comes of which way they're coming. Arrivals make for the middle of
 ## town, unless there's shooting going on they can hear: then they go to it.
+##
+## A map can also keep some of its gang indoors ("sleepers", each at the door he'll
+## come out of): nobody's there till the first shot (or till everyone outside has gone
+## quiet for good). Then out they come, the ready ones in a couple of seconds, the
+## rest when they've woken and found their boots. A level can count its waves from
+## that first shot instead of from the start ("waves_from": "first_shot").
 
 const WARN := 15.0          # s of warning: which roads they're coming down
 const EVERY := 0.9          # s between men walking in off the same road
 const HEAR := 1100.0        # px: gunfire this close to where they come in, and recent,
 const HEAR_FOR := 8.0       # s: is a fight going on (they go to it)
+const READY := Vector2(1.5, 2.5)     # s: out of the door, the ones who were ready
+const ASLEEP := Vector2(12.0, 18.0)  # s: the ones who had to wake up first
 
 var game: Node
 var waves: Array = []
@@ -23,12 +31,21 @@ var spawn_t := 0.0
 var arrived := 0
 var entries := {}           # name -> {name, at (screen), into (a step inside, screen)}
 var rng := RandomNumberGenerator.new()
+var sleepers: Array = []    # still indoors: {kind, at (screen, outside his door), delay}
+var roused := -1.0          # when the first shot was fired (or the quiet noticed), or -1
+var quiet := false          # roused by the quiet, not the shooting
+var from_shot := false      # the waves count from the first shot
 
 
-func setup(g: Node, wave_list: Array) -> void:
+func setup(g: Node, wave_list: Array, from_first_shot := false) -> void:
 	game = g
 	waves = wave_list
+	from_shot = from_first_shot
 	rng.seed = 7919 + waves.size()
+	for sl in g.level.get("sleepers", []):
+		var r: Vector2 = READY if sl.get("ready", false) else ASLEEP
+		sleepers.append({"kind": sl["kind"], "at": Iso.to_screen(Vector2(sl["x"], sl["y"])),
+			"delay": rng.randf_range(r.x, r.y), "ready": sl.get("ready", false)})
 	var mid := _center()
 	for e in g.level.get("entries", []):
 		var at := Iso.to_screen(Vector2(e["x"], e["y"]))
@@ -40,9 +57,19 @@ func _center() -> Vector2:
 	return Iso.to_screen(Vector2(c["x"], c["y"]))
 
 
-## Seconds to the next wave, or -1 when there are no more.
+## How far into the waves' own clock: from the start, or from the first shot (-1
+## till then).
+func wave_clock() -> float:
+	if not from_shot:
+		return clock
+	return clock - roused if roused >= 0.0 else -1.0
+
+
+## Seconds to the next wave, or -1 when there are no more (or none's begun counting).
 func next_in() -> float:
-	return float(waves[next]["at"]) - clock if next < waves.size() else -1.0
+	if next >= waves.size() or wave_clock() < 0.0:
+		return -1.0
+	return float(waves[next]["at"]) - wave_clock()
 
 
 ## The roads the next wave is coming down, once word of it has come (else empty).
@@ -60,24 +87,31 @@ func arriving_from() -> Array:
 	return seen.values()
 
 
-## All in: no wave still to come or still walking in.
+## All in: no wave still to come or still walking in, nobody still indoors.
 func done() -> bool:
-	return next >= waves.size() and queue.is_empty()
+	return next >= waves.size() and queue.is_empty() and sleepers.is_empty()
+
+
+## How many in the gang all told, those indoors included.
+func indoors() -> int:
+	return sleepers.size()
 
 
 func _process(delta: float) -> void:
 	if game.state != "play":
 		return
 	clock += delta
-	if next < waves.size():
+	_rouse()
+	var wc := wave_clock()
+	if next < waves.size() and wc >= 0.0:
 		var w: Dictionary = waves[next]
-		if warned < next and clock >= float(w["at"]) - WARN:
+		if warned < next and wc >= float(w["at"]) - WARN:
 			warned = next
 			var names: Array = w["groups"].map(func(gr): return gr["from"])
 			game.hud.banner("Men coming in by the %s!" % " and the ".join(names))
 			game.sfx("sting", null, -12.0, 0.0)
 			game.stats["waves warned"] = game.stats.get("waves warned", 0) + 1
-		if clock >= float(w["at"]):
+		if wc >= float(w["at"]):
 			_send(w)
 			next += 1
 	if not queue.is_empty():
@@ -85,6 +119,47 @@ func _process(delta: float) -> void:
 		if spawn_t <= 0.0:
 			spawn_t = EVERY / maxf(1.0, _roads_in_queue())
 			_walk_in(queue.pop_front())
+
+
+## The first shot (or, for one who's done it all with the knife, everyone outside
+## gone quiet for good) brings out those indoors.
+func _rouse() -> void:
+	if sleepers.is_empty() and not from_shot or roused >= 0.0:
+		_wake()
+		return
+	if game.last_gunfire > -1e8:
+		roused = clock
+		game.stats["roused by"] = "the shooting"
+	elif game.enemies.size() > 0 and game.alive_enemies() == 0:
+		roused = clock
+		quiet = true
+		game.stats["roused by"] = "the quiet"
+	if roused >= 0.0 and not sleepers.is_empty():
+		game.hud.banner("¡Despierten, muchachos!  The garrison's waking!" if not quiet else "It's gone very quiet out there...")
+	_wake()
+
+
+## Out of the doors, each when he's ready.
+func _wake() -> void:
+	if roused < 0.0:
+		return
+	for i in range(sleepers.size() - 1, -1, -1):
+		var sl: Dictionary = sleepers[i]
+		if clock - roused < sl["delay"]:
+			continue
+		sleepers.remove_at(i)
+		var at: Vector2 = sl["at"]
+		if not game.is_free(at):
+			at = game.free_point_near(at, 20.0)
+		var en: Enemy = game._add_enemy(sl["kind"], at, PackedVector2Array(), 90.0)
+		game.stats["out of doors"] = game.stats.get("out of doors", 0) + 1
+		if quiet:   # nobody about, and no answer: they go and look
+			en.wary = true
+			en.start_investigate(_center(), true)
+		else:
+			en.enter_combat(game.seen_pos if game.staleness() < 15.0 else game.last_gunfire_at, false, false)
+		if rng.randf() < 0.4:
+			en.say_line("spot", ["¡Vámonos!", "¿Qué pasa?", "¡A las armas!"] if sl["ready"] else ["¡Mis botas!", "¿Quién dispara?", "¡Ay, mi cabeza!"])
 
 
 func _roads_in_queue() -> float:

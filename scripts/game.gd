@@ -174,9 +174,9 @@ func _ready() -> void:
 	tex_scale = float(meta.get("tex_scale", 1.0))
 	_build_world()
 	_spawn_actors()
-	if level_entry.has("waves"):
+	if level_entry.has("waves") or level.has("sleepers"):
 		director = Director.new()
-		director.setup(self, level_entry["waves"])
+		director.setup(self, level_entry.get("waves", []), level_entry.get("waves_from", "") == "first_shot")
 		add_child(director)
 	_build_overlay()
 	start_time = Time.get_ticks_msec()
@@ -1556,7 +1556,7 @@ func _on_enemy_died(e: Actor) -> void:
 				g["ammo"] = p   # it goes with his gun
 				g["ammo_kind"] = ammo
 				break
-	if posse == null and alive_enemies() <= posse_size and alive_enemies() > 0:
+	if posse == null and alive_enemies() <= posse_size and alive_enemies() > 0 and (director == null or director.done()):
 		posse = Posse.new(self)
 		posse.form()
 	var coming: bool = den.has("door") and den["rallied"] and not den["squad"].is_empty() \

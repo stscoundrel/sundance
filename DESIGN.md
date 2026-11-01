@@ -59,8 +59,43 @@ from where they come in): then they go straight to it. Those passing as townsfol
 and El Jefe never come marching in; otherwise each is one of the sort already in
 town. The town isn't won till the last wave is in and down. The director
 (`scripts/director.gd`) runs it apart from the game. "San Miguel (waves)" in the
-picker is for trying it: 20 bandits, then 7 or 8 more every three minutes, from two
+picker is for trying it: 20 bandits, then 7 or 8 more every 90 s, from two
 roads at a time. `tests/test_waves.gd` runs a quick version in the test yard.
+
+**Cruz Verde** (the second level: the ending of *The Wild Bunch*, and Sollima's and
+Corbucci's revolutionary westerns). A garrison's walled town: thick crenellated adobe
+walls (x 16..49, y 14..47) with a squat bastion at each corner, a gate wide open
+midway along every side and the south and east walls breached, heaps of rubble in
+the gaps; too tall to see over, so the gates and breaches are the ways in. Inside, a
+whitewashed chapel with its bell wall, the general's two-storey house with its
+balcony, the barracks (CUARTEL) with a portal along the front, a cantina, two adobes;
+a plaza with a well, the tricolour on its pole, an old bronze cannon, sandbags
+inside each gate, wagons, ammunition crates and powder barrels. Outside, a village of
+jacales with chickens and, to the west, a great cemetery after Sad Hill: rings of
+crosses, mounds and headstones (low cover) round a circle of stones, and rows of
+graves below the west road. It's an **ambush**: the stranger starts outside the
+west gate, flat against the wall beside it. The garrison is fifteen, but it isn't
+as watchful as it ought to be: seven on the grounds (both riflemen, two patrols, a
+saloon girl with a derringer, a drunk), the other eight indoors, resting (the map's
+`sleepers`, each at the door he'll come out of: five in the barracks, two in the
+cantina, El Jefe in his house). Nobody comes out till the first shot, whoever fires
+it; then the three who were ready are out of their doors in about two seconds, the
+other five (El Jefe among them, "¡Mis botas!") in twelve to eighteen, all making for
+the fight. Kill all seven outside without a shot and the quiet is noticed in the end:
+out they come, wary, to look. The title counts all fifteen; the bandit count only
+those he can see. The waves count from that first shot (`"waves_from": "first_shot"`),
+so none walks past him while he's still creeping about; then they never really stop:
+every half minute two to four more come down one or two of the five roads (west,
+east, north, south, and through the cemetery), forty in six minutes. No posse forms
+while anyone's still due, indoors or on the road. Saloon girls (and one with a
+derringer), peons, women and the padre about the place; no undertaker, gunsmith or
+mayor. It falls back to the chapel, the general's house, the barracks or the cantina.
+For now the garrison are the usual bandit types; the revolutionaries' own look and
+their general come next. `tests/test_cruz_verde.gd` checks the map (nobody sees the
+start, the ways through every gate and breach, a way in from every road), the ambush
+(nothing stirs while he waits; the first shot brings them out, ready and sleepy, and
+starts the waves) and has the autopilot hold out a few minutes against the waves;
+`tests/test_ambush.gd` does it with the knife, and the quiet brings them out.
 
 ## Controls
 

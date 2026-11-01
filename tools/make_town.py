@@ -7,16 +7,14 @@ town where objects overlap or a bandit stands inside something.
 
 Usage: tools/.venv/bin/python tools/make_town.py
 """
-import json
-import math
 import os
 import random
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from world import BUILDINGS  # noqa: E402
+import layout  # noqa: E402
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 N = 64
 
 STREETS = [
@@ -190,118 +188,10 @@ CENTER = {"x": 35.0, "y": 31.0}   # (main street, between the hotel and the bank
 PLAYER = {"x": 63.2, "y": 63.2}   # the lower-right corner, hidden behind the stable and adobes
 
 
-# Guard posts for a shuffled town: the hand-placed gang's own, and more along the
-# streets, the alleys and the yards, spaced out. A shuffled level takes as many as
-# it has bandits (seeded by that count). Tags say who suits a post: "boss" (El
-# Jefe), "porch" (the ones passing as townsfolk), "lookout" (long views: riflemen),
-# "street", "alley", "yard".
-POST_TAG = {"jefe": "boss", "gambler": "porch", "saloon_girl": "porch", "rifleman": "lookout",
-            "poacher": "lookout"}
-POST_SPACING = 4.0     # tiles between posts
-POSTS_WANTED = 64
-
-
-def _screen_deg(dx, dy):
-    """A direction on the grid as the screen angle placements use (0 right, 90 down)."""
-    return round(math.degrees(math.atan2((dx + dy) * 8.0, (dx - dy) * 16.0))) % 360
-
-
-def _street_of(x, y):
-    for r in STREETS:
-        if r[0] <= x <= r[2] and r[1] <= y <= r[3]:
-            return r
-    return None
-
-
-def make_posts(solid):
-    def clear(x, y, pad=0.45):
-        if not (1.0 < x < N - 1.0 and 1.0 < y < N - 1.0):
-            return False
-        pt = (x - pad, y - pad, x + pad, y + pad)
-        return not any(overlaps(pt, r) for _, r in solid)
-
-    def near_town(x, y):
-        return any(overlaps((x - 3, y - 3, x + 3, y + 3), r) for o, r in solid if o["type"] in BUILDINGS_KINDS)
-
-    posts = []
-    for e in ENEMIES:
-        tag = POST_TAG.get(e["kind"], "street" if _street_of(e["x"], e["y"]) else "yard")
-        p = {"x": e["x"], "y": e["y"], "tag": tag}
-        for k in ("patrol", "facing"):
-            if k in e:
-                p[k] = e[k]
-        posts.append(p)
-    rng = random.Random(9)
-    cands = []
-    for r in STREETS:
-        alley = (r[2] - r[0]) < 3 or (r[3] - r[1]) < 3
-        along_x = (r[2] - r[0]) >= (r[3] - r[1])
-        for i in range(400):
-            x, y = rng.uniform(r[0] + 0.7, r[2] - 0.7), rng.uniform(r[1] + 0.7, r[3] - 0.7)
-            if clear(x, y):
-                cands.append((x, y, "alley" if alley else "street", along_x, r))
-    for i in range(3000):
-        x, y = rng.uniform(1.5, N - 1.5), rng.uniform(1.5, N - 1.5)
-        if _street_of(x, y) is None and clear(x, y, 0.6) and near_town(x, y):
-            cands.append((x, y, "yard", True, None))
-    rng.shuffle(cands)
-    for x, y, tag, along_x, r in cands:
-        if len(posts) >= POSTS_WANTED:
-            break
-        if any(math.hypot(x - q["x"], y - q["y"]) < POST_SPACING for q in posts):
-            continue
-        if math.hypot(x - PLAYER["x"], y - PLAYER["y"]) < 18.0:
-            continue   # (nobody posted where he'd see the stranger ride in)
-        x, y = round(x, 1), round(y, 1)
-        p = {"x": x, "y": y, "tag": tag}
-        if r is not None:
-            cx, cy = (r[0] + r[2]) / 2, (r[1] + r[3]) / 2
-            if tag == "street" and len(posts) % 3 == 0:   # every third walks up and down
-                a, b = ((max(r[0] + 0.8, x - 5), y), (min(r[2] - 0.8, x + 5), y)) if along_x \
-                    else ((x, max(r[1] + 0.8, y - 5)), (x, min(r[3] - 0.8, y + 5)))
-                steps = [(a[0] + (b[0] - a[0]) * t / 8, a[1] + (b[1] - a[1]) * t / 8) for t in range(9)]
-                if all(clear(*q) for q in steps):
-                    p["patrol"] = [[round(a[0], 1), round(a[1], 1)], [round(b[0], 1), round(b[1], 1)]]
-            if "patrol" not in p:   # looking along the street, the longer way
-                dx, dy = (1 if x < cx else -1, 0) if along_x else (0, 1 if y < cy else -1)
-                p["facing"] = _screen_deg(dx, dy)
-        else:   # a yard: looking out at the nearest street
-            best = min(STREETS, key=lambda s_: math.hypot(min(max(x, s_[0]), s_[2]) - x, min(max(y, s_[1]), s_[3]) - y))
-            tx, ty = min(max(x, best[0]), best[2]), min(max(y, best[1]), best[3])
-            p["facing"] = _screen_deg(tx - x, ty - y) if (tx, ty) != (x, y) else 90
-        posts.append(p)
-    return posts
-
-
-def footprint(kind, x, y):
-    w, h = BUILDINGS[kind][1]
-    return (x, y, x + w, y + h)
-
-
-def overlaps(a, b, pad=0.0):
-    return a[0] < b[2] + pad and b[0] < a[2] + pad and a[1] < b[3] + pad and b[1] < a[3] + pad
-
-
 def main():
     objects = [{"type": k, "x": x, "y": y} for k, x, y in BUILDINGS_AT + PROPS]
-    solid = [(o, footprint(o["type"], o["x"], o["y"])) for o in objects if BUILDINGS[o["type"]][2] != "none"]
-    errors = []
-    for i, (o, r) in enumerate(solid):
-        if r[0] < 0.5 or r[1] < 0.5 or r[2] > N - 0.5 or r[3] > N - 0.5:
-            errors.append(f"{o['type']} at {o['x']},{o['y']} leaves the map")
-        for o2, r2 in solid[i + 1:]:
-            if overlaps(r, r2, 0.1):
-                errors.append(f"{o['type']} at {o['x']},{o['y']} overlaps {o2['type']} at {o2['x']},{o2['y']}")
-    for e in ENEMIES + CIVILIANS + ENTRIES + [dict(CENTER, kind="centre")]:
-        for p in [(e["x"], e["y"])] + [tuple(q) for q in e.get("patrol", [])]:
-            pt = (p[0] - 0.35, p[1] - 0.35, p[0] + 0.35, p[1] + 0.35)
-            for o, r in solid:
-                if overlaps(pt, r):
-                    errors.append(f"{e.get('kind', e.get('name'))} point {p} is inside {o['type']} at {o['x']},{o['y']}")
-    if errors:
-        print("\n".join(errors))
-        sys.exit(1)
-    posts = make_posts(solid)
+    solid = layout.check(N, objects, ENEMIES + CIVILIANS + ENTRIES + [dict(CENTER, kind="centre")])
+    posts = layout.make_posts(N, STREETS, solid, ENEMIES, PLAYER, BUILDINGS_KINDS)
     town = {
         "name": "San Miguel",
         "size": N,
@@ -318,8 +208,7 @@ def main():
         "entries": ENTRIES,
         "center": CENTER,
     }
-    with open(os.path.join(ROOT, "data", "town.json"), "w") as f:
-        json.dump(town, f, indent=1)
+    layout.write("town.json", town)
     print("town: %d buildings, %d props, %d bandits, %d townsfolk, %d guard posts" % (
         len(BUILDINGS_AT), len(PROPS), len(ENEMIES), len(CIVILIANS), len(posts)))
 
