@@ -5,7 +5,14 @@
   {"id": "san_miguel_15", "name": "San Miguel", "map": "res://data/town.json", "count": 15, "note": "A quieter week: 15 bandits, shuffled."},
   {"id": "san_miguel_25", "name": "San Miguel", "map": "res://data/town.json", "count": 25, "note": "The whole gang, shuffled: 25 bandits."},
   {"id": "san_miguel_35", "name": "San Miguel", "map": "res://data/town.json", "count": 35, "note": "Payday: 35 bandits, shuffled."},
+  {"id": "san_miguel_waves", "name": "San Miguel (waves)", "map": "res://data/town.json", "count": 20, "note": "For testing: 20 bandits, then more down the roads every three minutes.",
+   "waves": [{"at": 180, "groups": [{"from": "east road", "count": 4}, {"from": "north trail", "count": 3}]},
+             {"at": 360, "groups": [{"from": "west road", "count": 4}, {"from": "south trail", "count": 4}]},
+             {"at": 540, "groups": [{"from": "north-east trail", "count": 4}, {"from": "east road", "count": 4}]}]},
   {"id": "test_yard", "name": "Test yard", "map": "res://data/test_yard.json", "hidden": true, "note": "A bare yard: no streets, townsfolk, reserve, boot hill or holdouts."},
-  {"id": "test_yard_5", "name": "Test yard", "map": "res://data/test_yard.json", "count": 5, "hidden": true}
+  {"id": "test_yard_5", "name": "Test yard", "map": "res://data/test_yard.json", "count": 5, "hidden": true},
+  {"id": "test_yard_waves", "name": "Test yard", "map": "res://data/test_yard.json", "count": 4, "hidden": true,
+   "waves": [{"at": 20, "groups": [{"from": "west track", "count": 3}]},
+             {"at": 40, "groups": [{"from": "west track", "count": 2}, {"from": "north track", "kinds": ["pistolero", "bandido"]}]}]}
  ]
 }

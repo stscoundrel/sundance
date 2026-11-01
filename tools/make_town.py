@@ -181,6 +181,12 @@ HOLDOUTS = [{"name": "cantina", "x": 16.2, "y": 37.6}, {"name": "bank", "x": 39.
             {"name": "church", "x": 27.0, "y": 12.8}, {"name": "stable", "x": 53.0, "y": 49.2}]
 
 BUILDINGS_KINDS = {k for k, *_ in BUILDINGS_AT}
+# Where the roads and trails cross the edge of the map: men sent for come in here,
+# on foot. And the middle of town, where they make for when nothing's going on.
+ENTRIES = [{"name": "east road", "x": 63.3, "y": 30.5}, {"name": "west road", "x": 0.7, "y": 30.5},
+           {"name": "north trail", "x": 18.0, "y": 0.8}, {"name": "north-east trail", "x": 45.0, "y": 0.8},
+           {"name": "south trail", "x": 18.0, "y": 63.2}]
+CENTER = {"x": 35.0, "y": 31.0}   # (main street, between the hotel and the bank)
 PLAYER = {"x": 63.2, "y": 63.2}   # the lower-right corner, hidden behind the stable and adobes
 
 
@@ -286,12 +292,12 @@ def main():
         for o2, r2 in solid[i + 1:]:
             if overlaps(r, r2, 0.1):
                 errors.append(f"{o['type']} at {o['x']},{o['y']} overlaps {o2['type']} at {o2['x']},{o2['y']}")
-    for e in ENEMIES + CIVILIANS:
+    for e in ENEMIES + CIVILIANS + ENTRIES + [dict(CENTER, kind="centre")]:
         for p in [(e["x"], e["y"])] + [tuple(q) for q in e.get("patrol", [])]:
             pt = (p[0] - 0.35, p[1] - 0.35, p[0] + 0.35, p[1] + 0.35)
             for o, r in solid:
                 if overlaps(pt, r):
-                    errors.append(f"{e['kind']} point {p} is inside {o['type']} at {o['x']},{o['y']}")
+                    errors.append(f"{e.get('kind', e.get('name'))} point {p} is inside {o['type']} at {o['x']},{o['y']}")
     if errors:
         print("\n".join(errors))
         sys.exit(1)
@@ -309,6 +315,8 @@ def main():
         "reserve": RESERVE,
         "holdouts": HOLDOUTS,
         "posts": posts,
+        "entries": ENTRIES,
+        "center": CENTER,
     }
     with open(os.path.join(ROOT, "data", "town.json"), "w") as f:
         json.dump(town, f, indent=1)

@@ -1963,5 +1963,36 @@
    "tag": "yard",
    "facing": 153
   }
- ]
+ ],
+ "entries": [
+  {
+   "name": "east road",
+   "x": 63.3,
+   "y": 30.5
+  },
+  {
+   "name": "west road",
+   "x": 0.7,
+   "y": 30.5
+  },
+  {
+   "name": "north trail",
+   "x": 18.0,
+   "y": 0.8
+  },
+  {
+   "name": "north-east trail",
+   "x": 45.0,
+   "y": 0.8
+  },
+  {
+   "name": "south trail",
+   "x": 18.0,
+   "y": 63.2
+  }
+ ],
+ "center": {
+  "x": 35.0,
+  "y": 31.0
+ }
 }

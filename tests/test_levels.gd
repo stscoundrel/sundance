@@ -38,6 +38,7 @@ func _process(_delta: float) -> bool:
 		return false   # (the walls settle into the physics world)
 	if frame == 3:
 		_posts()
+		_entries()
 		_shuffle()
 		_scale()
 		_picker()
@@ -79,6 +80,20 @@ func _posts() -> void:
 			var at := Iso.to_screen(g)
 			check(at.distance_to(spawn) > sight or not game.line_of_sight(at, spawn, false),
 				"a %s post at %s can see the spawn" % [p["tag"], g])
+
+
+## The roads into town: on open ground, and a way from each to the middle of town.
+func _entries() -> void:
+	step = "entries"
+	var lv: Dictionary = game.level
+	var mid := Iso.to_screen(Vector2(lv["center"]["x"], lv["center"]["y"]))
+	check(game.is_free(mid), "the middle of town is blocked")
+	check(lv["entries"].size() >= 4, "only %d roads in" % lv["entries"].size())
+	for e in lv["entries"]:
+		var at := Iso.to_screen(Vector2(e["x"], e["y"]))
+		check(game.is_free(at), "the %s comes in through something" % e["name"])
+		var path: PackedVector2Array = game.find_path(at, mid)
+		check(path.size() > 0 and path[path.size() - 1].distance_to(mid) < 20.0, "no way in from the %s" % e["name"])
 
 
 func _shuffle() -> void:

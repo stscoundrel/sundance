@@ -39,6 +39,8 @@ var doors := PackedVector2Array()   # doorsteps townsfolk can run inside from
 var innocents := 0                  # townsfolk the hero has shot
 var quiet_after := 45.0             # seconds without gunfire or a fight before the town stirs again
 var last_gunfire := -1e9
+var last_gunfire_at := Vector2.INF
+var director: Director = null   # a level's waves, if it has any
 var _quiet := 0.0
 var graves := PackedVector2Array()
 var to_mourn: Array[Dictionary] = []
@@ -172,6 +174,10 @@ func _ready() -> void:
 	tex_scale = float(meta.get("tex_scale", 1.0))
 	_build_world()
 	_spawn_actors()
+	if level_entry.has("waves"):
+		director = Director.new()
+		director.setup(self, level_entry["waves"])
+		add_child(director)
 	_build_overlay()
 	start_time = Time.get_ticks_msec()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
@@ -1479,6 +1485,7 @@ func grave_to_mourn() -> Dictionary:
 func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void:
 	if kind in ["shot", "enemy_shot", "blast"]:
 		last_gunfire = clock
+		last_gunfire_at = pos
 		for sh in shutters:
 			sh.hear_shot(pos, radius)
 		if den.has("door") and not den["rallied"] and pos.distance_to(den["door"]) < DEN_EAR:
@@ -1552,7 +1559,8 @@ func _on_enemy_died(e: Actor) -> void:
 	if posse == null and alive_enemies() <= posse_size and alive_enemies() > 0:
 		posse = Posse.new(self)
 		posse.form()
-	var coming: bool = den.has("door") and den["rallied"] and not den["squad"].is_empty()
+	var coming: bool = den.has("door") and den["rallied"] and not den["squad"].is_empty() \
+		or director != null and not director.done()   # (more on the way: it isn't over)
 	if alive_enemies() == 0 and state == "play" and not coming:
 		state = "won"
 		end_time = Time.get_ticks_msec()

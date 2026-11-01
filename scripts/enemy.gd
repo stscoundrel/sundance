@@ -506,6 +506,18 @@ func scout(at: Vector2) -> void:
 	_log("scouts")
 
 
+## Come in down a road with nothing going on that he can hear: on to the middle of
+## town, wary, to wait there looking about.
+func arrive(spot: Vector2, from: Vector2) -> void:
+	wary = true
+	home = spot
+	home_facing = (spot - from).normalized()
+	patrol = PackedVector2Array()
+	st = St.RETURN
+	path_to(spot)
+	_log("arrives")
+
+
 ## Falling back to the holdout: a new post there, facing the way he'll come.
 func fortify(spot: Vector2, at: Vector2) -> void:
 	alarm_role = "fortified"

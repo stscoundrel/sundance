@@ -58,6 +58,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_knife.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_drag.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_yard.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_waves.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_corners.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_cover.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_fragile.gd

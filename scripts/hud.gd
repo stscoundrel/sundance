@@ -184,10 +184,49 @@ func _draw_status(p: Player) -> void:
 	var n: int = game.alive_enemies()
 	var label := "BANDITS  %d" % n
 	_text(Vector2(0, 16), label, 12, INK, font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	if game.director:
+		_draw_waves(game.director)
 	if banner_t > 0.0:
 		var a := clampf(banner_t, 0.0, 1.0)
 		draw_rect(Rect2(150, 24, 340, 18), Color(0.3, 0.05, 0.03, 0.7 * a))
 		_text(Vector2(0, 37), banner_text, 10, Color(1, 0.8, 0.45, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+
+
+## The next wave's countdown under the bandit count, and, once word has come of
+## them (and while they walk in), which way: a mark at the road, or at the edge of
+## the screen pointing to it.
+func _draw_waves(d: Director) -> void:
+	var t := d.next_in()
+	if t >= 0.0:
+		var warn := not d.warned_from().is_empty()
+		var c := Color(1, 0.8, 0.45) if warn else Color(INK, 0.8)
+		_text(Vector2(0, 50 if banner_t > 0.0 else 30), "MORE COMING  %d:%02d" % [int(t) / 60, int(t) % 60], 8, c,
+			null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	var roads: Array = d.warned_from()
+	for r in d.arriving_from():
+		if not r in roads:
+			roads.append(r)
+	var to_local := get_global_transform_with_canvas().affine_inverse()
+	var view := get_viewport().get_canvas_transform()
+	var mid := Vector2(320, 180)
+	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 180.0)
+	for r in roads:
+		var at: Vector2 = to_local * (view * r["at"])
+		var inset := Rect2(24, 66, 592, 236)   # (clear of the count, the banner and the countdown)
+		var dir := (at - mid).normalized()
+		var tip := at
+		if not inset.has_point(at):   # off screen: on the edge, pointing out to it
+			var k := INF
+			for axis in 2:
+				if absf(dir[axis]) > 0.001:
+					var lim: float = (inset.end[axis] if dir[axis] > 0.0 else inset.position[axis]) - mid[axis]
+					k = minf(k, lim / dir[axis])
+			tip = mid + dir * k
+		var side := dir.orthogonal()
+		draw_colored_polygon(PackedVector2Array([tip + dir * 8.0, tip - dir * 4.0 + side * 6.0, tip - dir * 4.0 - side * 6.0]),
+			Color(1, 0.55, 0.3, pulse))
+		_text(tip - dir * 14.0 + Vector2(-60, 3), r["name"].to_upper(), 8, Color(1, 0.8, 0.45, pulse), null,
+			HORIZONTAL_ALIGNMENT_CENTER, 120)
 
 
 func _draw_weapon(p: Player) -> void:

@@ -44,6 +44,24 @@ baked ground; the hidden "Test yard" proves it. `tests/test_levels.gd` checks th
 posts, the deal and its determinism, the scaling and the picker; `tests/test_yard.gd`
 plays the bare map to a win.
 
+**Waves.** A level can bring more of the gang in at set times
+(`"waves": [{"at": seconds, "groups": [{"from": road, "count": n}]}]`, or a group's
+`"kinds"` by name), whether or not the stranger has dealt with the last lot: that's
+his problem. Each map names its **entries**, where the roads and trails cross its
+edge (San Miguel: the east and west roads, the north, north-east and south trails),
+and its **centre**. The men come in on foot, one road after another a man at a time.
+Under the bandit count a countdown runs to the next wave; 15 s before it, a banner
+names the roads ("Men coming in by the east road and the north trail!") and an arrow
+marks each (at the road, or at the edge of the screen pointing to it) until the last
+of them is in. Arrivals make for the middle of town and spread out about it, wary,
+unless there's shooting going on they can hear (within the last 8 s, not too far
+from where they come in): then they go straight to it. Those passing as townsfolk
+and El Jefe never come marching in; otherwise each is one of the sort already in
+town. The town isn't won till the last wave is in and down. The director
+(`scripts/director.gd`) runs it apart from the game. "San Miguel (waves)" in the
+picker is for trying it: 20 bandits, then 7 or 8 more every three minutes, from two
+roads at a time. `tests/test_waves.gd` runs a quick version in the test yard.
+
 ## Controls
 
 | Input | Action |
