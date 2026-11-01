@@ -22,7 +22,8 @@ Win when every bandit is dead, lose when the hero dies. Restart instantly.
 
 ## Levels
 
-After the title card comes the level picker ("Where to, stranger?"; up/down and
+After the title card comes the level picker (San Miguel and Cruz Verde; the shuffled
+San Miguels and the wave test are hidden, kept for the tests) ("Where to, stranger?"; up/down and
 Enter, a number or a click), then the loadout. The levels are listed in
 `data/levels.json`, each a map (a town file) and, optionally, a **count**: with one,
 the gang is shuffled. Each map carries **guard posts** (San Miguel has 64, written by
@@ -50,7 +51,8 @@ plays the bare map to a win.
 his problem. Each map names its **entries**, where the roads and trails cross its
 edge (San Miguel: the east and west roads, the north, north-east and south trails),
 and its **centre**. The men come in on foot, one road after another a man at a time.
-Under the bandit count a countdown runs to the next wave; 15 s before it, a banner
+They walk in close behind one another, a man every half second off each road. Under
+the bandit count a countdown runs to the next wave; 15 s before it, a banner
 names the roads ("Men coming in by the east road and the north trail!") and an arrow
 marks each (at the road, or at the edge of the screen pointing to it) until the last
 of them is in. Arrivals make for the middle of town and spread out about it, wary,
@@ -74,20 +76,28 @@ inside each gate, wagons, ammunition crates and powder barrels. Outside, a villa
 jacales with chickens and, to the west, a great cemetery after Sad Hill: rings of
 crosses, mounds and headstones (low cover) round a circle of stones, and rows of
 graves below the west road. It's an **ambush**: the stranger starts outside the
-west gate, flat against the wall beside it. The garrison is fifteen, but it isn't
-as watchful as it ought to be: seven on the grounds (both riflemen, two patrols, a
-saloon girl with a derringer, a drunk), the other eight indoors, resting (the map's
-`sleepers`, each at the door he'll come out of: five in the barracks, two in the
-cantina, El Jefe in his house). Nobody comes out till the first shot, whoever fires
-it; then the three who were ready are out of their doors in about two seconds, the
-other five (El Jefe among them, "¡Mis botas!") in twelve to eighteen, all making for
-the fight. Kill all seven outside without a shot and the quiet is noticed in the end:
+west gate, flat against the wall beside it. The garrison is fifteen, but there was
+a party last night after their last victory: only five revolucionarios on the
+grounds (a tirador at the north gate, the rest on their rounds or at the breach),
+the other ten indoors sleeping it off with the saloon girls (the map's `sleepers`,
+each at the door he'll come out of, with "after": seconds). Nobody comes out till the
+first shot, whoever fires it; then two who were ready dash out in about two
+seconds, three more at twelve, three at twenty and the last two (El General among
+them) at thirty, spread out so that a small place doesn't overrun him all at once: four saloon girls, a soldadera, a drunk and revolucionarios, all making for
+the fight. Kill the five outside without a shot and the quiet is noticed in the end:
 out they come, wary, to look. The title counts all fifteen; the bandit count only
 those he can see. The waves count from that first shot (`"waves_from": "first_shot"`),
 so none walks past him while he's still creeping about; then they never really stop:
-every half minute two to four more come down one or two of the five roads (west,
-east, north, south, and through the cemetery), forty in six minutes. No posse forms
-while anyone's still due, indoors or on the road. Saloon girls (and one with a
+the first a minute after that shot (time enough to clear the fort), then every
+half minute a band of six to twelve comes down one or two of the five roads
+(west, east, north, south, and through the cemetery), ninety in all, close
+together (a man every half second), so a gun at the gate can't pick off a whole band
+before the rest are in among the walls. No more than 40 of the gang are about at once
+(the frame time: past that the rest wait out on the road for room). There's no posse
+here at all (`"posse": false` in the map): it's a fort, not a town to get lost in,
+and the last of them just hold it. The waves have their own mix (`"wave_kinds"` in the map, by weight): mostly
+revolucionarios, many of them soldaderas, a few tiradores and sargentos. Cruz Verde's padre is brave (`"brave"` in his placement): he goes to the dead
+with the shooting still going on. Saloon girls (and one with a
 derringer), peons, women and the padre about the place; no undertaker, gunsmith or
 mayor. It falls back to the chapel, the general's house, the barracks or the cantina.
 For now the garrison are the usual bandit types; the revolutionaries' own look and
@@ -638,6 +648,34 @@ lever, or breech for anything that opens to load), stats, smoke, and for breech 
 the barrel count and each reload step's time and sound. A new breech gun is a data
 entry plus a model and poses in `tools/chars.py`. `tests/test_types.gd`
 checks the type data against the baked art.
+
+### The revolutionaries
+
+Up from the south for Cruz Verde (and three of the five drinking in San Miguel's
+saloon reserve): no modern kit, only the guns already in the game.
+
+- **Revolucionario**: white campesino cottons, two bandoliers crossed over the chest,
+  a striped serape over the left shoulder, a big straw sombrero; a Navy, a Colt or a
+  Winchester; 2 HP; "¡Tierra y libertad!".
+- **Tirador**: the same in plainer cloth, with a Winchester and a long eye.
+- **Sargento**: bearded, sashed, coach gun and Colt; calls the orders (rank 1).
+- **Soldadera**: a woman of the revolution in a long dress, crossed bandoliers and a
+  sombrero, a Winchester or a Colt. (Not the saloon girls: they're still about.)
+- **Coronel**: an olive tunic with two rows of brass, a red collar, gold epaulettes, a
+  kepi, a cavalry sabre at the hip (for show) and a Colt; 3 HP, rank 2.
+- **El General**: Cruz Verde's boss (as El Jefe is San Miguel's: both `"boss"`): a dark
+  tunic with medals and a red sash, epaulettes, a peaked cap with gold braid, a cigar,
+  a sabre, coach gun and Colt; 4 HP. He's the garrison's **coordinator**
+  (`"coordinator"`): while he lives, or sleeps, the gang's alarm is organised (men sent
+  to look, a holdout to fall back on). Down he goes and the banner says it, "¡Mataron
+  al general!": every man left is shaken to the core with his nerve cut, the
+  faint-hearted run, nobody gives orders any more (no men sent out, no falling back,
+  however badly it goes), and anyone still to come out of a door or down a road
+  arrives shaken. Hunting the general is worth the risk. `tests/test_general.gd`.
+
+New pieces of costume for them in `tools/chars.py`: the serape, a "uniform" style (a
+buttoned tunic with a coloured collar, a short closed skirt), epaulettes, medals, the
+sabre, the kepi and the peaked cap; a dress can do without its shawl.
 
 ## Townsfolk
 

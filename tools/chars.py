@@ -89,7 +89,7 @@ class Look:
 
 def _torso_fn(look):
     style = look.get("style")
-    base_slot = {"vest": "vest", "suit": "vest", "dress": "dress"}.get(style, "shirt")
+    base_slot = {"vest": "vest", "suit": "vest", "dress": "dress", "uniform": "coat"}.get(style, "shirt")
     base = np.array(look.c(base_slot), float)
 
     def f(P, N):
@@ -105,6 +105,13 @@ def _torso_fn(look):
         elif style == "suit":
             paint(front & (np.abs(P[:, 1]) < 0.06) & (P[:, 2] > 0.18), "shirt")
             paint(front & (np.abs(P[:, 1]) < 0.012) & (P[:, 2] > 0.34), "accent")       # string tie
+        elif style == "uniform":
+            # a buttoned tunic: two rows of brass down the front, a coloured collar
+            paint(P[:, 2] > 0.445, "accent")
+            for row in (-0.045, 0.045):
+                b = front & (np.abs(P[:, 1] - row) < 0.014) & ((P[:, 2] * 12.5) % 1.0 < 0.3) & (P[:, 2] > 0.1) & (P[:, 2] < 0.43)
+                c[b] = BRASS
+                s_[b] = 0
         elif style == "dress":
             paint(P[:, 2] > 0.4, "skin")                                                  # neckline
             lace = front & (np.abs(P[:, 1]) < 0.03) & (P[:, 2] < 0.38) & ((P[:, 2] * 40) % 1.0 < 0.35)
@@ -133,6 +140,20 @@ def _torso_fn(look):
                 m = np.abs(P[:, 1] - side * 0.08) < 0.018
                 c[m] = LEATHER
                 s_[m] = 0
+        if look.get("serape"):
+            # a striped blanket over the left shoulder and down across to the right hip
+            along = P[:, 2] - (0.24 + 1.2 * P[:, 1])
+            band = np.abs(along) < 0.1
+            stripe = np.floor((P[:, 2] + P[:, 1]) * 16) % 3
+            paint(band & (stripe == 0), "poncho_a")
+            paint(band & (stripe == 1), "poncho_b")
+            paint(band & (stripe == 2), "poncho_c")
+        if look.get("medals"):
+            # a row of decorations on the left breast
+            for i, dy in enumerate((0.05, 0.08, 0.11)):
+                md = front & (np.abs(P[:, 1] - dy) < 0.012) & (np.abs(P[:, 2] - 0.36) < 0.02)
+                c[md] = BRASS if i != 1 else (180, 40, 36)
+                s_[md] = 0
         if look.get("bandolier"):
             for sgn in (1, -1):
                 m = np.abs(P[:, 2] - (0.26 + sgn * 0.95 * P[:, 1])) < 0.035
@@ -338,6 +359,19 @@ def _hat(look, z):
             out += Cloud(hood.P[keep], hood.N[keep], hood.C[keep], hood.S[keep])
             out += frustum((-0.05, 0, z - 0.1), (-0.07, 0, z - 0.4), 0.09, 0.17, col, su=0.8, caps=False)
         return out
+    if kind in ("kepi", "cap"):
+        # an officer's kepi, its crown tipped forward; or a general's peaked cap,
+        # wide on top; each with a braided band and a short leather visor
+        with look.tag("hat"):
+            if kind == "kepi":
+                out += frustum((-0.01, 0, z - 0.03), (0.03, 0, z + 0.13), 0.108, 0.088, col)
+            else:
+                out += frustum((0, 0, z - 0.03), (0, 0, z + 0.07), 0.104, 0.135, col)
+                out += ellipsoid((0, 0, z + 0.07), (0.135, 0.13, 0.02), col)
+        with look.tag("band"):
+            out += frustum((0, 0, z - 0.03), (0, 0, z + 0.01), 0.11, 0.11, band, caps=False)
+        out += ellipsoid((0.1, 0, z - 0.03), (0.07, 0.085, 0.012), (30, 26, 24))   # the visor
+        return out
     if kind == "fur":
         # coonskin cap with the tail hanging down the back
         def fur(P, N):
@@ -475,6 +509,10 @@ def build_legs(look, lp):
             m += frustum((0, 0, H + 0.02), (-0.02 - lp["sway"] * 0.5, 0, bottom), 0.2, 0.24,
                          _coat_fn(look, -5.0), su=0.75, gap=(0.0, 0.4), caps=False)
             m += _fringe(look, H, bottom, 0.24, 0.75)
+    if style == "uniform":   # the tunic's skirt, short and closed
+        with look.tag("coat"):
+            m += frustum((0, 0, H + 0.04), (-0.01, 0, H - (0.12 if crouch else 0.2)), 0.17, 0.2,
+                         look.c("coat"), su=0.72, caps=False)
     if style in ("duster", "suit"):
         bottom = 0.05 if crouch else (max(0.04, H - 0.55) if style == "duster" else H - 0.32)
         with look.tag("coat"):
@@ -515,6 +553,8 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
             m += box((-0.05, 0.16, -0.22), (-0.05 + 0.1, 0.2, -0.02), LEATHER)
     m += frustum((0, 0, 0.04), (0, 0, 0.5), 0.15 if style != "dress" else 0.13, 0.19, _torso_fn(look), su=0.62)
     sleeve = forearm = "shirt"
+    if style == "uniform":
+        sleeve = forearm = "coat"
     if style == "buckskin":
         with look.tag("coat"):
             m += frustum((0, 0, 0.52), (0, 0, 0.0), 0.2, 0.21, _coat_fn(look, -5.0), su=0.7, gap=(0.0, 0.45), caps=False)
@@ -534,8 +574,9 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         m += frustum((0, 0, 0.6), (0, 0, 0.12), 0.09, 0.42, _poncho_fn(look), su=0.92, caps=False)
         sleeve = forearm = "poncho_a"
     elif style == "dress":
-        with look.tag("accent"):   # shawl over the shoulders
-            m += frustum((0, 0, 0.6), (0, 0, 0.38), 0.11, 0.26, look.c("accent"), su=0.8, caps=False)
+        if look.get("shawl", True):
+            with look.tag("accent"):   # shawl over the shoulders
+                m += frustum((0, 0, 0.6), (0, 0, 0.38), 0.11, 0.26, look.c("accent"), su=0.8, caps=False)
         sleeve, forearm = "dress", "dress" if look.get("sleeves") else "skin"
 
     with look.tag("skin"):
@@ -586,6 +627,17 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     with look.tag(sleeve):
         m += ellipsoid((0, 0.17, 0.46), (0.08, 0.07, 0.07), look.c(sleeve))
         m += ellipsoid((0, -0.17, 0.46), (0.08, 0.07, 0.07), look.c(sleeve))
+    if look.get("epaulettes"):   # gold on the shoulders, with a fringe
+        for side in (-1, 1):
+            m += ellipsoid((0, side * 0.18, 0.51), (0.07, 0.065, 0.022), BRASS)
+            for k in range(5):
+                a = (k - 2) * 0.03
+                m += beam((a, side * 0.235, 0.505), (a, side * 0.25, 0.44), 0.008, BRASS)
+    if look.get("sabre"):   # a cavalry sabre in its scabbard, hung at the left hip
+        m += beam((-0.02, 0.2, -0.02), (-0.3, 0.27, -0.74), 0.018, (52, 50, 54))
+        m += beam((-0.3, 0.27, -0.74), (-0.31, 0.272, -0.78), 0.02, (150, 140, 120))
+        m += beam((-0.02, 0.2, -0.02), (0.05, 0.19, 0.1), 0.014, BRASS)   # the hilt
+        m += ellipsoid((-0.01, 0.2, 0.0), (0.04, 0.03, 0.02), BRASS)
     if up.get("finger"):
         h = np.array(up["hL"], float)
         with look.tag("skin"):

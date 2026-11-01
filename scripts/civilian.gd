@@ -12,7 +12,8 @@ extends Actor
 ## claims a dead bandit, measures him, and drags him to boot hill to be buried. The
 ## padre ("role": "priest") kneels and blesses the dead first, anyone at all, and
 ## the church bell tolls for each; he fears no man, and neither gunfire nor the
-## stranger sends him running. Couples ("couple" in the placement) stroll arm in
+## stranger sends him running. A brave one ("brave": Cruz Verde's) doesn't even
+## wait for it to go quiet: he goes to the dead with the shooting still going. Couples ("couple" in the placement) stroll arm in
 ## arm while all is calm, and scatter separately when it isn't. Mourners ("role":
 ## "mourner", placed "indoors") stay inside until there's a fresh grave and the town
 ## is quiet, then come out in black to stand at it a while, and go home again.
@@ -95,6 +96,7 @@ var inside_t := 0.0          # how long he's been indoors
 var fade: Tween
 var undertaker := false
 var priest := false
+var brave := false        # a padre who goes to the dead with the shooting still going on
 var mourner := false
 var mourning: Dictionary = {}   # the grave she's going to, or standing at
 var gunsmith := false
@@ -140,6 +142,7 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	snitch = randf() < float(tdata["snitch"])
 	undertaker = tdata.get("role", "") == "undertaker"
 	priest = tdata.get("role", "") == "priest"
+	brave = priest and tdata.get("brave", false)
 	mourner = tdata.get("role", "") == "mourner"
 	gunsmith = tdata.get("role", "") == "gunsmith"
 	mayor = tdata.get("role", "") == "mayor"
@@ -406,7 +409,7 @@ func _idle(delta: float) -> void:
 				return
 	if game.quiet_for() >= game.quiet_after and _find_work():
 		return
-	if priest and game.quiet_for() >= game.quiet_after:
+	if priest and (brave or game.quiet_for() >= game.quiet_after):
 		body = game.blessing_for(self)
 		if body:
 			st = St.TO_BLESS

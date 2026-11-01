@@ -27,7 +27,13 @@
     "mayor":           {"style": "suit",   "hat": "top",      "mustache": true, "chain": true, "holsters": 0},
     "carpenter":       {"style": "shirt",  "hat": "slouch",   "apron": true, "beard": true, "holsters": 0},
     "barkeep":         {"style": "vest",   "hat": "slick",    "mustache": true, "apron": true, "holsters": 0},
-    "henwife":         {"style": "dress",  "hat": "rebozo",   "female": true, "apron": true}
+    "henwife":         {"style": "dress",  "hat": "rebozo",   "female": true, "apron": true},
+    "revolucionario":  {"style": "shirt",  "hat": "sombrero", "bandolier": true, "serape": true, "mustache": true},
+    "sargento":        {"style": "shirt",  "hat": "sombrero", "bandolier": true, "sash": true, "mustache": true, "beard": true},
+    "soldadera":       {"style": "dress",  "hat": "sombrero", "female": true, "sleeves": true, "bandolier": true, "shawl": false},
+    "coronel":         {"style": "uniform", "hat": "kepi",    "epaulettes": true, "sabre": true, "mustache": true},
+    "general":         {"style": "uniform", "hat": "cap",     "epaulettes": true, "sabre": true, "medals": true,
+                        "sash": true, "cigar": true, "mustache": true}
   },
 
   "player": {
@@ -40,7 +46,7 @@
     "hp": 2, "range": [70, 170], "cadence": [0.7, 1.3], "aim": 1.0, "speed": 1.0,
     "reflex": [0.6, 1.8], "nerve": [0.15, 0.9], "rank": 0, "cover_call": 0.5,
     "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "bold": 0.0, "opportunist": 0.0,
-    "concealed": false, "dynamite": 0, "fumble": 0.0, "bandages": 1, "patch": 0.6, "gasp": 0.0, "shouts": {}
+    "concealed": false, "boss": false, "coordinator": false, "dynamite": 0, "fumble": 0.0, "bandages": 1, "patch": 0.6, "gasp": 0.0, "shouts": {}
   },
 
   "types": {
@@ -92,7 +98,7 @@
       ]
     },
     "jefe": {
-      "name": "El Jefe", "gasp": 0.65, "template": "duster_sombrero", "loadout": ["coach", "colt"],
+      "name": "El Jefe", "gasp": 0.65, "boss": true, "template": "duster_sombrero", "loadout": ["coach", "colt"],
       "hp": 4, "range": [30, 95], "cadence": [0.45, 0.9], "nerve": [0.95, 0.95],
       "rank": 2, "cover_call": 1.0, "fires_on_move": true, "draw_sidearm": 0.8, "flank": 0.4,
       "palettes": [
@@ -211,6 +217,82 @@
         {"dress": [150, 30, 40], "accent": [30, 24, 26], "boots": [30, 24, 22], "skin": [214, 170, 140], "hair": [40, 28, 20]},
         {"dress": [40, 90, 70], "accent": [210, 190, 150], "boots": [40, 30, 26], "skin": [200, 150, 116], "hair": [150, 90, 40]},
         {"dress": [90, 50, 110], "accent": [20, 20, 24], "boots": [30, 24, 22], "skin": [180, 124, 92], "hair": [20, 16, 14]}
+      ]
+    },
+
+    "revolucionario": {
+      "name": "Revolucionario", "gasp": 0.45, "template": "revolucionario", "dynamite": 1, "loadout": ["navy"],
+      "loadouts": [{"guns": ["navy"], "weight": 4}, {"guns": ["colt"], "weight": 3}, {"guns": ["rifle"], "weight": 2}],
+      "hp": 2, "range": [60, 180], "cadence": [0.8, 1.5], "aim": 1.4, "speed": 1.0,
+      "reflex": [0.8, 1.8], "nerve": [0.2, 0.75], "cover_call": 0.5, "flank": 0.5,
+      "shouts": {"spot": ["¡Viva la revolución!", "¡Allí está el gringo!", "¡Tierra y libertad!"],
+                 "reload": ["¡Cúbreme, compadre!"], "scare": ["¡Santa María!"], "flee": ["¡Retirada!"]},
+      "palettes": [
+        {"shirt": [226, 218, 196], "trousers": [220, 212, 190], "boots": [110, 80, 52], "hat": [206, 180, 120],
+         "band": [70, 50, 36], "accent": [176, 46, 36], "poncho_a": [170, 40, 36], "poncho_b": [220, 196, 140],
+         "poncho_c": [40, 60, 90], "skin": [166, 108, 74], "hair": [26, 20, 18]},
+        {"shirt": [210, 200, 176], "trousers": [200, 190, 164], "boots": [92, 66, 44], "hat": [186, 160, 104],
+         "band": [120, 40, 30], "accent": [60, 110, 70], "poncho_a": [60, 110, 80], "poncho_b": [200, 176, 120],
+         "poncho_c": [140, 50, 40], "skin": [176, 116, 80], "hair": [34, 26, 22]},
+        {"shirt": [150, 120, 90], "trousers": [216, 206, 180], "boots": [80, 56, 38], "hat": [170, 140, 90],
+         "band": [40, 36, 34], "accent": [70, 80, 140], "poncho_a": [60, 50, 110], "poncho_b": [220, 200, 160],
+         "poncho_c": [180, 120, 40], "skin": [158, 100, 68], "hair": [20, 16, 14]}
+      ]
+    },
+    "tirador": {
+      "name": "Tirador", "gasp": 0.45, "template": "revolucionario", "dynamite": 1, "loadout": ["rifle", "navy"],
+      "hp": 2, "range": [120, 280], "cadence": [1.1, 1.8], "aim": 0.9, "reflex": [0.9, 1.8], "nerve": [0.3, 0.8],
+      "cover_call": 0.6, "flank": 0.2, "draw_sidearm": 0.4,
+      "shouts": {"spot": ["¡Lo tengo en la mira!", "¡Ahí, en el polvo!"], "reload": ["¡Cargando!"]},
+      "palettes": [
+        {"shirt": [220, 212, 190], "trousers": [210, 200, 176], "boots": [92, 66, 44], "hat": [196, 170, 112],
+         "band": [40, 36, 34], "accent": [120, 40, 30], "poncho_a": [120, 40, 30], "poncho_b": [210, 190, 140],
+         "poncho_c": [60, 50, 40], "skin": [160, 104, 70], "hair": [24, 18, 16]}
+      ]
+    },
+    "sargento": {
+      "name": "Sargento", "gasp": 0.55, "template": "sargento", "dynamite": 1, "loadout": ["coach", "colt"],
+      "hp": 2, "range": [40, 120], "cadence": [0.6, 1.1], "aim": 1.1, "reflex": [0.6, 1.4], "nerve": [0.6, 0.9],
+      "rank": 1, "cover_call": 0.9, "fires_on_move": true, "draw_sidearm": 0.6, "flank": 0.6,
+      "shouts": {"spot": ["¡A él, muchachos!", "¡Fuego!"], "reload": ["¡Cúbranme!"], "flee": ["¡Atrás, atrás!"]},
+      "palettes": [
+        {"shirt": [196, 180, 150], "trousers": [120, 100, 76], "boots": [70, 50, 34], "hat": [150, 124, 80],
+         "band": [176, 46, 36], "accent": [176, 46, 36], "skin": [150, 96, 66], "hair": [40, 32, 28]}
+      ]
+    },
+    "soldadera": {
+      "name": "Soldadera", "gasp": 0.45, "template": "soldadera", "loadout": ["rifle"],
+      "loadouts": [{"guns": ["rifle"], "weight": 2}, {"guns": ["colt"], "weight": 1}],
+      "hp": 1, "range": [80, 220], "cadence": [0.9, 1.5], "aim": 1.1, "reflex": [0.7, 1.5], "nerve": [0.3, 0.85],
+      "cover_call": 0.5, "flank": 0.4,
+      "shouts": {"spot": ["¡Ahí va el gringo!", "¡Viva la revolución!"], "reload": ["¡Cúbreme!"], "scare": ["¡Ay!"]},
+      "palettes": [
+        {"dress": [210, 200, 176], "accent": [176, 46, 36], "hat": [196, 170, 112], "band": [176, 46, 36],
+         "boots": [70, 50, 34], "skin": [170, 112, 78], "hair": [20, 16, 14]},
+        {"dress": [120, 60, 50], "accent": [210, 190, 150], "hat": [176, 150, 98], "band": [40, 36, 34],
+         "boots": [60, 44, 30], "skin": [156, 100, 68], "hair": [24, 18, 16]}
+      ]
+    },
+    "coronel": {
+      "name": "Coronel", "gasp": 0.7, "template": "coronel", "loadout": ["colt"],
+      "hp": 3, "range": [60, 160], "cadence": [0.6, 1.1], "aim": 1.0, "reflex": [0.5, 1.2], "nerve": [0.8, 0.95],
+      "rank": 2, "cover_call": 1.0, "draw_sidearm": 0.0, "flank": 0.3,
+      "shouts": {"spot": ["¡Fuego a discreción!", "¡Ahí está! ¡Mátenlo!"], "reload": ["¡Sostengan la línea!"],
+                 "flee": ["¡Reagrúpense!"]},
+      "palettes": [
+        {"coat": [112, 116, 88], "trousers": [96, 98, 76], "accent": [150, 40, 36], "boots": [30, 24, 20],
+         "hat": [112, 116, 88], "band": [196, 156, 64], "skin": [176, 120, 84], "hair": [28, 22, 18]}
+      ]
+    },
+    "general": {
+      "name": "El General", "gasp": 0.7, "template": "general", "loadout": ["coach", "colt"], "boss": true,
+      "coordinator": true, "hp": 4, "range": [30, 110], "cadence": [0.45, 0.9], "nerve": [0.95, 0.95],
+      "rank": 3, "cover_call": 1.0, "fires_on_move": true, "draw_sidearm": 0.8, "flank": 0.3,
+      "shouts": {"spot": ["¡Tráiganme su cabeza!", "¡Un hombre solo! ¡Mátenlo!"], "reload": ["¡Defiendan a su general!"],
+                 "flee": ["¡Cobardes!"]},
+      "palettes": [
+        {"coat": [40, 44, 52], "trousers": [40, 44, 52], "accent": [176, 46, 36], "boots": [24, 20, 18],
+         "hat": [40, 44, 52], "band": [206, 166, 70], "skin": [180, 124, 88], "hair": [30, 24, 20]}
       ]
     }
   }

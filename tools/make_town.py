@@ -132,7 +132,8 @@ ENEMIES = [
 # Townsfolk, near the doors they'd run for. Fewer than the bandits.
 # The gang's reserve, drinking in the saloon: they come out when the shooting gets
 # close and loud, or when a runner fetches them.
-RESERVE = {"den": "saloon", "squad": ["pistolero", "bandido", "cowboy", "bandido", "redscarf"]}
+RESERVE = {"den": "saloon", "squad": ["pistolero", "revolucionario", "cowboy", "soldadera", "revolucionario"]}
+# (revolucionarios up from the south, drinking with the gang: in the reserve, three of the five)
 
 CIVILIANS = [
     {"kind": "gunsmith", "x": 45.5, "y": 28.6, "facing": 90},

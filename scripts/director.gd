@@ -12,12 +12,15 @@ extends Node
 ## come out of): nobody's there till the first shot (or till everyone outside has gone
 ## quiet for good). Then out they come, the ready ones in a couple of seconds, the
 ## rest when they've woken and found their boots. A level can count its waves from
-## that first shot instead of from the start ("waves_from": "first_shot").
+## that first shot instead of from the start ("waves_from": "first_shot"). No more
+## than CROWD of the gang are about at once: past that, the rest wait out on the
+## road till there's room (the frame time's the reason, and a fair fight).
 
 const WARN := 15.0          # s of warning: which roads they're coming down
-const EVERY := 0.9          # s between men walking in off the same road
+const EVERY := 0.45         # s between men walking in off the same road (a band, not a file)
 const HEAR := 1100.0        # px: gunfire this close to where they come in, and recent,
 const HEAR_FOR := 8.0       # s: is a fight going on (they go to it)
+const CROWD := 40           # alive at once, at most: the rest wait out on the road for room
 const READY := Vector2(1.5, 2.5)     # s: out of the door, the ones who were ready
 const ASLEEP := Vector2(12.0, 18.0)  # s: the ones who had to wake up first
 
@@ -44,8 +47,11 @@ func setup(g: Node, wave_list: Array, from_first_shot := false) -> void:
 	rng.seed = 7919 + waves.size()
 	for sl in g.level.get("sleepers", []):
 		var r: Vector2 = READY if sl.get("ready", false) else ASLEEP
+		var delay := rng.randf_range(r.x, r.y)
+		if sl.has("after"):   # (or a set time after the shot, give or take)
+			delay = maxf(0.5, float(sl["after"]) + rng.randf_range(-0.5, 0.5))
 		sleepers.append({"kind": sl["kind"], "at": Iso.to_screen(Vector2(sl["x"], sl["y"])),
-			"delay": rng.randf_range(r.x, r.y), "ready": sl.get("ready", false)})
+			"delay": delay, "ready": delay < 5.0})
 	var mid := _center()
 	for e in g.level.get("entries", []):
 		var at := Iso.to_screen(Vector2(e["x"], e["y"]))
@@ -114,7 +120,7 @@ func _process(delta: float) -> void:
 		if wc >= float(w["at"]):
 			_send(w)
 			next += 1
-	if not queue.is_empty():
+	if not queue.is_empty() and game.alive_enemies() < CROWD:
 		spawn_t -= delta
 		if spawn_t <= 0.0:
 			spawn_t = EVERY / maxf(1.0, _roads_in_queue())
@@ -153,6 +159,8 @@ func _wake() -> void:
 			at = game.free_point_near(at, 20.0)
 		var en: Enemy = game._add_enemy(sl["kind"], at, PackedVector2Array(), 90.0)
 		game.stats["out of doors"] = game.stats.get("out of doors", 0) + 1
+		if game.leaderless:
+			en.lose_heart()
 		if quiet:   # nobody about, and no answer: they go and look
 			en.wary = true
 			en.start_investigate(_center(), true)
@@ -188,11 +196,23 @@ func _send(w: Dictionary) -> void:
 	game.stats["waves"] = game.stats.get("waves", 0) + 1
 
 
-## One of the gang's sort (those passing as townsfolk and El Jefe don't come
-## marching in), in the mix of the men already in town.
+## One of the gang's sort: the map's own mix for its waves ("wave_kinds", by weight),
+## or else the mix of the men already in town (those passing as townsfolk and the
+## boss don't come marching in).
 func _a_kind() -> String:
+	var mix: Dictionary = game.level.get("wave_kinds", {})
+	if not mix.is_empty():
+		var total := 0.0
+		for k in mix:
+			total += float(mix[k])
+		var r := rng.randf() * total
+		for k in mix:
+			r -= float(mix[k])
+			if r <= 0.0:
+				return k
+		return mix.keys()[0]
 	var pool: Array = game.level["enemies"].map(func(e): return e["kind"]).filter(
-		func(k): return not k in ["jefe", "gambler", "saloon_girl"])
+		func(k): return not (game.enemy_type(k).get("boss", false) or game.enemy_type(k).get("concealed", false)))
 	if pool.is_empty():
 		return "bandido"
 	return pool[rng.randi_range(0, pool.size() - 1)]
@@ -206,6 +226,10 @@ func _walk_in(q: Array) -> void:
 	var en: Enemy = game._add_enemy(q[1], at, PackedVector2Array(), rad_to_deg((entry["into"] - entry["at"]).angle()))
 	arrived += 1
 	game.stats["arrivals"] = game.stats.get("arrivals", 0) + 1
+	if game.leaderless:   # word on the road: their general's dead
+		en.shaken = 0.7
+		en.nerve *= 0.7
+		game.stats["arrive headless"] = game.stats.get("arrive headless", 0) + 1
 	var fight: bool = game.clock - game.last_gunfire < HEAR_FOR and game.last_gunfire_at.distance_to(at) < HEAR
 	if fight:
 		en.enter_combat(game.last_gunfire_at, false, false)   # the shooting: that's where they're wanted

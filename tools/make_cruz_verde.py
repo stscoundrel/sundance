@@ -89,29 +89,33 @@ STREETS = [
 ]
 MUD = [[31.8, 31.4, 0.8], [50.0, 30.6, 1.0], [25.6, 29.4, 0.6]]
 
-# The garrison's not as watchful as it ought to be: seven on the grounds...
+# The garrison's not as watchful as it ought to be: there was a party last night,
+# after their last victory. Five on the grounds, all revolucionarios...
 ENEMIES = [
-    {"kind": "rifleman", "x": 32.5, "y": 16.0, "look": (32.5, 8)},
-    {"kind": "rifleman", "x": 46.0, "y": 44.4, "look": (41, 47)},
-    {"kind": "saloon_girl", "x": 40.2, "y": 44.4, "look": (34, 44)},
-    {"kind": "bandido", "x": 24.0, "y": 31.2, "patrol": [[24.0, 31.2], [30.0, 31.6], [41.0, 31.2]]},
-    {"kind": "bandido", "x": 44.6, "y": 34.6, "look": (49, 35)},
-    {"kind": "pistolero", "x": 33.8, "y": 18.0, "patrol": [[33.8, 18.0], [33.8, 37.0]]},
-    {"kind": "drunkard", "x": 28.2, "y": 36.8, "look": (32, 32)},
+    {"kind": "tirador", "x": 32.5, "y": 16.0, "look": (32.5, 8)},
+    {"kind": "revolucionario", "x": 24.0, "y": 31.2, "patrol": [[24.0, 31.2], [30.0, 31.6], [41.0, 31.2]]},
+    {"kind": "revolucionario", "x": 44.6, "y": 34.6, "look": (49, 35)},
+    {"kind": "revolucionario", "x": 33.8, "y": 18.0, "patrol": [[33.8, 18.0], [33.8, 37.0]]},
+    {"kind": "revolucionario", "x": 28.2, "y": 36.8, "look": (32, 32)},
 ]
-# ...and the rest indoors, resting: they come out of these doors once the shooting
-# starts. The ready ones in a couple of seconds; the rest have to wake and find
-# their boots (El Jefe among them).
+# ...and ten indoors, sleeping it off with the saloon girls: once the shooting
+# starts they come out of these doors, a couple who were ready at once, the rest by
+# tens of seconds ("after"), spread out, El General last of all. While he lives, the garrison
+# has its orders.
 SLEEPERS = [
-    {"kind": "pistolero", "x": 21.0, "y": 43.6, "ready": True},     # the barracks
-    {"kind": "cowboy", "x": 24.0, "y": 43.6, "ready": True},
-    {"kind": "redscarf", "x": 27.0, "y": 43.6, "ready": False},
-    {"kind": "oldtimer", "x": 21.0, "y": 43.6, "ready": False},
-    {"kind": "bandido", "x": 24.0, "y": 43.6, "ready": False},
-    {"kind": "gunslinger", "x": 43.6, "y": 40.5, "ready": True},     # the cantina
-    {"kind": "bandido", "x": 43.6, "y": 40.5, "ready": False},
-    {"kind": "jefe", "x": 41.0, "y": 23.6, "ready": False},          # the general's house
+    {"kind": "revolucionario", "x": 24.0, "y": 43.6, "after": 2},     # the barracks
+    {"kind": "saloon_girl", "x": 43.6, "y": 40.5, "after": 2},        # the cantina
+    {"kind": "saloon_girl", "x": 43.6, "y": 40.5, "after": 12},
+    {"kind": "revolucionario", "x": 21.0, "y": 43.6, "after": 12},
+    {"kind": "soldadera", "x": 27.0, "y": 43.6, "after": 12},
+    {"kind": "saloon_girl", "x": 43.6, "y": 40.5, "after": 20},
+    {"kind": "revolucionario", "x": 24.0, "y": 43.6, "after": 20},
+    {"kind": "drunkard", "x": 43.6, "y": 40.5, "after": 20},
+    {"kind": "saloon_girl", "x": 43.6, "y": 40.5, "after": 30},
+    {"kind": "general", "x": 41.0, "y": 23.6, "after": 30},           # his house
 ]
+# The bands coming down the roads: mostly revolucionarios, many of them women.
+WAVE_KINDS = {"revolucionario": 5, "soldadera": 3, "tirador": 2, "sargento": 1}
 for e in ENEMIES:   # (written as where each looks; placements take a screen angle)
     if "look" in e:
         lx, ly = e.pop("look")
@@ -121,7 +125,7 @@ CIVILIANS = [
     {"kind": "saloon_girl", "x": 38.2, "y": 43.8, "facing": 120},
     {"kind": "saloon_girl", "x": 42.3, "y": 44.0, "facing": 60},
     {"kind": "saloon_girl", "x": 37.6, "y": 36.8, "facing": 200},
-    {"kind": "priest", "x": 21.5, "y": 23.7, "facing": 90},
+    {"kind": "priest", "x": 21.5, "y": 23.7, "facing": 90, "brave": True},   # he goes to the dead under fire
     {"kind": "peon", "x": 27.4, "y": 29.6, "facing": 0},
     {"kind": "peon", "x": 39.4, "y": 27.4, "facing": 180},
     {"kind": "peon", "x": 54.0, "y": 21.8, "facing": 120},
@@ -165,6 +169,8 @@ def main():
         "posts": posts,
         "entries": ENTRIES,
         "center": CENTER,
+        "wave_kinds": WAVE_KINDS,
+        "posse": False,   # (a fort, not a town to get lost in: the last of them just hold it)
     })
     print("Cruz Verde: %d buildings, %d props, %d bandits on guard and %d indoors, %d townsfolk, %d guard posts" % (
         len(FORT + INSIDE + OUTSIDE), len(PROPS) + len(cemetery()), len(ENEMIES), len(SLEEPERS), len(CIVILIANS), len(posts)))

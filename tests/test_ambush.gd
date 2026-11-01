@@ -1,5 +1,5 @@
 extends SceneTree
-## Cruz Verde done with the knife: the seven on guard go down without a shot. The
+## Cruz Verde done with the knife: the five on guard go down without a shot. The
 ## quiet's noticed in the end: those indoors come out (no faster than the slowest
 ## wakes) and go looking, wary, not straight to a fight; and the waves start then.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_ambush.gd
@@ -36,15 +36,15 @@ func _process(delta: float) -> bool:
 	if is_equal_approx(snappedf(t, 1.0 / 60.0), 2.0):
 		for e in game.enemies:   # quietly, one by one
 			e.die(Vector2.RIGHT, game.player, "death_slump")
-	if t < 21.0:
+	if t < 34.0:
 		return false
 	var d: Director = game.director
 	print("roused by %s; %d came out; states %s; next wave in %.0f s" % [game.stats.get("roused by", "nothing"),
-		game.stats.get("out of doors", 0), game.enemies.slice(7).map(func(e): return Enemy.St.keys()[e.st]), d.next_in()])
+		game.stats.get("out of doors", 0), game.enemies.slice(5).map(func(e): return Enemy.St.keys()[e.st]), d.next_in()])
 	check(game.last_gunfire < -1e8, "a shot was fired")
 	check(game.stats.get("roused by", "") == "the quiet", "not roused by the quiet")
-	check(d.indoors() == 0 and game.stats.get("out of doors", 0) == 8, "not all out")
-	check(game.enemies.slice(7).all(func(e): return e.st in [Enemy.St.INVESTIGATE, Enemy.St.SEARCH]), "they didn't go looking")
+	check(d.indoors() == 0 and game.stats.get("out of doors", 0) == 10, "not all out")
+	check(game.enemies.slice(5).all(func(e): return e.st in [Enemy.St.INVESTIGATE, Enemy.St.SEARCH]), "they didn't go looking")
 	check(d.next_in() > 0.0, "the waves never started")
 	check(game.state == "play", "won with the garrison still to come")
 	print("ambush test: ", "OK" if failures == 0 else "%d failures" % failures)

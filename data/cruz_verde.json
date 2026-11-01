@@ -1103,25 +1103,13 @@
  },
  "enemies": [
   {
-   "kind": "rifleman",
+   "kind": "tirador",
    "x": 32.5,
    "y": 16.0,
    "facing": 333
   },
   {
-   "kind": "rifleman",
-   "x": 46.0,
-   "y": 44.4,
-   "facing": 189
-  },
-  {
-   "kind": "saloon_girl",
-   "x": 40.2,
-   "y": 44.4,
-   "facing": 210
-  },
-  {
-   "kind": "bandido",
+   "kind": "revolucionario",
    "x": 24.0,
    "y": 31.2,
    "patrol": [
@@ -1140,13 +1128,13 @@
    ]
   },
   {
-   "kind": "bandido",
+   "kind": "revolucionario",
    "x": 44.6,
    "y": 34.6,
    "facing": 31
   },
   {
-   "kind": "pistolero",
+   "kind": "revolucionario",
    "x": 33.8,
    "y": 18.0,
    "patrol": [
@@ -1161,7 +1149,7 @@
    ]
   },
   {
-   "kind": "drunkard",
+   "kind": "revolucionario",
    "x": 28.2,
    "y": 36.8,
    "facing": 357
@@ -1169,52 +1157,64 @@
  ],
  "sleepers": [
   {
-   "kind": "pistolero",
-   "x": 21.0,
-   "y": 43.6,
-   "ready": true
-  },
-  {
-   "kind": "cowboy",
+   "kind": "revolucionario",
    "x": 24.0,
    "y": 43.6,
-   "ready": true
+   "after": 2
   },
   {
-   "kind": "redscarf",
+   "kind": "saloon_girl",
+   "x": 43.6,
+   "y": 40.5,
+   "after": 2
+  },
+  {
+   "kind": "saloon_girl",
+   "x": 43.6,
+   "y": 40.5,
+   "after": 12
+  },
+  {
+   "kind": "revolucionario",
+   "x": 21.0,
+   "y": 43.6,
+   "after": 12
+  },
+  {
+   "kind": "soldadera",
    "x": 27.0,
    "y": 43.6,
-   "ready": false
+   "after": 12
   },
   {
-   "kind": "oldtimer",
-   "x": 21.0,
-   "y": 43.6,
-   "ready": false
+   "kind": "saloon_girl",
+   "x": 43.6,
+   "y": 40.5,
+   "after": 20
   },
   {
-   "kind": "bandido",
+   "kind": "revolucionario",
    "x": 24.0,
    "y": 43.6,
-   "ready": false
+   "after": 20
   },
   {
-   "kind": "gunslinger",
+   "kind": "drunkard",
    "x": 43.6,
    "y": 40.5,
-   "ready": true
+   "after": 20
   },
   {
-   "kind": "bandido",
+   "kind": "saloon_girl",
    "x": 43.6,
    "y": 40.5,
-   "ready": false
+   "after": 30
   },
   {
-   "kind": "jefe",
+   "kind": "general",
    "x": 41.0,
    "y": 23.6,
-   "ready": false
+   "after": 30
   }
  ],
  "civilians": [
@@ -1240,7 +1240,8 @@
    "kind": "priest",
    "x": 21.5,
    "y": 23.7,
-   "facing": 90
+   "facing": 90,
+   "brave": true
   },
   {
    "kind": "peon",
@@ -1327,18 +1328,6 @@
    "y": 16.0,
    "tag": "lookout",
    "facing": 333
-  },
-  {
-   "x": 46.0,
-   "y": 44.4,
-   "tag": "lookout",
-   "facing": 189
-  },
-  {
-   "x": 40.2,
-   "y": 44.4,
-   "tag": "porch",
-   "facing": 210
   },
   {
    "x": 24.0,
@@ -1438,16 +1427,7 @@
    "x": 33.5,
    "y": 39.3,
    "tag": "street",
-   "patrol": [
-    [
-     33.5,
-     34.3
-    ],
-    [
-     33.5,
-     44.3
-    ]
-   ]
+   "facing": 333
   },
   {
    "x": 32.3,
@@ -1465,16 +1445,7 @@
    "x": 37.5,
    "y": 31.9,
    "tag": "street",
-   "patrol": [
-    [
-     32.5,
-     31.9
-    ],
-    [
-     42.5,
-     31.9
-    ]
-   ]
+   "facing": 207
   },
   {
    "x": 42.0,
@@ -1517,6 +1488,12 @@
    "y": 34.4,
    "tag": "street",
    "facing": 333
+  },
+  {
+   "x": 44.8,
+   "y": 43.1,
+   "tag": "yard",
+   "facing": 207
   },
   {
    "x": 47.0,
@@ -1697,6 +1674,12 @@
    "y": 35.9,
    "tag": "yard",
    "facing": 207
+  },
+  {
+   "x": 39.0,
+   "y": 45.0,
+   "tag": "yard",
+   "facing": 207
   }
  ],
  "entries": [
@@ -1729,5 +1712,12 @@
  "center": {
   "x": 34.2,
   "y": 31.4
- }
+ },
+ "wave_kinds": {
+  "revolucionario": 5,
+  "soldadera": 3,
+  "tirador": 2,
+  "sargento": 1
+ },
+ "posse": false
 }

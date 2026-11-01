@@ -7,9 +7,10 @@ extends SceneTree
 ##              count a different one.
 ##   scale    - a smaller gang bands together into a smaller posse, and drinks in a
 ##              smaller reserve; the hand-drawn town keeps its seven and its five.
-##   picker   - the title gives way to the picker; picking the town already loaded
-##              goes on to the guns; picking another reloads with it, at the guns,
-##              and the drawn town keeps its 25, its posse of seven, its five.
+##   picker   - the title gives way to the picker, which offers San Miguel and Cruz
+##              Verde (the rest are hidden, for the tests); picking another town
+##              reloads with it, at the guns, and the drawn town keeps its 25, its posse
+##              of seven, its five; picking the town already loaded goes on to the guns.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
 
 var game: Node
@@ -56,6 +57,11 @@ func _process(_delta: float) -> bool:
 	check(g.state == "loadout", "a new town should open on the guns (%s)" % g.state)
 	check(g.enemies.size() == 25 and g.posse_size == Posse.SIZE and g.level["reserve"]["squad"].size() == 5,
 		"the drawn town: %d bandits, posse %d, reserve %d" % [g.enemies.size(), g.posse_size, g.level["reserve"]["squad"].size()])
+	step = "picker"
+	g._to_levels()
+	check(g.levels[g.level_pick]["id"] == "san_miguel", "the cursor isn't on the town loaded")
+	g.pick_level(g.level_pick)
+	check(g.state == "loadout", "picking the town already loaded didn't go on to the guns (%s)" % g.state)
 	print("levels test: ", "OK" if failures == 0 else "%d failures" % failures)
 	quit(1 if failures else 0)
 	return true
@@ -137,7 +143,5 @@ func _picker() -> void:
 	check(game.state == "title", "starts at %s" % game.state)
 	game._to_levels()
 	check(game.state == "levels", "the title didn't give way to the picker")
-	check(game.levels[game.level_pick]["id"] == "san_miguel_15", "the cursor isn't on the town loaded")
-	check(game.levels.size() >= 4 and game.levels[0]["id"] == "san_miguel", "the drawn town should come first")
-	game.pick_level(game.level_pick)
-	check(game.state == "loadout", "picking the town already loaded didn't go on to the guns (%s)" % game.state)
+	check(game.levels.map(func(l): return l["id"]) == ["san_miguel", "cruz_verde"],
+		"the picker offers %s" % [game.levels.map(func(l): return l["id"])])

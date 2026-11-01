@@ -20,8 +20,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # it has bandits (seeded by that count). Tags say who suits a post: "boss" (El
 # Jefe), "porch" (the ones passing as townsfolk), "lookout" (long views: riflemen),
 # "street", "alley", "yard".
-POST_TAG = {"jefe": "boss", "gambler": "porch", "saloon_girl": "porch", "rifleman": "lookout",
-            "poacher": "lookout"}
+POST_TAG = {"jefe": "boss", "general": "boss", "gambler": "porch", "saloon_girl": "porch", "rifleman": "lookout",
+            "poacher": "lookout", "tirador": "lookout"}
 
 
 def footprint(kind, x, y):

@@ -1407,10 +1407,10 @@
   "den": "saloon",
   "squad": [
    "pistolero",
-   "bandido",
+   "revolucionario",
    "cowboy",
-   "bandido",
-   "redscarf"
+   "soldadera",
+   "revolucionario"
   ]
  },
  "holdouts": [

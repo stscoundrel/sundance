@@ -41,6 +41,10 @@ var quiet_after := 45.0             # seconds without gunfire or a fight before 
 var last_gunfire := -1e9
 var last_gunfire_at := Vector2.INF
 var director: Director = null   # a level's waves, if it has any
+# A gang with a coordinator (El General: "coordinator" in his type) fights to his
+# orders while he lives: the alarm sends men out and falls back on a holdout. Down
+# he goes, and it's over: no more orders, every man shaken, the faint-hearted run.
+var leaderless := false
 var _quiet := 0.0
 var graves := PackedVector2Array()
 var to_mourn: Array[Dictionary] = []
@@ -296,11 +300,11 @@ func usable_post(p: Dictionary) -> bool:
 
 static func _post_tag(kind: String) -> String:
 	match kind:
-		"jefe":
+		"jefe", "general":
 			return "boss"
 		"gambler", "saloon_girl":
 			return "porch"
-		"rifleman", "poacher":
+		"rifleman", "poacher", "tirador":
 			return "lookout"
 	return "street"
 
@@ -1414,6 +1418,19 @@ func in_hand(a: Actor) -> bool:
 	return who != null and who.alive and who.body == a and who.st in [Civilian.St.MEASURE, Civilian.St.DRAG]
 
 
+## Their general down: the gang's lost its head.
+func lose_the_head(who: Enemy) -> void:
+	if leaderless:
+		return
+	leaderless = true
+	hud.banner("¡Mataron al general!  The garrison's lost its head!")
+	sfx("sting", null, -6.0, 0.0)
+	stats["lost its head"] = stats.get("lost its head", 0) + 1
+	for e in enemies:
+		if e.alive and e != who:
+			e.lose_heart()
+
+
 ## A free plot on boot hill, a little apart from the other new graves.
 func grave_spot() -> Vector2:
 	var r: Array = level["boothills"][0]
@@ -1536,6 +1553,8 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 func _on_enemy_died(e: Actor) -> void:
 	fallen += 1
 	raise_alarm(5.0)
+	if e is Enemy and e.tdata.get("coordinator", false):
+		lose_the_head(e)
 	if e.has_meta("scout") and e.alarm_role == "scout":
 		raise_alarm(10.0)   # sent to look, and never came back
 		stats["scouts lost"] = stats.get("scouts lost", 0) + 1
@@ -1556,7 +1575,8 @@ func _on_enemy_died(e: Actor) -> void:
 				g["ammo"] = p   # it goes with his gun
 				g["ammo_kind"] = ammo
 				break
-	if posse == null and alive_enemies() <= posse_size and alive_enemies() > 0 and (director == null or director.done()):
+	if posse == null and level.get("posse", true) and alive_enemies() <= posse_size and alive_enemies() > 0 \
+			and (director == null or director.done()):
 		posse = Posse.new(self)
 		posse.form()
 	var coming: bool = den.has("door") and den["rallied"] and not den["squad"].is_empty() \
@@ -2391,6 +2411,8 @@ func _far_from_fight() -> Array:
 
 
 func _gang_alarm(delta: float) -> void:
+	if leaderless:
+		return   # nobody giving the orders now: every man for himself
 	if quiet_for() > 30.0:
 		alarm = maxf(0.0, alarm - 0.2 * delta)   # a long quiet: the nerves settle (a little)
 	if alarm < UNEASY or seen_pos == Vector2.ZERO:

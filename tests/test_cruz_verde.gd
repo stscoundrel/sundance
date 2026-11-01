@@ -1,12 +1,14 @@
 extends SceneTree
 ## Cruz Verde, the walled garrison:
-##   map      - the seven on guard and the townsfolk are on open ground; none of them
+##   map      - the five on guard and the townsfolk are on open ground; none of them
 ##              (nor any guard post) can see where the stranger starts, outside the
 ##              west gate; he can get from there to the plaza.
-##   ambush   - the rest are indoors: fifteen on the title, seven to be seen. Waiting
+##   ambush   - the rest are indoors: fifteen on the title, five to be seen. Waiting
 ##              outside, nothing stirs and no waves come. The first shot brings them
-##              out of their doors, the ready ones in about two seconds, the rest (El
-##              Jefe among them) within about eighteen; and starts the waves' clock.
+##              out of their doors: two at once, then three at twelve seconds, three
+##              at twenty and two (El General last) at thirty; and starts the waves'
+##              clock, the first of them a minute off.
+##   padre    - the padre goes to the dead with the shooting still going on.
 ##   ways in  - from every road there's a way to the plaza, and each gate and
 ##              breach is a way through the walls on its own.
 ##   fight    - the autopilot holds out a few minutes: the waves keep coming down
@@ -21,6 +23,8 @@ var t := 0.0
 var shot_at := -1.0
 var first_out := -1.0
 var all_out := -1.0
+var blessed_under_fire := 0
+var blessings := 0
 
 
 func _initialize() -> void:
@@ -49,7 +53,7 @@ func _process(delta: float) -> bool:
 		_map()
 		_ways_in()
 		step = "ambush"
-		check(game.enemies.size() == 7 and game.director.indoors() == 8, "%d out, %d in" % [game.enemies.size(),
+		check(game.enemies.size() == 5 and game.director.indoors() == 10, "%d out, %d in" % [game.enemies.size(),
 			game.director.indoors()])
 		game.begin()
 		game.player.hp = 100000
@@ -57,8 +61,12 @@ func _process(delta: float) -> bool:
 		return false
 	t += delta
 	var d: Director = game.director
+	for c in game.civilians:   # (gone to the dead, or knelt by them, with the shooting going on)
+		if c.priest and c.alive and c.st in [Civilian.St.TO_BLESS, Civilian.St.BLESS] and game.quiet_for() < game.quiet_after:
+			blessed_under_fire += 1
+	blessings = game.stats.get("blessings", 0)
 	if t < 10.0:
-		if d.next_in() >= 0.0 or game.enemies.size() != 7 or game.last_gunfire > -1e8:
+		if d.next_in() >= 0.0 or game.enemies.size() != 5 or game.last_gunfire > -1e8:
 			check(false, "it stirred with the stranger waiting outside (%.1f to a wave, %d about)" % [d.next_in(), game.enemies.size()])
 			t = 10.0
 		return false
@@ -72,21 +80,26 @@ func _process(delta: float) -> bool:
 		first_out = t
 	if all_out < 0.0 and d.indoors() == 0:
 		all_out = t
-		var jefe: bool = game.enemies.any(func(e): return e.kind == "jefe")
-		print("first shot at %.1f s; first out %.1f s after, all eight %.1f s after; next wave in %.0f s" % [
+		var jefe: bool = game.enemies.any(func(e): return e.kind == "general")
+		print("first shot at %.1f s; first out %.1f s after, all ten %.1f s after; next wave in %.0f s" % [
 			shot_at, first_out - shot_at, all_out - shot_at, d.next_in()])
 		check(first_out - shot_at < 3.0, "the ready ones took %.1f s" % (first_out - shot_at))
-		check(all_out - shot_at > 10.0 and all_out - shot_at < 19.0, "all out %.1f s after the shot" % (all_out - shot_at))
-		check(jefe, "El Jefe never came out")
+		check(all_out - shot_at > 28.0 and all_out - shot_at < 31.5, "all out %.1f s after the shot" % (all_out - shot_at))
+		check(jefe, "El General never came out")
 		check(game.stats.get("roused by", "") == "the shooting", "roused by %s" % game.stats.get("roused by", ""))
-		check(d.next_in() > 0.0 and d.next_in() < 30.0 - (all_out - shot_at) + 1.0, "the waves' clock didn't start with the shot")
+		check(d.next_in() > 0.0 and d.next_in() < 60.0 - (all_out - shot_at) + 1.0, "the waves' clock didn't start with the shot")
 		step = "fight"
+		for e in game.enemies:   # one for the padre, in the middle of it all
+			if e.kind == "revolucionario" and e.alive:
+				e.die(Vector2.RIGHT, null, "death_slump")
 	if t < 210.0 and game.state == "play":
 		return false
 	print("after %.0f s: %s; %d of %d down, %d walked in; stats %s" % [t, game.state,
 		game.enemies.filter(func(e): return not e.alive).size(), game.enemies.size(), game.stats.get("arrivals", 0), game.stats])
 	check(game.stats.get("arrivals", 0) >= 12, "only %d walked in by %.0f s" % [game.stats.get("arrivals", 0), t])
 	check(game.stats.get("waves warned", 0) >= 6, "too few warnings")
+	check(blessed_under_fire >= 1, "the padre never went to the dead under fire (%d blessings)" % blessings)
+	print("the padre with the dead under fire for %.0f s; %d blessings" % [blessed_under_fire / 60.0, blessings])
 	print("Cruz Verde test: ", "OK" if failures == 0 else "%d failures" % failures)
 	quit(1 if failures else 0)
 	return true

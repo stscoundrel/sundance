@@ -506,6 +506,19 @@ func scout(at: Vector2) -> void:
 	_log("scouts")
 
 
+## His general's fallen: shaken to the core, the heart gone out of him; one with
+## little nerve left turns tail.
+func lose_heart() -> void:
+	shaken = 1.0
+	nerve *= 0.6
+	if reaction in ["", "point", "flinch"] and randf() < 0.6 * (1.0 - nerve):
+		threat = game.seen_pos if game.seen_pos != Vector2.ZERO else global_position
+		start_reaction("flee")
+		_log("loses heart")
+	else:
+		_log("wavers at the news")
+
+
 ## Come in down a road with nothing going on that he can hear: on to the middle of
 ## town, wary, to wait there looking about.
 func arrive(spot: Vector2, from: Vector2) -> void:
