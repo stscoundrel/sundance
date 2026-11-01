@@ -929,6 +929,52 @@ def crate_stack():
     return m
 
 
+def keg():
+    """A powder keg: small and squat, its staves stained near black, bright copper
+    hoops (no iron to strike a spark) and a white band painted round its middle so
+    nobody mistakes it for a water barrel. A wooden bung in the top."""
+    r = 0.27
+    c0 = (r + 0.02, r + 0.02)
+
+    def fn(P, N):
+        ang = np.arctan2(P[:, 1] - c0[1], P[:, 0] - c0[0])
+        st = np.floor(ang / (2 * math.pi) * 14)
+        c = np.tile([62.0, 44, 32], (len(P), 1)) * (0.85 + 0.3 * hash01(st))[:, None]
+        z = P[:, 2]
+        band = np.abs(z - 0.34) < 0.07
+        c[band] = (226, 220, 200)
+        hoop = (np.abs(z - 0.08) < 0.03) | (np.abs(z - 0.6) < 0.03)
+        c[hoop] = (196, 112, 60)
+        return c
+    m = frustum((*c0, 0), (*c0, 0.34), 0.23, 0.27, fn)
+    m += frustum((*c0, 0.34), (*c0, 0.68), 0.27, 0.23, fn)
+    m += frustum((c0[0] + 0.08, c0[1], 0.68), (c0[0] + 0.08, c0[1], 0.72), 0.04, 0.04, solid((150, 110, 70)))
+    return m
+
+
+def dyn_crate():
+    """A crate of dynamite, the lid prised half off: the red sticks packed in rows
+    inside, in sawdust, a red band painted round the boards."""
+    L, Wd, H = 1.0, 0.7, 0.5
+    wood = planks((176, 140, 92), board=0.12, mud=0)
+
+    def fn(P, N):
+        c = wood(P, N)
+        band = (np.abs(P[:, 2] - 0.28) < 0.07) & (np.abs(N[:, 2]) < 0.5)
+        c[band] = (176, 40, 30)
+        return c
+    m = box((0, 0, 0), (L, Wd, H), fn, skip=("+z",))
+    m += box((0.04, 0.04, H - 0.08), (L - 0.04, Wd - 0.04, H - 0.07), solid((196, 168, 112)),
+             skip=("-z", "-x", "+x", "-y", "+y"))                                     # sawdust
+    for i in range(7):   # the sticks, lying lengthwise in a row
+        y = 0.1 + i * 0.08
+        m += beam((0.08, y, H - 0.05), (L - 0.12, y, H - 0.05), 0.032, (184, 36, 28))
+    lid = box((0, 0, 0), (L, Wd * 0.55, 0.04), planks((168, 132, 86), board=0.12, mud=0))
+    lid.transform(rot_x(-0.35))
+    m += lid.translate((0.0, Wd * 0.48, H + 0.02))
+    return m
+
+
 def coop():
     """A little plank hen house on short legs, a ramp up to its hatch."""
     wood = planks((150, 118, 82), board=0.14, mud=0)
@@ -1017,7 +1063,7 @@ FRAGILE = {
 
 # Props that shooting wears down: each gets a damaged and a wrecked look.
 BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon", "crate_stack",
-             "upturned_n", "upturned_s", "upturned_e", "upturned_w")
+             "upturned_n", "upturned_s", "upturned_e", "upturned_w", "keg", "dyn_crate")
 RAW_WOOD = np.array([214, 178, 128], float)   # fresh splinters
 
 
@@ -1534,6 +1580,10 @@ BUILDINGS = {
     "jacal_b": (lambda: jacal(83), (3, 3), "wall", True, None),
     "well": (well, (1.2, 1.2), "cover", False, [[0.15, 0.15, 1.05, 1.05]]),
     "sandbags_x": (lambda: sandbags(True), (2.0, 0.6), "cover", False, None),
+    # the explosives: shot, a keg fizzes a second and goes up; a crate of dynamite
+    # burns a while first, then makes the biggest bang there is
+    "keg": (keg, (0.45, 0.45), "cover", False, None),
+    "dyn_crate": (dyn_crate, (0.8, 0.56), "cover", False, None),
     "crate_stack": (crate_stack, (1.6, 0.8), "cover", False, [[0, 0, 1.6, 0.8]]),
     # tables thrown over for a barricade, named for the way the top faces: only the
     # top stops anything, the legs behind it don't

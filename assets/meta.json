@@ -344832,6 +344832,82 @@
      ]
     }
    ]
+  },
+  "keg": {
+   "file": "res://assets/sprites/world/keg.png",
+   "anchor": [
+    21,
+    34
+   ],
+   "footprint": [
+    0.45,
+    0.45
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.45,
+     0.45
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/keg_1.png",
+     "anchor": [
+      29,
+      34
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/keg_2.png",
+     "anchor": [
+      36,
+      19
+     ]
+    }
+   ]
+  },
+  "dyn_crate": {
+   "file": "res://assets/sprites/world/dyn_crate.png",
+   "anchor": [
+    34,
+    30
+   ],
+   "footprint": [
+    0.8,
+    0.56
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.8,
+     0.56
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/dyn_crate_1.png",
+     "anchor": [
+      34,
+      30
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/dyn_crate_2.png",
+     "anchor": [
+      20,
+      9
+     ]
+    }
+   ]
   }
  },
  "tumbleweed": {

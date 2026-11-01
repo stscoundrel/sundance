@@ -61,7 +61,7 @@ func _physics_process(delta: float) -> void:
 				continue
 			if col.has_meta("prop"):
 				game.impact(hp, h, vel, true, false)
-				if game.hit_prop(col.get_meta("prop"), damage, pierce, hp):
+				if game.hit_prop(col.get_meta("prop"), damage, pierce, hp, shooter):
 					exclude.append(col.get_rid())   # through the boards, a little spent
 					damage = maxi(1, damage - 1)
 					continue

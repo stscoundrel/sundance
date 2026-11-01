@@ -84,9 +84,14 @@ var dyn_cd := 0.0
 # nor in anyone's way). A damaged trough leaks. Toughness decides which rounds go
 # straight through (a Winchester through a crate, a Sharps through a barrel too).
 const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33, "crate_stack": 16,
-	"upturned_n": 7, "upturned_s": 7, "upturned_e": 7, "upturned_w": 7}
+	"upturned_n": 7, "upturned_s": 7, "upturned_e": 7, "upturned_w": 7, "keg": 1, "dyn_crate": 1}
 const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3, "crate_stack": 2,
-	"upturned_n": 1, "upturned_s": 1, "upturned_e": 1, "upturned_w": 1}
+	"upturned_n": 1, "upturned_s": 1, "upturned_e": 1, "upturned_w": 1, "keg": 9, "dyn_crate": 9}
+# Props that go up when hit (see Charge): anyone's round, or a blast close by.
+const EXPLOSIVE := ["keg", "dyn_crate"]
+const CHAIN := Vector2(0.15, 0.35)   # s: a keg in reach of a blast goes up this soon after
+const RUNS_FROM := 2                 # rank: officers know a lit keg when they see one, and run
+var charges: Array[Charge] = []
 var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
 # Blood trails: every drop a wounded man leaves. The gang can follow the stranger's.
 const TRAIL_FRESH := 45.0   # s a drop stays a lead worth following
@@ -1942,7 +1947,7 @@ func stick_landed(d: Dynamite) -> void:
 ## The bang. Everyone in reach not behind a wall is hurt (killed, near the middle),
 ## a crate or barrel between them and it taking some of it; cover nearby is blown
 ## apart; and the whole town hears it.
-func blast(at: Vector2, by: Enemy) -> void:
+func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE) -> void:
 	dyn_cd = DYN_CD
 	stats["blasts"] = stats.get("blasts", 0) + 1
 	var hurt: Array[Actor] = []
@@ -1953,10 +1958,10 @@ func blast(at: Vector2, by: Enemy) -> void:
 		if not a.alive or not a.visible:
 			continue
 		var d := a.global_position.distance_to(at)
-		if d > Dynamite.R or not line_of_sight(at, a.global_position, false):
+		if d > r or not line_of_sight(at, a.global_position, false):
 			continue
-		var dmg := 8 if d < Dynamite.CORE else (3 if d < Dynamite.R * 0.7 else 1)
-		if d >= Dynamite.CORE and not line_of_sight(at, a.global_position, true):
+		var dmg := 8 if d < core else (3 if d < r * 0.7 else 1)
+		if d >= core and not line_of_sight(at, a.global_position, true):
 			dmg -= 2   # behind a crate: it takes the worst of it
 		if dmg <= 0:
 			continue
@@ -1972,52 +1977,93 @@ func blast(at: Vector2, by: Enemy) -> void:
 		if prop["state"] >= 2:
 			continue
 		var d := maxf(0.0, prop_centre(prop).distance_to(at) - 8.0)
-		if d < Dynamite.R:
-			hit_prop(prop, int(lerpf(40.0, 8.0, d / Dynamite.R)), 0, prop_centre(prop))
+		if d < r and prop["kind"] in EXPLOSIVE:
+			arm(prop, by, randf_range(CHAIN.x, CHAIN.y))   # the next one along goes up too
+		elif d < r:
+			hit_prop(prop, int(lerpf(40.0, 8.0, d / r)), 0, prop_centre(prop))
 	for item in fragile:
 		var near: Vector2 = item["at"] + (at - item["at"]).normalized() * 6.0   # (the near side of a pane)
-		if item["at"].distance_to(at) < Dynamite.R * 1.3 and line_of_sight(at, near, false):
+		if item["at"].distance_to(at) < r * 1.3 and line_of_sight(at, near, false):
 			var sh = item.get("shutter")
 			if sh == null or not sh.shut:
 				while item["state"] < item["last"]:
 					hit_fragile(item, item["at"])
 	for e in enemies:
-		if e.alive and e.global_position.distance_to(at) < Dynamite.R * 2.2:
+		if e.alive and e.global_position.distance_to(at) < r * 2.2:
 			e.shaken = minf(1.0, e.shaken + 0.3)
-	_blast_fx(at)
+	var big := r / Dynamite.R
+	_blast_fx(at, big)
 	_scar(at, {})
-	sfx("boom", at, 2.0, 0.08)
-	add_shake(lerpf(10.0, 2.0, clampf(player.global_position.distance_to(at) / 500.0, 0.0, 1.0)))
-	make_noise(at, 650.0, "blast", by)
+	sfx("boom", at, 2.0 + 3.0 * (big - 1.0), 0.08)
+	add_shake(lerpf(10.0, 2.0, clampf(player.global_position.distance_to(at) / 500.0, 0.0, 1.0)) * big)
+	make_noise(at, 650.0 * big, "blast", by)
 
 
-func _blast_fx(at: Vector2) -> void:
+## A keg or a crate of dynamite hit (by a round, or a blast nearby: then `delay`):
+## it's going up, and nothing will stop it now. The officers know what a fizzing
+## keg means and get clear; the rest of them blunder on; townsfolk run.
+func arm(prop: Dictionary, by: Actor, delay := -1.0) -> void:
+	if prop.get("lit", false) or prop["state"] >= 2:
+		return
+	prop["lit"] = true
+	var c := Charge.new()
+	world.add_child(c)
+	c.setup(self, prop, by, delay)
+	charges.append(c)
+	stats["charges lit"] = stats.get("charges lit", 0) + 1
+	var at := c.global_position
+	var shouted := false
+	for e in enemies:
+		if not e.alive or e.global_position.distance_to(at) > c.r + 40.0:
+			continue
+		if e.rank >= RUNS_FROM:
+			e.dodge(at, c.fuse, c.r)
+			stats["officers clear"] = stats.get("officers clear", 0) + 1
+		elif not shouted and c.fuse > 0.5 and randf() < 0.5:
+			shouted = true   # (he knows what it is, for all the good it does him)
+			e.say_line("powder", ["¡Pólvora!", "¡Dinamita!", "¡Cuidado!", "Powder!"])
+	for cv in civilians:
+		if cv.alive and cv.global_position.distance_to(at) < c.r + 60.0:
+			cv.alarm(at, true)
+
+
+## It goes up: the keg or crate is gone, and everything round it takes the blast.
+func detonate(c: Charge) -> void:
+	charges.erase(c)
+	var prop := c.prop
+	_prop_state(prop, 2)
+	stats["kegs blown" if prop["kind"] == "keg" else "dynamite crates blown"] = \
+		stats.get("kegs blown" if prop["kind"] == "keg" else "dynamite crates blown", 0) + 1
+	blast(c.global_position, c.by, c.r, c.core)
+
+
+func _blast_fx(at: Vector2, big := 1.0) -> void:
 	var puff := Puff.new()
 	puff.position = at
 	puff.add(Vector2(0, -6), Vector2.ZERO, 0.12, 20.0, Color(1.0, 0.95, 0.72, 1.0), -60.0)   # the flash
-	for i in 16:   # the fireball
-		var v := Vector2.from_angle(randf() * TAU) * randf_range(50, 150)
+	for i in int(16 * big):   # the fireball
+		var v := Vector2.from_angle(randf() * TAU) * randf_range(50, 150) * big
 		puff.add(Vector2(randf_range(-4, 4), -randf_range(2, 10)), Vector2(v.x, v.y * 0.5 - randf_range(30, 90)),
 			randf_range(0.2, 0.45), randf_range(3.0, 6.0), Color(1.0, randf_range(0.5, 0.8), 0.18, 0.95), -9.0)
-	for i in 34:   # dirt and splinters thrown up
-		puff.add(Vector2(randf_range(-6, 6), -2), Vector2(randf_range(-130, 130), -randf_range(80, 240)),
+	for i in int(34 * big):   # dirt and splinters thrown up
+		puff.add(Vector2(randf_range(-6, 6), -2), Vector2(randf_range(-130, 130), -randf_range(80, 240)) * big,
 			randf_range(0.8, 1.5), randf_range(0.8, 1.6), [Color(0.42, 0.31, 0.21), Color(0.3, 0.22, 0.15),
 			Color(0.62, 0.48, 0.32)].pick_random(), 0.0, 320.0)
-	for i in 30:   # a grimy cloud that hangs and drifts
-		var v := Vector2.from_angle(randf() * TAU) * randf_range(15, 70)
+	for i in int(30 * big):   # a grimy cloud that hangs and drifts
+		var v := Vector2.from_angle(randf() * TAU) * randf_range(15, 70) * big
 		var shade := randf_range(0.36, 0.56)
 		puff.smoke(Vector2(randf_range(-12, 12), -randf_range(2, 18)), Vector2(v.x, v.y * 0.5 - randf_range(5, 30)),
 			randf_range(3.0, 5.5), randf_range(2.5, 4.5), Color(shade, shade * 0.93, shade * 0.86, 0.4),
 			randf_range(1.5, 3.0), WIND + Vector2(randf_range(-3, 3), randf_range(-4, 0)))
 	for i in 18:   # the dust ring rolling out along the street
 		var a := TAU * i / 18.0
-		puff.smoke(Vector2(cos(a), sin(a) * 0.5) * 6.0, Vector2(cos(a), sin(a) * 0.5) * randf_range(90, 130),
+		puff.smoke(Vector2(cos(a), sin(a) * 0.5) * 6.0, Vector2(cos(a), sin(a) * 0.5) * randf_range(90, 130) * big,
 			randf_range(1.5, 2.6), randf_range(3.0, 5.0), Color(0.78, 0.65, 0.48, 0.45), 4.0, WIND * 0.5)
 	world.add_child(puff)
-	decals.add(at, 24.0, Color(0.1, 0.08, 0.06, 0.5))   # scorched earth
-	decals.add(at, 13.0, Color(0.06, 0.05, 0.04, 0.65))
-	for i in 7:
-		decals.add(at + Vector2.from_angle(randf() * TAU) * randf_range(14, 30) * Vector2(1, 0.5), randf_range(2, 4),
+	decals.add(at, 24.0 * big, Color(0.1, 0.08, 0.06, 0.5))   # scorched earth
+	decals.add(at, 13.0 * big, Color(0.06, 0.05, 0.04, 0.65))
+	for i in int(7 * big):
+		decals.add(at + Vector2.from_angle(randf() * TAU) * randf_range(14, 30) * big * Vector2(1, 0.5), randf_range(2, 4),
 			Color(0.08, 0.06, 0.05, 0.5))
 
 
@@ -2029,9 +2075,13 @@ func prop_centre(prop: Dictionary) -> Vector2:
 
 ## A round strikes a prop: it takes the damage, and its look changes as it goes.
 ## Returns true if the round carries on through (thin enough for the gun).
-func hit_prop(prop: Dictionary, dmg: int, pierce: int, at: Vector2) -> bool:
+func hit_prop(prop: Dictionary, dmg: int, pierce: int, at: Vector2, by: Actor = null) -> bool:
 	if prop["state"] >= 2:
 		return true
+	if prop["kind"] in EXPLOSIVE:   # not wear: one round and it's going up
+		sfx("wood_hit", at, -6.0, 0.15)
+		arm(prop, by)
+		return false
 	prop["hp"] -= dmg
 	sfx("wood_hit", at, -6.0, 0.15)
 	var full: int = PROP_HP[prop["kind"]]

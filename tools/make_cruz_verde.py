@@ -67,13 +67,15 @@ PROPS = [
     ("agave", 28, 49.5), ("agave", 18, 49), ("agave", 42, 10), ("agave", 26, 9), ("agave", 13, 6),
 ]
 
-# Barrels stood by the gates and the breach: the spots where the powder kegs will go
-# (shoot one with the band coming through). Plain barrels for now.
-KEG_SPOTS = [("barrel", 18.7, 27.2), ("barrel", 19.4, 27.3),       # the west gate
-             ("barrel", 28.6, 17.0), ("barrel", 29.3, 17.1),       # the north gate
-             ("barrel", 45.9, 32.7), ("barrel", 46.6, 32.5),       # the east gate
-             ("barrel", 29.5, 44.8), ("barrel", 28.8, 44.6),       # the south gate
-             ("barrel", 46.0, 37.6)]                               # the east breach
+# Powder kegs by the gates and the breach, each beside a plain barrel so it isn't
+# too plain which is which: put a round in one as a band comes through. And three
+# crates of dynamite in among the stores, which burn a while before they go.
+KEG_SPOTS = [("keg", 18.75, 27.25), ("barrel", 19.4, 27.3),        # the west gate
+             ("barrel", 28.6, 17.0), ("keg", 29.35, 17.15),        # the north gate
+             ("keg", 45.95, 32.75), ("barrel", 46.6, 32.5),        # the east gate
+             ("barrel", 29.5, 44.8), ("keg", 28.85, 44.65),        # the south gate
+             ("keg", 46.05, 37.65),                                # the east breach
+             ("dyn_crate", 28.2, 19.6), ("dyn_crate", 35.2, 19.4), ("dyn_crate", 34.5, 39.6)]
 PROPS += KEG_SPOTS
 
 # The cemetery: rings of crosses, mounds and headstones round a circle of stones,

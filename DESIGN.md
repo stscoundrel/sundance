@@ -78,9 +78,11 @@ the well, each top turned to the gate it watches (`upturned_n/s/e/w`: only the t
 stops a round, the legs behind it don't). Sandbags and barrels are piled against the
 chapel in the north corner, and the fort's stores (`crate_stack`: two crates, a third
 on top, a sack) are stacked wherever there was room, so there's little open ground
-between the buildings. Both are breakable wood like the crates. A pair of barrels
-stands by each gate and the east breach (`KEG_SPOTS` in `tools/make_cruz_verde.py`):
-that's where the powder kegs will go. Outside, a village of
+between the buildings. Both are breakable wood like the crates. And the fort's
+powder (`KEG_SPOTS` in `tools/make_cruz_verde.py`): a **powder keg** by each gate and
+the east breach, each beside a plain barrel, for the band coming through; three
+**crates of dynamite** in among the stores. See "Powder kegs and dynamite crates"
+below. Outside, a village of
 jacales with chickens and, to the west, a great cemetery after Sad Hill: rings of
 crosses, mounds and headstones (low cover) round a circle of stones, and rows of
 graves below the west road. It's an **ambush**: the stranger starts outside the
@@ -461,6 +463,21 @@ carried, which you collect by walking over them.
   Not yet: throwing it back, shooting the stick, the stranger carrying it.
   `tests/test_dynamite.gd` covers who carries it, when it's thrown, the blast, and
   the dropped and fumbled stick.
+- **Powder kegs and dynamite crates** (Cruz Verde; `scripts/charge.gd`,
+  `tests/test_kegs.gd`): props that go up when hit, by anyone's round (the gang's
+  strays too) or a blast close by. A **keg** (squat, near black, copper hoops and a
+  white band so it isn't taken for a water barrel) fizzes and spits sparks for a
+  second, then goes up: reach 110 px, nobody lives within 45. A **crate of dynamite**
+  (the lid prised off, the red sticks showing) catches and burns for three seconds,
+  flames and black smoke, then makes the biggest bang there is: 150 px, core 60. A
+  ring on the ground shows the reach while it burns. The blast is the stick's, scaled
+  up (fireball, debris, scorch, shake and noise), and any keg or crate inside it goes
+  up a moment after (0.15-0.35 s): one can bring a whole row of stores up, or a gate
+  keg the breach's. The gang mostly blunders on (one may shout "¡Pólvora!" for all
+  the good it does him); officers (rank 2 and up: the coronel, El General) know what
+  it means and run clear of its reach. Townsfolk flee. A round stops in a keg; it
+  isn't worn down like other cover, and hiding behind one is a poor idea, since the
+  gang shoots the cover he's behind. Kegs aren't mended.
 - **Corner watching**: the gang remembers where the stranger shoots from. Each shot
   is filed under a *spot*, a loose cluster: within ~90 px of its centre or ~50 px of
   any place he's fired from there, so the two corners of a small house, or turning

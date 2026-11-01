@@ -151,6 +151,7 @@ var stick: Dynamite = null   # lit, in his hand
 var throw_at := Vector2.ZERO
 var dyn_look := 0.0
 var clear_for := 0.0         # how long the fuse he's getting away from has left
+var clear_r := Dynamite.R    # and how far it'll reach
 # Wounded, he may break off to patch himself up: into cover away from the
 # stranger, down on one knee, a bandage round it. One HP back, no more limp or
 # bleeding. The stranger walking up on him in plain view breaks it off.
@@ -793,7 +794,7 @@ func start_reaction(r: String) -> void:
 		"clear":
 			# a lit stick by his boots: run, anywhere out of its reach, then get down
 			reaction_t = clear_for + 0.5
-			path_to(game.point_away(global_position, threat, Dynamite.R + 30.0))
+			path_to(game.point_away(global_position, threat, clear_r + 30.0))
 			if shout_t <= 0.0 and randf() < 0.6:
 				_say(_line("scare", SCARE_LINES))
 		"dash", "hide":
@@ -1419,11 +1420,12 @@ func _maybe_patch(from: Vector2) -> void:
 
 
 ## A lit stick has come down near him: he'll get clear of it in a moment.
-func dodge(at: Vector2, fuse_left: float) -> void:
+func dodge(at: Vector2, fuse_left: float, reach := Dynamite.R) -> void:
 	if not alive or reaction == "throw":
 		return
 	threat = at
 	clear_for = fuse_left
+	clear_r = reach
 	pending = "clear"
 	pending_forced = true
 	pending_t = randf_range(0.05, 0.3) * reflex
