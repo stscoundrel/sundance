@@ -157,7 +157,10 @@ func _wake() -> void:
 		var at: Vector2 = sl["at"]
 		if not game.is_free(at):
 			at = game.free_point_near(at, 20.0)
-		var en: Enemy = game._add_enemy(sl["kind"], at, PackedVector2Array(), 90.0)
+		# out in a hurry with a pistol, the rifles left in the rack (all but the boss: his
+		# own gun goes where he goes)
+		var hurry := {} if game.enemy_type(sl["kind"]).get("boss", false) else {"pistols_only": true}
+		var en: Enemy = game._add_enemy(sl["kind"], at, PackedVector2Array(), 90.0, hurry)
 		game.stats["out of doors"] = game.stats.get("out of doors", 0) + 1
 		if game.leaderless:
 			en.lose_heart()

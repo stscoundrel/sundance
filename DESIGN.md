@@ -81,7 +81,9 @@ a party last night after their last victory: only five revolucionarios on the
 grounds (a tirador at the north gate, the rest on their rounds or at the breach),
 the other ten indoors sleeping it off with the saloon girls (the map's `sleepers`,
 each at the door he'll come out of, with "after": seconds). Nobody comes out till the
-first shot, whoever fires it; then two who were ready dash out in about two
+first shot, whoever fires it; then two who were ready dash out (with whatever
+pistol they had on them: their long guns are in the rack, so only El General, whose
+coach gun goes where he goes, comes out with more) in about two
 seconds, three more at twelve, three at twenty and the last two (El General among
 them) at thirty, spread out so that a small place doesn't overrun him all at once: four saloon girls, a soldadera, a drunk and revolucionarios, all making for
 the fight. Kill the five outside without a shot and the quiet is noticed in the end:
@@ -652,15 +654,21 @@ checks the type data against the baked art.
 ### The revolutionaries
 
 Up from the south for Cruz Verde (and three of the five drinking in San Miguel's
-saloon reserve): no modern kit, only the guns already in the game.
+saloon reserve): no modern kit, and a worse, older arsenal than the gang's. Most of
+them carry revolvers (the Navy above all); the long guns go to fewer of them and are
+cast-offs (see "The revolution's arsenal" below).
 
 - **Revolucionario**: white campesino cottons, two bandoliers crossed over the chest,
-  a striped serape over the left shoulder, a big straw sombrero; a Navy, a Colt or a
-  Winchester; 2 HP; "¡Tierra y libertad!".
-- **Tirador**: the same in plainer cloth, with a Winchester and a long eye.
-- **Sargento**: bearded, sashed, coach gun and Colt; calls the orders (rank 1).
+  a striped serape over the left shoulder, a big straw sombrero; mostly a Navy or a
+  Colt (8 in 11), else a Spencer, a Springfield or an escopeta with a Navy to fall
+  back on; 2 HP; "¡Tierra y libertad!".
+- **Tirador**: the same in plainer cloth, with a long eye: a Springfield (less
+  accurate than it should be, in his hands), a Spencer, or a captured Winchester.
+- **Sargento**: bearded, sashed, coach gun (or a Spencer) and Colt; calls the orders
+  (rank 1).
 - **Soldadera**: a woman of the revolution in a long dress, crossed bandoliers and a
-  sombrero, a Winchester or a Colt. (Not the saloon girls: they're still about.)
+  sombrero; a Navy or a Colt more often than not, else a Spencer or an escopeta.
+  (Not the saloon girls: they're still about.)
 - **Coronel**: an olive tunic with two rows of brass, a red collar, gold epaulettes, a
   kepi, a cavalry sabre at the hip (for show) and a Colt; 3 HP, rank 2.
 - **El General**: Cruz Verde's boss (as El Jefe is San Miguel's: both `"boss"`): a dark
@@ -672,6 +680,30 @@ saloon reserve): no modern kit, only the guns already in the game.
   faint-hearted run, nobody gives orders any more (no men sent out, no falling back,
   however badly it goes), and anyone still to come out of a door or down a road
   arrives shaken. Hunting the general is worth the risk. `tests/test_general.gd`.
+
+**The revolution's arsenal** (`tests/test_arsenal.gd`):
+
+- **Spencer carbine** (1860): the repeater the revolution has instead of the
+  Winchester. Seven rounds in a tube through the butt, and two motions a shot: the
+  lever, then the hammer thumbed back (0.85 s between shots against the Winchester's
+  0.45); a little less range and a slower bullet. A lever gun with `"tube": 7`.
+- **Springfield Model 1861** rifle-musket: a fine gun, long (armory-bright barrel,
+  three bands, the ramrod beneath), a .58 Minie ball that hits for 3 and carries far.
+  But a muzzle-loader: one shot, then he stands it on its butt, tears the cartridge,
+  pours, rams and caps, about 6.7 s. In revolutionary hands its aim is worse than the
+  gun deserves (`"aim"` on the loadout).
+- **Escopeta**: an old single-barrel percussion fowling piece, the peon's gun: a
+  fistful of shot at close range, then powder, wad, shot, wad, all rammed down from
+  the front (about 7.4 s). Nobody waits for that: fire it once, throw it down, go to
+  the Navy (`"draw_sidearm"` 0.9 on that loadout).
+
+Muzzle-loaders are breech guns in `Weapon.DATA` with their steps renamed (open: the
+cartridge torn; eject: the powder poured; insert: the ramrod; close: the cap), and
+their own poses: the gun upright by the left foot, the right fist working the rod
+above the muzzle. A loadout option can carry its own way of fighting (`range`,
+`aim`, `draw_sidearm`, `fires_on_move`) over the type's. A man created with
+`"pistols_only"` (the director does it for everyone coming out of a door but the
+boss) is given a revolver option only.
 
 New pieces of costume for them in `tools/chars.py`: the serape, a "uniform" style (a
 buttoned tunic with a coloured collar, a short closed skirt), epaulettes, medals, the

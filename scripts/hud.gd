@@ -281,7 +281,7 @@ func _draw_weapon(p: Player) -> void:
 			var ch := Rect2(c.x - 14, c.y - 8, 5, 16)
 			draw_rect(ch, BRASS if w.chambered else Color(0.1, 0.1, 0.1))
 			draw_rect(Rect2(ch.position.x, ch.position.y - 2, 5, 3), Color(0.5, 0.45, 0.4) if w.chambered else Color(0.1, 0.1, 0.1))
-			for i in Weapon.TUBE_CAP:
+			for i in w.cap():
 				var r := Rect2(c.x - 6 + i * 4, c.y - 6, 3, 12)
 				draw_rect(r, BRASS if i < w.tube else Color(0.12, 0.1, 0.08))
 	_text(Vector2(box.position.x + 70 if w.kind != "rifle" else box.position.x + 4, box.position.y + 47), "+%d" % w.reserve, 8, INK)

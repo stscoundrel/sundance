@@ -222,7 +222,12 @@
 
     "revolucionario": {
       "name": "Revolucionario", "gasp": 0.45, "template": "revolucionario", "dynamite": 1, "loadout": ["navy"],
-      "loadouts": [{"guns": ["navy"], "weight": 4}, {"guns": ["colt"], "weight": 3}, {"guns": ["rifle"], "weight": 2}],
+      "loadouts": [{"guns": ["navy"], "weight": 5}, {"guns": ["colt"], "weight": 3},
+                   {"guns": ["spencer", "navy"], "weight": 1, "range": [110, 260], "draw_sidearm": 0.5},
+                   {"guns": ["springfield", "navy"], "weight": 1, "range": [140, 320], "cadence": [1.2, 2.0], "aim": 1.6,
+                    "draw_sidearm": 0.85},
+                   {"guns": ["escopeta", "navy"], "weight": 1, "range": [30, 100], "fires_on_move": true, "flank": 0.7,
+                    "draw_sidearm": 0.9}],
       "hp": 2, "range": [60, 180], "cadence": [0.8, 1.5], "aim": 1.4, "speed": 1.0,
       "reflex": [0.8, 1.8], "nerve": [0.2, 0.75], "cover_call": 0.5, "flank": 0.5,
       "shouts": {"spot": ["¡Viva la revolución!", "¡Allí está el gringo!", "¡Tierra y libertad!"],
@@ -240,7 +245,9 @@
       ]
     },
     "tirador": {
-      "name": "Tirador", "gasp": 0.45, "template": "revolucionario", "dynamite": 1, "loadout": ["rifle", "navy"],
+      "name": "Tirador", "gasp": 0.45, "template": "revolucionario", "dynamite": 1, "loadout": ["springfield", "navy"],
+      "loadouts": [{"guns": ["springfield", "navy"], "weight": 2, "aim": 1.25, "draw_sidearm": 0.3},
+                   {"guns": ["spencer", "navy"], "weight": 2}, {"guns": ["rifle", "navy"], "weight": 1}],
       "hp": 2, "range": [120, 280], "cadence": [1.1, 1.8], "aim": 0.9, "reflex": [0.9, 1.8], "nerve": [0.3, 0.8],
       "cover_call": 0.6, "flank": 0.2, "draw_sidearm": 0.4,
       "shouts": {"spot": ["¡Lo tengo en la mira!", "¡Ahí, en el polvo!"], "reload": ["¡Cargando!"]},
@@ -252,6 +259,8 @@
     },
     "sargento": {
       "name": "Sargento", "gasp": 0.55, "template": "sargento", "dynamite": 1, "loadout": ["coach", "colt"],
+      "loadouts": [{"guns": ["coach", "colt"], "weight": 2},
+                   {"guns": ["spencer", "colt"], "weight": 1, "range": [100, 240], "fires_on_move": false}],
       "hp": 2, "range": [40, 120], "cadence": [0.6, 1.1], "aim": 1.1, "reflex": [0.6, 1.4], "nerve": [0.6, 0.9],
       "rank": 1, "cover_call": 0.9, "fires_on_move": true, "draw_sidearm": 0.6, "flank": 0.6,
       "shouts": {"spot": ["¡A él, muchachos!", "¡Fuego!"], "reload": ["¡Cúbranme!"], "flee": ["¡Atrás, atrás!"]},
@@ -261,8 +270,11 @@
       ]
     },
     "soldadera": {
-      "name": "Soldadera", "gasp": 0.45, "template": "soldadera", "loadout": ["rifle"],
-      "loadouts": [{"guns": ["rifle"], "weight": 2}, {"guns": ["colt"], "weight": 1}],
+      "name": "Soldadera", "gasp": 0.45, "template": "soldadera", "loadout": ["navy"],
+      "loadouts": [{"guns": ["navy"], "weight": 3, "range": [60, 170]}, {"guns": ["colt"], "weight": 1, "range": [60, 170]},
+                   {"guns": ["spencer", "navy"], "weight": 2, "draw_sidearm": 0.5},
+                   {"guns": ["escopeta", "navy"], "weight": 1, "range": [30, 100], "fires_on_move": true,
+                    "draw_sidearm": 0.9}],
       "hp": 1, "range": [80, 220], "cadence": [0.9, 1.5], "aim": 1.1, "reflex": [0.7, 1.5], "nerve": [0.3, 0.85],
       "cover_call": 0.5, "flank": 0.4,
       "shouts": {"spot": ["¡Ahí va el gringo!", "¡Viva la revolución!"], "reload": ["¡Cúbreme!"], "scare": ["¡Ay!"]},

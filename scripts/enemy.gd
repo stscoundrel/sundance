@@ -264,8 +264,18 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 
 
 ## His guns: the type's loadout, or one of its weighted "loadouts" picked at random.
+## Caught indoors ("pistols_only"), he comes out with whatever handgun he had on him:
+## his long gun's back in the rack.
 func _pick_loadout() -> Array:
 	var options: Array = tdata.get("loadouts", [])
+	if tdata.get("pistols_only", false):
+		if options.is_empty():
+			options = [{"guns": tdata["loadout"]}]
+		options = options.filter(func(o): return o["guns"][0] in PISTOLS)
+		if options.is_empty():
+			var short: Array = tdata["loadout"].filter(func(g): return g in PISTOLS)
+			tdata["range"] = [60, 170]
+			return short if not short.is_empty() else ["navy"]
 	if options.is_empty():
 		return tdata["loadout"]
 	var total := 0.0

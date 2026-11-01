@@ -14,7 +14,7 @@ var posse_size := Posse.SIZE    # how few left before they band together (fewer,
 const META_PATH := "res://assets/meta.json"
 const ENEMIES_PATH := "res://data/enemies.json"
 const POST_SHADER := preload("res://shaders/post.gdshader")
-const LOUD := ["colt", "coach", "rifle", "bell", "boom"]
+const LOUD := ["colt", "coach", "rifle", "sharps", "howdah", "spencer", "musket", "bell", "boom"]
 const WIND := Vector2(7, -2)   # px/s drift for smoke and dust
 const VIEW_W := 1280.0 / 3.0   # world pixels across the screen: a close, detailed view
 
@@ -2820,7 +2820,7 @@ func spill_guns(c: Civilian) -> void:
 ## Animation events: brass flicking out of a Winchester or Colt, shells out of the
 ## coach gun.
 func anim_event(a: Actor, ev: String) -> void:
-	if ev == "brass" and a.weapon and a.weapon.kind == "rifle" and not a.weapon.ejecting:
+	if ev == "brass" and a.weapon and a.weapon.action == "lever" and not a.weapon.ejecting:
 		return   # working the lever on an empty chamber: nothing to throw out
 	var puff := Puff.new()
 	puff.position = a.global_position + Vector2(0, 2)

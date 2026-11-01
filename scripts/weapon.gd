@@ -5,14 +5,17 @@ extends RefCounted
 ##   revolver - Colt Single Action Army: six chambers, cocked per shot, gate loading.
 ##              A pair ("twin") holds twelve, fired right hand, left hand, in turn.
 ##              The old cap-and-ball Navy loads each chamber from the front: slow.
-##   lever    - Winchester 1866: tube magazine, a lever stroke between shots
+##   lever    - Winchester 1866: tube magazine, a lever stroke between shots. The
+##              Spencer too: a smaller tube, and the hammer thumbed back as well.
 ##   breech   - everything that opens to load: coach gun, sawn-off, derringer, Sharps,
-##              howdah.
+##              howdah. And, near enough, the muzzle-loaders (Springfield rifle-musket,
+##              escopeta): one charge, the "open/eject/insert/close" steps being the
+##              cartridge torn open, the powder poured, the ramrod, the cap.
 ##              Barrel count, timings and sounds come from the data below.
 
 enum S { READY, CYCLE, OPEN, EJECT, INSERT, CLOSE }
 
-const TUBE_CAP := 12   # plus one in the chamber
+const TUBE_CAP := 12   # plus one in the chamber (a lever gun's "tube" may hold fewer)
 # For breech guns, open/eject/insert/close are [seconds, sound]; "hammer" means the
 # hammer is thumbed back after each shot; "volley" lets the right trigger fire every
 # loaded barrel at once.
@@ -49,6 +52,28 @@ const DATA := {
 		"spread": 3.2, "pellets": 1, "noise": 360.0, "sfx": "colt", "cycle": 0.38, "shake": 2.0, "smoke": 15,
 		"smoke_push": 1.2, "eject": [0.2, "gate"], "insert": [1.5, "shell_in"],
 		"status": {"cycle": "COCKING", "open": "POWDER AND BALL", "close": "CAPPED"}},
+	# Spencer 1860 carbine, the revolution's cast-off repeater: seven rounds in a tube
+	# through the butt, and between shots both the lever and the hammer to work.
+	# Slower than the Winchester and fewer rounds, with a heavier, slower bullet.
+	"spencer": {"name": "SPENCER CARBINE", "action": "lever", "tube": 7, "damage": 2, "pierce": 1, "speed": 820.0,
+		"range": 540.0, "spread": 0.9, "pellets": 1, "noise": 480.0, "sfx": "spencer", "cycle": 0.85, "shake": 2.8,
+		"smoke": 14, "smoke_push": 1.1, "insert": [0.5, "shell_in"],
+		"status": {"cycle": "LEVER, HAMMER", "open": "MAGAZINE OUT", "close": ""}},
+	# Springfield Model 1861 rifle-musket: a fine gun, a .58 Minie ball that carries far
+	# and hits hard, but a muzzle-loader. Bite the paper cartridge, pour, ram the ball
+	# home, cap the nipple. Good in good hands; the revolution's aren't always.
+	"springfield": {"name": "SPRINGFIELD 1861", "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
+		"damage": 3, "pierce": 1, "speed": 950.0, "range": 700.0, "spread": 0.5, "pellets": 1, "noise": 560.0,
+		"sfx": "musket", "cycle": 0.5, "shake": 4.0, "smoke": 24, "smoke_push": 1.6,
+		"open": [1.0, "gate"], "eject": [1.1, "pour"], "insert": [3.4, "ram"], "close": [1.2, "cock"],
+		"status": {"cycle": "COCKING", "open": "CARTRIDGE TORN", "close": "CAPPED"}},
+	# Escopeta: an old single-barrel percussion fowling piece, the peon's gun. Powder,
+	# wad, shot, wad, all rammed down from the front: one shot and he'll want his pistol.
+	"escopeta": {"name": "ESCOPETA", "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
+		"damage": 1, "speed": 470.0, "range": 150.0, "spread": 11.0, "pellets": 8, "noise": 470.0,
+		"sfx": "coach", "cycle": 0.4, "shake": 3.5, "smoke": 26, "smoke_push": 1.8,
+		"open": [1.0, "pour"], "eject": [1.2, "pour"], "insert": [4.0, "ram"], "close": [1.2, "cock"],
+		"status": {"cycle": "COCKING", "open": "POWDER", "close": "CAPPED"}},
 	# Empty hands: townsfolk. Never fires; drops nothing.
 	"unarmed": {"name": "", "action": "none", "damage": 0, "speed": 0.0, "range": 0.0, "spread": 0.0,
 		"pellets": 0, "noise": 0.0, "sfx": "", "cycle": 0.0, "shake": 0.0, "smoke": 0, "drops": [],
@@ -92,7 +117,7 @@ var hand := 0   # the hand that fired last: 0 right, 1 left (a pair of guns)
 # Breech guns, same encoding per barrel.
 var barrels: Array[int] = []
 # Lever action.
-var tube := TUBE_CAP
+var tube := TUBE_CAP   # (set to the gun's own cap())
 var chambered := true
 var ejecting := false   # this lever stroke throws out a fired case
 
@@ -106,6 +131,7 @@ func _init(k: String, h: Actor) -> void:
 	chambers.fill(1)
 	for i in int(d.get("barrels", 0)):
 		barrels.append(1)
+	tube = cap()
 
 
 ## As a dead man left it: some of it fired off.
@@ -120,7 +146,12 @@ func part_spent() -> void:
 				if randf() < 0.5:
 					barrels[i] = 2
 		"lever":
-			tube = randi_range(0, TUBE_CAP)
+			tube = randi_range(0, cap())
+
+
+## Rounds a lever gun's tube holds.
+func cap() -> int:
+	return int(d.get("tube", TUBE_CAP))
 
 
 ## A shotgun: a hip-carried scattergun throwing a fistful of shot.
@@ -246,7 +277,7 @@ func start_reload() -> bool:
 			if not barrels.has(0) and not barrels.has(2):
 				return false
 		"lever":
-			if tube >= TUBE_CAP:
+			if tube >= cap():
 				return false
 	stop_requested = false
 	reload_idx = 0
@@ -350,10 +381,11 @@ func _reload_step() -> void:
 				_step(S.INSERT, d["insert"][0], d["insert"][1])
 				return
 		"lever":
-			if tube < TUBE_CAP and reserve > 0:
+			if tube < cap() and reserve > 0:
 				tube += 1
 				reserve -= 1
-				_step(S.INSERT, 0.4, "shell_in")
+				var ins: Array = d.get("insert", [0.4, "shell_in"])
+				_step(S.INSERT, ins[0], ins[1])
 				return
 	_close()
 

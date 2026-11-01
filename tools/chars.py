@@ -58,7 +58,9 @@ def template_guns():
     return out
 
 
-GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6, "navy": 0.36}
+GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6, "navy": 0.36,
+           "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3}
+MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
 # in the left hand (pose key "gun2").
 GUN_ART = {"colts": "colt", "smith": "rifle"}   # the gunsmith looks over a rifle
@@ -302,6 +304,42 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
             out += beam(hinge + side * o + upb * 0.012, hinge + ab * bl + side * o + upb * 0.012, 0.024, GUNMETAL)
             out += beam(at(0.19, (o * 1.4, 0.03)), at(0.24, (o * 1.6, 0.075)), 0.012, STEEL)  # hammers
         out += beam(hinge - upb * 0.026, hinge + ab * (bl * 0.36) - upb * 0.026, 0.03, WOOD)
+    elif kind == "spencer":
+        # Spencer carbine: walnut butt with the magazine tube's brass cap at its heel, a
+        # dark case-hardened receiver, side hammer, a short fore-end and one barrel band
+        out += frustum(at(0.0, (0, -0.045)), at(0.3), 0.057, 0.03, (104, 64, 40))
+        out += beam(at(0.0, (0, -0.02)), at(0.02, (0, -0.02)), 0.022, BRASS)            # tube cap
+        out += frustum(at(0.29), at(0.42), 0.042, 0.04, (70, 64, 60))                  # receiver
+        out += beam(at(0.42, (0, 0.012)), at(1.0, (0, 0.012)), 0.017, GUNMETAL)
+        out += beam(at(0.42, (0, -0.016)), at(0.66), 0.03, (104, 64, 40))              # fore-end
+        out += beam(at(0.64, (0, -0.005)), at(0.67, (0, -0.005)), 0.034, STEEL)        # barrel band
+        out += beam(at(0.33, (0.03, 0.025)), at(0.36, (0.03, 0.06)), 0.011, STEEL)     # side hammer
+        drop = 0.08 * lever                                                          # lever / trigger guard
+        out += beam(at(0.3 - 0.04 * lever, (0, -0.05 - drop)), at(0.38 - 0.07 * lever, (0, -0.095 - drop)), 0.011, STEEL)
+        out += beam(at(0.38 - 0.07 * lever, (0, -0.095 - drop)), at(0.42, (0, -0.045)), 0.011, STEEL)
+    elif kind == "springfield":
+        # Springfield 1861 rifle-musket: a long full stock nearly to the muzzle, three
+        # barrel bands, the barrel in armory bright, the ramrod under it, the lock's hammer
+        bright = (176, 178, 184)
+        out += frustum(at(0.0, (0, -0.05)), at(0.25), 0.055, 0.028, WOOD)
+        out += box(tuple(at(0.24) - 0.03), tuple(at(0.3) + 0.03), (150, 152, 158))      # lock plate
+        out += beam(at(0.29, (0, -0.012)), at(0.88, (0, -0.012)), 0.027, WOOD)        # fore-stock
+        out += beam(at(0.26, (0, 0.012)), at(1.0, (0, 0.012)), 0.016, bright)
+        out += beam(at(0.32, (0, -0.036)), at(0.97, (0, -0.036)), 0.007, bright)       # ramrod
+        for t in (0.5, 0.68, 0.86):
+            out += beam(at(t), at(t + 0.02), 0.032, bright)                            # bands
+        out += beam(at(0.25, (0.025, 0.03)), at(0.28, (0.025, 0.065)), 0.011, STEEL)   # hammer
+    elif kind == "escopeta":
+        # escopeta: an old single-barrel fowling piece, plain dark stock run far up a
+        # long thin barrel, brass butt plate and bands, a hammer on the side lock
+        dark = (92, 58, 36)
+        out += frustum(at(0.0, (0, -0.045)), at(0.24), 0.05, 0.026, dark)
+        out += beam(at(0.0, (0, -0.045)), at(0.015, (0, -0.045)), 0.05, BRASS)          # butt plate
+        out += beam(at(0.24, (0, -0.01)), at(0.74, (0, -0.01)), 0.024, dark)
+        out += beam(at(0.22, (0, 0.012)), at(1.0, (0, 0.012)), 0.019, (84, 84, 90))
+        for t in (0.45, 0.7):
+            out += beam(at(t), at(t + 0.018), 0.028, BRASS)
+        out += beam(at(0.21, (0.025, 0.03)), at(0.24, (0.025, 0.065)), 0.011, STEEL)   # hammer
     elif kind == "coach":
         out += frustum(at(0.0, (0, -0.04)), at(0.3), 0.06, 0.032, WOOD)
         out += box(tuple(at(0.3) - 0.04), tuple(at(0.34) + 0.04), STEEL)
@@ -690,6 +728,9 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     if up.get("tape"):   # the undertaker's tape measure, stretched between his hands
         m += beam(np.array(up["hL"], float), np.array(up["hR"], float), 0.009, (226, 204, 120))
 
+    if up.get("rod"):   # a ramrod held in the right fist, its end down the barrel
+        h, gd = np.array(up["hR"], float), up["gun"]["D"]
+        m += beam(h + gd * 0.05, h - gd * 0.5, 0.007, (176, 178, 184))
     muzzle = muzzle2 = None
     g = up.get("gun")
     art = GUN_ART.get(weapon, weapon)
@@ -745,6 +786,27 @@ def _key_poses(w):
         k["eject_b"] = P(k["load"], hR=V(0.16, -0.08, 0.36))
         k["insert_a"] = P(k["insert_a"], lever=1.0)
         k["insert_b"] = P(k["insert_b"], lever=1.0)
+        return k
+    if w == "spencer":
+        k = _key_poses("rifle")
+        k["cock"] = P(k["aim"], eR=V(-0.04, -0.28, 0.3), hR=V(0.16, -0.08, 0.44))     # thumb back on the hammer
+        return k
+    if w in MUZZLE_LOADERS:
+        # shouldered like a rifle; loaded standing, the butt by his left foot and the
+        # muzzle at his chest: powder poured in, then the ball (or wad and shot) rammed
+        k = _key_poses("rifle")
+        k["kick"] = P(k["kick"], lean=-0.16, gun=G((-0.16, -0.12, 0.48), (0.95, 0.07, 0.22)))
+        k["cock"] = P(k["aim"], hR=V(0.14, -0.1, 0.42))
+        D = V(-0.1, -0.02, 1.0)
+        D /= np.linalg.norm(D)
+        B = V(0.3, 0.06, -0.9)
+        mz = B + D * GUN_LEN[w]
+        hold = dict(eL=V(0.12, 0.27, 0.27), hL=B + D * GUN_LEN[w] * 0.72, gun=G(B, D))
+        k["load"] = dict(eR=V(0.08, -0.3, 0.3), hR=V(0.18, -0.16, 0.3), **hold)
+        k["pour_a"] = dict(eR=V(0.1, -0.34, 0.34), hR=mz + V(0.02, -0.03, 0.07), **hold)
+        k["pour_b"] = dict(eR=V(0.1, -0.33, 0.36), hR=mz + V(0.01, -0.02, 0.1), **hold)
+        k["ram_hi"] = dict(eR=V(0.12, -0.3, 0.6 + mz[2] * 0.3), hR=mz + V(0.0, -0.02, 0.36), rod=True, **hold)
+        k["ram_lo"] = dict(eR=V(0.1, -0.33, 0.36), hR=mz + V(0.0, -0.02, 0.07), rod=True, **hold)
         return k
     if w == "howdah":
         k = _key_poses("colt")
@@ -1082,6 +1144,19 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 6, events={1: "brass"})
         add("reload_insert", [k["insert_a"], k["insert_b"]], 4, True)
         add("reload_close", _frames([k["load"], k["aim"]], 2), 6)
+    elif w == "spencer":
+        # the lever thrown and back, then the hammer thumbed: two motions a shot
+        add("lever", [k["lever_half"], k["lever"], k["lever_half"], k["aim"], k["cock"], k["aim"]], 7, events={1: "brass"})
+        add("reload_open", _frames([k["aim"], k["load"]], 2), 8)
+        add("reload_insert", [k["insert_a"], k["insert_b"]], 4, True)
+        add("reload_close", _frames([k["load"], k["aim"]], 2), 8)
+    elif w in MUZZLE_LOADERS:
+        add("cock", [k["cock"], k["aim"]], 5)
+        add("reload_open", _frames([k["aim"], k["load"]], 2), 4)
+        add("reload_eject", [k["pour_a"], k["pour_b"], k["pour_b"]], 3)
+        add("reload_insert", [k["ram_lo"], lerp_pose(k["ram_lo"], k["ram_hi"], 0.5), k["ram_hi"],
+                              lerp_pose(k["ram_lo"], k["ram_hi"], 0.5)], 4, True)
+        add("reload_close", _frames([k["load"], k["aim"]], 2), 4)
     elif w == "howdah":
         add("cock", [k["cock"], k["aim"]], 6)
         add("reload_open", [k["load_half"], k["load"]], 5)

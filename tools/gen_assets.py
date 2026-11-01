@@ -962,6 +962,27 @@ def gen_sfx(meta):
     v = bandpass(v, 200, 1400) + bandpass(grng2.normal(0, 1, len(t)), 300, 2500) * 0.25
     v *= np.minimum(1, t / 0.15) * np.exp(-np.maximum(t - 0.4, 0) / 0.25)
     write("groan", room(v, grng2, 0.05, 0.2), meta, 0.5, 1.2)
+    # The revolution's guns. The Spencer: a rifle's crack with a heavier, duller body.
+    # The Springfield rifle-musket: a deep black-powder thump with a long tail.
+    arng = np.random.default_rng(97)
+    for i in range(3):
+        sfx = "" if i == 0 else "_%d" % (i + 1)
+        j = arng.uniform(0.92, 1.08)
+        write("spencer" + sfx, gunshot(arng, 0.002, 2900, 0.04, 220, 0.13, 52, 3.1, 1.15, 1.2 * j), meta, 0.98, 1.6)
+        write("musket" + sfx, gunshot(arng, 0.003, 1800, 0.075, 160, 0.24, 40, 3.5, 1.6, 1.35 * j), meta, 0.98, 1.8)
+    # Powder (and shot) poured down the barrel: a dry hiss, then a patter.
+    n = int(SR * 0.5)
+    hiss = bandpass(arng.normal(0, 1, n), 2500, 9000) * np.sin(np.linspace(0, np.pi, n)) ** 0.8 * 0.5
+    parts = [(0.0, hiss)] + [(0.3 + 0.025 * k, tink(arng, 4200 + 300 * k, 0.006, 0.25, 0.04)) for k in range(5)]
+    write("pour", room(place(0.6, parts), arng, 0.04, 0.2), meta, 0.45, 1.2)
+    # The ramrod: steel scraping down the bore, two firm thumps on the charge, out again.
+    def scrape(dur, lo, hi):
+        n = int(SR * dur)
+        return bandpass(arng.normal(0, 1, n), lo, hi) * np.sin(np.linspace(0, np.pi, n)) ** 0.5 * \
+            (0.7 + 0.3 * np.sin(np.linspace(0, 60, n)))
+    parts = [(0.0, scrape(0.3, 1800, 6500) * 0.5), (0.3, knock(arng, 700, 0.02, 0.1) * 1.4 + metal(arng, 1300, 1.2, 0.1) * 0.4),
+             (0.52, knock(arng, 700, 0.02, 0.1) * 1.2), (0.62, scrape(0.25, 2200, 7000) * 0.4)]
+    write("ram", room(place(0.95, parts), arng, 0.05, 0.25), meta, 0.65, 1.3)
 
 
 def main():
