@@ -239,6 +239,20 @@ carried, which you collect by walking over them.
   none of it blocks anything, each kind breaks step by step, a pane breaks only
   when hit at its height and not behind shut shutters, a blast clears the lot, and
   the mayor hears about it.
+- **Signs, washing and bullet holes** (more of the same: no cover, but a fight
+  leaves its mark, whoever's shooting). A painted board hangs on chains from an
+  iron arm out front of most porches (WHISKY, ROOMS, BATHS, WANTED, COFFINS...): a
+  round sets it swinging away from the shot, a damped pendulum over seven baked
+  angles, settling in a couple of seconds; the third parts a chain and it hangs
+  down from one corner till the carpenter rehangs it. Washing is pegged out on
+  lines in the back yards and across three alleys (sheets, shirts, red long johns,
+  towels, a skirt), flapping now and then in a gust: a round holes it and it
+  flaps hard, the third tears it off the line into the dirt, and the hen women peg
+  it out again once it's quiet. Rounds into a building's walls leave holes there
+  for good (on the faces you can see; up to 150 a building, the oldest going),
+  drawn with the building so they sort and fade with it: raw wood round them, or
+  chipped plaster on adobe. Windows and shut shutters still take their own rounds.
+  `tests/test_signs.gd`.
 - **Patching up**: most bandits carry a bandage (`bandages`; not the bandidos or
   drunks). Hit and still standing, one may break off (`patch` chance, more likely
   the more rattled he is, less for a bold one): "¡Me dieron!", into cover away from
@@ -364,6 +378,11 @@ carried, which you collect by walking over them.
   0.7 s, already fighting, making for the last place the stranger was seen (or the
   shooting). Silence all 25 on the street before then and the town is won; once
   they've rallied they have to die too (the count goes up as they come out).
+  When it's over each goes back to a spot of his own out front of the door (a
+  reachable one: they once all made for one point against the saloon wall and
+  jostled there for good, corking the gap beside it). And a bandit stuck behind a
+  comrade standing still asks him to step aside for a moment, instead of
+  re-planning the same way through him.
   `tests/test_reinforcements.gd` checks a quiet win brings nobody out, distant
   gunfire doesn't stir them but gunfire outside does, that all five come out and
   must be killed, and that a runner is sent, can be stopped, and the next one

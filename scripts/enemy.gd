@@ -59,6 +59,8 @@ var search_t := 0.0
 var strafe_t := 0.0
 var strafe_dir := 1.0
 var stuck_t := 0.0
+var give_way := Vector2.ZERO   # stepping aside for a comrade who can't get past
+var give_way_t := 0.0
 var last_pos := Vector2.ZERO
 var marker := ""
 var marker_t := 0.0
@@ -881,6 +883,9 @@ func _physics_process(delta: float) -> void:
 		if st == St.COMBAT:
 			_leader_orders()
 	velocity *= limp_factor()
+	if give_way_t > 0.0:
+		give_way_t -= delta
+		velocity = give_way
 	var own_velocity := velocity
 	if st != St.GUARD:
 		_separate()
@@ -924,9 +929,31 @@ func _check_stuck(delta: float, before: Vector2) -> void:
 		stuck_t += delta
 		if stuck_t > 0.6 and path.size() > 0:
 			stuck_t = 0.0
-			path_to(path[path.size() - 1])
+			if not _ask_way(velocity.normalized()):
+				path_to(path[path.size() - 1])
 	else:
 		stuck_t = 0.0
+
+
+## A comrade standing still in the way (in an alley, a gap by a wall): he steps
+## aside, off the line, for a moment. (A new path would only run into him again.)
+func _ask_way(dir: Vector2) -> bool:
+	for e in game.enemies:
+		if e == self or not e.alive or e.give_way_t > 0.0 or e.velocity.length() > 15.0:
+			continue
+		var d: Vector2 = e.global_position - global_position
+		if d.length() > 24.0 or d.normalized().dot(dir) < 0.5:
+			continue
+		var side := dir.orthogonal()
+		if side.dot(d) < 0.0:
+			side = -side   # (whichever side of the line he's already on)
+		for s in [side, -side, dir]:
+			if game.is_free(e.global_position + s * 20.0):
+				e.give_way = s * e.walk
+				e.give_way_t = 0.8
+				_log("makes way")
+				return true
+	return false
 
 
 func _guard(delta: float) -> void:

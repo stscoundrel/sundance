@@ -754,6 +754,13 @@ func _find_work() -> bool:
 			work_t = 40.0   # (she gives up on one that won't be shooed)
 			repath_t = 0.0
 			return true
+		job = game.laundry_job(self)   # the washing shot through, or down in the dirt: out again
+		if not job.is_empty():
+			var at: Vector2 = game.job_at(job)
+			path = game.find_path(global_position, at if game.is_free(at) else game.free_point_near(at, 14.0))
+			path_i = 0
+			st = St.TO_FIX
+			return true
 	return false
 
 
@@ -773,6 +780,8 @@ func _mend(delta: float) -> void:
 			desired = (game.job_at(job) - global_position).normalized()
 			if keeper:
 				pose = "tidy"
+			elif henwife:
+				pose = "shoo"   # (pegging it out again)
 			else:
 				crouched = true
 				pose = "hammer"

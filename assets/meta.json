@@ -226318,6 +226318,24 @@
       7.055999999999999
      ]
     }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/saloon_0.png",
+     "cell": [
+      68,
+      83
+     ],
+     "frames": 8,
+     "anchor": [
+      156,
+      -116
+     ],
+     "at": [
+      4.54,
+      7.087999999999999
+     ]
+    }
    ]
   },
   "store": {
@@ -226544,6 +226562,24 @@
       6.056
      ]
     }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/store_0.png",
+     "cell": [
+      68,
+      83
+     ],
+     "frames": 8,
+     "anchor": [
+      156,
+      -82
+     ],
+     "at": [
+      3.54,
+      6.088
+     ]
+    }
    ]
   },
   "sheriff": {
@@ -226589,6 +226625,24 @@
       6.056
      ]
     }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/sheriff_0.png",
+     "cell": [
+      68,
+      83
+     ],
+     "frames": 8,
+     "anchor": [
+      156,
+      -82
+     ],
+     "at": [
+      3.54,
+      6.088
+     ]
+    }
    ]
   },
   "bank": {
@@ -226632,6 +226686,24 @@
      "at": [
       2.08,
       7.055999999999999
+     ]
+    }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/bank_0.png",
+     "cell": [
+      69,
+      82
+     ],
+     "frames": 8,
+     "anchor": [
+      181,
+      -109
+     ],
+     "at": [
+      4.04,
+      7.087999999999999
      ]
     }
    ]
@@ -227448,6 +227520,24 @@
       7.055999999999999
      ]
     }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/hotel_0.png",
+     "cell": [
+      69,
+      83
+     ],
+     "frames": 8,
+     "anchor": [
+      157,
+      -130
+     ],
+     "at": [
+      4.54,
+      7.087999999999999
+     ]
+    }
    ]
   },
   "barber": {
@@ -227672,6 +227762,24 @@
      "at": [
       1.08,
       5.056
+     ]
+    }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/barber_0.png",
+     "cell": [
+      68,
+      83
+     ],
+     "frames": 8,
+     "anchor": [
+      132,
+      -46
+     ],
+     "at": [
+      3.04,
+      5.088
      ]
     }
    ]
@@ -227900,6 +228008,24 @@
       6.056
      ]
     }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/undertaker_0.png",
+     "cell": [
+      68,
+      83
+     ],
+     "frames": 8,
+     "anchor": [
+      180,
+      -70
+     ],
+     "at": [
+      3.04,
+      6.088
+     ]
+    }
    ]
   },
   "assay": {
@@ -228126,6 +228252,24 @@
       5.056
      ]
     }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/assay_0.png",
+     "cell": [
+      68,
+      83
+     ],
+     "frames": 8,
+     "anchor": [
+      108,
+      -58
+     ],
+     "at": [
+      3.54,
+      5.088
+     ]
+    }
    ]
   },
   "feed": {
@@ -228350,6 +228494,24 @@
      "at": [
       1.58,
       6.056
+     ]
+    }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/feed_0.png",
+     "cell": [
+      68,
+      83
+     ],
+     "frames": 8,
+     "anchor": [
+      156,
+      -82
+     ],
+     "at": [
+      3.54,
+      6.088
      ]
     }
    ]
@@ -229025,6 +229187,231 @@
     }
    ],
    "fragile": true
+  },
+  "washline": {
+   "file": "res://assets/sprites/world/washline.png",
+   "anchor": [
+    20,
+    107
+   ],
+   "footprint": [
+    3.6,
+    0.24
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     3.6,
+     0.24
+    ]
+   ],
+   "doors": [],
+   "laundry": [
+    {
+     "file": "res://assets/sprites/world/laundry/washline_0.png",
+     "cell": [
+      69,
+      127
+     ],
+     "frames": 7,
+     "anchor": [
+      20,
+      89
+     ],
+     "at": [
+      0.57,
+      0.12
+     ],
+     "kind": "sheet"
+    },
+    {
+     "file": "res://assets/sprites/world/laundry/washline_1.png",
+     "cell": [
+      42,
+      111
+     ],
+     "frames": 7,
+     "anchor": [
+      -33,
+      62
+     ],
+     "at": [
+      1.39,
+      0.12
+     ],
+     "kind": "shirt"
+    },
+    {
+     "file": "res://assets/sprites/world/laundry/washline_2.png",
+     "cell": [
+      52,
+      116
+     ],
+     "frames": 7,
+     "anchor": [
+      -65,
+      42
+     ],
+     "at": [
+      2.21,
+      0.12
+     ],
+     "kind": "longjohns"
+    },
+    {
+     "file": "res://assets/sprites/world/laundry/washline_3.png",
+     "cell": [
+      45,
+      113
+     ],
+     "frames": 7,
+     "anchor": [
+      -111,
+      26
+     ],
+     "at": [
+      3.03,
+      0.12
+     ],
+     "kind": "towel"
+    }
+   ]
+  },
+  "washline_b": {
+   "file": "res://assets/sprites/world/washline_b.png",
+   "anchor": [
+    20,
+    107
+   ],
+   "footprint": [
+    3.6,
+    0.24
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     3.6,
+     0.24
+    ]
+   ],
+   "doors": [],
+   "laundry": [
+    {
+     "file": "res://assets/sprites/world/laundry/washline_b_0.png",
+     "cell": [
+      52,
+      118
+     ],
+     "frames": 7,
+     "anchor": [
+      5,
+      81
+     ],
+     "at": [
+      0.7066666666666667,
+      0.12
+     ],
+     "kind": "skirt"
+    },
+    {
+     "file": "res://assets/sprites/world/laundry/washline_b_1.png",
+     "cell": [
+      73,
+      125
+     ],
+     "frames": 7,
+     "anchor": [
+      -34,
+      57
+     ],
+     "at": [
+      1.8,
+      0.12
+     ],
+     "kind": "sheet"
+    },
+    {
+     "file": "res://assets/sprites/world/laundry/washline_b_2.png",
+     "cell": [
+      43,
+      114
+     ],
+     "frames": 7,
+     "anchor": [
+      -105,
+      29
+     ],
+     "at": [
+      2.893333333333333,
+      0.12
+     ],
+     "kind": "shirt"
+    }
+   ]
+  },
+  "washline_alley": {
+   "file": "res://assets/sprites/world/washline_alley.png",
+   "anchor": [
+    20,
+    107
+   ],
+   "footprint": [
+    1.92,
+    0.24
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.92,
+     0.24
+    ]
+   ],
+   "doors": [],
+   "laundry": [
+    {
+     "file": "res://assets/sprites/world/laundry/washline_alley_0.png",
+     "cell": [
+      68,
+      125
+     ],
+     "frames": 7,
+     "anchor": [
+      20,
+      87
+     ],
+     "at": [
+      0.5599999999999999,
+      0.12
+     ],
+     "kind": "sheet"
+    },
+    {
+     "file": "res://assets/sprites/world/laundry/washline_alley_1.png",
+     "cell": [
+      51,
+      117
+     ],
+     "frames": 7,
+     "anchor": [
+      -25,
+      64
+     ],
+     "at": [
+      1.3599999999999999,
+      0.12
+     ],
+     "kind": "longjohns"
+    }
+   ]
   }
  },
  "tumbleweed": {

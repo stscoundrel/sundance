@@ -67,6 +67,11 @@ PROPS += [
     # hens for market: shoot one open and out they burst
     ("coop", 4.6, 40.0), ("coop", 22.2, 40.2), ("coop", 49.2, 40.0), ("coop", 54.6, 18.2), ("coop", 34.2, 11.8),
     ("hencrate", 51.6, 28.3), ("hencrate", 24.2, 22.1), ("hencrate", 28.8, 38.6),
+    # washing out in the back yards, and strung across three of the alleys (no cover,
+    # but shot through, holed and torn down; the hen women peg it out again)
+    ("washline", 3.5, 42.0), ("washline_b", 21.5, 42.2), ("washline", 49.0, 42.4),
+    ("washline_b", 3.2, 21.2), ("washline", 31.5, 12.6),
+    ("washline_alley", 25.55, 19.0), ("washline_alley", 34.55, 24.5), ("washline_alley", 9.3, 25.0),
 ]
 # crosses on boot hill
 for x, y in ((4.5, 51.5), (6.5, 55), (8.2, 52.2), (4.8, 56), (8.6, 55.6), (3.2, 54), (11, 52.5), (12, 55.5)):

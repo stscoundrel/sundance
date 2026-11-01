@@ -118,6 +118,11 @@ WINDOWS = []
 GLAZED = []
 # Lanterns hung under a porch awning: (x, y, z of the beam), metres from the origin.
 LANTERNS = []
+# Painted boards hung on chains under an awning: (x, y, z of the chains' tops, text).
+SIGNS = []
+SIGN_SWING = (-0.5, -0.33, -0.17, 0.0, 0.17, 0.33, 0.5)   # radians about the beam, a frame each
+# Laundry pegged out on a washing line: (x, y, z of the line there, kind, seed).
+WASHING = []
 
 
 # Shutter frames, open to closed: each leaf's swing from flat against the wall (pi)
@@ -176,6 +181,145 @@ def lantern(at, broken=False):
     else:
         out += frustum(c + [0, 0, 0.03], c + [0, 0, 0.09], 0.062, 0.062, (120, 130, 140))  # a jagged rim
     return out
+
+
+def _board_paint(x0, x1, z0, z1, text, board=(70, 50, 36), ink=(228, 208, 162)):
+    """A painted board: a darker frame round the edge and the words in the middle,
+    on the faces front and back."""
+    def f(P, N):
+        u, z = P[:, 0], P[:, 2]
+        c = np.tile(np.array(board, float), (len(P), 1)) * (0.92 + 0.12 * hash01(np.floor(z * 12)))[:, None]
+        edge = (u < x0 + 0.05) | (u > x1 - 0.05) | (z < z0 + 0.05) | (z > z1 - 0.05)
+        c[edge] *= 0.72
+        n = len(text)
+        unit = min((x1 - x0 - 0.16) / (4 * n - 1), (z1 - z0 - 0.14) / 5)
+        start = (x0 + x1) / 2 - unit * (4 * n - 1) / 2
+        top = (z0 + z1) / 2 + unit * 2.5
+        gx = np.floor((u - start) / unit).astype(int)
+        gy = np.floor((top - z) / unit).astype(int)
+        li, lx = gx // 4, gx % 4
+        ink_m = np.zeros(len(P), bool)
+        for i, ch in enumerate(text):
+            g = FONT.get(ch, FONT[" "])
+            for r in range(5):
+                for k in range(3):
+                    if g[r][k] == "#":
+                        ink_m |= (li == i) & (lx == k) & (gy == r)
+        c[ink_m & ~edge & (np.abs(N[:, 1]) > 0.5)] = ink
+        return c
+    return f
+
+
+def hanging_sign(at, swing=0.0, askew=False):
+    """A painted board on two chains from the awning. A round sets it swinging about
+    the chains' tops; enough of them part a chain and it hangs down from one corner."""
+    x, y, top, text = at
+    w, h, drop = 1.0, 0.42, 0.2
+    x0, x1, z1 = x - w / 2, x + w / 2, top - drop
+    out = Cloud()
+    board = box((x0, y - 0.025, z1 - h), (x1, y + 0.025, z1), _board_paint(x0, x1, z1 - h, z1, text), 0.02)
+    chain = (52, 48, 44)
+    if askew:   # the right chain shot through: down from the left corner, nearly on end
+        board.transform(rot_y_(1.15), pivot=(x0 + 0.06, y, z1))
+        out += board
+        out += _sign_bracket(x0, x1, y, top)
+        out += beam((x0 + 0.06, y, top), (x0 + 0.06, y, z1), 0.01, chain)
+        out += beam((x1 - 0.06, y, top), (x1 - 0.06, y, top - 0.08), 0.01, chain)   # the broken end
+        return out
+    out += board
+    for cx in (x0 + 0.06, x1 - 0.06):
+        out += beam((cx, y, top), (cx, y, z1), 0.01, chain)
+    out.transform(rot_x(swing), pivot=(x, y, top))
+    out += _sign_bracket(x0, x1, y, top)
+    return out
+
+
+def _sign_bracket(x0, x1, y, top):
+    """The iron arm it hangs from, out from under the awning's edge."""
+    out = Cloud()
+    iron = (46, 42, 40)
+    out += beam((x0 - 0.04, y, top), (x1 + 0.04, y, top), 0.014, iron)
+    for xx in (x0 - 0.04, x1 + 0.04):
+        out += beam((xx, y, top), (xx, y - 0.3, top + 0.28), 0.012, iron)
+    return out
+
+
+def rot_y_(a):
+    c, s_ = math.cos(a), math.sin(a)
+    return np.array([[c, 0, s_], [0, 1, 0], [-s_, 0, c]])
+
+
+# Washing: (kind, width, height, colour). Pegged out across a yard or an alley.
+GARMENTS = {
+    "sheet": (1.0, 1.1, (232, 228, 214)),
+    "shirt": (0.5, 0.62, (126, 146, 172)),
+    "longjohns": (0.46, 1.0, (176, 58, 48)),
+    "towel": (0.42, 0.5, (226, 220, 200)),
+    "skirt": (0.6, 0.8, (96, 70, 92)),
+}
+LAUNDRY_LOOKS = ((0.12, False), (0.55, False), (-0.35, False), (0.12, True), (0.55, True), (-0.35, True))
+
+
+def garment(peg, flap=0.0, holed=False, down=False):
+    """A piece of washing pegged to the line at `peg`, the wind (or a round) lifting
+    its hem by `flap`. Holed: shot through. Down: torn off the line, in the dirt."""
+    x, y, z, kind, seed = peg
+    w, h, col = GARMENTS[kind]
+    rng = np.random.default_rng(seed)
+    sp = 0.02 / 3
+    u, v = np.meshgrid(np.arange(-w / 2, w / 2, sp), np.arange(0.0, h, sp), indexing="ij")
+    u, v = u.ravel(), v.ravel()
+    keep = np.ones(len(u), bool)
+    if kind == "longjohns":   # two legs below the seat
+        keep &= ~((v > h * 0.45) & (np.abs(u) < 0.035))
+    if kind == "shirt":       # narrower at the hem than across the shoulders, sleeves hanging
+        keep &= ~((v > 0.18) & (np.abs(u) > 0.17))
+    if kind == "skirt":
+        keep &= np.abs(u) < w / 2 * (0.55 + 0.45 * v / h)
+    if holed:
+        for _ in range(3):
+            cu, cv, r = rng.uniform(-w / 3, w / 3), rng.uniform(h * 0.2, h * 0.85), rng.uniform(0.035, 0.06)
+            keep &= np.hypot(u - cu, v - cv) > r
+    u, v = u[keep], v[keep]
+    base = np.array(col, float)
+    C = np.tile(base, (len(u), 1)) * (0.9 + 0.12 * hash01(np.floor(u * 30), np.floor(v * 30)))[:, None]
+    if kind == "towel":   # a stripe across
+        C[(v > h * 0.7) & (v < h * 0.8)] = (170, 60, 50)
+    if kind == "shirt":   # the sleeves, a shade darker in the fold
+        C[np.abs(u) > 0.17] *= 0.88
+    if down:
+        # in a heap in the dirt below the line, crumpled
+        P = np.stack([x + u * 0.85 + 0.05 * np.sin(v * 9), y + 0.25 + v * 0.45,
+                      0.02 + 0.05 * hash01(np.floor(u * 8), np.floor(v * 8))], -1)
+        return make(P, np.tile([0, 0, 1.0], (len(P), 1)), lambda P_, N_: C)
+    t = v / h
+    bend = flap * 0.45 * t ** 1.6 + 0.03 * flap * np.sin(u * 9 + seed)
+    P = np.stack([x + u, y + bend, z - v * np.cos(flap * 0.5 * t)], -1)
+    out = make(P, np.tile([0, 1.0, 0], (len(P), 1)), lambda P_, N_: C)
+    out += make(P - [0, 0.006, 0], np.tile([0, -1.0, 0], (len(P), 1)), lambda P_, N_: C * 0.8)
+    for px in (x - w / 2 + 0.04, x + w / 2 - 0.04):   # the pegs
+        out += box((px - 0.012, y - 0.015, z - 0.06), (px + 0.012, y + 0.015, z + 0.03), solid((150, 120, 84)), 0.01)
+    return out
+
+
+def washline(L, kinds, seed):
+    """Two T-posts and a sagging line between them along x, with the washing out:
+    `kinds` pegged along it in turn. Its pegs go in WASHING."""
+    m = Cloud()
+    wood = (110, 84, 60)
+    y = 0.15
+    for px in (0.1, L - 0.1):
+        m += box((px - 0.05, y - 0.05, 0), (px + 0.05, y + 0.05, 2.15), solid(wood), 0.02)
+        m += box((px - 0.04, y - 0.25, 2.05), (px + 0.04, y + 0.25, 2.12), solid(wood), 0.02)
+    sag = lambda xx: 2.08 - 0.16 * math.sin(math.pi * (xx - 0.1) / (L - 0.2))
+    xs = np.linspace(0.1, L - 0.1, 24)
+    for a, b in zip(xs[:-1], xs[1:]):
+        m += beam((a, y, sag(a)), (b, y, sag(b)), 0.008, (196, 186, 160))
+    gap = (L - 0.4) / len(kinds)
+    for i, k in enumerate(kinds):
+        cx = 0.2 + gap * (i + 0.5)
+        WASHING.append((cx, y, sag(cx), k, seed + i))
+    return m
 
 
 def shutter(window, swing, col):
@@ -326,8 +470,10 @@ def gable_ends(W, D, z, rise, fn, along_y=True):
     return out
 
 
-def boardwalk(W, D, depth=1.2, awning=3.0, posts=4, wood=(132, 98, 66)):
+def boardwalk(W, D, depth=1.2, awning=3.0, posts=4, wood=(132, 98, 66), hang=None):
     LANTERNS.append((W / 2 - 1.15, D + depth + 0.12, awning - 0.25))   # by the door, on a hook out front
+    if hang:   # a board on chains the other side of the door, out from the awning's edge
+        SIGNS.append((W / 2 + 1.3, D + depth + 0.16, awning - 0.3, hang))
     out = Cloud()
     out += box((0, D, 0), (W, D + depth, 0.15), planks(wood, board=0.18, vertical=True, mud=0), BSP)
     for x in np.linspace(0.1, W - 0.22, posts):
@@ -393,7 +539,7 @@ def saloon():
     m += false_front(W, D, Hh, 7.0, 0.6, fn)
     m += box((0, D, 2.9), (W, D + 0.04, 3.05), solid((90, 64, 44)), 0.03)
     # balcony rail on the upper floor
-    m += boardwalk(W, D, awning=3.1, posts=5)
+    m += boardwalk(W, D, awning=3.1, posts=5, hang="WHISKY")
     return m
 
 
@@ -414,7 +560,7 @@ def store():
     m += gable_roof(W, D, Hh, 1.0, roofing((104, 92, 80)))
     m += gable_ends(W, D, Hh, 1.0, wall)
     m += false_front(W, D, Hh, 5.1, 0.0, fn)
-    m += boardwalk(W, D, awning=2.8, posts=3)
+    m += boardwalk(W, D, awning=2.8, posts=3, hang="TOBACCO")
     return m
 
 
@@ -435,7 +581,7 @@ def sheriff():
     m += gable_roof(W, D, Hh, 0.9, roofing((86, 70, 62)))
     m += gable_ends(W, D, Hh, 0.9, wall)
     m += false_front(W, D, Hh, 4.9, 0.4, fn)
-    m += boardwalk(W, D, awning=2.8, posts=3)
+    m += boardwalk(W, D, awning=2.8, posts=3, hang="WANTED")
     return m
 
 
@@ -458,7 +604,7 @@ def bank():
              skip=("-z",))
     m += box((0.3, 0.3, Hh + 0.35), (W - 0.3, D - 0.3, Hh + 0.36), solid((96, 82, 70)), BSP)
     m += box((-0.05, -0.05, 0), (W + 0.05, D + 0.05, 0.4), solid((176, 160, 136)), 0.03, skip=("-z", "+z"))
-    m += boardwalk(W, D, awning=3.0, posts=4, wood=(120, 110, 96))
+    m += boardwalk(W, D, awning=3.0, posts=4, wood=(120, 110, 96), hang="LOANS")
     return m
 
 
@@ -973,7 +1119,7 @@ def tumbleweed(frame, seed=4):
 
 
 def frontier(w, h, wall_h, front_h, wall, sign, sign_col, ink=(232, 214, 170), floors=1,
-             roof_col=(100, 84, 72), step=0.0, extras=None):
+             roof_col=(100, 84, 72), step=0.0, extras=None, hang=None):
     """A generic false-front building facing +y: plank or brick walls, windows per
     floor, a sign on the false front, boardwalk and awning."""
     W, D = w * T, h * T
@@ -996,7 +1142,7 @@ def frontier(w, h, wall_h, front_h, wall, sign, sign_col, ink=(232, 214, 170), f
     m += gable_roof(W, D, wall_h, 1.0, roofing(roof_col))
     m += gable_ends(W, D, wall_h, 1.0, wall)
     m += false_front(W, D, wall_h, front_h, step, fn)
-    m += boardwalk(W, D, awning=2.8, posts=max(2, int(W // 2.4) + 1))
+    m += boardwalk(W, D, awning=2.8, posts=max(2, int(W // 2.4) + 1), hang=hang)
     if extras:
         m += extras(W, D)
     return m
@@ -1047,15 +1193,15 @@ BUILDINGS = {
                      [1.6, 1.6, 1.84, 1.84]]),
     "gallows": (gallows, (3, 3), "cover", True, None),
     "hotel": (lambda: frontier(7, 6, 5.4, 7.0, planks((150, 156, 134), seed=17), "HOTEL", (60, 50, 44),
-                               floors=2, step=0.5), (7, 6), "wall", True, None),
+                               floors=2, step=0.5, hang="ROOMS"), (7, 6), "wall", True, None),
     "barber": (lambda: frontier(4, 4, 3.4, 4.6, planks((190, 182, 160), seed=19), "BARBER", (40, 60, 90),
-                                extras=_barber_pole), (4, 4), "wall", True, None),
+                                extras=_barber_pole, hang="BATHS"), (4, 4), "wall", True, None),
     "undertaker": (lambda: frontier(4, 5, 3.6, 4.8, planks((70, 62, 58), seed=23), "UNDERTAKER", (24, 22, 22),
-                                    ink=(210, 200, 180)), (4, 5), "wall", True, None),
-    "assay": (lambda: frontier(5, 4, 3.6, 4.8, bricks((168, 150, 120), (210, 196, 170)), "ASSAY", (80, 60, 40)),
+                                    ink=(210, 200, 180), hang="COFFINS"), (4, 5), "wall", True, None),
+    "assay": (lambda: frontier(5, 4, 3.6, 4.8, bricks((168, 150, 120), (210, 196, 170)), "ASSAY", (80, 60, 40), hang="GOLD"),
               (5, 4), "wall", True, None),
     "feed": (lambda: frontier(5, 5, 4.0, 5.4, planks((140, 96, 60), seed=29), "FEED", (230, 210, 160),
-                              ink=(120, 40, 30), step=0.4), (5, 5), "wall", True, None),
+                              ink=(120, 40, 30), step=0.4, hang="HAY"), (5, 5), "wall", True, None),
     "gunsmith": (lambda: frontier(3, 4, 3.4, 4.6, planks((112, 72, 54), seed=37), "GUNSMITH", (34, 30, 28),
                                   ink=(214, 180, 96), extras=_gun_sign), (3, 4), "wall", True, None),
     "cantina": (cantina, (6, 5), "wall", True, None),
@@ -1073,4 +1219,7 @@ BUILDINGS = {
     "table": (table, (0.56, 0.56), "none", False, None),
     "coop": (coop, (0.84, 0.6), "none", False, None),
     "hencrate": (hen_crate, (0.56, 0.4), "none", False, None),
+    "washline": (lambda: washline(4.5, ("sheet", "shirt", "longjohns", "towel"), 3), (3.6, 0.24), "none", False, None),
+    "washline_b": (lambda: washline(4.5, ("skirt", "sheet", "shirt"), 11), (3.6, 0.24), "none", False, None),
+    "washline_alley": (lambda: washline(2.4, ("sheet", "longjohns"), 17), (1.92, 0.24), "none", False, None),
 }

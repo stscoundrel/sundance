@@ -68,9 +68,10 @@ func _physics_process(delta: float) -> void:
 				_scare_impact(hp)
 				queue_free()
 				return
-		if col.collision_layer & Iso.LAYER_WALL:
-			game.glass_hit(hp, h)
-		game.impact(hp, h, vel, true)
+		var holed := false
+		if col.collision_layer & Iso.LAYER_WALL and not game.glass_hit(hp, h):
+			holed = game.wall_hole(col, hp, h, hit["normal"])
+		game.impact(hp, h, vel, true, not holed)   # (a lasting hole: no fading one too)
 		_scare_impact(hp)
 		queue_free()
 		return

@@ -79,7 +79,21 @@ const TRAIL_CLOSE := 70.0   # px: following a trail, he picks up the next drop t
 var trails: Array[Dictionary] = []   # {at, t, player}
 # Things gunfire breaks that are no cover at all: window panes, porch lanterns,
 # tables of bottles, chairs, clay jars. Each hit moves one a look further gone.
-const FRAGILE_R := {"olla": 5.0, "chair": 5.0, "table": 7.0, "lantern": 4.0, "coop": 9.0, "hencrate": 6.0}
+const FRAGILE_R := {"olla": 5.0, "chair": 5.0, "table": 7.0, "lantern": 4.0, "coop": 9.0, "hencrate": 6.0,
+	"sign": 7.0, "laundry": 6.0}
+# Hanging signs swing when hit (a damped pendulum, a baked frame per angle); the
+# third round parts a chain. Washing flaps; the first round holes it, the third
+# tears it off the line.
+const SIGN_REST := 3          # (frames: 7 angles of swing, then hanging askew)
+const SIGN_STEP := 0.17       # rad between swing frames
+const SIGN_K := 12.0          # pull back to the vertical (a swing of about two seconds)
+const SIGN_DAMP := 1.4
+const SIGN_KICK := 3.2        # rad/s a round sets it going
+const SIGN_HITS := 3
+const LAUNDRY_HITS := 3
+var swinging: Array[Dictionary] = []   # signs on the move
+var laundry: Array[Dictionary] = []
+static var wind_rng := RandomNumberGenerator.new()   # (the breeze in the washing: the town's dice stay as seeded)
 const HENS_IN := {"coop": 4, "hencrate": 3}   # shut in, till a round lets them out
 const HENS_OUT := 2                           # pecking about each coop from the start
 var hens: Array[Chicken] = []
@@ -134,10 +148,12 @@ func _ready() -> void:
 		Shutter.rng.randomize()
 		Chicken.rng.randomize()
 		Enemy.gasp_rng.randomize()
+		wind_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
 		Enemy.gasp_rng.seed = 13
+		wind_rng.seed = 17
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -460,6 +476,9 @@ func _place_object(type: String, g: Vector2) -> void:
 		var body := StaticBody2D.new()
 		body.collision_layer = {"wall": Iso.LAYER_WALL, "cover": Iso.LAYER_COVER, "post": Iso.LAYER_POST}[collide]
 		body.collision_mask = 0
+		if collide == "wall":
+			body.set_meta("building", spr)   # (for the bullet holes)
+			body.set_meta("paint", m.get("paint", "wood"))
 		for r in m["colliders"]:
 			var x0: float = g.x + r[0]
 			var y0: float = g.y + r[1]
@@ -592,6 +611,7 @@ func _build_overlay() -> void:
 
 func _process(delta: float) -> void:
 	var now := Time.get_ticks_msec()
+	_sway(delta)
 	if state == "title":
 		title_t += delta   # frame time, not the wall clock: a slow load doesn't skip the title
 		if title_t > 5.5 and not _args.has("freeze"):
@@ -1582,7 +1602,25 @@ func _spill_out(delta: float) -> void:
 	var door: Vector2 = den["door"]
 	var at := door + Vector2(randf_range(-6.0, 6.0), randf_range(0.0, 6.0))
 	var en := _add_enemy(kind, at, PackedVector2Array(), rad_to_deg((den["alarm"] - door).angle()))
-	en.home = door + (den["alarm"] - door).normalized() * 40.0   # after the fight: back out front of the den
+	# after the fight: back out front of the den, each to his own spot, out in the
+	# open towards where the trouble was (all on one, or one they can't reach, and
+	# they'd jostle there for good, blocking the way past)
+	var fwd: Vector2 = (den["alarm"] - door).normalized()
+	var homes: Array = den.get_or_add("homes", [])
+	var angles: Array = range(12).map(func(k): return k * TAU / 12.0)
+	angles.sort_custom(func(a, b): return Vector2.from_angle(a).dot(fwd) > Vector2.from_angle(b).dot(fwd))
+	en.home = door + fwd * 40.0
+	var found := false
+	for r in [36.0, 56.0, 76.0]:
+		for a in angles:
+			var spot: Vector2 = door + Vector2.from_angle(a) * r
+			if is_free(spot) and clear_path(door, spot) and homes.all(func(h): return h.distance_to(spot) > 18.0):
+				en.home = spot
+				found = true
+				break
+		if found:
+			break
+	homes.append(en.home)
 	en.enter_combat(den["alarm"], false, false)
 	if randf() < 0.5:
 		en.say_line("spot", ["¡Vámonos!"])
@@ -1856,6 +1894,16 @@ func _add_fixtures(m: Dictionary, spr: Sprite2D, corner: Vector2, made: Array[Sh
 	for la in m.get("lanterns", []):
 		var ov := _overlay(m, la, spr)
 		_add_fragile("lantern", Iso.to_screen(corner + Vector2(la["at"][0], la["at"][1])), ov, 1, FRAGILE_R["lantern"])
+	for sg in m.get("signs", []):
+		var ov := _overlay(m, sg, spr)
+		ov.frame = SIGN_REST
+		var item := _add_fragile("sign", Iso.to_screen(corner + Vector2(sg["at"][0], sg["at"][1])), ov, 1, FRAGILE_R["sign"])
+		item.merge({"swing": 0.0, "spin": 0.0, "hits": 0, "frame0": SIGN_REST, "look0": [ov.texture, ov.offset]})
+	for la in m.get("laundry", []):
+		var ov := _overlay(m, la, spr)
+		var item := _add_fragile("laundry", Iso.to_screen(corner + Vector2(la["at"][0], la["at"][1])), ov, 2, FRAGILE_R["laundry"])
+		item.merge({"hits": 0, "flap_t": 0.0, "frame0": 0, "look0": [ov.texture, ov.offset], "cloth": la["kind"]})
+		laundry.append(item)
 
 
 func _overlay(m: Dictionary, o: Dictionary, building: Sprite2D) -> Sprite2D:
@@ -1892,8 +1940,8 @@ func _fragile_body(item: Dictionary, radius: float) -> void:
 
 
 ## A round strikes a wall: if that's a pane of glass at the height it flew (and
-## the shutters aren't shut over it), the pane goes.
-func glass_hit(at: Vector2, height: float) -> void:
+## the shutters aren't shut over it), the pane goes. True if the window took it.
+func glass_hit(at: Vector2, height: float) -> bool:
 	for item in fragile:
 		if item["kind"] != "glass" or item["state"] > 0:
 			continue
@@ -1904,14 +1952,40 @@ func glass_hit(at: Vector2, height: float) -> void:
 			continue
 		var sh = item["shutter"]
 		if sh != null and sh.shut:
-			return   # the shutters take it
+			return true   # the shutters take it
 		hit_fragile(item, at, height)
-		return
+		return true
+	return false
+
+
+## A round into a building's wall leaves a hole in it for good, on the faces you can
+## see (one turned away would never show it). False if it left none.
+func wall_hole(col: Object, at: Vector2, height: float, normal: Vector2) -> bool:
+	if not col.has_meta("building") or normal.y <= 0.05:
+		return false
+	var spr: Sprite2D = col.get_meta("building")
+	var holes: Holes = spr.get_node_or_null("Holes")
+	if holes == null:
+		holes = Holes.new()
+		holes.name = "Holes"
+		holes.scale = Vector2.ONE / tex_scale
+		if col.get_meta("paint") == "adobe":
+			holes.rim = Color(0.92, 0.84, 0.7, 0.45)   # chipped plaster
+		spr.add_child(holes)
+		spr.move_child(holes, 0)   # (under its shutters, panes, lanterns and signs)
+	holes.add(at - Vector2(0, height * 0.7) - spr.position)
+	return true
 
 
 ## Hit: one look further gone, with the glass, crockery or splinters to show it.
 func hit_fragile(item: Dictionary, at: Vector2, height := -1.0) -> void:
 	if item["state"] >= item["last"]:
+		return
+	if item["kind"] == "sign":
+		_hit_sign(item, at)
+		return
+	if item["kind"] == "laundry":
+		_hit_laundry(item, at)
 		return
 	item["state"] += 1
 	var n: int = item["state"]
@@ -1966,6 +2040,102 @@ func hit_fragile(item: Dictionary, at: Vector2, height := -1.0) -> void:
 		item["body"] = null
 	stats["broken"] = stats.get("broken", 0) + 1
 	_scar(item["at"], item)
+
+
+## A round through a hanging sign: it swings away from the shot, splinters flying;
+## the third parts a chain and leaves it hanging from one corner.
+func _hit_sign(item: Dictionary, at: Vector2) -> void:
+	item["hits"] += 1
+	var from: float = Iso.to_grid(at).y - Iso.to_grid(item["at"]).y   # (which side the round came in)
+	item["spin"] += SIGN_KICK * (-1.0 if from > 0.0 else 1.0)
+	if not item in swinging:
+		swinging.append(item)
+	impact(item["at"], 34.0, Vector2.RIGHT.rotated(randf() * TAU), true, false)
+	if item["hits"] < SIGN_HITS:
+		sfx("wood_hit", at, -6.0, 0.12)
+		return
+	item["state"] = 1
+	item["sprite"].frame = SIGN_REST + 4   # (askew)
+	swinging.erase(item)
+	sfx("wood_break", at, -6.0, 0.1)
+	_broken(item)
+
+
+## A round through the washing: it jerks and flaps, holed; the third tears it off
+## the line into the dirt.
+func _hit_laundry(item: Dictionary, at: Vector2) -> void:
+	item["hits"] += 1
+	item["flap_t"] = 1.4
+	sfx("tear", at, -10.0, 0.15)
+	var puff := Puff.new()   # a wisp of lint
+	puff.position = item["at"]
+	for i in 4:
+		puff.add(Vector2(0, -26), Vector2.RIGHT.rotated(randf() * TAU) * randf_range(10, 30), randf_range(0.4, 0.8),
+			0.8, Color(0.93, 0.91, 0.86, 0.9), 0.0, 40.0)
+	world.add_child(puff)
+	if item["state"] == 0:
+		item["state"] = 1
+	if item["hits"] >= LAUNDRY_HITS:
+		item["state"] = 2
+		item["flap_t"] = 0.0
+		item["sprite"].frame = 6
+		_broken(item)
+
+
+## Gone as far as it goes: no more to hit, and on the mayor's list.
+func _broken(item: Dictionary) -> void:
+	if item["body"]:
+		item["body"].queue_free()
+		item["body"] = null
+	stats["broken"] = stats.get("broken", 0) + 1
+	_scar(item["at"], item)
+
+
+## Signs swinging back to rest, washing flapping (shot, or now and then in the breeze).
+func _sway(delta: float) -> void:
+	for i in range(swinging.size() - 1, -1, -1):
+		var it: Dictionary = swinging[i]
+		it["spin"] += (-SIGN_K * it["swing"] - SIGN_DAMP * it["spin"]) * delta
+		it["swing"] = clampf(it["swing"] + it["spin"] * delta, -SIGN_STEP * 3.4, SIGN_STEP * 3.4)
+		it["sprite"].frame = SIGN_REST + clampi(roundi(it["swing"] / SIGN_STEP), -3, 3)
+		if absf(it["swing"]) < SIGN_STEP * 0.5 and absf(it["spin"]) < 0.25:   # (back on its rest frame)
+			it["swing"] = 0.0
+			it["sprite"].frame = SIGN_REST
+			swinging.remove_at(i)
+	for it in laundry:
+		if it["state"] >= 2:
+			continue
+		var base: int = it["state"] * 3
+		if it["flap_t"] <= 0.0 and wind_rng.randf() < delta * 0.06:
+			it["flap_t"] = wind_rng.randf_range(0.8, 1.6) * -1.0   # (a gust: negative, a lazier flap)
+		var t: float = it["flap_t"]
+		if t > 0.0:
+			it["flap_t"] = maxf(0.0, t - delta)
+			it["sprite"].frame = base + 1 + int(t * 9.0) % 2
+		elif t < 0.0:
+			it["flap_t"] = minf(0.0, t + delta)
+			it["sprite"].frame = base + 1 + int(-t * 3.0) % 2
+		else:
+			it["sprite"].frame = base
+
+
+## Washing down in the dirt, or shot through: the nearest no one else is seeing to.
+func laundry_job(by: Civilian) -> Dictionary:
+	var best: Dictionary = {}
+	var best_d := INF
+	for item in laundry:
+		if item["state"] == 0:
+			continue
+		var f = item.get("fixer")
+		if f != null and f != by and is_instance_valid(f) and f.alive and not f.gone():
+			continue
+		var d := by.global_position.distance_to(item["at"])
+		if d < best_d:
+			best_d = d
+			best = item
+	if not best.is_empty():
+		best["fixer"] = by
+	return best
 
 
 ## A hen near `at` (her own dice: the town's stay as seeded).
@@ -2183,7 +2353,7 @@ func trail_lead(e: Enemy, newer: float) -> Dictionary:
 
 # ------------------------------------------------------------------ the town tidies up
 
-const WOOD := ["crate", "barrel", "coffin", "trough", "wagon", "chair", "table", "coop", "hencrate"]
+const WOOD := ["crate", "barrel", "coffin", "trough", "wagon", "chair", "table", "coop", "hencrate", "sign"]
 const KEEPS := 160.0   # px round the saloon keeper's door: his tables and chairs, not the carpenter's
 const SWEEP_R := 26.0  # px a sweeper's broom clears at a go
 const STRAY := 80.0    # px from the nearest coop: a hen this far off wants shooing home
@@ -2241,6 +2411,9 @@ func repair(item: Dictionary) -> void:
 	spr.texture = item["look0"][0]
 	spr.offset = item["look0"][1]
 	spr.z_index = 0
+	if item.has("frame0"):   # (a sign rehung, the washing pegged out again)
+		spr.frame = item["frame0"]
+		item["hits"] = 0
 	item["state"] = 0
 	item["fixer"] = null
 	if item.has("hp"):

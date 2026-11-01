@@ -98,6 +98,8 @@ def gen_world(meta):
         world.WINDOWS.clear()
         world.GLAZED.clear()
         world.LANTERNS.clear()
+        world.SIGNS.clear()
+        world.WASHING.clear()
         model = fn()
         img, anchor = render(model, edges=True)
         path = save(img, f"sprites/world/{name}.png")
@@ -135,6 +137,19 @@ def gen_world(meta):
                                                           [[world.lantern(l), world.lantern(l, True)] for l in world.LANTERNS])
             for o, l in zip(meta["objects"][name]["lanterns"], world.LANTERNS):
                 o["at"] = [l[0] / world.T, l[1] / world.T]
+        if world.SIGNS:   # a frame for each angle of swing, and one hanging askew
+            meta["objects"][name]["signs"] = _overlays(name, "sign", model,
+                                                       [[world.hanging_sign(sg, a) for a in world.SIGN_SWING]
+                                                        + [world.hanging_sign(sg, askew=True)] for sg in world.SIGNS])
+            for o, sg in zip(meta["objects"][name]["signs"], world.SIGNS):
+                o["at"] = [sg[0] / world.T, sg[1] / world.T]
+        if world.WASHING:   # flapping, then shot through and flapping, then down in the dirt
+            meta["objects"][name]["laundry"] = _overlays(name, "laundry", model,
+                                                         [[world.garment(pg, f, holed) for f, holed in world.LAUNDRY_LOOKS]
+                                                          + [world.garment(pg, down=True)] for pg in world.WASHING])
+            for o, pg in zip(meta["objects"][name]["laundry"], world.WASHING):
+                o["at"] = [pg[0] / world.T, pg[1] / world.T]
+                o["kind"] = pg[3]
     meta["shutter_paint"] = world.SHUTTER_PAINT
     if only:
         return
