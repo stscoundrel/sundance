@@ -169,6 +169,11 @@ CIVILIANS = [
     {"kind": "apprentice", "x": 9.6, "y": 50.4, "facing": 45},
 ]
 
+# Where the gang falls back to and digs in when a fight's going badly for them
+# (the one furthest from the fighting): before the door of each.
+HOLDOUTS = [{"name": "cantina", "x": 16.2, "y": 37.6}, {"name": "bank", "x": 39.5, "y": 29.2},
+            {"name": "church", "x": 27.0, "y": 12.8}, {"name": "stable", "x": 53.0, "y": 49.2}]
+
 PLAYER = {"x": 63.2, "y": 63.2}   # the lower-right corner, hidden behind the stable and adobes
 
 
@@ -211,6 +216,7 @@ def main():
         "enemies": ENEMIES,
         "civilians": CIVILIANS,
         "reserve": RESERVE,
+        "holdouts": HOLDOUTS,
     }
     with open(os.path.join(ROOT, "data", "town.json"), "w") as f:
         json.dump(town, f, indent=1)

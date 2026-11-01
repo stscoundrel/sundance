@@ -1372,5 +1372,27 @@
    "bandido",
    "redscarf"
   ]
- }
+ },
+ "holdouts": [
+  {
+   "name": "cantina",
+   "x": 16.2,
+   "y": 37.6
+  },
+  {
+   "name": "bank",
+   "x": 39.5,
+   "y": 29.2
+  },
+  {
+   "name": "church",
+   "x": 27.0,
+   "y": 12.8
+  },
+  {
+   "name": "stable",
+   "x": 53.0,
+   "y": 49.2
+  }
+ ]
 }

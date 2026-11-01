@@ -179,6 +179,13 @@ var rescuing: Enemy = null   # (as the rescuer) who he's come for
 var rescue_phase := ""       # "go", "drag", "treat"
 var smear := Vector2.ZERO
 var work_t := 0.0
+# The gang's alarm (see game._gang_alarm): how he's answering it, if he is.
+const UNEASY_LINES := ["¿Qué pasa allá?", "That's a lot of shooting...", "Hear that?", "Something's wrong."]
+const SCOUT_LINES := ["Vamos a ver.", "Come on, let's go look.", "I'll go see."]
+const FALLBACK_LINES := ["¡Al refugio!", "Fall back!", "Dig in, boys!", "¡Atrás, todos!"]
+const NEWS_LINES := ["He's killing everyone!", "¡Es el diablo!", "They're all dead back there!", "Get ready, he's coming!"]
+var alarm_role := ""         # "", "uneasy", "scout", "fortified"
+var bearing_news := false    # running from the fight to his comrades
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -431,6 +438,64 @@ func start_investigate(pos: Vector2, run: bool) -> void:
 	path_to(pos)
 
 
+# ------------------------------------------------------------------ the gang's alarm
+
+## A fight going on somewhere else: off his rounds, eyes that way, on edge.
+func get_uneasy(at: Vector2) -> void:
+	if alarm_role != "" or st == St.COMBAT:
+		return
+	alarm_role = "uneasy"
+	wary = true
+	if patrol.size() > 1:
+		home = global_position   # he stops where he is
+		patrol = PackedVector2Array()
+		st = St.GUARD
+		path = PackedVector2Array()
+	home_facing = (at - home).normalized()
+	if shout_t <= 0.0 and randf() < 0.4:
+		_say(_line("uneasy", UNEASY_LINES))
+	_log("uneasy")
+
+
+## Sent with another to see what the shooting's about.
+func scout(at: Vector2) -> void:
+	alarm_role = "scout"
+	set_meta("scout", true)
+	start_investigate(at, true)
+	if shout_t <= 0.0 and randf() < 0.6:
+		_say(_line("scout", SCOUT_LINES))
+	_log("scouts")
+
+
+## Falling back to the holdout: a new post there, facing the way he'll come.
+func fortify(spot: Vector2, at: Vector2) -> void:
+	alarm_role = "fortified"
+	wary = true
+	home = spot
+	home_facing = (at - spot).normalized()
+	patrol = PackedVector2Array()
+	st = St.RETURN
+	path_to(spot)
+	if shout_t <= 0.0 and randf() < 0.5:
+		_say(_line("fallback", FALLBACK_LINES))
+	_log("falls back")
+
+
+## Made it to the others with the news?
+func _tell_news() -> bool:
+	for o in game.enemies:
+		if o != self and o.alive and o.revealed and o.st != St.COMBAT \
+				and o.global_position.distance_to(global_position) < 50.0:
+			bearing_news = false
+			velocity = Vector2.ZERO
+			_say(_line("news", NEWS_LINES))
+			game.news(self, threat)
+			_log("brings the news")
+			reaction_t = minf(reaction_t, 1.5)
+			return true
+	return false
+
+
 ## Every so often: any fresh drops of the stranger's blood in view?
 func _blood(delta: float) -> Dictionary:
 	trail_look -= delta
@@ -604,7 +669,14 @@ func start_reaction(r: String) -> void:
 				(global_position - threat).orthogonal().normalized() * [-0.8, 0.8].pick_random()).normalized()
 		"flee":
 			reaction_t = randf_range(8.0, 12.0)
-			path_to(game.point_away(global_position, threat, 220.0))
+			# away from him, to the others if he can: they'll want to know
+			var to: Vector2 = game.comrades_to_tell(self, threat)
+			bearing_news = to != Vector2.INF
+			if bearing_news:
+				reaction_t = 25.0
+				path_to(to)
+			else:
+				path_to(game.point_away(global_position, threat, 220.0))
 			_say(_line("flee", FLEE_LINES))
 		"throw":
 			reaction_t = WINDUP + FOLLOW
@@ -682,6 +754,8 @@ func _do_reaction(delta: float) -> void:
 				crouched = true
 				desired = (threat - global_position).normalized()
 		"flee":
+			if bearing_news and _tell_news():
+				return
 			if follow_path(run * 1.15):
 				crouched = true   # out of sight, catching his breath
 				desired = (threat - global_position).normalized()
@@ -812,7 +886,7 @@ func _run_state(delta: float) -> void:
 		St.SEARCH:
 			_search(delta)
 		St.RETURN:
-			if follow_path(walk):
+			if follow_path(run if alarm_role == "fortified" else walk):   # (falling back, he runs)
 				st = St.PATROL if patrol.size() > 1 else St.GUARD
 		St.POSSE:
 			_posse(delta)

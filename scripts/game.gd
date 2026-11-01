@@ -711,7 +711,24 @@ var counts := {"rays": 0, "paths": 0, "path_us": 0}
 var _fade_frame := 0
 const PLANS_A_FRAME := 2   # hunts planned in one frame; the rest wait their turn (a frame or two)
 var plans_left := PLANS_A_FRAME
-var rescue_cd := 0.0   # (for tools/profile: how hard the queries are worked)
+var rescue_cd := 0.0
+# The gang's alarm: sustained gunfire, men going down and survivors' news build it
+# up, and the men far from the fight (who can't know where the stranger is) answer
+# by stages: uneasy at their posts; then each group sends a pair to look (and more
+# later); then, once a third of the gang is down, the rest fall back to a holdout
+# away from the fight and dig in.
+const UNEASY := 12.0
+const SEND := 35.0
+const SEND_EVERY := 30.0       # s before each group sends another pair
+const FORTIFY_LOSS := 0.33     # of the gang down: time to fall back
+const GROUP := 220.0           # px: men this close together are one post
+const FAR := 350.0             # px from the fight: out of it
+var alarm := 0.0
+var alarm_stage := 0
+var alarm_cd := 0.0
+var send_cd := 0.0
+var fallen := 0                # dead or downed
+var holdout: Dictionary = {}   # (for tools/profile: how hard the queries are worked)
 
 
 func ray(from: Vector2, to: Vector2, mask: int, exclude: Array[RID] = [], areas := false) -> Dictionary:
@@ -1036,6 +1053,10 @@ func _physics_process(delta: float) -> void:
 	if rescue_cd <= 0.0:
 		rescue_cd = 0.5
 		_send_rescuers()
+	alarm_cd -= delta
+	if alarm_cd <= 0.0:
+		alarm_cd = 0.5
+		_gang_alarm(0.5)
 	innocent_t = maxf(0.0, innocent_t - delta)
 	dyn_cd = maxf(0.0, dyn_cd - delta)
 	_pick_up_guns()
@@ -1260,6 +1281,7 @@ func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void
 				rally("gunfire")
 	if kind == "shot" and source == player:
 		_note_fire(player.global_position)
+	raise_alarm({"shot": 1.0, "enemy_shot": 0.3, "blast": 6.0}.get(kind, 0.0))
 	if kind == "shot":
 		player_fired = true
 		report_sighting(pos)   # his muzzle flash and the crack give him away
@@ -1298,6 +1320,11 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 
 
 func _on_enemy_died(e: Actor) -> void:
+	fallen += 1
+	raise_alarm(5.0)
+	if e.has_meta("scout") and e.alarm_role == "scout":
+		raise_alarm(10.0)   # sent to look, and never came back
+		stats["scouts lost"] = stats.get("scouts lost", 0) + 1
 	if e.killer == player and not spot_at(player.global_position).is_empty():
 		spot_at(player.global_position)["kills"] += 1
 	for o in enemies:
@@ -1979,6 +2006,123 @@ func drip(a: Actor, at: Vector2) -> void:
 	trails.append({"at": at, "t": clock, "player": a.is_player})
 	if trails.size() > 400:
 		trails.pop_front()
+
+
+# ------------------------------------------------------------------ the gang's alarm
+
+func raise_alarm(amount: float) -> void:
+	if amount > 0.0 and not Engine.has_meta("no_alarm"):
+		alarm += amount
+
+
+## Men out of the fight, at their posts (or on their rounds) well away from it.
+func _far_from_fight() -> Array:
+	var out := []
+	for e in enemies:
+		if e.alive and e.revealed and not e.in_posse and e.st in [Enemy.St.GUARD, Enemy.St.PATROL, Enemy.St.RETURN] \
+				and e.global_position.distance_to(seen_pos) > FAR:
+			out.append(e)
+	return out
+
+
+func _gang_alarm(delta: float) -> void:
+	if quiet_for() > 30.0:
+		alarm = maxf(0.0, alarm - 0.2 * delta)   # a long quiet: the nerves settle (a little)
+	if alarm < UNEASY or seen_pos == Vector2.ZERO:
+		return
+	var far := _far_from_fight()
+	alarm_stage = maxi(alarm_stage, 1)
+	for e in far:
+		e.get_uneasy(seen_pos)
+	# losing badly: the rest fall back to a holdout away from the fight
+	if fallen >= maxi(3, ceili(enemies.size() * FORTIFY_LOSS)) and level.has("holdouts"):
+		if holdout.is_empty():
+			_pick_holdout()
+		for e in far:
+			if e.alarm_role != "fortified":   # (scouts back at their posts too)
+				e.fortify(_holdout_spot(e), seen_pos)
+		alarm_stage = 3
+		return
+	# a long fight: each post sends a pair to see what's going on
+	send_cd -= delta
+	if alarm >= SEND and send_cd <= 0.0:
+		send_cd = SEND_EVERY
+		alarm_stage = 2
+		for group in _posts(far):
+			if group.size() < 2:
+				continue   # a man alone holds his post
+			group.sort_custom(func(a, b): return a.global_position.distance_to(seen_pos) < b.global_position.distance_to(seen_pos))
+			for e in group.slice(0, 2):
+				e.scout(seen_pos + Vector2(randf_range(-50, 50), randf_range(-25, 25)))
+
+
+## The men grouped by post: each with whoever's within GROUP of him.
+func _posts(men: Array) -> Array:
+	var left := men.duplicate()
+	var out := []
+	while not left.is_empty():
+		var g := [left.pop_back()]
+		var i := 0
+		while i < g.size():
+			for o in left.duplicate():
+				if o.global_position.distance_to(g[i].global_position) < GROUP:
+					g.append(o)
+					left.erase(o)
+			i += 1
+		out.append(g)
+	return out
+
+
+func _pick_holdout() -> void:
+	var best: Dictionary = {}
+	for h in level["holdouts"]:
+		var at := Iso.to_screen(Vector2(h["x"], h["y"]))
+		if best.is_empty() or at.distance_to(seen_pos) > best["at"].distance_to(seen_pos):
+			best = {"name": h["name"], "at": at, "taken": []}
+	holdout = best
+	hud.banner("¡Al %s, muchachos!  The gang falls back to the %s!" % [best["name"], best["name"]])
+	stats["holdout"] = best["name"]
+
+
+## A place at the holdout for him: cover near it nobody's taken, else open ground.
+func _holdout_spot(e: Enemy) -> Vector2:
+	var at: Vector2 = holdout["at"]
+	var best := Vector2.INF
+	for c in cover_points:
+		if c.distance_to(at) < 150.0 and not c in holdout["taken"] \
+				and (best == Vector2.INF or c.distance_to(at) < best.distance_to(at)):
+			best = c
+	if best == Vector2.INF:
+		best = free_point_near(at, 60.0)
+	holdout["taken"].append(best)
+	return best
+
+
+## A man running from the fight: the nearest of his comrades not in it (and not
+## back towards the stranger) to run to with the news; or INF.
+func comrades_to_tell(e: Enemy, threat: Vector2) -> Vector2:
+	var away := (e.global_position - threat).normalized()
+	var best := Vector2.INF
+	var best_d := 700.0
+	for o in enemies:
+		if o == e or not o.alive or not o.revealed or o.st == Enemy.St.COMBAT:
+			continue
+		var to: Vector2 = o.global_position - e.global_position
+		var d := to.length()
+		if d < best_d and d > 60.0 and to.normalized().dot(away) > -0.2:
+			best_d = d
+			best = o.global_position
+	return best
+
+
+## He's made it to them: they all know now.
+func news(from: Enemy, threat: Vector2) -> void:
+	raise_alarm(8.0)
+	for o in enemies:
+		if o != from and o.alive and o.revealed and o.st != Enemy.St.COMBAT \
+				and o.global_position.distance_to(from.global_position) < 160.0:
+			o.get_uneasy(threat)
+	stats["news brought"] = stats.get("news brought", 0) + 1
 
 
 ## A downed man's own gun, back in his hand (if it's still lying by him).

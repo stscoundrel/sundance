@@ -173,6 +173,28 @@ carried, which you collect by walking over them.
   different side and no more than ~1.8x the straight distance.
   `tests/test_flank.gd` checks it (`NO_FLANK=1` runs the control: about half the
   groups go single file without flanking, about a quarter with it).
+- **The gang's alarm**: a fight on one side of town doesn't go unnoticed on the
+  other, but nobody there knows where the stranger is. Sustained gunfire (each of
+  his shots 1, theirs 0.3, dynamite 6), every man downed or killed (5) and news
+  brought by a survivor (8) build up a gang-wide alarm (it drains a little only
+  after 30 s of quiet). The men out of the fight (over ~350 px from where he was
+  last seen or heard) answer by stages:
+  - *Uneasy* (12): they stop their rounds where they are and stand facing the
+    trouble, wary (wider, longer eyes), muttering "¿Qué pasa allá?". Still at their
+    posts: sneaking up gets harder, not impossible.
+  - *Sending men* (35): each post of two or more sends a pair to see (the two
+    nearest the fight), and again every 30 s while it lasts; a man alone holds his
+    post. A scout cut down is a scout who never comes back: +10 more.
+  - *Falling back* (a third of the gang down): the far men abandon their posts for
+    the holdout furthest from the fight (cantina, bank, church or stable, from
+    `town.json`), "¡Al cantina, muchachos!", run there and dig in behind its cover,
+    facing the way he'll come. The stranger then has a held position to crack.
+  News travels with people: a man who runs from the fight runs to his comrades if
+  there are any not back towards the stranger, and when he reaches them ("He's
+  killing everyone!") they're on edge and the alarm goes up. Cutting him down keeps
+  the far side in the dark. `tests/test_alarm.gd` covers the news, a few shots
+  stirring nobody, the far side going uneasy, a pair sent and heading for the fight,
+  a lost scout, and the fall back to the right holdout.
 - **The posse**: once seven or fewer bandits are left (a band of seven: more than
   one man's six shots), the survivors band together
   instead of waiting at their posts at the far end of town. The steadiest man (by
