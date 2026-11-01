@@ -199,6 +199,19 @@ carried, which you collect by walking over them.
   none of it blocks anything, each kind breaks step by step, a pane breaks only
   when hit at its height and not behind shut shutters, a blast clears the lot, and
   the mayor hears about it.
+- **Hens** (for Corbucci, whose gunfights always had animals running through them):
+  five hen houses stand in the back yards, two hens pecking about each, and crates
+  of hens for market sit by the store, the feed store and the plaza. A round into
+  a coop or crate lets them all out (four from a coop, three from a crate),
+  bursting out in a flapping, squawking zigzag. Gunfire or a blast nearby sends
+  any hen bolting away from it, and a man walking right up to one sends her off a
+  few steps; after a few seconds she settles and pecks wherever she's got to. Hens
+  are scenery only: nothing can hit them, they block nobody, and they keep their
+  own dice so they never change how a seeded fight plays out. Sprites: three
+  colours x eight directions x stand, two walk frames, peck and two flap frames.
+  `tests/test_hens.gd` checks they keep to their yards when it's quiet, bolt and
+  then settle at a shot, shy from a man walking at them, burst out of a shot coop
+  or crate (once), and have no body to hit.
 - **Seeing behind cover**: crouched behind something and holding still, the
   stranger is hard to make out; firing over it gives him away for a second (he
   rises to shoot, and there's the flash). Bandits in a fight within ~130 px see a

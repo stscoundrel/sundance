@@ -25,8 +25,9 @@ sounds are synthesised. The town is laid out by `tools/make_town.py`, which writ
 ```bash
 python3 -m venv tools/.venv && tools/.venv/bin/pip install -r tools/requirements.txt
 tools/.venv/bin/python tools/gen_assets.py            # everything
-tools/.venv/bin/python tools/gen_assets.py chars ui   # or just some: chars world fx ui sfx ground
+tools/.venv/bin/python tools/gen_assets.py chars ui   # or just some: chars world fx ui sfx animals ground
 SUNDANCE_TEMPLATES=veteran tools/.venv/bin/python tools/gen_assets.py chars   # re-bake some bodies
+SUNDANCE_OBJECTS=coop,hencrate tools/.venv/bin/python tools/gen_assets.py world   # re-bake some world objects
 godot --headless --path . --import
 ```
 
@@ -57,6 +58,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_knife.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_corners.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_cover.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_fragile.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_hens.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_dynamite.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_perf.gd
 ```

@@ -749,10 +749,85 @@ def table(bottles=True):
     return m
 
 
+def coop():
+    """A little plank hen house on short legs, a ramp up to its hatch."""
+    wood = planks((150, 118, 82), board=0.14, mud=0)
+    m = Cloud()
+    for x in (0.08, 0.9):
+        for y in (0.08, 0.62):
+            m += box((x, y, 0), (x + 0.06, y + 0.06, 0.25), solid((96, 70, 48)), 0.02)
+    m += box((0.05, 0.05, 0.25), (1.0, 0.72, 0.85), wood)
+    m += quad((0.0, 0.0, 0.92), (1.05, 0, 0), (0, 0.77, -0.14), roofing((104, 82, 62), along_y=False, row=0.16))
+    m += box((0.55, 0.719, 0.3), (0.78, 0.722, 0.55), solid((26, 20, 18)))          # the hatch
+    m += quad((0.56, 0.72, 0.3), (0.2, 0, 0), (0, 0.42, -0.3), planks((128, 96, 64), board=0.06, mud=0))  # ramp
+    for i in range(3):   # straw at the hatch
+        m += beam((0.6 + i * 0.05, 0.75, 0.31), (0.65 + i * 0.05, 0.8, 0.3), 0.008, (214, 190, 120))
+    return m
+
+
+def coop_broken():
+    """Shot through: holes in the boards, the hatch hanging off, feathers about."""
+    rng = np.random.default_rng(13)
+    m = damaged(coop(), 53)
+    for _ in range(14):
+        x, y = rng.uniform(-0.2, 1.3), rng.uniform(-0.1, 1.2)
+        m += ellipsoid((x, y, 0.01), (0.025, 0.012, 0.006), (236, 230, 220) if rng.random() < 0.7 else (150, 92, 50))
+    return m
+
+
+def hen(color, pose="stand", phase=0.0):
+    """A hen (facing +x), about knee high: plump body, tail up, red comb. Poses:
+    stand / peck (head down) / flap (wings up, legs pumping), phase 0..1."""
+    m = Cloud()
+    body, dark = np.array(color, float), np.array(color, float) * 0.72
+    up = 0.04 if pose == "flap" else 0.0
+    m += ellipsoid((0.0, 0, 0.24 + up), (0.15, 0.1, 0.11), tuple(body))
+    m += ellipsoid((-0.13, 0, 0.32 + up), (0.06, 0.05, 0.1), tuple(dark))          # tail
+    head = np.array([0.2, 0, 0.1]) if pose == "peck" else np.array([0.12, 0, 0.4 + up])
+    m += ellipsoid((0.08, 0, 0.3 + up) if pose != "peck" else (0.14, 0, 0.2), (0.05, 0.045, 0.07), tuple(body))
+    m += ellipsoid(tuple(head), (0.05, 0.045, 0.05), tuple(body))
+    m += ellipsoid(tuple(head + [0.0, 0, 0.05]), (0.035, 0.012, 0.025), (200, 30, 26))   # comb
+    m += ellipsoid(tuple(head + [0.035, 0, -0.04]), (0.015, 0.01, 0.02), (200, 30, 26))  # wattle
+    m += beam(head + [0.04, 0, 0], head + [0.085, 0, -0.01], 0.012, (230, 180, 60))   # beak
+    if pose == "flap":
+        lift = 0.1 + 0.08 * math.sin(phase * 2 * math.pi)
+        for s in (1, -1):
+            m += ellipsoid((-0.02, s * 0.15, 0.32 + lift), (0.1, 0.07, 0.02), tuple(dark))
+    else:
+        for s in (1, -1):
+            m += ellipsoid((-0.02, s * 0.09, 0.25), (0.1, 0.02, 0.06), tuple(dark))
+    stride = 0.06 * math.sin(phase * 2 * math.pi) if pose in ("flap", "walk") else 0.0
+    for s, k in ((1, 1), (-1, -1)):
+        m += beam((0.0, s * 0.04, 0.16), (stride * k, s * 0.04, 0.0), 0.012, (220, 170, 60))
+    return m
+
+
+def hen_crate():
+    """A slatted crate of hens for market, heads poking out."""
+    m = Cloud()
+    wood = (176, 140, 96)
+    m += box((0, 0, 0), (0.7, 0.5, 0.04), solid(wood), 0.02)
+    for y in (0.0, 0.23, 0.46):   # an open-slatted lid
+        m += box((0, y, 0.42), (0.7, y + 0.04, 0.46), solid(wood), 0.015)
+    for x in np.linspace(0.0, 0.66, 7):
+        for y in (0.0, 0.46):
+            m += box((x, y, 0.04), (x + 0.035, y + 0.04, 0.42), solid(wood), 0.015)
+    for y in np.linspace(0.0, 0.46, 5):
+        for x in (0.0, 0.66):
+            m += box((x, y, 0.04), (x + 0.04, y + 0.035, 0.42), solid(wood), 0.015)
+    for (x, y, c) in ((0.2, 0.25, (236, 230, 218)), (0.48, 0.2, (150, 86, 44)), (0.42, 0.36, (236, 230, 218))):
+        h = hen(c)
+        h.P = h.P * 0.8 + [x, y, 0.04]
+        m += h
+    return m
+
+
 # Small things gunfire breaks that are no cover at all (bullets pass through):
 # each a list of looks, whole first; each hit moves it one look on.
 FRAGILE = {
     "olla": lambda: [olla(), olla_broken()],
+    "coop": lambda: [coop(), coop_broken()],
+    "hencrate": lambda: [hen_crate(), wrecked(hen_crate(), "hencrate", 47)],
     "chair": lambda: [chair(), chair(over=True), wrecked(chair(), "chair", 41)],
     "table": lambda: [table(), table(bottles=False), wrecked(table(bottles=False), "table", 43)],
 }
@@ -996,4 +1071,6 @@ BUILDINGS = {
     "olla": (olla, (0.4, 0.4), "none", False, None),
     "chair": (chair, (0.4, 0.4), "none", False, None),
     "table": (table, (0.56, 0.56), "none", False, None),
+    "coop": (coop, (0.84, 0.6), "none", False, None),
+    "hencrate": (hen_crate, (0.56, 0.4), "none", False, None),
 }

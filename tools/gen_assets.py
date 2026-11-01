@@ -84,8 +84,13 @@ def gen_characters(meta):
 
 
 def gen_world(meta):
-    meta["objects"] = {}
+    # SUNDANCE_OBJECTS=coop,hencrate re-bakes only those objects and keeps the rest.
+    only = [o for o in os.environ.get("SUNDANCE_OBJECTS", "").split(",") if o]
+    if not only or "objects" not in meta:
+        meta["objects"] = {}
     for name, (fn, fp, collide, fade, colliders) in world.BUILDINGS.items():
+        if only and name not in only:
+            continue
         print("  object", name)
         world.DOORS.clear()
         world.WINDOWS.clear()
@@ -129,12 +134,38 @@ def gen_world(meta):
             for o, l in zip(meta["objects"][name]["lanterns"], world.LANTERNS):
                 o["at"] = [l[0] / world.T, l[1] / world.T]
     meta["shutter_paint"] = world.SHUTTER_PAINT
+    if only:
+        return
     frames = []
     for f in range(4):
         img, anchor = render(world.tumbleweed(f), size=(24 * PIX, 24 * PIX), anchor=(12 * PIX, 18 * PIX))
         frames.append(img)
     path = save(np.concatenate(frames, 1), "sprites/world/tumbleweed.png")
     meta["tumbleweed"] = {"file": path, "cell": [24 * PIX, 24 * PIX], "anchor": [12 * PIX, 18 * PIX], "frames": 4}
+
+
+HEN_COLORS = [(236, 230, 218), (150, 86, 44), (52, 46, 46)]   # white, red-brown, black
+HEN_FRAMES = [("stand", 0.0), ("walk", 0.25), ("walk", 0.75), ("peck", 0.0), ("flap", 0.0), ("flap", 0.5)]
+
+
+def gen_animals(meta):
+    """The town's hens: a sheet of frames across (stand, walk x2, peck, flap x2) and,
+    down, each colour's eight directions."""
+    import chars
+    print("  hens")
+    cell, anchor = (16 * PIX, 16 * PIX), (8 * PIX, 12 * PIX)
+    rows = []
+    for col in HEN_COLORS:
+        for d in range(8):
+            row = []
+            for pose, ph in HEN_FRAMES:
+                m = world.hen(col, pose, ph)
+                m.P = m.P * 1.35   # a shade larger than life, to read at this size
+                m.transform(chars.rot_z(chars.yaw_for_dir(d)))
+                row.append(render(m, size=cell, anchor=anchor)[0])
+            rows.append(np.concatenate(row, 1))
+    meta["hens"] = {"file": save(np.concatenate(rows, 0), "sprites/world/hens.png"), "cell": list(cell),
+                    "anchor": list(anchor), "frames": len(HEN_FRAMES), "colors": len(HEN_COLORS)}
 
 
 def _shutters(name, windows, building):
@@ -869,6 +900,25 @@ def gen_sfx(meta):
     splash = lowpass(grng.normal(0, 1, int(SR * 0.3)), 2500) * np.exp(-t_of(0.3) / 0.08) * 0.5
     parts.append((0.03, splash))
     write("crock", room(place(0.6, parts), grng, 0.06, 0.3), meta, 0.75, 1.3)
+    # Hens: a contented cluck, and a panicked squawk (a harsh rising "bawk!").
+    hrng2 = np.random.default_rng(93)
+
+    def bawk(f0, f1, dur, rough):
+        t = t_of(dur)
+        f = f0 + (f1 - f0) * np.sin(np.pi * np.minimum(t / dur, 1.0)) ** 0.7
+        ph = 2 * np.pi * np.cumsum(f) / SR
+        s = sum(np.sin(ph * k) / k ** 0.8 for k in range(1, 9))
+        s *= 1 + rough * lowpass(hrng2.normal(0, 1, len(t)), 300) * 6
+        s = bandpass(s, 400, 4000)
+        return s * np.minimum(1, t / 0.01) * np.exp(-np.maximum(t - dur * 0.6, 0) / (dur * 0.2))
+    clk = place(0.45, [(0.0, bawk(330, 380, 0.07, 0.3)), (0.13, bawk(320, 360, 0.06, 0.3)),
+                       (0.24, bawk(360, 460, 0.12, 0.4))])
+    write("cluck", room(clk, hrng2, 0.04, 0.2), meta, 0.5, 1.2)
+    sq = place(0.7, [(0.0, bawk(500, 1050, 0.16, 0.9)), (0.2, bawk(620, 1250, 0.3, 1.0)),
+                     (0.52, bawk(560, 900, 0.12, 0.8))])
+    sq += np.pad(highpass(hrng2.normal(0, 1, int(SR * 0.4)), 2000) * np.exp(-t_of(0.4) / 0.1) * 0.15,
+                 (0, len(sq) - int(SR * 0.4)))   # wings beating
+    write("squawk", room(sq, hrng2, 0.05, 0.25), meta, 0.6, 1.4)
 
 
 def main():
@@ -881,7 +931,8 @@ def main():
     if only and os.path.exists(meta_path):
         with open(meta_path) as f:
             meta = json.load(f)
-    steps = {"chars": gen_characters, "world": gen_world, "fx": gen_fx, "ui": gen_ui, "sfx": gen_sfx}
+    steps = {"chars": gen_characters, "world": gen_world, "fx": gen_fx, "ui": gen_ui, "sfx": gen_sfx,
+             "animals": gen_animals}
     for key, fn in steps.items():
         if not only or key in only:
             fn(meta)

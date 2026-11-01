@@ -63,6 +63,10 @@ PROPS += [
     ("table", 15.45, 37.4), ("chair", 15.5, 38.2), ("chair", 15.45, 36.7),          # cantina
     ("olla", 8.3, 36.0), ("olla", 25.3, 36.0), ("olla", 25.3, 38.1), ("olla", 42.8, 36.0),
     ("olla", 52.3, 38.1), ("olla", 8.3, 17.5), ("olla", 37.3, 8.0), ("olla", 61.3, 9.0),
+    # hen houses in the back yards (two hens pecking about each), and crates of
+    # hens for market: shoot one open and out they burst
+    ("coop", 4.6, 40.0), ("coop", 22.2, 40.2), ("coop", 49.2, 40.0), ("coop", 54.6, 18.2), ("coop", 34.2, 11.8),
+    ("hencrate", 51.6, 28.3), ("hencrate", 24.2, 22.1), ("hencrate", 28.8, 38.6),
 ]
 # crosses on boot hill
 for x, y in ((4.5, 51.5), (6.5, 55), (8.2, 52.2), (4.8, 56), (8.6, 55.6), (3.2, 54), (11, 52.5), (12, 55.5)):

@@ -169094,6 +169094,70 @@
     }
    ],
    "fragile": true
+  },
+  "coop": {
+   "file": "res://assets/sprites/world/coop.png",
+   "anchor": [
+    36,
+    50
+   ],
+   "footprint": [
+    0.84,
+    0.6
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.84,
+     0.6
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/coop_1.png",
+     "anchor": [
+      36,
+      50
+     ]
+    }
+   ],
+   "fragile": true
+  },
+  "hencrate": {
+   "file": "res://assets/sprites/world/hencrate.png",
+   "anchor": [
+    26,
+    28
+   ],
+   "footprint": [
+    0.56,
+    0.4
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.56,
+     0.4
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/hencrate_1.png",
+     "anchor": [
+      18,
+      16
+     ]
+    }
+   ],
+   "fragile": true
   }
  },
  "tumbleweed": {
@@ -169170,7 +169234,9 @@
   "fuse": "res://assets/sfx/fuse.wav",
   "boom": "res://assets/sfx/boom.wav",
   "glass": "res://assets/sfx/glass.wav",
-  "crock": "res://assets/sfx/crock.wav"
+  "crock": "res://assets/sfx/crock.wav",
+  "cluck": "res://assets/sfx/cluck.wav",
+  "squawk": "res://assets/sfx/squawk.wav"
  },
  "ground": {
   "file": "res://assets/sprites/ground.png",
@@ -169702,5 +169768,18 @@
     120
    ]
   ]
+ },
+ "hens": {
+  "file": "res://assets/sprites/world/hens.png",
+  "cell": [
+   48,
+   48
+  ],
+  "anchor": [
+   24,
+   36
+  ],
+  "frames": 6,
+  "colors": 3
  }
 }

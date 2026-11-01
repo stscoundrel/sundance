@@ -74,7 +74,10 @@ const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon":
 var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
 # Things gunfire breaks that are no cover at all: window panes, porch lanterns,
 # tables of bottles, chairs, clay jars. Each hit moves one a look further gone.
-const FRAGILE_R := {"olla": 5.0, "chair": 5.0, "table": 7.0, "lantern": 4.0}
+const FRAGILE_R := {"olla": 5.0, "chair": 5.0, "table": 7.0, "lantern": 4.0, "coop": 9.0, "hencrate": 6.0}
+const HENS_IN := {"coop": 4, "hencrate": 3}   # shut in, till a round lets them out
+const HENS_OUT := 2                           # pecking about each coop from the start
+var hens: Array[Chicken] = []
 var fragile: Array[Dictionary] = []   # {kind, at, state, last, sprite, body, (glass: a, b, z, shutter)}
 var props: Array[Dictionary] = []   # {kind, sprite, body, g, fp, hp, state, cells, covers}
 var _solid := {}                    # cell -> how many things block it   # {centre, points (newest first), peeks, kills, last_t}                # {door, sprite, squad, heat, rallied, cause, spawn_t, runner, runner_cd, fight_t, alarm}   # fresh graves: {at, mourners, done}
@@ -124,8 +127,10 @@ func _ready() -> void:
 	if not Engine.has_meta("fixed_seed"):   # tests seed the RNG themselves
 		randomize()
 		Shutter.rng.randomize()
+		Chicken.rng.randomize()
 	else:
 		Shutter.rng.seed = 7
+		Chicken.rng.seed = 11
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -326,6 +331,10 @@ func _build_world() -> void:
 
 	for o in level["objects"]:
 		_place_object(o["type"], Vector2(o["x"], o["y"]))
+	for item in fragile:
+		if item["kind"] == "coop":
+			for i in HENS_OUT:
+				_add_hen(item["at"], 34.0)
 
 	# map boundary
 	var edge := StaticBody2D.new()
@@ -418,7 +427,9 @@ func _place_object(type: String, g: Vector2) -> void:
 	var collide: String = m["collide"]
 	var prop := {}
 	if m.get("fragile", false):
-		_add_fragile(type, Iso.to_screen(g + fp * 0.5), spr, m["states"].size(), FRAGILE_R[type])["g"] = g
+		var item := _add_fragile(type, Iso.to_screen(g + fp * 0.5), spr, m["states"].size(), FRAGILE_R[type])
+		item["g"] = g
+		item["hens"] = HENS_IN.get(type, 0)
 	elif m.has("states"):
 		prop = {"kind": type, "sprite": spr, "g": g, "fp": fp, "hp": PROP_HP[type], "state": 0,
 			"cells": [], "covers": [], "body": null}
@@ -1209,6 +1220,10 @@ func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void
 	for c in civilians:
 		if c.alive:
 			c.hear(pos, radius, kind, source)
+	if kind in ["shot", "enemy_shot", "blast"]:
+		for h in hens:
+			if h.position.distance_to(pos) < radius * 0.7:
+				h.scare(pos)
 
 
 func alert_allies(caller: Enemy, radius: float, target: Vector2) -> void:
@@ -1828,7 +1843,7 @@ func hit_fragile(item: Dictionary, at: Vector2, height := -1.0) -> void:
 			spr.texture = tex(st["file"])
 			spr.offset = (base - Vector2(st["anchor"][0], st["anchor"][1])).round()
 	var h: float = height if height >= 0.0 else {"glass": 24.0, "lantern": 36.0, "table": 13.0, "chair": 8.0,
-		"olla": 6.0}[kind]
+		"olla": 6.0, "coop": 10.0, "hencrate": 7.0}[kind]
 	var ground: Vector2 = item["at"] + (Vector2(0, 4) if kind == "glass" else Vector2.ZERO)   # (glass: onto the porch)
 	match kind:
 		"glass", "lantern":
@@ -1845,6 +1860,17 @@ func hit_fragile(item: Dictionary, at: Vector2, height := -1.0) -> void:
 		"chair":
 			impact(ground, h, Vector2.RIGHT.rotated(randf() * TAU), true, false)
 			sfx("wood_break" if n == item["last"] else "wood_hit", at, -6.0, 0.12)
+		"coop", "hencrate":
+			impact(ground, h, Vector2.RIGHT.rotated(randf() * TAU), true, false)
+			sfx("wood_break" if n == item["last"] else "wood_hit", at, -6.0, 0.12)
+			feathers(ground, 10)
+			if item.get("hens", 0) > 0:
+				# out they burst, every which way, squawking
+				sfx("squawk", ground, -4.0, 0.1)
+				for i in item["hens"]:
+					_add_hen(ground, 8.0).scare(at)
+				stats["hens loose"] = stats.get("hens loose", 0) + item["hens"]
+				item["hens"] = 0
 		"olla":
 			_shards(ground, h, Color(0.69, 0.38, 0.24), 12)
 			sfx("crock", at, -4.0, 0.12)
@@ -1854,6 +1880,33 @@ func hit_fragile(item: Dictionary, at: Vector2, height := -1.0) -> void:
 		item["body"] = null
 	stats["broken"] = stats.get("broken", 0) + 1
 	_scar(item["at"], item)
+
+
+## A hen near `at` (her own dice: the town's stay as seeded).
+func _add_hen(at: Vector2, spread: float) -> Chicken:
+	var p := at
+	for i in 8:
+		var q := at + Vector2.from_angle(Chicken.rng.randf() * TAU) * Chicken.rng.randf_range(4.0, spread)
+		if is_free(q):
+			p = q
+			break
+	var h := Chicken.new()
+	world.add_child(h)
+	h.setup(self, p)
+	hens.append(h)
+	return h
+
+
+## A few feathers drifting down.
+func feathers(at: Vector2, n: int) -> void:
+	var puff := Puff.new()
+	puff.position = at
+	for i in n:
+		var c: Color = [Color(0.94, 0.92, 0.88), Color(0.6, 0.36, 0.2), Color(0.25, 0.22, 0.22)][Chicken.rng.randi() % 3]
+		puff.add(Vector2(Chicken.rng.randf_range(-4, 4), -Chicken.rng.randf_range(4, 12)),
+			Vector2(Chicken.rng.randf_range(-25, 25), -Chicken.rng.randf_range(10, 40)), Chicken.rng.randf_range(1.6, 2.8),
+			0.9, c, 0.0, 22.0, WIND * 0.7)
+	world.add_child(puff)
 
 
 func _shards(at: Vector2, height: float, col: Color, n: int) -> void:
