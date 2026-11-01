@@ -83,8 +83,10 @@ var dyn_cd := 0.0
 # hit them, look shot up past half, and fall to a heap of boards (no longer cover,
 # nor in anyone's way). A damaged trough leaks. Toughness decides which rounds go
 # straight through (a Winchester through a crate, a Sharps through a barrel too).
-const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33}
-const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3}
+const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33, "crate_stack": 16,
+	"upturned_n": 7, "upturned_s": 7, "upturned_e": 7, "upturned_w": 7}
+const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3, "crate_stack": 2,
+	"upturned_n": 1, "upturned_s": 1, "upturned_e": 1, "upturned_w": 1}
 var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
 # Blood trails: every drop a wounded man leaves. The gang can follow the stranger's.
 const TRAIL_FRESH := 45.0   # s a drop stays a lead worth following
@@ -2564,7 +2566,8 @@ func trail_lead(e: Enemy, newer: float) -> Dictionary:
 
 # ------------------------------------------------------------------ the town tidies up
 
-const WOOD := ["crate", "barrel", "coffin", "trough", "wagon", "chair", "table", "coop", "hencrate", "sign"]
+const WOOD := ["crate", "barrel", "coffin", "trough", "wagon", "chair", "table", "coop", "hencrate", "sign",
+	"crate_stack", "upturned_n", "upturned_s", "upturned_e", "upturned_w"]
 const KEEPS := 160.0   # px round the saloon keeper's door: his tables and chairs, not the carpenter's
 const SWEEP_R := 26.0  # px a sweeper's broom clears at a go
 const STRAY := 80.0    # px from the nearest coop: a hen this far off wants shooing home

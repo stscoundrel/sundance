@@ -72,7 +72,15 @@ the gaps; too tall to see over, so the gates and breaches are the ways in. Insid
 whitewashed chapel with its bell wall, the general's two-storey house with its
 balcony, the barracks (CUARTEL) with a portal along the front, a cantina, two adobes;
 a plaza with a well, the tricolour on its pole, an old bronze cannon, sandbags
-inside each gate, wagons, ammunition crates and powder barrels. Outside, a village of
+inside each gate, wagons, ammunition crates and powder barrels. The plaza's been made
+ready for a push through the gates: cantina tables thrown over on their sides round
+the well, each top turned to the gate it watches (`upturned_n/s/e/w`: only the top
+stops a round, the legs behind it don't). Sandbags and barrels are piled against the
+chapel in the north corner, and the fort's stores (`crate_stack`: two crates, a third
+on top, a sack) are stacked wherever there was room, so there's little open ground
+between the buildings. Both are breakable wood like the crates. A pair of barrels
+stands by each gate and the east breach (`KEG_SPOTS` in `tools/make_cruz_verde.py`):
+that's where the powder kegs will go. Outside, a village of
 jacales with chickens and, to the west, a great cemetery after Sad Hill: rings of
 crosses, mounds and headstones (low cover) round a circle of stones, and rows of
 graves below the west road. It's an **ambush**: the stranger starts outside the

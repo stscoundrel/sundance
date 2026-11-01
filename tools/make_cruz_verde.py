@@ -45,6 +45,20 @@ PROPS = [
     ("barrel", 36.0, 39.0), ("barrel", 36.0, 40.0),
     ("rubble", 40.0, 46.0), ("rubble", 48.0, 34.5),
     ("table", 39.0, 43.9), ("chair", 38.5, 44.0), ("olla", 23.3, 37.8), ("olla", 45.5, 28.2),
+    # the plaza made ready: tables out of the cantina thrown over round the well, each
+    # top turned to the gate it's watching, for when they come pushing in from the gates
+    ("upturned_w", 27.4, 29.0), ("upturned_w", 28.2, 32.4), ("upturned_e", 39.8, 29.2), ("upturned_e", 40.6, 32.4),
+    ("upturned_n", 30.8, 24.8), ("upturned_s", 35.0, 35.8), ("upturned_n", 36.4, 25.6),
+    # sandbags and barrels against the chapel, in the north corner
+    ("sandbags_y", 24.8, 17.6), ("sandbags_x", 25.6, 22.6), ("barrel", 24.9, 20.2), ("barrel", 25.7, 20.55),
+    ("barrel", 25.0, 20.9),
+    # the fort's stores, stacked wherever there was room: crates, sacks and barrels
+    ("crate_stack", 27.0, 15.8), ("crate", 28.8, 15.6), ("crate_stack", 26.6, 18.6), ("barrel", 28.4, 18.8),
+    ("crate_stack", 35.1, 20.4), ("crate", 35.6, 22.0), ("barrel", 36.0, 18.0),
+    ("crate_stack", 25.5, 37.6), ("crate", 27.4, 37.6),
+    ("crate_stack", 34.2, 40.8), ("crate", 33.6, 42.2), ("barrel", 35.2, 42.4),
+    ("crate", 44.0, 32.2), ("crate_stack", 42.0, 35.6), ("barrel", 37.4, 35.2), ("barrel", 38.1, 35.3),
+    ("crate", 22.4, 27.0), ("crate", 23.4, 27.2),
     ("coop", 55.5, 26.0), ("coop", 27.6, 55.0), ("hencrate", 51.4, 33.4),
     ("wagon", 55.0, 31.6), ("trough", 51.0, 28.6),
     ("cactus", 60, 6), ("cactus", 58, 14), ("cactus", 61, 47), ("cactus", 50, 61), ("cactus", 14, 60),
@@ -52,6 +66,15 @@ PROPS = [
     ("agave", 51, 8), ("agave", 55, 12), ("agave", 60, 34), ("agave", 49, 44), ("agave", 35, 49.5),
     ("agave", 28, 49.5), ("agave", 18, 49), ("agave", 42, 10), ("agave", 26, 9), ("agave", 13, 6),
 ]
+
+# Barrels stood by the gates and the breach: the spots where the powder kegs will go
+# (shoot one with the band coming through). Plain barrels for now.
+KEG_SPOTS = [("barrel", 18.7, 27.2), ("barrel", 19.4, 27.3),       # the west gate
+             ("barrel", 28.6, 17.0), ("barrel", 29.3, 17.1),       # the north gate
+             ("barrel", 45.9, 32.7), ("barrel", 46.6, 32.5),       # the east gate
+             ("barrel", 29.5, 44.8), ("barrel", 28.8, 44.6),       # the south gate
+             ("barrel", 46.0, 37.6)]                               # the east breach
+PROPS += KEG_SPOTS
 
 # The cemetery: rings of crosses, mounds and headstones round a circle of stones,
 # and rows of graves below the west road.
@@ -126,7 +149,7 @@ CIVILIANS = [
     {"kind": "saloon_girl", "x": 42.3, "y": 44.0, "facing": 60},
     {"kind": "saloon_girl", "x": 37.6, "y": 36.8, "facing": 200},
     {"kind": "priest", "x": 21.5, "y": 23.7, "facing": 90, "brave": True},   # he goes to the dead under fire
-    {"kind": "peon", "x": 27.4, "y": 29.6, "facing": 0},
+    {"kind": "peon", "x": 28.6, "y": 29.8, "facing": 0},
     {"kind": "peon", "x": 39.4, "y": 27.4, "facing": 180},
     {"kind": "peon", "x": 54.0, "y": 21.8, "facing": 120},
     {"kind": "peon", "x": 23.8, "y": 54.6, "facing": 300},

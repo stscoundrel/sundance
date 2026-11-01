@@ -3,7 +3,7 @@ Every model has its origin at the footprint's minimum corner."""
 import math
 import numpy as np
 from render3d import (Cloud, make, box, quad, tri, frustum, ellipsoid, beam, hash01, TILE_M,
-                      rot_x)
+                      rot_x, rot_z)
 
 T = TILE_M
 BSP = 0.04  # building sample spacing
@@ -895,6 +895,40 @@ def table(bottles=True):
     return m
 
 
+def upturned(faces):
+    """A long cantina table thrown over on its side for a barricade: the top stood
+    up as a shield towards `faces` ("n", "s", "e" or "w"), the legs sticking out
+    behind it. A table is 1.2 tiles long; the legs reach back 0.6."""
+    L, W, top = 1.2 * T, 0.6 * T, 0.06
+    wood = planks((116, 80, 52), board=0.14, mud=0)
+    m = box((0, 0, 0.02), (L, top, W), wood, 0.02)                               # the top, on edge
+    m += box((0.04, top, 0.04), (L - 0.04, top + 0.06, 0.1), solid((92, 64, 42)), 0.02)   # apron
+    m += box((0.04, top, W - 0.1), (L - 0.04, top + 0.06, W - 0.04), solid((92, 64, 42)), 0.02)
+    for x in (0.08, L - 0.16):
+        for z in (0.08, W - 0.16):
+            m += box((x, top, z), (x + 0.08, W, z + 0.08), solid((96, 66, 44)), 0.02)   # legs, out back
+    # turned to face its way: as built it faces -y (north on the grid)
+    D = W
+    R = {"n": np.eye(3), "s": np.diag([1.0, -1.0, 1.0]),
+         "w": np.array([[0, 1.0, 0], [1.0, 0, 0], [0, 0, 1.0]]),
+         "e": np.array([[0, -1.0, 0], [1.0, 0, 0], [0, 0, 1.0]])}[faces]
+    m.transform(R)
+    lo = m.P.min(0)
+    m.translate((-lo[0], -lo[1], 0))
+    return m
+
+
+def crate_stack():
+    """The fort's stores: two crates side by side, a third on top, a sack against them."""
+    m = crate()
+    m += crate().translate((1.0, 0, 0))
+    top = crate()
+    top.transform(rot_z(0.12), pivot=(0.5, 0.5, 0))
+    m += top.translate((0.45, 0.02, 0.95))
+    m += ellipsoid((1.55, 0.95, 0.25), (0.32, 0.18, 0.26), solid((176, 150, 104)))
+    return m
+
+
 def coop():
     """A little plank hen house on short legs, a ramp up to its hatch."""
     wood = planks((150, 118, 82), board=0.14, mud=0)
@@ -982,7 +1016,8 @@ FRAGILE = {
 # ---------------------------------------------------------------- broken props
 
 # Props that shooting wears down: each gets a damaged and a wrecked look.
-BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon")
+BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon", "crate_stack",
+             "upturned_n", "upturned_s", "upturned_e", "upturned_w")
 RAW_WOOD = np.array([214, 178, 128], float)   # fresh splinters
 
 
@@ -1499,6 +1534,13 @@ BUILDINGS = {
     "jacal_b": (lambda: jacal(83), (3, 3), "wall", True, None),
     "well": (well, (1.2, 1.2), "cover", False, [[0.15, 0.15, 1.05, 1.05]]),
     "sandbags_x": (lambda: sandbags(True), (2.0, 0.6), "cover", False, None),
+    "crate_stack": (crate_stack, (1.6, 0.8), "cover", False, [[0, 0, 1.6, 0.8]]),
+    # tables thrown over for a barricade, named for the way the top faces: only the
+    # top stops anything, the legs behind it don't
+    "upturned_n": (lambda: upturned("n"), (1.2, 0.6), "cover", False, [[0, 0, 1.2, 0.12]]),
+    "upturned_s": (lambda: upturned("s"), (1.2, 0.6), "cover", False, [[0, 0.48, 1.2, 0.6]]),
+    "upturned_w": (lambda: upturned("w"), (0.6, 1.2), "cover", False, [[0, 0, 0.12, 1.2]]),
+    "upturned_e": (lambda: upturned("e"), (0.6, 1.2), "cover", False, [[0.48, 0, 0.6, 1.2]]),
     "sandbags_y": (lambda: sandbags(False), (0.6, 2.0), "cover", False, None),
     "cannon": (cannon, (2.0, 1.0), "cover", False, None),
     "flagpole": (flagpole, (0.3, 0.3), "post", False, None),

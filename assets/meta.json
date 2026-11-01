@@ -344642,6 +344642,196 @@
     ]
    ],
    "doors": []
+  },
+  "crate_stack": {
+   "file": "res://assets/sprites/world/crate_stack.png",
+   "anchor": [
+    45,
+    87
+   ],
+   "footprint": [
+    1.6,
+    0.8
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.6,
+     0.8
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/crate_stack_1.png",
+     "anchor": [
+      48,
+      87
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/crate_stack_2.png",
+     "anchor": [
+      43,
+      12
+     ]
+    }
+   ]
+  },
+  "upturned_n": {
+   "file": "res://assets/sprites/world/upturned_n.png",
+   "anchor": [
+    32,
+    42
+   ],
+   "footprint": [
+    1.2,
+    0.6
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.2,
+     0.12
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/upturned_n_1.png",
+     "anchor": [
+      32,
+      42
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/upturned_n_2.png",
+     "anchor": [
+      32,
+      5
+     ]
+    }
+   ]
+  },
+  "upturned_s": {
+   "file": "res://assets/sprites/world/upturned_s.png",
+   "anchor": [
+    35,
+    37
+   ],
+   "footprint": [
+    1.2,
+    0.6
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0.48,
+     1.2,
+     0.6
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/upturned_s_1.png",
+     "anchor": [
+      38,
+      37
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/upturned_s_2.png",
+     "anchor": [
+      40,
+      19
+     ]
+    }
+   ]
+  },
+  "upturned_w": {
+   "file": "res://assets/sprites/world/upturned_w.png",
+   "anchor": [
+    64,
+    42
+   ],
+   "footprint": [
+    0.6,
+    1.2
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.12,
+     1.2
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/upturned_w_1.png",
+     "anchor": [
+      64,
+      42
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/upturned_w_2.png",
+     "anchor": [
+      64,
+      12
+     ]
+    }
+   ]
+  },
+  "upturned_e": {
+   "file": "res://assets/sprites/world/upturned_e.png",
+   "anchor": [
+    61,
+    37
+   ],
+   "footprint": [
+    0.6,
+    1.2
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.48,
+     0,
+     0.6,
+     1.2
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/upturned_e_1.png",
+     "anchor": [
+      61,
+      37
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/upturned_e_2.png",
+     "anchor": [
+      51,
+      8
+     ]
+    }
+   ]
   }
  },
  "tumbleweed": {
