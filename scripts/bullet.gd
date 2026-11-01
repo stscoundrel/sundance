@@ -48,8 +48,8 @@ func _physics_process(delta: float) -> void:
 			continue
 		if col is Area2D:
 			var a: Actor = col.get_meta("actor")
-			# bandits don't gun each other down
-			if a.alive and not (a is Enemy and shooter is Enemy):
+			# bandits don't gun each other down (nor finish their own)
+			if (a.alive or (a is Enemy and a.downed)) and not (a is Enemy and shooter is Enemy):
 				a.take_hit(damage, vel.normalized(), shooter)
 				queue_free()
 				return

@@ -115,9 +115,10 @@ func _draw_enemy_marks() -> void:
 	people.append_array(game.enemies)
 	people.append_array(game.civilians)
 	for e in people:
-		if not e.alive or (e is Civilian and e.gone()):
+		var down: bool = e is Enemy and e.downed
+		if not (e.alive or down) or (e is Civilian and e.gone()):
 			continue
-		var head: Vector2 = to_local * (e.get_global_transform_with_canvas() * Vector2(0, -40))
+		var head: Vector2 = to_local * (e.get_global_transform_with_canvas() * Vector2(0, -16 if down else -40))
 		if head.x < -50 or head.x > 690 or head.y < -20 or head.y > 380:
 			continue
 		var y := head.y

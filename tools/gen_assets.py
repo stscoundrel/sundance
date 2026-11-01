@@ -935,6 +935,15 @@ def gen_sfx(meta):
     n = int(SR * 0.45)
     sw = bandpass(wrng.normal(0, 1, n), 1500, 7000) * np.sin(np.linspace(0, np.pi, n)) ** 1.5
     write("sweep", sw, meta, 0.35, 1.0)
+    # A wounded man groaning in the dirt: a low, breathy "uhhh" that sags.
+    grng2 = np.random.default_rng(96)
+    t = t_of(0.9)
+    f = 125 * (1 - 0.18 * t / 0.9) * (1 + 0.02 * np.sin(2 * np.pi * 6 * t))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    v = sum(np.sin(ph * k) / k ** 1.2 for k in range(1, 12))
+    v = bandpass(v, 200, 1400) + bandpass(grng2.normal(0, 1, len(t)), 300, 2500) * 0.25
+    v *= np.minimum(1, t / 0.15) * np.exp(-np.maximum(t - 0.4, 0) / 0.25)
+    write("groan", room(v, grng2, 0.05, 0.2), meta, 0.5, 1.2)
 
 
 def main():

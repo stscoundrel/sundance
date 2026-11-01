@@ -227,6 +227,24 @@ carried, which you collect by walking over them.
   `tests/test_bandage.gd` covers the stranger's bandage (time, interruption, two
   bars, none left), his blood trail and a guard following it to him, a bandit
   patching up (and bleeding on the way), one giving it up, and who carries none.
+- **Downed, not dead**: about a third of killing shots (not dynamite, not the
+  knife, not a shotgun at arm's length, and never twice for the same man) put a
+  bandit in the dirt instead. He's out of the fight as far as anyone's counting
+  (his gun falls, comrades react, the posse and the win count him out) but he's
+  still there to hit: groaning, calling for help ("¡Ayúdenme!"), bleeding out in
+  45 s. Every type, from bandido to boss, can be downed and will go for a downed
+  comrade: the nearest one free (within ~300 px; the more rattled, the less likely)
+  shouts "Hang on, amigo!", the others nearby lay down covering fire, and he runs
+  to him, drags him by the collar into cover away from the stranger (a smear of
+  blood behind them), kneels and bandages him for 10 s (long enough to be spotted at it). While he has hold of him
+  the downed man presses the wound and his clock stops. Patched up, he gets up with
+  1 HP, shaken and limping, his own gun back in hand. Shoot the rescuer and the
+  man's left lying there, clock running again. Another round (or the knife,
+  quietly) finishes a downed man; the stranger's tally of such is kept, unseen, for
+  a later honour system. The undertaker, padre and gunsmith leave him be till he's
+  dead. `tests/test_downed.gd` covers going down, bleeding out, finishing him, a
+  rescue (the clock stopped while he's held, up again with his gun), the rescuer
+  shot mid-drag, the knife, and no second time down.
 - **Hens** (for Corbucci, whose gunfights always had animals running through them):
   five hen houses stand in the back yards, two hens pecking about each, and crates
   of hens for market sit by the store, the feed store and the plaza. A round into

@@ -176,7 +176,7 @@ func anim_length(name: String) -> float:
 
 ## Play a one-shot upper-body animation; it overrides poses and the gun's state.
 func play_action(name: String) -> void:
-	if not alive or not has_anim(_upper_key(name)):
+	if not alive or (weapon == null and anim_gun == "") or not has_anim(_upper_key(name)):
 		return
 	action = name
 	action_t = anim_length(name)

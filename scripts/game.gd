@@ -710,7 +710,8 @@ func _maybe_screenshot(now: int) -> void:
 var counts := {"rays": 0, "paths": 0, "path_us": 0}
 var _fade_frame := 0
 const PLANS_A_FRAME := 2   # hunts planned in one frame; the rest wait their turn (a frame or two)
-var plans_left := PLANS_A_FRAME   # (for tools/profile: how hard the queries are worked)
+var plans_left := PLANS_A_FRAME
+var rescue_cd := 0.0   # (for tools/profile: how hard the queries are worked)
 
 
 func ray(from: Vector2, to: Vector2, mask: int, exclude: Array[RID] = [], areas := false) -> Dictionary:
@@ -924,9 +925,11 @@ func enemy_under(screen_point: Vector2) -> Enemy:
 	var best: Enemy = null
 	var bd := 1e9
 	for e in enemies:
-		if not e.alive:
+		if not e.alive and not e.downed:
 			continue
 		var r := Rect2(e.global_position + Vector2(-8, -36), Vector2(16, 38))
+		if e.downed:
+			r = Rect2(e.global_position + Vector2(-14, -12), Vector2(28, 16))   # lying in the dirt
 		if r.has_point(screen_point):
 			var d := e.global_position.distance_to(screen_point)
 			if d < bd:
@@ -1029,6 +1032,10 @@ func _physics_process(delta: float) -> void:
 		return
 	clock += delta
 	plans_left = PLANS_A_FRAME
+	rescue_cd -= delta
+	if rescue_cd <= 0.0:
+		rescue_cd = 0.5
+		_send_rescuers()
 	innocent_t = maxf(0.0, innocent_t - delta)
 	dyn_cd = maxf(0.0, dyn_cd - delta)
 	_pick_up_guns()
@@ -1126,7 +1133,7 @@ func claim_body(by: Civilian) -> Enemy:
 	var best: Enemy = null
 	var best_score := INF
 	for e in enemies:
-		if e.alive or e.dying() or e.has_meta("buried") or _held(e, "claimed_by"):
+		if e.alive or e.downed or e.dying() or e.has_meta("buried") or _held(e, "claimed_by"):
 			continue
 		var score := by.global_position.distance_to(e.global_position)
 		if not e.has_meta("blessed"):
@@ -1147,7 +1154,7 @@ func blessing_for(by: Civilian) -> Actor:
 	var best: Actor = null
 	var best_d := INF
 	for a in dead:
-		if a.alive or a.dying() or a.has_meta("buried") or a.has_meta("blessed") \
+		if a.alive or (a is Enemy and a.downed) or a.dying() or a.has_meta("buried") or a.has_meta("blessed") \
 				or _held(a, "blessing_by") or in_hand(a):
 			continue
 		var d := by.global_position.distance_to(a.global_position)
@@ -1972,6 +1979,37 @@ func drip(a: Actor, at: Vector2) -> void:
 	trails.append({"at": at, "t": clock, "player": a.is_player})
 	if trails.size() > 400:
 		trails.pop_front()
+
+
+## A downed man's own gun, back in his hand (if it's still lying by him).
+func take_back_gun(e: Enemy) -> void:
+	for g in loose_guns:
+		if g["under"] == e:
+			loose_guns.erase(g)
+			g["sprite"].queue_free()
+			var ammo = g.get("ammo")
+			if ammo != null and is_instance_valid(ammo):
+				ammo.queue_free()
+			return
+
+
+## Downed men nobody's gone for yet: the nearest comrade game for it goes (most
+## will: they don't leave their own in the dirt).
+func _send_rescuers() -> void:
+	for d in enemies:
+		if not d.downed or d.rescuer != null:
+			continue
+		var best: Enemy = null
+		var best_d := Enemy.RESCUE_NEAR
+		for e in enemies:
+			if not e.alive or e.reaction != "" or e.runner_to != Vector2.INF or e.stick or not e.revealed:
+				continue
+			var dist := e.global_position.distance_to(d.global_position)
+			if dist < best_d:
+				best_d = dist
+				best = e
+		if best and randf() < 0.9 - 0.4 * best.fear():
+			best.start_rescue(d)
 
 
 ## The freshest drop of the stranger's blood this bandit can see, newer than the

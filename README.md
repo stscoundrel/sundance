@@ -61,6 +61,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_fragile.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_hens.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_bandage.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_crew.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_downed.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_dynamite.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_perf.gd
 godot --path . -s tests/profile.gd                        # where a big fight's frame goes (also --headless)

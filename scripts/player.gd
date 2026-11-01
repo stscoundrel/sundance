@@ -217,7 +217,7 @@ func _find_knife_target() -> void:
 		return
 	var best_d := INF
 	for e in game.enemies:
-		if not e.alive:
+		if not e.alive and not e.downed:
 			continue
 		var d := global_position.distance_to(e.global_position)
 		if d > KNIFE_RUSH or not game.line_of_sight(global_position, e.global_position, false):
@@ -228,7 +228,7 @@ func _find_knife_target() -> void:
 			best_d = d
 			knife_cand = e
 	if knife_cand:
-		knife_silent = knife_cand.unaware() and global_position.distance_to(knife_cand.global_position) <= KNIFE_SILENT
+		knife_silent = (knife_cand.downed or knife_cand.unaware()) and global_position.distance_to(knife_cand.global_position) <= KNIFE_SILENT
 
 
 ## E: go for him.
@@ -245,7 +245,7 @@ func knife() -> bool:
 func _lunge(delta: float) -> void:
 	var e := knife_target
 	knife_t += delta
-	if e == null or not e.alive or knife_t > LUNGE_MAX:
+	if e == null or not (e.alive or e.downed) or knife_t > LUNGE_MAX:
 		_knife_done(KNIFE_CD)   # missed him
 		game.stats["knife misses"] = game.stats.get("knife misses", 0) + 1
 		return
@@ -262,6 +262,12 @@ func _lunge(delta: float) -> void:
 func _strike(e: Enemy) -> void:
 	var dir := facing
 	play_action("stab")
+	if e.downed:
+		# a wounded man in the dirt: quickly, quietly
+		e.finish(self)
+		game.make_noise(global_position, 40.0, "struggle", self)
+		_knife_done(KNIFE_CD)
+		return
 	if knife_quiet and e.unaware():
 		# a hand over his mouth, the blade, and he's let down quietly
 		e.die(dir, self, "death_slump")

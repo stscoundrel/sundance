@@ -161,6 +161,24 @@ var patching := false
 const TRAIL_LINES := ["Blood... he's hit.", "¡Sangre! Por aquí.", "He's bleeding. Follow it."]
 var trail_t := -1.0          # when the last drop he followed fell
 var trail_look := 0.0
+# Downed: a hit that would kill may only put him in the dirt instead, out of the
+# fight, groaning, bleeding out (BLEED_T) unless a comrade gets to him: dragged into
+# cover and bandaged he gets up again (1 HP). While someone has hold of him he
+# presses the wound and the clock stops. Another hit, or the knife, finishes him.
+const DOWN_CHANCE := 0.35
+const BLEED_T := 45.0
+const DOWN_LINES := ["¡Ayúdenme!", "Help... me...", "¡Madre de Dios!", "Don't leave me here!", "I'm hit bad..."]
+const RESCUE_LINES := ["¡Aguanta, compadre!", "Hang on, amigo!", "Cover me, I'm getting him!", "¡Lo saco yo!"]
+const RESCUE_NEAR := 300.0   # px: a comrade this close may go for a downed man
+const TREAT_T := 10.0      # s bandaging a downed comrade: long enough for the stranger to spot it
+var downed := false
+var down_t := 0.0
+var groan_t := 0.0
+var rescuer: Enemy = null    # who's come for him
+var rescuing: Enemy = null   # (as the rescuer) who he's come for
+var rescue_phase := ""       # "go", "drag", "treat"
+var smear := Vector2.ZERO
+var work_t := 0.0
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -594,6 +612,8 @@ func start_reaction(r: String) -> void:
 			play_action("throw")
 			stick = game.light_stick(self)
 			_say(_line("dynamite", THROW_LINES))
+		"rescue":
+			reaction_t = 30.0
 		"patch":
 			cover_pos = game.find_cover(global_position, threat)
 			patching = cover_pos == Vector2.INF   # nowhere to go: he does it where he is
@@ -655,6 +675,8 @@ func _do_reaction(delta: float) -> void:
 				_let_fly()
 		"patch":
 			_patch()
+		"rescue":
+			_rescue(delta)
 		"clear":
 			if follow_path(run * 1.2):
 				crouched = true
@@ -709,6 +731,8 @@ func _physics_process(delta: float) -> void:
 		marker_t -= delta
 	if not alive:
 		cone.queue_redraw()
+		if downed and game.state in ["play", "won"]:
+			_downed_tick(delta)
 		if dying():
 			update_anim(delta)
 		return
@@ -929,7 +953,7 @@ func unaware() -> bool:
 func can_fire_at(p: Actor) -> bool:
 	if not alive or not revealed or is_staggered() or weapon.is_reloading() or not weapon.can_fire():
 		return false
-	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear", "patch"]:
+	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear", "patch", "rescue"]:
 		return false
 	return absf(facing.angle_to(p.global_position - global_position)) < 1.1
 
@@ -1228,9 +1252,174 @@ func _fumble_stick() -> void:
 func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
 	var s := stick
 	stick = null
+	_end_rescue()
 	super(from_dir, shooter, how)
 	if s:
 		s.drop()   # once it's lit, it's lit
+
+
+# ------------------------------------------------------------------ downed
+
+## Not every killing shot kills: not dynamite, the knife, or a shotgun at arm's
+## length, and not a man who's already been down once and got up.
+func _goes_down(shooter: Actor) -> bool:
+	if blasted or Engine.has_meta("no_downed") or has_meta("was_down"):
+		return false
+	if shooter and shooter.weapon and shooter.weapon.is_shotgun() \
+			and shooter.global_position.distance_to(global_position) < 60.0:
+		return false
+	return Engine.has_meta("always_downed") or randf() < DOWN_CHANCE
+
+
+## Into the dirt, alive: out of the fight as far as anyone's counting (his gun
+## falls, his comrades see him drop), but he can still be hit, and he can be saved.
+func go_down(from_dir: Vector2, shooter: Actor) -> void:
+	die(from_dir, shooter)
+	downed = true
+	down_t = 0.0
+	groan_t = randf_range(1.0, 2.5)
+	hurtbox.set_deferred("collision_layer", Iso.LAYER_HURT)   # (after die()'s: a man can still shoot him)
+	set_meta("was_down", true)
+	_log("goes down")
+
+
+func _downed_tick(delta: float) -> void:
+	shout_t = maxf(0.0, shout_t - delta)
+	if rescuer != null and (not is_instance_valid(rescuer) or not rescuer.alive or rescuer.rescuing != self):
+		rescuer = null
+	var held := rescuer != null and rescuer.rescue_phase in ["drag", "treat"]
+	if not held:
+		down_t += delta   # bleeding out (he presses the wound while someone's got him)
+	if down_t >= BLEED_T:
+		finish(null)
+		_log("bleeds out")
+		return
+	groan_t -= delta
+	if groan_t <= 0.0:
+		groan_t = randf_range(3.0, 6.0)
+		game.sfx("groan", global_position, -10.0, 0.12)
+		if shout_t <= 0.0 and randf() < 0.6 and not held:
+			_say(_line("downed", DOWN_LINES))
+
+
+## Dead for good, lying where he is.
+func finish(by: Actor) -> void:
+	if not downed:
+		return
+	downed = false
+	if by:
+		killer = by
+	hurtbox.set_deferred("collision_layer", 0)
+	shout_t = 0.0
+	if rescuer and is_instance_valid(rescuer):
+		rescuer._end_rescue()
+	rescuer = null
+	game.sfx("hit", global_position, -6.0)
+	if by and by.is_player:
+		game.stats["wounded men shot"] = game.stats.get("wounded men shot", 0) + 1   # (hidden, for now)
+	_log("finished")
+
+
+## Patched up and on his feet again: one HP, shaken, gun back in hand.
+func revive() -> void:
+	if not downed:
+		return
+	downed = false
+	alive = true
+	hp = 1
+	rescuer = null
+	bleeding = false
+	limp_t = randf_range(5.0, 8.0)
+	shaken = 1.0
+	_death = ""
+	_layers.erase("full")
+	legs_spr.visible = true
+	collision_layer = Iso.LAYER_ACTOR
+	collision_mask = Iso.LAYER_WALL | Iso.LAYER_COVER | Iso.LAYER_POST | Iso.LAYER_ACTOR
+	hurtbox.set_deferred("collision_layer", Iso.LAYER_HURT)
+	game.take_back_gun(self)
+	weapon = Weapon.new(loadout[0], self)
+	weapon.reserve = 999
+	reaction = ""
+	pending = ""
+	st = St.GUARD   # (so enter_combat treats it as joining the fight)
+	enter_combat(game.seen_pos, false, false)
+	stagger_t = 0.8
+	_log("gets back up")
+
+
+# ------------------------------------------------------------------ rescue
+
+## Off to get a downed comrade, the others asked to keep the stranger's head down.
+func start_rescue(d: Enemy) -> void:
+	rescuing = d
+	d.rescuer = self
+	threat = game.seen_pos
+	pending = ""
+	_stop_watching(WATCH_CD)
+	start_reaction("rescue")
+	rescue_phase = "go"
+	path_to(d.global_position)
+	if shout_t <= 0.0 or randf() < 0.7:
+		_say(_line("rescue", RESCUE_LINES))
+	if game.staleness() < game.FRESH:
+		for o in game.enemies:
+			if o != self and o.alive and o.global_position.distance_to(global_position) < 260.0:
+				o.suppress(game.seen_pos, randf_range(3.0, 4.5))
+	_log("goes to get a downed man")
+
+
+## Run to him, drag him by the collar into cover away from the stranger, then down
+## on one knee bandaging him till he can stand.
+func _rescue(delta: float) -> void:
+	var d := rescuing
+	if d == null or not is_instance_valid(d) or not d.downed or d.rescuer != self:
+		_end_rescue()
+		reaction_t = 0.0
+		return
+	reaction_t = 30.0   # (it ends when it's done, not on a clock)
+	match rescue_phase:
+		"go":
+			if follow_path(run) and global_position.distance_to(d.global_position) >= 14.0:
+				velocity = (d.global_position - global_position).normalized() * run   # the last few steps
+			if global_position.distance_to(d.global_position) < 14.0:
+				rescue_phase = "drag"
+				var c: Vector2 = game.find_cover(d.global_position, threat)
+				path_to(c if c != Vector2.INF else game.point_away(d.global_position, threat, 70.0))
+				smear = d.global_position
+		"drag":
+			pose = "haul"
+			var there := follow_path(walk * 0.7)
+			if velocity.length() > 1.0:
+				var behind := global_position - velocity.normalized() * 13.0
+				d.global_position = d.global_position.move_toward(behind, maxf(velocity.length(), 20.0) * delta * 1.5)
+			if d.global_position.distance_to(smear) > 9.0:
+				smear = d.global_position
+				game.decals.add(smear, randf_range(1.2, 2.2), Color(0.38, 0.06, 0.04, 0.5))
+			if there:
+				rescue_phase = "treat"
+				work_t = TREAT_T
+				game.sfx("tear", global_position, -8.0, 0.1)
+		"treat":
+			velocity = Vector2.ZERO
+			crouched = true
+			pose = "bandage"
+			desired = (d.global_position - global_position).normalized()
+			work_t -= delta
+			if work_t <= 0.0:
+				if bandages > 0:
+					bandages -= 1
+				d.revive()
+				_log("patches up a downed man")
+				_end_rescue()
+				reaction_t = 0.0
+
+
+func _end_rescue() -> void:
+	if rescuing and is_instance_valid(rescuing) and rescuing.rescuer == self:
+		rescuing.rescuer = null
+	rescuing = null
+	rescue_phase = ""
 
 
 func _stop_watching(cd: float) -> void:
@@ -1638,6 +1827,15 @@ func on_hurt_alert(shooter: Actor) -> void:
 
 
 func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
+	if downed:
+		finish(shooter)   # in the dirt already: this one's for good
+		return
+	if alive and hp - dmg <= 0 and _goes_down(shooter):
+		hp = 0
+		game.blood(global_position, from_dir, gun_height())
+		game.sfx("hit", global_position, -2.0)
+		go_down(from_dir, shooter)
+		return
 	super(dmg, from_dir, shooter)
 	if alive and stick:
 		_fumble_stick()
