@@ -63,6 +63,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_bandage.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_crew.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_dynamite.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_perf.gd
+godot --path . -s tests/profile.gd                        # where a big fight's frame goes (also --headless)
 ```
 
 Flags go after `--`: `--skip-title` (no title or loadout screen; rides in with all three guns, or `--guns=colt,rifle`), `--at=GX,GY` (start tile), `--bot` (autopilot that shoots

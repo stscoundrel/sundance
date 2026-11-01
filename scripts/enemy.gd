@@ -136,6 +136,7 @@ const ALERT_OVER := 130.0   # px: in a fight, he sees a crouched man over low co
 # trough...) they can see: a couple of them put rounds into it.
 const BREAK_NEAR := 34.0    # px: last seen this close to it, he's behind it
 const BREAK_LINES := ["Shoot through it!", "¡Tírenle a la caja!", "Splinter that crate!", "Flush him out!"]
+var break_look := 0.0
 var breaking: Dictionary = {}         # he was waiting for him: a moment where nothing pulls him off the shot
 # Dynamite: a stick or two for when the stranger keeps killing them from one place
 # (see game.dynamite_target). Lit, a moment to wind up, and over it goes.
@@ -1021,8 +1022,11 @@ func _combat(delta: float) -> void:
 		_suppress(delta, spec)
 		return
 	breaking = {}
-	if not sees_player and _break_cover():
-		return
+	break_look -= delta
+	if not sees_player and break_look <= 0.0:
+		break_look = 0.4   # a few times a second is plenty to notice he's behind a crate
+		if _break_cover():
+			return
 	if sees_player or (at_cover and fight_pos != Vector2.INF and lost_t < 4.0):
 		hunt_target = Vector2.INF   # a fresh hunt once he's lost again
 		_fight(delta, p, to, dist, spec)
@@ -1038,7 +1042,8 @@ func _combat(delta: float) -> void:
 			return
 		# Hunt him down where he was last seen: straight there, or round the other
 		# way to cut him off, depending on what his comrades are already doing.
-		if hunt_target == Vector2.INF or hunt_target.distance_to(last_known) > 40.0:
+		if (hunt_target == Vector2.INF or hunt_target.distance_to(last_known) > 40.0) and game.plans_left > 0:
+			game.plans_left -= 1   # (a whole gang replanning at once would stall the frame)
 			var plan: Dictionary = game.plan_hunt(self, last_known)
 			path = plan["path"]
 			path_i = 0
@@ -1410,6 +1415,8 @@ func _separate() -> void:
 		if e == self or not e.alive:
 			continue
 		var d: Vector2 = global_position - e.global_position
+		if absf(d.x) > 32.0 or absf(d.y) > 32.0:
+			continue   # (most of them, most of the time: no square root needed)
 		var l: float = d.length()
 		if l < 32.0 and l > 0.01:
 			push += d / l * (32.0 - l) / 32.0

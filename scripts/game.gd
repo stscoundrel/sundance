@@ -151,6 +151,7 @@ func _ready() -> void:
 	_setup_audio()
 	for k in meta["sfx"]:
 		_streams[k] = _takes(k)   # all up front: a first load mid-fight stalls the frame
+	_preload(meta)   # every sprite too, for the same reason (a crate's wreck, a pool of blood...)
 	var wind := AudioStreamPlayer.new()
 	wind.stream = load(meta["sfx"]["wind"])
 	wind.volume_db = -12.0
@@ -164,6 +165,19 @@ func _ready() -> void:
 		begin()
 	elif _args.has("freeze"):
 		hud.hide_title()   # debug: look around town with everyone standing still
+
+
+## Every texture the asset meta names, loaded now rather than the first time it's
+## needed in the middle of a fight.
+func _preload(node: Variant) -> void:
+	if node is Dictionary:
+		for v in node.values():
+			_preload(v)
+	elif node is Array:
+		for v in node:
+			_preload(v)
+	elif node is String and node.begins_with("res://") and node.ends_with(".png"):
+		tex(node)
 
 
 ## Glue and a brick-wall limiter on the master bus: gunfire can be mixed hot and
@@ -625,6 +639,9 @@ func _update_fades(delta: float) -> void:
 		var hides_hero := behind and _covers(b, player.global_position)
 		var target := 0.35 if hides_hero or (state == "play" and _covers_point(b, cursor)) else 1.0
 		spr.modulate.a = move_toward(spr.modulate.a, target, delta * 4.0)
+	_fade_frame += 1
+	if _fade_frame % 3 != 0:
+		return   # who's hidden behind what: 20 times a second is plenty for a silhouette
 	var actors: Array = [player]
 	actors.append_array(enemies)
 	for c in civilians:
@@ -690,7 +707,14 @@ func _maybe_screenshot(now: int) -> void:
 
 # ------------------------------------------------------------------ queries
 
+var counts := {"rays": 0, "paths": 0, "path_us": 0}
+var _fade_frame := 0
+const PLANS_A_FRAME := 2   # hunts planned in one frame; the rest wait their turn (a frame or two)
+var plans_left := PLANS_A_FRAME   # (for tools/profile: how hard the queries are worked)
+
+
 func ray(from: Vector2, to: Vector2, mask: int, exclude: Array[RID] = [], areas := false) -> Dictionary:
+	counts["rays"] += 1
 	var q := PhysicsRayQueryParameters2D.create(from, to, mask, exclude)
 	q.collide_with_areas = areas
 	q.collide_with_bodies = true
@@ -747,12 +771,15 @@ func _nearest_free(c: Vector2i) -> Vector2i:
 ## A walkable route. `avoid` is a list of routes to steer clear of: cells along them
 ## (away from both ends) cost more, so the pathfinder prefers another way round.
 func find_path(from: Vector2, to: Vector2, avoid: Array = [], penalty := 3.5) -> PackedVector2Array:
+	counts["paths"] += 1
 	var a := _nearest_free(_cell(from))
 	var b := _nearest_free(_cell(to))
 	var touched: Array[Vector2i] = []
 	for route in avoid:
 		_weigh_route(route, from, to, touched, penalty)
+	var t_path := Time.get_ticks_usec()
 	var ids := astar.get_id_path(a, b)
+	counts["path_us"] += Time.get_ticks_usec() - t_path
 	for c in touched:
 		astar.set_point_weight_scale(c, 1.0)
 	var pts := PackedVector2Array()
@@ -760,16 +787,24 @@ func find_path(from: Vector2, to: Vector2, avoid: Array = [], penalty := 3.5) ->
 		pts.append(_cell_center(id))
 	if pts.size() > 0 and b == _cell(to):
 		pts[pts.size() - 1] = to
-	# string-pull: skip points we can walk to directly
+	# string-pull: only the turns of the grid path matter; from each point we keep
+	# going on to the next turn while it can be walked to directly (one pass, so a
+	# long route costs a ray or two a turn, not a ray for every later point)
+	var turns := PackedVector2Array()
+	for k in pts.size():
+		if k == 0 or k == pts.size() - 1:
+			turns.append(pts[k])
+		elif (pts[k] - pts[k - 1]).normalized().dot((pts[k + 1] - pts[k]).normalized()) < 0.99:
+			turns.append(pts[k])
 	var out := PackedVector2Array()
 	var cur := from
 	var i := 0
-	while i < pts.size():
-		var j := pts.size() - 1
-		while j > i and not clear_path(cur, pts[j]):
-			j -= 1
-		out.append(pts[j])
-		cur = pts[j]
+	while i < turns.size():
+		var j := i
+		while j + 1 < turns.size() and clear_path(cur, turns[j + 1]):
+			j += 1
+		out.append(turns[j])
+		cur = turns[j]
 		i = j + 1
 	return out
 
@@ -993,6 +1028,7 @@ func _physics_process(delta: float) -> void:
 	if state != "play":
 		return
 	clock += delta
+	plans_left = PLANS_A_FRAME
 	innocent_t = maxf(0.0, innocent_t - delta)
 	dyn_cd = maxf(0.0, dyn_cd - delta)
 	_pick_up_guns()

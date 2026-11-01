@@ -8,7 +8,7 @@ extends SceneTree
 
 const HERO := Vector2(26.0, 31.4)
 const START := Vector2(33.0, 31.4)
-const PHASE := 25.0
+const PHASE := 40.0   # (long enough that the difference shows over the noise)
 const KINDS := ["saloon_girl", "cowboy"]
 
 var game: Node

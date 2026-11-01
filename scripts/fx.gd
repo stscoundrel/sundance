@@ -1,13 +1,29 @@
 class_name Puff
 extends Node2D
 ## A burst of particles (gun smoke, dust, splinters, blood) anchored at a ground point
-## so it y-sorts with the world. Frees itself when every particle is gone.
+## so it y-sorts with the world. Frees itself when every particle is gone. Round
+## particles are drawn as squares of one shared disc texture, so a whole cloud goes
+## to the screen in a handful of draw calls rather than a circle at a time.
 
 enum K { DOT, SOFT, MARK }
 
 const FIELDS := 10
 # Each particle: [pos, vel, life, max_life, size, color, grow, gravity, drift, kind]
 var parts: Array = []
+static var disc: Texture2D   # a white disc, soft at the very edge
+
+
+## The shared disc (made once).
+static func disc_tex() -> Texture2D:
+	if disc == null:
+		var n := 32
+		var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+		for y in n:
+			for x in n:
+				var d := Vector2(x + 0.5 - n * 0.5, y + 0.5 - n * 0.5).length() / (n * 0.5)
+				img.set_pixel(x, y, Color(1, 1, 1, clampf((1.0 - d) * n * 0.5, 0.0, 1.0)))
+		disc = ImageTexture.create_from_image(img)
+	return disc
 
 
 func add(p: Vector2, v: Vector2, life: float, size: float, color: Color, grow := 0.0, gravity := 0.0,
@@ -46,6 +62,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
+	var tex := disc_tex()
 	for q in parts:
 		var c: Color = q[5]
 		var ratio: float = q[2] / q[3]
@@ -55,8 +72,10 @@ func _draw() -> void:
 			K.SOFT:
 				# fade in quickly, thin out slowly; a lit top over a shaded underside
 				c.a *= clamp((1.0 - ratio) * 8.0, 0.0, 1.0) * clamp(ratio * 1.6, 0.0, 1.0)
-				draw_circle(p, s, Color(c.r * 0.82, c.g * 0.8, c.b * 0.8, c.a))
-				draw_circle(p + Vector2(-s * 0.2, -s * 0.25), s * 0.75, Color(c.r * 1.05, c.g * 1.04, c.b * 1.02, c.a * 0.9))
+				draw_texture_rect(tex, Rect2(p - Vector2(s, s), Vector2(s, s) * 2.0), false, Color(c.r * 0.82, c.g * 0.8, c.b * 0.8, c.a))
+				var top := p + Vector2(-s * 0.2, -s * 0.25)
+				draw_texture_rect(tex, Rect2(top - Vector2(s, s) * 0.75, Vector2(s, s) * 1.5), false,
+					Color(c.r * 1.05, c.g * 1.04, c.b * 1.02, c.a * 0.9))
 			K.MARK:
 				c.a *= clamp(ratio * 4.0, 0.0, 1.0)
 				draw_rect(Rect2(p - Vector2(s, s * 0.6) * 0.5, Vector2(s, s * 0.6)), c)
@@ -65,4 +84,4 @@ func _draw() -> void:
 				if s <= 1.2:
 					draw_rect(Rect2(p - Vector2(s, s) * 0.5, Vector2(s, s)), c)
 				else:
-					draw_circle(p, s, c)
+					draw_texture_rect(tex, Rect2(p - Vector2(s, s), Vector2(s, s) * 2.0), false, c)

@@ -13,7 +13,7 @@ func add(p: Vector2, r: float, c: Color) -> void:
 
 
 func _draw() -> void:
+	var tex := Puff.disc_tex()   # (one texture: the lot goes in a few draw calls)
 	for s in splats:
-		draw_set_transform(s[0], 0.0, Vector2(1.0, 0.5))
-		draw_circle(Vector2.ZERO, s[1], s[2])
-	draw_set_transform(Vector2.ZERO)
+		var r: float = s[1]
+		draw_texture_rect(tex, Rect2(s[0] - Vector2(r, r * 0.5), Vector2(r * 2.0, r)), false, s[2])

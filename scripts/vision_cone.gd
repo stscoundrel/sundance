@@ -72,11 +72,24 @@ func _draw() -> void:
 	var combat := enemy.st == Enemy.St.COMBAT
 	var cf := Color(base, 0.04 if combat else 0.10)
 	var cn := Color(base, 0.07 if combat else 0.18)
-	for i in far.size() - 1:
-		draw_primitive(PackedVector2Array([Vector2.ZERO, far[i], far[i + 1]]), PackedColorArray([cf, cf, cf]), PackedVector2Array())
-		draw_primitive(PackedVector2Array([Vector2.ZERO, near[i], near[i + 1]]), PackedColorArray([cn, cn, cn]), PackedVector2Array())
+	# two fans, one call each (the triangles given outright: a cone squashed flat
+	# against a wall would only trip up triangulating it)
+	_fan(far, cf)
+	_fan(near, cn)
 	var edge := Color(base, 0.15 if combat else 0.35)
 	var line := PackedVector2Array([Vector2.ZERO])
 	line.append_array(far)
 	line.append(Vector2.ZERO)
 	draw_polyline(line, edge, 1.0)
+
+
+func _fan(rim: PackedVector2Array, c: Color) -> void:
+	var pts := PackedVector2Array([Vector2.ZERO])
+	pts.append_array(rim)
+	var idx := PackedInt32Array()
+	for i in range(1, pts.size() - 1):
+		idx.append_array([0, i, i + 1])
+	var cols := PackedColorArray()
+	cols.resize(pts.size())
+	cols.fill(c)
+	RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, pts, cols)
