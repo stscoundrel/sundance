@@ -605,6 +605,10 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         m += beam(h + [0, 0, -0.005], h + [0, 0, 0.015], 0.028, (214, 198, 160))   # the paper band
         m += beam(h + [0, 0, 0.09], h + [0.02, 0, 0.13], 0.007, (48, 40, 32))      # the fuse
         m += ellipsoid(h + [0.022, 0, 0.14], (0.018, 0.018, 0.018), (255, 226, 120))
+    if up.get("roll"):   # a bandage: a roll of it in the right hand, wound round the left forearm
+        e, h = np.array(up["eL"], float), np.array(up["hL"], float)
+        m += frustum(e + (h - e) * 0.45, e + (h - e) * 0.8, 0.058, 0.052, (232, 228, 216))
+        m += ellipsoid(np.array(up["hR"], float) + [0.02, 0, 0], (0.035, 0.035, 0.035), (240, 236, 226))
     if up.get("hanky"):   # a white handkerchief pressed to her eyes
         h = np.array(up["hR"], float)
         m += box(tuple(h + [-0.02, -0.03, -0.04]), tuple(h + [0.03, 0.03, 0.03]), (232, 228, 220))
@@ -840,6 +844,11 @@ def _shared_poses(k):
     # the knife: gun hand down, the blade drawn back in the other, then driven in
     k["stab_a"] = P(low, eL=V(-0.06, 0.27, 0.28), hL=V(0.02, 0.22, 0.4), knife=True, twist=0.25)
     k["stab_b"] = P(low, eL=V(0.28, 0.14, 0.36), hL=V(0.56, 0.02, 0.3), knife=True, twist=-0.2, lean=0.2)
+    # bandaging: down on one knee (the legs crouch), the gun set aside, winding a
+    # strip round the left forearm, over and under
+    k["band_a"] = dict(eL=V(0.12, 0.25, 0.26), hL=V(0.32, 0.06, 0.3), eR=V(0.12, -0.22, 0.32),
+                       hR=V(0.3, -0.02, 0.44), roll=True, gun=None, nod=0.3, lean=0.15)
+    k["band_b"] = P(k["band_a"], eR=V(0.16, -0.2, 0.2), hR=V(0.36, 0.12, 0.24))
     # dynamite: lit at the chest, drawn back over the shoulder, then lobbed high
     k["light"] = P(low, eL=V(0.12, 0.27, 0.3), hL=V(0.24, 0.1, 0.44), stick=True, nod=0.15)
     k["wind"] = P(low, eL=V(-0.12, 0.3, 0.6), hL=V(-0.2, 0.26, 0.82), stick=True, twist=0.4, lean=-0.12)
@@ -1000,6 +1009,8 @@ def upper_anims(w):
     add("point", [k["point_half"], k["point"], k["point"]], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
     if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor"):
+        add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
+                        lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         # 7 fps: it leaves his hand on frame 4, Enemy.WINDUP (0.57 s) after lighting
         add("throw", [k["light"], k["light"], lerp_pose(k["light"], k["wind"], 0.6), k["wind"], k["lob"],
                       lerp_pose(k["lob"], k["aim"], 0.4), lerp_pose(k["lob"], k["aim"], 0.8)], 7)

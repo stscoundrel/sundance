@@ -919,6 +919,14 @@ def gen_sfx(meta):
     sq += np.pad(highpass(hrng2.normal(0, 1, int(SR * 0.4)), 2000) * np.exp(-t_of(0.4) / 0.1) * 0.15,
                  (0, len(sq) - int(SR * 0.4)))   # wings beating
     write("squawk", room(sq, hrng2, 0.05, 0.25), meta, 0.6, 1.4)
+    # Cloth torn for a bandage: a ragged rip in a few quick jerks.
+    trng = np.random.default_rng(94)
+    parts = []
+    for st, dur in ((0.0, 0.12), (0.16, 0.09), (0.28, 0.16)):
+        n = int(SR * dur)
+        rip = bandpass(trng.normal(0, 1, n), 900, 6000) * (0.5 + 0.5 * (trng.random(n) < 0.35))
+        parts.append((st, rip * np.sin(np.linspace(0, np.pi, n)) ** 0.6))
+    write("tear", room(place(0.5, parts), trng, 0.04, 0.2), meta, 0.6, 1.3)
 
 
 def main():

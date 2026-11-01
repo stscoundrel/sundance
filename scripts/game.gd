@@ -72,6 +72,11 @@ var dyn_cd := 0.0
 const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33}
 const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3}
 var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
+# Blood trails: every drop a wounded man leaves. The gang can follow the stranger's.
+const TRAIL_FRESH := 45.0   # s a drop stays a lead worth following
+const TRAIL_SEE := 170.0    # px: a bandit notices a drop this close (in view)
+const TRAIL_CLOSE := 70.0   # px: following a trail, he picks up the next drop this close anywhere round him
+var trails: Array[Dictionary] = []   # {at, t, player}
 # Things gunfire breaks that are no cover at all: window panes, porch lanterns,
 # tables of bottles, chairs, clay jars. Each hit moves one a look further gone.
 const FRAGILE_R := {"olla": 5.0, "chair": 5.0, "table": 7.0, "lantern": 4.0, "coop": 9.0, "hencrate": 6.0}
@@ -203,7 +208,7 @@ func _setup_input() -> void:
 	var keys := {
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN],
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
-		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E],
+		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E], "bandage": [KEY_B],
 		"weapon_1": [KEY_1], "weapon_2": [KEY_2], "weapon_3": [KEY_3],
 		"restart": [KEY_ENTER], "quit": [KEY_ESCAPE],
 	}
@@ -1918,6 +1923,33 @@ func _shards(at: Vector2, height: float, col: Color, n: int) -> void:
 	world.add_child(puff)
 	for i in 4:   # it stays where it fell, glinting
 		decals.add(at + Vector2(randf_range(-7, 7), randf_range(-3, 4)), 0.7, Color(col.r, col.g, col.b, 0.8))
+
+
+## A drop of blood where a wounded man is (or was a moment ago).
+func drip(a: Actor, at: Vector2) -> void:
+	decals.add(at + Vector2(randf_range(-2, 2), randf_range(-1, 1)), randf_range(1.3, 2.1), Color(0.42, 0.05, 0.04, 0.85))
+	trails.append({"at": at, "t": clock, "player": a.is_player})
+	if trails.size() > 400:
+		trails.pop_front()
+
+
+## The freshest drop of the stranger's blood this bandit can see, newer than the
+## last one he followed (and not too old to be worth it); or none. Once he's on the
+## trail he's reading the ground: drops close by count even outside his gaze.
+func trail_lead(e: Enemy, newer: float) -> Dictionary:
+	var on_it := newer >= 0.0 and clock - newer < TRAIL_FRESH
+	for i in range(trails.size() - 1, -1, -1):
+		var d: Dictionary = trails[i]
+		if d["t"] <= newer or clock - d["t"] > TRAIL_FRESH:
+			break
+		if not d["player"]:
+			continue
+		var dist: float = e.global_position.distance_to(d["at"])
+		if dist < TRAIL_SEE and e.visibility_of(d["at"], true, false) > 0.0:
+			return d
+		if on_it and dist < TRAIL_CLOSE and line_of_sight(e.global_position, d["at"], true):
+			return d
+	return {}
 
 
 ## Fresh damage (or worse damage to a wreck he's already seen) for the mayor.

@@ -17,6 +17,11 @@ const LUNGE := 150.0         # px/s
 const LUNGE_MAX := 0.5       # s: if he hasn't reached him by then, he's missed
 const KNIFE_CD := 0.7        # s before the next
 const RUSH_DMG := 3          # a rush's cut: enough for most, not El Jefe
+# Bandaging (B): down on one knee for a long while, patching himself up: two bars
+# back, the limp and the bleeding stopped. Moving, shooting, reloading, the knife
+# or a hit breaks it off (he keeps the bandage, not the time spent).
+const BANDAGE_T := 10.0
+const BANDAGE_HEAL := 2
 const WALK := 46.0
 const CROUCH_WALK := 22.0
 
@@ -36,6 +41,8 @@ var knife_quiet := false
 var knife_t := -1.0            # time into the lunge; < 0 when not lunging
 var knife_cd := 0.0
 var exposed_t := 0.0           # he's just fired: up over his cover, flash and smoke
+var bandages := 1
+var bandage_t := -1.0          # time into bandaging; < 0 when not at it
 
 
 func setup(g: Node, pos: Vector2) -> void:
@@ -66,6 +73,8 @@ func _physics_process(delta: float) -> void:
 	if playing and not is_staggered():
 		input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = input * (CROUCH_WALK if crouched else WALK) * limp_factor()
+	if bandage_t >= 0.0:
+		_bandage(delta, input)
 	move_and_slide()
 	_find_knife_target()
 
@@ -102,6 +111,13 @@ func _physics_process(delta: float) -> void:
 
 
 func _handle_actions() -> void:
+	if bandage_t >= 0.0:
+		for a in ["fire", "alt", "reload", "knife", "crouch", "weapon_1", "weapon_2", "weapon_3"]:
+			if Input.is_action_just_pressed(a):
+				stop_bandage()
+				break
+	if Input.is_action_just_pressed("bandage"):
+		start_bandage()
 	if Input.is_action_just_pressed("crouch"):
 		crouched = not crouched
 	if Input.is_action_just_pressed("reload"):
@@ -143,6 +159,53 @@ func take_up(k: String) -> void:
 	owned.sort_custom(func(a, b): return ORDER.find(a) < ORDER.find(b))
 	game.sfx("pickup", null, 0.0)
 	game.sfx("close", null, -6.0)
+
+
+# ------------------------------------------------------------------ bandages
+
+## Worth it (he's hurt, limping or bleeding) and he has one: down he gets.
+func start_bandage() -> bool:
+	if bandage_t >= 0.0 or not alive or knife_t >= 0.0:
+		return false
+	if bandages <= 0:
+		game.hud.toast("No bandages left")
+		return false
+	if hp >= max_hp and limp_t <= 0.0 and not bleeding:
+		return false
+	crouched = true
+	weapon.abort()
+	bandage_t = 0.0
+	pose = "bandage"
+	game.sfx("tear", global_position, -6.0, 0.1)
+	game.make_noise(global_position, 45.0, "step", self)   # the tearing cloth, close by
+	return true
+
+
+func _bandage(delta: float, input: Vector2) -> void:
+	if input != Vector2.ZERO or not crouched:
+		stop_bandage()
+		return
+	velocity = Vector2.ZERO
+	pose = "bandage"
+	bandage_t += delta
+	if bandage_t >= BANDAGE_T:
+		hp = mini(max_hp, hp + BANDAGE_HEAL)
+		limp_t = 0.0
+		bleeding = false
+		bandages -= 1
+		bandage_t = -1.0
+		pose = ""
+		game.hud.toast("Bandaged")
+		game.stats["bandaged"] = game.stats.get("bandaged", 0) + 1
+
+
+func stop_bandage() -> void:
+	if bandage_t < 0.0:
+		return
+	bandage_t = -1.0
+	pose = ""
+	game.hud.toast("Bandaging broken off")
+	game.stats["bandaging broken off"] = game.stats.get("bandaging broken off", 0) + 1
 
 
 # ------------------------------------------------------------------ the knife
@@ -275,6 +338,7 @@ func on_fired(shake: float) -> void:
 
 
 func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
+	stop_bandage()
 	super(dmg, from_dir, shooter)
 	if alive:
 		game.on_player_hurt()

@@ -44,6 +44,23 @@ he survives two clean hits. No health pickups.
 Crouching: half speed, silent footsteps, tighter spread and a smaller visual
 profile (see Stealth).
 
+**Bandages** (B). He rides in with one (the count is kept, so more can come
+later). Down on one knee, gun set aside, winding it round: ten seconds, and only
+crouched and still. Moving, firing, reloading, the knife or a hit breaks it off
+(he keeps the bandage, not the time). Done, it gives back two bars (never more than
+he started with), ends a limp and stops the bleeding. The long wait is the point:
+the gang's memory of where he fought fades, they drift into searching, and the town
+starts going about its business again. A HUD bar shows the progress, and the
+tearing cloth can be heard close by.
+
+**Blood trails**. Any wounded man bleeds till he's bandaged: a drop in the dirt
+every few steps, and now and then where he stands. A bandit who comes across
+fresh drops of the stranger's blood (under 45 s old, in view within ~170 px)
+follows them ("Blood... he's hit."), drop by drop, reading the ground (once on the
+trail he picks up the next drop anywhere within ~70 px); in a fight it tells them
+where he went to ground. The stranger can follow a wounded bandit's trail the same
+way, by eye.
+
 **The knife** (E). A small blade over a bandit's head shows who it would go for (the
 one under the cursor if he's in reach, else the nearest; never through a wall):
 - *Pale: a silent takedown.* Within ~22 px of a man who isn't on to him (no fight,
@@ -199,6 +216,16 @@ carried, which you collect by walking over them.
   none of it blocks anything, each kind breaks step by step, a pane breaks only
   when hit at its height and not behind shut shutters, a blast clears the lot, and
   the mayor hears about it.
+- **Patching up**: most bandits carry a bandage (`bandages`; not the bandidos or
+  drunks). Hit and still standing, one may break off (`patch` chance, more likely
+  the more rattled he is, less for a bold one): "¡Me dieron!", into cover away from
+  the stranger, down on one knee for 8 s. One HP back (El Jefe and the old timer
+  aren't made whole), no more limp or bleeding. He isn't shooting meanwhile, so it's
+  a moment to flank or rush him; a leader counts it as trouble and orders covering
+  fire. The stranger walking up on him in plain view (~100 px) breaks it off.
+  `tests/test_bandage.gd` covers the stranger's bandage (time, interruption, two
+  bars, none left), his blood trail and a guard following it to him, a bandit
+  patching up (and bleeding on the way), one giving it up, and who carries none.
 - **Hens** (for Corbucci, whose gunfights always had animals running through them):
   five hen houses stand in the back yards, two hens pecking about each, and crates
   of hens for market sit by the store, the feed store and the plaza. A round into

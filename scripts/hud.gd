@@ -166,7 +166,17 @@ func _draw_status(p: Player) -> void:
 		draw_rect(r, Color(0.1, 0.06, 0.05, 0.85))
 		if i < p.hp:
 			draw_rect(r.grow(-1), Color(0.75, 0.12, 0.08))
-	if p.crouched:
+	# bandages: a white roll each, after the bars
+	var bx := 54 + p.max_hp * 7 + 5
+	for i in p.bandages:
+		draw_rect(Rect2(bx + i * 9, 345, 7, 6), Color(0.92, 0.9, 0.84))
+		draw_line(Vector2(bx + i * 9 + 2, 345), Vector2(bx + i * 9 + 2, 351), Color(0.7, 0.66, 0.6), 1.0)
+	if p.bandage_t >= 0.0:
+		var f: float = p.bandage_t / Player.BANDAGE_T
+		_text(Vector2(54, 338), "BANDAGING", 8, INK)
+		draw_rect(Rect2(104, 332, 40, 5), Color(0.1, 0.06, 0.05, 0.85))
+		draw_rect(Rect2(105, 333, 38 * f, 3), Color(0.92, 0.9, 0.84))
+	elif p.crouched:
 		_text(Vector2(54, 338), "CROUCHED", 8, INK)
 	var n: int = game.alive_enemies()
 	var label := "BANDITS  %d" % n
@@ -338,7 +348,7 @@ func _draw_title() -> void:
 	_text(Vector2(0, 100), "~ un western all'italiana ~", 10, Color(0.85, 0.7, 0.5, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	_text(Vector2(0, 196), "%s.  %d bandits.  One stranger." % [town, game.enemies.size()], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	var lines := [
-		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   E knife   1 2 3 guns",
+		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   E knife   B bandage   1 2 3 guns",
 		"RMB: fan the Colt's hammer  /  fire both barrels of the coach gun",
 		"Stay out of their sight. Crouch behind cover. Kill them all.",
 	]

@@ -44,6 +44,13 @@ var occluded := false
 var anim_gun := ""         # play another gun's upper-body set ("unarmed": hiding his)
 var killer: Actor          # who shot him dead
 var blasted := false       # being hit by dynamite (just for the length of the hit)
+# Wounded, he bleeds till he's bandaged: a drop in the dirt every few steps (and
+# now and then where he stands), a trail anyone can follow.
+const DRIP_EVERY := 14.0   # px walked between drops
+const DRIP_STILL := 2.5    # s standing between drops
+var bleeding := false
+var _drip_from := Vector2.INF
+var _drip_t := 0.0
 
 
 func setup_body(g: Node, pos: Vector2) -> void:
@@ -259,6 +266,8 @@ func update_anim(delta: float) -> void:
 	if moving:
 		_move_t += delta * speed / 40.0
 	var dir := Iso.dir8(facing)
+	if bleeding and alive:
+		_bleed(delta)
 
 	if not alive:
 		var r := _advance("full", "full/" + _death)
@@ -281,6 +290,16 @@ func update_anim(delta: float) -> void:
 		var c := Color(1.8, 0.8, 0.7) if flash_t > 0.0 else Color.WHITE
 		legs_spr.modulate = c
 		upper_spr.modulate = c
+
+
+func _bleed(delta: float) -> void:
+	_drip_t += delta
+	if _drip_from == Vector2.INF:
+		_drip_from = global_position
+	if global_position.distance_to(_drip_from) > DRIP_EVERY or _drip_t > DRIP_STILL:
+		_drip_from = global_position
+		_drip_t = 0.0
+		game.drip(self, global_position)
 
 
 ## Where the muzzle is, relative to his feet, in the frame now showing (the left
@@ -323,6 +342,7 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 	if hp <= 0:
 		die(from_dir, shooter)
 		return
+	bleeding = true
 	# Where it struck decides how he reels: a leg (stagger, then a limp), the gut
 	# (doubled over), or a shoulder, which snaps back on the side it came from.
 	var r := randf()

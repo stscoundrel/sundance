@@ -147,6 +147,19 @@ var stick: Dynamite = null   # lit, in his hand
 var throw_at := Vector2.ZERO
 var dyn_look := 0.0
 var clear_for := 0.0         # how long the fuse he's getting away from has left
+# Wounded, he may break off to patch himself up: into cover away from the
+# stranger, down on one knee, a bandage round it. One HP back, no more limp or
+# bleeding. The stranger walking up on him in plain view breaks it off.
+const PATCH_T := 8.0
+const PATCH_ABORT := 100.0   # px: the stranger in view this close and he gives it up
+const PATCH_LINES := ["I'm hit! Cover me!", "¡Me dieron!", "Just a scratch...", "Damn, I'm bleeding!"]
+var bandages := 0
+var patching := false
+# His blood: a wounded stranger leaves a trail, and a bandit who comes across it
+# follows it (see game.trail_lead).
+const TRAIL_LINES := ["Blood... he's hit.", "¡Sangre! Por aquí.", "He's bleeding. Follow it."]
+var trail_t := -1.0          # when the last drop he followed fell
+var trail_look := 0.0
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -183,6 +196,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	opportunist = float(tdata["opportunist"])
 	order_cd = randf_range(3.0, 6.0)
 	sticks = int(tdata["dynamite"])
+	bandages = int(tdata["bandages"])
 	cone = VisionCone.new()
 	cone.enemy = self
 	g.cone_layer.add_child(cone)
@@ -280,6 +294,10 @@ func _perceive(delta: float) -> void:
 			lost_t = 0.0
 		else:
 			lost_t += delta
+			var lead := _blood(delta)
+			if not lead.is_empty():
+				last_known = lead["at"]   # gone to ground, but he's left a trail
+				lost_t = minf(lost_t, 3.0)
 		return
 	if not revealed:
 		# Passing as townsfolk she never starts anything herself: no suspicion, no
@@ -307,6 +325,9 @@ func _perceive(delta: float) -> void:
 			if visibility_of(e.global_position, true, false) > 0.0:
 				known_corpses.append(e)
 				_found_corpse(e)
+	var lead := _blood(delta)
+	if not lead.is_empty():
+		_follow_blood(lead)
 
 
 func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
@@ -389,6 +410,34 @@ func start_investigate(pos: Vector2, run: bool) -> void:
 	running = run
 	_mark("?")
 	path_to(pos)
+
+
+## Every so often: any fresh drops of the stranger's blood in view?
+func _blood(delta: float) -> Dictionary:
+	trail_look -= delta
+	if trail_look > 0.0 or not revealed:
+		return {}
+	trail_look = 0.6
+	var lead: Dictionary = game.trail_lead(self, trail_t)
+	if not lead.is_empty():
+		trail_t = lead["t"]
+	return lead
+
+
+## Off along the trail, drop by drop, to where it's freshest.
+func _follow_blood(lead: Dictionary) -> void:
+	last_known = lead["at"]
+	if st != St.SEARCH:
+		wary = true
+		st = St.SEARCH
+		running = false
+		_mark("?")
+		if shout_t <= 0.0:
+			_say(_line("blood", TRAIL_LINES))
+		_log("follows the blood")
+	search_t = maxf(search_t, 12.0)
+	wait = 0.0
+	path_to(lead["at"])
 
 
 func _found_corpse(e: Enemy) -> void:
@@ -544,6 +593,18 @@ func start_reaction(r: String) -> void:
 			play_action("throw")
 			stick = game.light_stick(self)
 			_say(_line("dynamite", THROW_LINES))
+		"patch":
+			cover_pos = game.find_cover(global_position, threat)
+			patching = cover_pos == Vector2.INF   # nowhere to go: he does it where he is
+			if patching:
+				reaction_t = PATCH_T
+				game.sfx("tear", global_position, -8.0, 0.1)
+			else:
+				path_to(cover_pos)
+				reaction_t = 6.0
+			if shout_t <= 0.0:
+				_say(_line("patch", PATCH_LINES))
+			_log("goes to patch up")
 		"clear":
 			# a lit stick by his boots: run, anywhere out of its reach, then get down
 			reaction_t = clear_for + 0.5
@@ -591,6 +652,8 @@ func _do_reaction(delta: float) -> void:
 			aiming = true
 			if stick and reaction_t <= FOLLOW:
 				_let_fly()
+		"patch":
+			_patch()
 		"clear":
 			if follow_path(run * 1.2):
 				crouched = true
@@ -865,7 +928,7 @@ func unaware() -> bool:
 func can_fire_at(p: Actor) -> bool:
 	if not alive or not revealed or is_staggered() or weapon.is_reloading() or not weapon.can_fire():
 		return false
-	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear"]:
+	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear", "patch"]:
 		return false
 	return absf(facing.angle_to(p.global_position - global_position)) < 1.1
 
@@ -1091,6 +1154,48 @@ func _let_fly() -> void:
 	to += Vector2.from_angle(randf() * TAU) * randf_range(0.0, 16.0) * float(tdata["aim"]) * Vector2(1.0, 0.6)
 	s.throw(to)
 	_log("throws dynamite")
+
+
+## Into cover, then down on one knee winding the bandage on, unless the stranger
+## walks up on him.
+func _patch() -> void:
+	if not patching:
+		if follow_path(run) or reaction_t <= 0.0:
+			patching = true
+			reaction_t = PATCH_T
+			velocity = Vector2.ZERO
+			game.sfx("tear", global_position, -8.0, 0.1)
+		return
+	velocity = Vector2.ZERO
+	crouched = true
+	pose = "bandage"
+	desired = (threat - global_position).normalized()
+	if sees_player and game.player.global_position.distance_to(global_position) < PATCH_ABORT:
+		patching = false
+		reaction_t = 0.0
+		_log("gives up patching")
+		return
+	if reaction_t <= 0.0:
+		hp = mini(max_hp, hp + 1)
+		limp_t = 0.0
+		bleeding = false
+		bandages -= 1
+		patching = false
+		_log("patches up")
+
+
+## Hit and still standing: maybe he breaks off to patch himself up (more likely the
+## more rattled he is; a bold man fights on).
+func _maybe_patch(from: Vector2) -> void:
+	if bandages <= 0 or hp >= max_hp or reaction == "throw":
+		return
+	var chance := float(tdata["patch"]) * (0.6 + 0.6 * fear()) * (1.0 - bold * 0.7)
+	if randf() >= chance:
+		return
+	threat = from
+	pending = "patch"
+	pending_forced = true
+	pending_t = randf_range(0.2, 0.5) * reflex
 
 
 ## A lit stick has come down near him: he'll get clear of it in a moment.
@@ -1428,7 +1533,7 @@ func _leader_orders() -> void:
 	for e in game.enemies:
 		if e == self or not e.alive or e.global_position.distance_to(global_position) > 320.0:
 			continue
-		if e.reaction in ["flee", "dash", "cower", "hide"] or e.weapon.is_reloading():
+		if e.reaction in ["flee", "dash", "cower", "hide", "patch"] or e.weapon.is_reloading():
 			trouble = true
 		elif e.st == St.COMBAT and game.line_of_sight(e.global_position, last_known, false):
 			men.append(e)   # only the ones who can see where he is can shoot at it
@@ -1531,6 +1636,7 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 		_fumble_stick()
 	if alive and blasted:
 		shaken = min(1.0, shaken + 0.4)   # his own side's dynamite: no one to shoot back at
+		_maybe_patch(global_position + from_dir * -40.0)
 		return
 	if alive:
 		on_hurt_alert(shooter)
@@ -1539,3 +1645,4 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 		if st == St.COMBAT:
 			last_known = shooter.global_position
 			lost_t = 0.0
+		_maybe_patch(shooter.global_position)
