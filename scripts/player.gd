@@ -23,6 +23,14 @@ const RUSH_DMG := 3          # a rush's cut: enough for most, not El Jefe
 const BANDAGE_T := 10.0
 const BANDAGE_HEAL := 2
 const WALK := 46.0
+# Dragging the dead (hold E by a body): out of sight round a corner before his
+# friends find him. Slow, both hands on the collar (the guns put away): letting go
+# of E, shooting, crouching, bandaging or a change of gun drops him. He leaves a
+# smear the bandits can follow, and his pool stays where he fell.
+const DRAG_REACH := 20.0
+const DRAG_GRAB := 0.35     # s of holding E before he takes hold (a tap is the knife)
+const DRAG_SPEED := 0.4
+const DRAG_SMEAR := 9.0     # px between smears
 const CROUCH_WALK := 22.0
 
 var weapons := {}
@@ -40,6 +48,9 @@ var knife_target: Enemy = null
 var knife_quiet := false
 var knife_t := -1.0            # time into the lunge; < 0 when not lunging
 var knife_cd := 0.0
+var dragging: Enemy = null
+var grab_t := 0.0
+var smear_at := Vector2.ZERO
 var exposed_t := 0.0           # he's just fired: up over his cover, flash and smoke
 var bandages := 1
 var bandage_t := -1.0          # time into bandaging; < 0 when not at it
@@ -73,10 +84,14 @@ func _physics_process(delta: float) -> void:
 	if playing and not is_staggered():
 		input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = input * (CROUCH_WALK if crouched else WALK) * limp_factor()
+	if dragging:
+		velocity = input * WALK * DRAG_SPEED * limp_factor()
 	if bandage_t >= 0.0:
 		_bandage(delta, input)
 	move_and_slide()
 	_find_knife_target()
+	if dragging:
+		_drag(delta, input)
 
 	var m := get_global_mouse_position()
 	aim_target = game.enemy_under(m)
@@ -84,7 +99,7 @@ func _physics_process(delta: float) -> void:
 	if aim_target:
 		target = aim_target.aim_point()
 	var to := target - global_position
-	if to.length() > 3.0 and playing:
+	if to.length() > 3.0 and playing and not dragging:
 		facing = to.normalized()
 	aim_dist = to.length()
 
@@ -111,6 +126,24 @@ func _physics_process(delta: float) -> void:
 
 
 func _handle_actions() -> void:
+	if dragging:
+		for a in ["fire", "alt", "crouch", "bandage", "weapon_1", "weapon_2", "weapon_3"]:
+			if Input.is_action_just_pressed(a):
+				drop_body()
+				return
+		if not Input.is_action_pressed("knife"):
+			drop_body()
+		return
+	if Input.is_action_pressed("knife") and knife_t < 0.0 and bandage_t < 0.0:
+		grab_t += get_physics_process_delta_time()
+		if grab_t >= DRAG_GRAB:
+			grab_t = 0.0
+			var b: Enemy = game.body_to_drag(global_position, DRAG_REACH)
+			if b:
+				take_body(b)
+				return
+	else:
+		grab_t = 0.0
 	if bandage_t >= 0.0:
 		for a in ["fire", "alt", "reload", "knife", "crouch", "weapon_1", "weapon_2", "weapon_3"]:
 			if Input.is_action_just_pressed(a):
@@ -159,6 +192,42 @@ func take_up(k: String) -> void:
 	owned.sort_custom(func(a, b): return ORDER.find(a) < ORDER.find(b))
 	game.sfx("pickup", null, 0.0)
 	game.sfx("close", null, -6.0)
+
+
+# ------------------------------------------------------------------ the dead
+
+## By the collar: the guns go away and he hauls the body along behind him.
+func take_body(b: Enemy) -> void:
+	dragging = b
+	b.set_meta("dragged", true)
+	crouched = false
+	pose = "haul"
+	smear_at = b.global_position
+	game.sfx("tear", global_position, -14.0, 0.1)
+	game.stats["bodies dragged"] = game.stats.get("bodies dragged", 0) + 1
+
+
+func drop_body() -> void:
+	if dragging and is_instance_valid(dragging):
+		dragging.remove_meta("dragged")
+	dragging = null
+	if pose == "haul":
+		pose = ""
+
+
+func _drag(delta: float, input: Vector2) -> void:
+	var b := dragging
+	if not is_instance_valid(b) or b.has_meta("buried"):
+		drop_body()
+		return
+	if input != Vector2.ZERO:
+		facing = input.normalized()   # walking away with it, the body behind him
+		var behind := global_position - facing * 14.0
+		b.global_position = b.global_position.move_toward(behind, maxf(velocity.length(), 20.0) * delta * 1.5)
+	if b.global_position.distance_to(smear_at) > DRAG_SMEAR:
+		smear_at = b.global_position
+		game.decals.add(smear_at, randf_range(1.2, 2.2), Color(0.38, 0.06, 0.04, 0.5))
+		game.trails.append({"at": smear_at, "t": game.clock, "player": true})   # (the bandits read it like his own blood)
 
 
 # ------------------------------------------------------------------ bandages
@@ -345,6 +414,7 @@ func on_fired(shake: float) -> void:
 
 func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 	stop_bandage()
+	drop_body()   # (a round in him: he lets go)
 	super(dmg, from_dir, shooter)
 	if alive:
 		game.on_player_hurt()

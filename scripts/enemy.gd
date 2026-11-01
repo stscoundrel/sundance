@@ -53,6 +53,7 @@ var running := false
 var cover_pos := Vector2.INF
 var sees_player := false
 var known_corpses: Array[Enemy] = []
+var pool_look := 0.0
 var desired := Vector2.DOWN
 var repath_t := 0.0
 var search_t := 0.0
@@ -380,6 +381,10 @@ func _perceive(delta: float) -> void:
 			if visibility_of(e.global_position, true, false) > 0.0:
 				known_corpses.append(e)
 				_found_corpse(e)
+	pool_look -= delta
+	if pool_look <= 0.0:
+		pool_look = 0.5
+		_look_at_pools()
 	var lead := _blood(delta)
 	if not lead.is_empty():
 		_follow_blood(lead)
@@ -414,6 +419,11 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 		"enemy_shot":
 			if st != St.COMBAT and source is Enemy:
 				enter_combat(source.last_known, false, false)
+		"scream":   # a townsman crying murder at what the stranger's doing, there
+			if st != St.COMBAT and revealed:
+				wary = true
+				suspicion = maxf(suspicion, 0.7)
+				start_investigate(pos, true)
 		"step":
 			if not revealed:
 				return   # footsteps are no business of a townsman's
@@ -551,6 +561,24 @@ func _follow_blood(lead: Dictionary) -> void:
 	search_t = maxf(search_t, 12.0)
 	wait = 0.0
 	path_to(lead["at"])
+
+
+## A pool of blood where a man fell, and nobody lying in it: someone's moved him.
+## Not the alarm a body is, but he goes and looks.
+func _look_at_pools() -> void:
+	for pl in game.blood_pools:
+		var b: Enemy = pl["body"]
+		if self in pl["known"] or b == self or not is_instance_valid(b) or b.has_meta("buried") \
+				or b.global_position.distance_to(pl["at"]) < 40.0:
+			continue
+		if visibility_of(pl["at"], true, false) > 0.0:
+			pl["known"].append(self)
+			if st != St.COMBAT and st != St.SEARCH:
+				wary = true
+				suspicion = maxf(suspicion, 0.5)
+				start_investigate(pl["at"], false)
+				_mark("?")
+				_log("finds a pool")
 
 
 func _found_corpse(e: Enemy) -> void:

@@ -77,6 +77,21 @@ one under the cursor if he's in reach, else the nearest; never through a wall):
 `tests/test_knife.gd` covers both, the witness, and the ready, reloading, tough
 and out-of-reach cases.
 
+**Moving the dead** (hold E by a body). Only the dead: a downed man is still alive
+and would call out, so the knife comes first. A tap of E is the knife; held a third
+of a second by a body, the stranger takes him by the collar (the guns put away, the
+rescuers' "haul" pose) and hauls him along behind at 40% of a walk. Letting go of E,
+reaching for a gun, crouching, bandaging or being hit drops him; no shot goes off
+with his hands full. There are no special hiding places: round a corner, out of the
+bandits' sight, is hidden. But it leaves evidence. The pool stays where the man
+fell, and a bandit who sees a pool with nobody in it gets suspicious and goes to
+look (not the full alarm a body brings); the body leaves a smear the bandits read
+as the stranger's own trail and follow (the sweepers clean it up later). Townsfolk
+who see him at it mostly (70%) cry murder ("¡Asesino!"), which bandits within ~340
+px of him hear and come to see; the rest, no friends of the gang, slip off indoors
+without a word. The undertaker won't claim a body the stranger has hold of.
+`tests/test_drag.gd`.
+
 **Loadout and loot.** After the title card the stranger chooses his irons: any of
 the Colt, the coach gun and the Winchester, at least one (1 2 3 or a click to take
 or put back; Enter or "ride in"; all three are allowed for now, for testing, and

@@ -77,6 +77,7 @@ const TRAIL_FRESH := 45.0   # s a drop stays a lead worth following
 const TRAIL_SEE := 170.0    # px: a bandit notices a drop this close (in view)
 const TRAIL_CLOSE := 70.0   # px: following a trail, he picks up the next drop this close anywhere round him
 var trails: Array[Dictionary] = []   # {at, t, player}
+var blood_pools: Array[Dictionary] = []   # where bandits fell: {at, body, known (who's seen it bare)}
 # Things gunfire breaks that are no cover at all: window panes, porch lanterns,
 # tables of bottles, chairs, clay jars. Each hit moves one a look further gone.
 const FRAGILE_R := {"olla": 5.0, "chair": 5.0, "table": 7.0, "lantern": 4.0, "coop": 9.0, "hencrate": 6.0,
@@ -1180,7 +1181,7 @@ func claim_body(by: Civilian) -> Enemy:
 	var best: Enemy = null
 	var best_score := INF
 	for e in enemies:
-		if e.alive or e.downed or e.dying() or e.has_meta("buried") or _held(e, "claimed_by"):
+		if e.alive or e.downed or e.dying() or e.has_meta("buried") or _held(e, "claimed_by") or e.has_meta("dragged"):
 			continue
 		var score := by.global_position.distance_to(e.global_position)
 		if not e.has_meta("blessed"):
@@ -1222,6 +1223,20 @@ func _held(a: Actor, key: String) -> bool:
 
 
 ## The undertaker already has his tape on him, or has him in tow.
+## A dead man within reach for the stranger to haul off (not one being buried).
+func body_to_drag(from: Vector2, reach: float) -> Enemy:
+	var best: Enemy = null
+	var best_d := reach
+	for e in enemies:
+		if e.alive or e.downed or e.dying() or e.has_meta("buried") or in_hand(e):
+			continue
+		var d := e.global_position.distance_to(from)
+		if d < best_d:
+			best_d = d
+			best = e
+	return best
+
+
 func in_hand(a: Actor) -> bool:
 	if not a.has_meta("claimed_by"):
 		return false
@@ -1261,6 +1276,8 @@ func lay_pool(a: Actor) -> void:
 	s.scale = Vector2.ONE * tex_scale * 0.4
 	s.modulate.a = 0.0
 	decals.add_child(s)
+	if a is Enemy:
+		blood_pools.append({"at": a.global_position, "body": a, "known": []})
 	var land := a.anim("full/" + a._death)
 	var t: float = land["frames"][0].size() / float(land["fps"]) * 0.8
 	var tw := create_tween()

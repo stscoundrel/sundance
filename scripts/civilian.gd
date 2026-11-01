@@ -42,6 +42,9 @@ const FOV := deg_to_rad(65.0)
 const CLOSE := 110.0     # gunfire this close frightens him even unseen
 const HEAR := 320.0      # and this far off if he can see where it came from
 const LOOK := 2.5        # seconds a snitch stares at the stranger before he runs to tell
+const DRAG_SEE := 220.0   # px: close enough to see what the stranger's dragging
+const SCREAM := 0.7       # chance he cries murder (else he hides)
+const SCREAM_LINES := ["¡Asesino!", "Murder! Murder!", "¡Socorro!", "He's got a dead man!"]
 const GLANCE := 0.9      # how long anyone else looks before averting his eyes
 const FLEE_LINES := ["Lord help us!", "¡Corran!", "Get inside!"]
 const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
@@ -195,6 +198,20 @@ func near_miss(from: Vector2) -> void:
 	alarm(from, true)
 
 
+## The stranger hauling a dead man off: most cry murder (and the bandits hear);
+## some, no friends of the gang, just get indoors and keep their mouths shut.
+func _saw_drag(p: Player) -> void:
+	set_meta("saw_drag", true)
+	if randf() < SCREAM:
+		_say(_line("scream", SCREAM_LINES))
+		game.make_noise(p.global_position, 340.0, "scream", self)
+		game.stats["screams"] = game.stats.get("screams", 0) + 1
+		alarm(p.global_position, true)
+	else:
+		game.stats["looks away"] = game.stats.get("looks away", 0) + 1
+		alarm(p.global_position, false)   # (off indoors, without a word)
+
+
 func witness_death(at: Vector2) -> void:
 	if alive and global_position.distance_to(at) < 200.0 and game.line_of_sight(global_position, at, false):
 		alarm(at, true)
@@ -335,6 +352,9 @@ func _perceive(delta: float) -> void:
 	if sees(p.global_position):
 		saw_t += delta
 		seen_at = p.global_position
+		if p.dragging and not has_meta("saw_drag") and global_position.distance_to(p.global_position) < DRAG_SEE:
+			_saw_drag(p)
+			return
 		var to_him := (p.global_position - global_position).normalized()
 		if snitch:
 			# the tell: he doesn't look away, and he starts drifting off to the bandits

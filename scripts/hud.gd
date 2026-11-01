@@ -349,7 +349,7 @@ func _draw_title() -> void:
 	_text(Vector2(0, 100), "~ un western all'italiana ~", 10, Color(0.85, 0.7, 0.5, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	_text(Vector2(0, 196), "%s.  %d bandits.  One stranger." % [town, game.enemies.size()], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	var lines := [
-		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   E knife   B bandage   1 2 3 guns",
+		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   E knife (hold: drag a body)   B bandage   1 2 3 guns",
 		"RMB: fan the Colt's hammer  /  fire both barrels of the coach gun",
 		"Stay out of their sight. Crouch behind cover. Kill them all.",
 	]
