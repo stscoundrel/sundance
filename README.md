@@ -56,6 +56,8 @@ godot --headless --path . --fixed-fps 60 -s tests/test_loadout.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_reinforcements.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_knife.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_drag.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_yard.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_corners.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_cover.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_fragile.gd
@@ -71,6 +73,6 @@ godot --headless --path . --fixed-fps 60 -s tests/test_perf.gd
 godot --path . -s tests/profile.gd                        # where a big fight's frame goes (also --headless)
 ```
 
-Flags go after `--`: `--skip-title` (no title or loadout screen; rides in with all three guns, or `--guns=colt,rifle`), `--at=GX,GY` (start tile), `--bot` (autopilot that shoots
+Flags go after `--`: `--skip-title` (no title or loadout screen; rides in with all three guns, or `--guns=colt,rifle`), `--level=ID` (a level from `data/levels.json`, e.g. `san_miguel_35`), `--at=GX,GY` (start tile), `--bot` (autopilot that shoots
 and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--alert` (trigger the close-up), `--rattle` (near-miss every bandit once), `--freeze` (no title, bandits stand still), `--shot=PATH --shot-time=SECONDS` (save a
 screenshot and quit).

@@ -20,6 +20,30 @@ Mode **Eliminate all enemies**. The player starts at the edge of town.
 Bandits patrol and guard. Pick them off quietly or start a shootout.
 Win when every bandit is dead, lose when the hero dies. Restart instantly.
 
+## Levels
+
+After the title card comes the level picker ("Where to, stranger?"; up/down and
+Enter, a number or a click), then the loadout. The levels are listed in
+`data/levels.json`, each a map (a town file) and, optionally, a **count**: with one,
+the gang is shuffled. Each map carries **guard posts** (San Miguel has 64, written by
+`tools/make_town.py`: its own gang's 25 and more spread along the streets, alleys
+and yards, none in sight of where the stranger rides in), tagged for who suits them:
+`boss`, `porch` (those passing as townsfolk), `lookout` (riflemen), `street`,
+`alley`, `yard`. A shuffled level deals `count` men out over them with the count as
+the seed, so the same count is always the same town (adding posts reshuffles them,
+which is fine). The mix is the map's own gang scaled to the count, always one El
+Jefe; each man goes to a post of his kind, kept six tiles from the others where the
+posts allow it, and posts on blocked ground are passed over. A smaller or bigger gang
+scales its saloon reserve (2 to 8) and the size it bands into a posse (3 to 7). The
+hand-drawn San Miguel stays first in the list, unshuffled: the tests and the tuning
+lean on it. Picking another level reloads the scene with it, straight to the guns;
+after a win or a loss, Enter goes back to the picker with the same level ready. A
+map can do without streets (the posse rides between guard posts), townsfolk, a
+reserve, a boot hill (no burials) or holdouts (no falling back), and can name its own
+baked ground; the hidden "Test yard" proves it. `tests/test_levels.gd` checks the
+posts, the deal and its determinism, the scaling and the picker; `tests/test_yard.gd`
+plays the bare map to a win.
+
 ## Controls
 
 | Input | Action |

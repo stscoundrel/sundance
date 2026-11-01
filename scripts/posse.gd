@@ -34,9 +34,13 @@ func _init(g: Node) -> void:
 	_build_points()
 
 
-## Route points along the middle of every street and the plaza.
+## Route points along the middle of every street and the plaza (a town without
+## streets drawn: its guard posts).
 func _build_points() -> void:
-	for r in game.level["streets"]:
+	if game.level.get("streets", []).is_empty():
+		for p in game.level.get("posts", []):
+			points.append(Iso.to_screen(Vector2(p["x"], p["y"])))
+	for r in game.level.get("streets", []):
 		var a := Vector2(r[0], r[1])
 		var b := Vector2(r[2], r[3])
 		var mid := (a + b) * 0.5

@@ -105,6 +105,8 @@ func _draw() -> void:
 		_draw_title()
 	if game.state == "loadout":
 		_draw_loadout(p)
+	elif game.state == "levels":
+		_draw_levels()
 
 
 ## "!" / "?" markers, suspicion bars and shouted lines above the bandits' (and
@@ -287,6 +289,42 @@ func _draw_message() -> void:
 	draw_rect(Rect2(0, 140, 640, 70), Color(0, 0, 0, 0.6 * a))
 	_text(Vector2(0, 180), message, 26, Color(0.95, 0.75, 0.35, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	_text(Vector2(0, 200), sub, 8, Color(INK, a), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+
+
+# ------------------------------------------------------------------ levels
+
+const ROW := Rect2(150, 104, 340, 30)
+
+
+func _row(i: int) -> Rect2:
+	return Rect2(ROW.position + Vector2(0, i * (ROW.size.y + 6)), ROW.size)
+
+
+## Which level row is under the cursor on the picker, or -1.
+func level_hit(pos: Vector2) -> int:
+	for i in game.levels.size():
+		if _row(i).has_point(pos):
+			return i
+	return -1
+
+
+func _draw_levels() -> void:
+	draw_rect(Rect2(0, 0, 640, 360), Color(0.03, 0.02, 0.02, 0.86))
+	_text(Vector2(0, 62), "WHERE TO, STRANGER?", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	_text(Vector2(0, 84), "Pick a town. A shuffled one deals its gang out afresh, the same for the same count.", 8,
+		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	var mouse := get_local_mouse_position()
+	var over := level_hit(mouse)
+	for i in game.levels.size():
+		var l: Dictionary = game.levels[i]
+		var r := _row(i)
+		var on: bool = i == game.level_pick or i == over
+		draw_rect(r, Color(0.16, 0.1, 0.07, 0.95) if on else PANEL)
+		draw_rect(r, BRASS if on else Color(0.3, 0.22, 0.15), false, 2.0 if i == game.level_pick else 1.0)
+		_text(r.position + Vector2(10, 13), "[%d]  %s" % [i + 1, l["name"]], 12, Color(0.95, 0.75, 0.35) if on else INK, font)
+		_text(r.position + Vector2(36, 25), l.get("note", ""), 8, Color(INK, 0.85 if on else 0.55))
+	_text(Vector2(0, 340), "up / down and Enter, a number, or a click", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	draw_colored_polygon(PackedVector2Array([mouse, mouse + Vector2(0, 11), mouse + Vector2(3, 8), mouse + Vector2(7, 8)]), BRASS)
 
 
 # ------------------------------------------------------------------ loadout

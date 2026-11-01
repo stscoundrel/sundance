@@ -2,7 +2,15 @@ extends Node2D
 ## Builds the town from data/town.json and assets/meta.json, owns the shared systems
 ## (physics queries, pathfinding, noise, bullets, effects, sound) and the match flow.
 
-const LEVEL_PATH := "res://data/town.json"
+const LEVELS_PATH := "res://data/levels.json"
+# The level picker's choice, kept over the scene reload that loads it; and where
+# that reload lands ("loadout" after a pick, "levels" after a restart).
+static var chosen_level := ""
+static var open_on := ""
+var levels: Array = []          # the ones the picker shows
+var level_entry: Dictionary = {}
+var level_pick := 0             # the picker's cursor
+var posse_size := Posse.SIZE    # how few left before they band together (fewer, in a smaller gang)
 const META_PATH := "res://assets/meta.json"
 const ENEMIES_PATH := "res://data/enemies.json"
 const POST_SHADER := preload("res://shaders/post.gdshader")
@@ -158,8 +166,8 @@ func _ready() -> void:
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
-	level = _load_json(LEVEL_PATH)
 	enemy_data = _load_json(ENEMIES_PATH)
+	_load_level()
 	size = int(level["size"])
 	tex_scale = float(meta.get("tex_scale", 1.0))
 	_build_world()
@@ -184,6 +192,111 @@ func _ready() -> void:
 		begin()
 	elif _args.has("freeze"):
 		hud.hide_title()   # debug: look around town with everyone standing still
+	elif open_on == "loadout":
+		_to_loadout()
+	elif open_on == "levels":
+		_to_levels()
+	open_on = ""
+
+
+## The level: the one the tests ask for, or named on the command line (--level=id),
+## or picked last, or the first. A shuffled one deals its gang out over the map's
+## guard posts, and a smaller or larger gang has a reserve and a posse to match.
+func _load_level() -> void:
+	var all: Array = _load_json(LEVELS_PATH)["levels"]
+	levels = all.filter(func(l): return not l.get("hidden", false))
+	var want: String = Engine.get_meta("level", _args.get("level", chosen_level))
+	level_entry = all[0]
+	for l in all:
+		if l["id"] == want:
+			level_entry = l
+	level_pick = maxi(0, levels.find(level_entry))
+	level = _load_json(level_entry["map"])
+	if level_entry.has("count"):   # (dealt out once the town's built: see _spawn_actors)
+		var n := int(level_entry["count"])
+		var gang: Array = level["enemies"]
+		posse_size = clampi(roundi(Posse.SIZE * n / float(gang.size())), 3, Posse.SIZE)
+		if level.has("reserve"):
+			var squad: Array = level["reserve"]["squad"]
+			var k := clampi(roundi(squad.size() * n / float(gang.size())), 2, 8)
+			level["reserve"]["squad"] = range(k).map(func(i): return squad[i % squad.size()])
+
+
+## `n` bandits on the map's guard posts, the count the seed: the same count, the
+## same town. The mix of men is the map's own gang scaled to `n` (one El Jefe,
+## always), each put where he suits (the boss at the boss's post, those passing as
+## townsfolk on a porch, riflemen with a view), and kept apart as far as the posts allow.
+static func shuffled_gang(lv: Dictionary, n: int, usable := Callable()) -> Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = n
+	var classic: Array = lv["enemies"]
+	var share := {}
+	for e in classic:
+		share[e["kind"]] = share.get(e["kind"], 0) + 1
+	var kinds: Array = []
+	var rest: Array = []   # [fraction left over, kind]
+	for k in share:
+		var want: float = share[k] * n / float(classic.size())
+		if k == "jefe":
+			want = 1.0
+		for i in int(want):
+			kinds.append(k)
+		rest.append([want - int(want) + rng.randf() * 0.01, k])
+	rest.sort_custom(func(a, b): return a[0] > b[0])
+	var i := 0
+	while kinds.size() < n:
+		if rest[i % rest.size()][1] != "jefe":
+			kinds.append(rest[i % rest.size()][1])
+		i += 1
+	kinds = kinds.slice(0, n)
+	var order := {"boss": 0, "porch": 1, "lookout": 2}
+	kinds.sort_custom(func(a, b): return order.get(_post_tag(a), 3) < order.get(_post_tag(b), 3))
+	var posts: Array = lv["posts"].filter(func(p): return not usable.is_valid() or usable.call(p))
+	for j in range(posts.size() - 1, 0, -1):   # shuffled by the count's own dice
+		var k := rng.randi_range(0, j)
+		var t = posts[j]
+		posts[j] = posts[k]
+		posts[k] = t
+	var out: Array = []
+	for kind in kinds:
+		var tag := _post_tag(kind)
+		var pick: Dictionary = {}
+		for spacing in [6.0, 4.0, 2.0, 0.0]:
+			for pass_ in 2:   # a post of his own kind first, then any (but the boss's or a porch)
+				for p in posts:
+					var fits: bool = p["tag"] == tag if pass_ == 0 else not p["tag"] in ["boss", "porch"]
+					if fits and out.all(func(q): return Vector2(q["x"], q["y"]).distance_to(Vector2(p["x"], p["y"])) >= spacing):
+						pick = p
+						break
+				if not pick.is_empty():
+					break
+			if not pick.is_empty():
+				break
+		if pick.is_empty():
+			break   # (more bandits than posts)
+		posts.erase(pick)
+		var e: Dictionary = pick.duplicate()
+		e.erase("tag")
+		e["kind"] = kind
+		out.append(e)
+	return out
+
+
+## A guard post a man can stand at (and walk, if it's a patrol): on open ground.
+func usable_post(p: Dictionary) -> bool:
+	var pts: Array = [[p["x"], p["y"]]] + p.get("patrol", [])
+	return pts.all(func(q): return is_free(Iso.to_screen(Vector2(q[0], q[1]))))
+
+
+static func _post_tag(kind: String) -> String:
+	match kind:
+		"jefe":
+			return "boss"
+		"gambler", "saloon_girl":
+			return "porch"
+		"rifleman", "poacher":
+			return "lookout"
+	return "street"
 
 
 ## Every texture the asset meta names, loaded now rather than the first time it's
@@ -268,13 +381,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().quit()
 	elif state == "title" and (event is InputEventMouseButton or event is InputEventKey) and event.is_pressed():
 		if Time.get_ticks_msec() - start_time > 600:
-			_to_loadout()
+			_to_levels()
 			get_viewport().set_input_as_handled()
+	elif state == "levels" and event.is_pressed():
+		_levels_input(event)
+		get_viewport().set_input_as_handled()
 	elif state == "loadout" and event.is_pressed():
 		_loadout_input(event)
 		get_viewport().set_input_as_handled()
 	elif (state == "won" or state == "lost") and event.is_action_pressed("restart"):
 		Engine.time_scale = 1.0
+		open_on = "levels"   # (the same level under the cursor: Enter again to ride back in)
 		get_tree().reload_current_scene()
 	elif event is InputEventMouseButton and event.pressed and player and state == "play":
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -284,7 +401,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func begin() -> void:
-	if state != "title" and state != "loadout":
+	if state != "title" and state != "loadout" and state != "levels":
 		return
 	if not start_guns.is_empty():
 		player.arm(start_guns)
@@ -292,7 +409,49 @@ func begin() -> void:
 	hud.hide_title()
 
 
-## The title card gives way to choosing his guns.
+## The title card gives way to choosing where to ride.
+func _to_levels() -> void:
+	state = "levels"
+	hud.hide_title()
+
+
+## Up and down (or W S) move the cursor, 1-9 or a click picks, Enter or Space
+## takes the one under the cursor.
+func _levels_input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		match event.keycode:
+			KEY_UP, KEY_W:
+				level_pick = posmod(level_pick - 1, levels.size())
+				sfx("close", null, -14.0)
+			KEY_DOWN, KEY_S:
+				level_pick = posmod(level_pick + 1, levels.size())
+				sfx("close", null, -14.0)
+			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
+				pick_level(level_pick)
+			_:
+				var i: int = event.keycode - KEY_1
+				if i >= 0 and i < mini(9, levels.size()):
+					pick_level(i)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		var i: int = hud.level_hit(hud.get_local_mouse_position())
+		if i >= 0:
+			pick_level(i)
+
+
+## This one: on to the guns if it's the town already loaded, else load it (the
+## scene comes back up at the loadout).
+func pick_level(i: int) -> void:
+	var l: Dictionary = levels[i]
+	sfx("close", null, -8.0)
+	if l["id"] == level_entry["id"]:
+		_to_loadout()
+		return
+	chosen_level = l["id"]
+	open_on = "loadout"
+	get_tree().reload_current_scene()
+
+
+## The title card (or the level picker) gives way to choosing his guns.
 func _to_loadout() -> void:
 	state = "loadout"
 	hud.hide_title()
@@ -338,9 +497,10 @@ func _ride_in() -> void:
 
 func _build_world() -> void:
 	var ground := Sprite2D.new()
-	ground.texture = tex(meta["ground"]["file"])
+	var gm: Dictionary = meta.get(level.get("ground", "ground"), meta["ground"])   # (a map may bake its own)
+	ground.texture = tex(gm["file"])
 	ground.centered = false
-	ground.position = Vector2(meta["ground"]["origin"][0], meta["ground"]["origin"][1])
+	ground.position = Vector2(gm["origin"][0], gm["origin"][1])
 	ground.scale = Vector2.ONE * tex_scale
 	ground.z_index = -20
 	add_child(ground)
@@ -546,6 +706,8 @@ func _spawn_actors() -> void:
 		var xy: PackedStringArray = _args["at"].split(",")
 		start = Vector2(float(xy[0]), float(xy[1]))
 	player.setup(self, Iso.to_screen(start))
+	if level_entry.has("count"):
+		level["enemies"] = shuffled_gang(level, int(level_entry["count"]), usable_post)
 	for e in level["enemies"]:
 		var patrol := PackedVector2Array()
 		if e.has("patrol"):
@@ -616,7 +778,7 @@ func _process(delta: float) -> void:
 	if state == "title":
 		title_t += delta   # frame time, not the wall clock: a slow load doesn't skip the title
 		if title_t > 5.5 and not _args.has("freeze"):
-			_to_loadout()
+			_to_levels()
 	if closeup_left > 0.0:
 		closeup_left -= delta / maxf(Engine.time_scale, 0.01)
 		if closeup_left <= 0.0:
@@ -1180,6 +1342,8 @@ func quiet_for() -> float:
 func claim_body(by: Civilian) -> Enemy:
 	var best: Enemy = null
 	var best_score := INF
+	if level.get("boothills", []).is_empty():
+		return null   # (a town with no boot hill: nowhere to take them)
 	for e in enemies:
 		if e.alive or e.downed or e.dying() or e.has_meta("buried") or _held(e, "claimed_by") or e.has_meta("dragged"):
 			continue
@@ -1385,7 +1549,7 @@ func _on_enemy_died(e: Actor) -> void:
 				g["ammo"] = p   # it goes with his gun
 				g["ammo_kind"] = ammo
 				break
-	if posse == null and alive_enemies() <= Posse.SIZE and alive_enemies() > 0:
+	if posse == null and alive_enemies() <= posse_size and alive_enemies() > 0:
 		posse = Posse.new(self)
 		posse.form()
 	var coming: bool = den.has("door") and den["rallied"] and not den["squad"].is_empty()
@@ -2228,7 +2392,7 @@ func _gang_alarm(delta: float) -> void:
 	for e in far:
 		e.get_uneasy(seen_pos)
 	# losing badly: the rest fall back to a holdout away from the fight
-	if fallen >= maxi(3, ceili(enemies.size() * FORTIFY_LOSS)) and level.has("holdouts"):
+	if fallen >= maxi(3, ceili(enemies.size() * FORTIFY_LOSS)) and not level.get("holdouts", []).is_empty():
 		if holdout.is_empty():
 			_pick_holdout()
 		for e in far:

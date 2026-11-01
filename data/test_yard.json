@@ -1,0 +1,128 @@
+{
+ "name": "Test yard",
+ "size": 24,
+ "objects": [
+  {
+   "type": "adobe_a",
+   "x": 4,
+   "y": 4
+  },
+  {
+   "type": "adobe_b",
+   "x": 14,
+   "y": 5
+  },
+  {
+   "type": "crate",
+   "x": 10,
+   "y": 12
+  },
+  {
+   "type": "barrel",
+   "x": 12.5,
+   "y": 14
+  },
+  {
+   "type": "wagon",
+   "x": 6,
+   "y": 15
+  },
+  {
+   "type": "trough",
+   "x": 15,
+   "y": 15
+  }
+ ],
+ "player": {
+  "x": 21.5,
+  "y": 21.5
+ },
+ "enemies": [
+  {
+   "kind": "jefe",
+   "x": 9,
+   "y": 10,
+   "facing": 90
+  },
+  {
+   "kind": "cowboy",
+   "x": 3,
+   "y": 12,
+   "patrol": [
+    [
+     3,
+     12
+    ],
+    [
+     3,
+     20
+    ]
+   ]
+  },
+  {
+   "kind": "bandido",
+   "x": 12,
+   "y": 3,
+   "facing": 45
+  },
+  {
+   "kind": "rifleman",
+   "x": 19,
+   "y": 11,
+   "facing": 180
+  }
+ ],
+ "posts": [
+  {
+   "x": 9,
+   "y": 10,
+   "tag": "boss",
+   "facing": 90
+  },
+  {
+   "x": 3,
+   "y": 12,
+   "tag": "street",
+   "patrol": [
+    [
+     3,
+     12
+    ],
+    [
+     3,
+     20
+    ]
+   ]
+  },
+  {
+   "x": 12,
+   "y": 3,
+   "tag": "yard",
+   "facing": 45
+  },
+  {
+   "x": 19,
+   "y": 11,
+   "tag": "lookout",
+   "facing": 180
+  },
+  {
+   "x": 11,
+   "y": 19,
+   "tag": "street",
+   "facing": 0
+  },
+  {
+   "x": 2.5,
+   "y": 3,
+   "tag": "yard",
+   "facing": 45
+  },
+  {
+   "x": 20,
+   "y": 3,
+   "tag": "yard",
+   "facing": 135
+  }
+ ]
+}
