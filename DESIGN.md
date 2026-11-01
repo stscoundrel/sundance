@@ -173,7 +173,8 @@ carried, which you collect by walking over them.
   different side and no more than ~1.8x the straight distance.
   `tests/test_flank.gd` checks it (`NO_FLANK=1` runs the control: about half the
   groups go single file without flanking, about a quarter with it).
-- **The posse**: once five or fewer bandits are left, the survivors band together
+- **The posse**: once seven or fewer bandits are left (a band of seven: more than
+  one man's six shots), the survivors band together
   instead of waiting at their posts at the far end of town. The steadiest man (by
   rank, then whoever is nearest the others) calls "To me, boys!" and they gather
   on him; anyone mid-fight or mid-search finishes first and then falls in. They set

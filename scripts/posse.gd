@@ -6,7 +6,7 @@ extends RefCounted
 ## others keep their places around him, each watching his own side. A fight breaks
 ## the formation as usual; afterwards each man falls back in on the leader.
 
-const SIZE := 5
+const SIZE := 7              # a band of seven: too many for one man's six shots
 const GATHER_MAX := 30.0   # set off with whoever has arrived by then
 const TOGETHER := 70.0     # gathered: everyone this close to the leader
 const LAG := 110.0         # the leader waits for anyone further behind than this
@@ -14,8 +14,8 @@ const WAIT_MAX := 6.0      # but not for ever: then he moves on and they catch u
 const SPACING := 8.0       # tiles between route points along a street
 # Formation slots around the leader: [metres back, metres to the side] in his
 # frame, and the bearing each man keeps watch on when they stop.
-const SLOTS := [[1.6, 1.3], [1.6, -1.3], [3.2, 0.0], [3.0, 2.4], [3.0, -2.4]]
-const WATCH := [0.9, -0.9, PI, 2.0, -2.0]
+const SLOTS := [[1.6, 1.3], [1.6, -1.3], [3.2, 0.0], [3.0, 2.4], [3.0, -2.4], [4.6, 1.3], [4.6, -1.3]]
+const WATCH := [0.9, -0.9, PI, 2.0, -2.0, 2.6, -2.6]
 const RALLY_LINES := ["¡A mí, muchachos!", "To me, boys!", "Stick together!", "¡Juntos!"]
 
 var game: Node

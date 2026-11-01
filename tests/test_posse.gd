@@ -6,7 +6,7 @@ extends SceneTree
 ## the fight:
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_posse.gd
 
-const KEEP := [0, 6, 12, 17, 23, 20]   # placements left alive: spread over the map
+const KEEP := [0, 6, 9, 12, 15, 17, 20, 23]   # placements left alive: spread over the map
 const LENGTH := 300.0
 
 var game: Node
@@ -48,9 +48,9 @@ func _process(delta: float) -> bool:
 			else:
 				game.enemies[i].queue_free()
 		game.enemies = keep
-		# the sixth goes down, which leaves five: that forms the posse
-		keep[5].die(Vector2.RIGHT)
-		check(game.posse != null and game.posse.members.size() == 5, "five left should form a posse")
+		# the eighth goes down, which leaves seven: that forms the posse
+		keep[7].die(Vector2.RIGHT)
+		check(game.posse != null and game.posse.members.size() == 7, "seven left should form a posse")
 		if game.posse == null:
 			quit(1)
 			return true
@@ -77,7 +77,7 @@ func _process(delta: float) -> bool:
 	var all_posse := true
 	for e in p.members:
 		if e.alive:
-			fought = fought or e.st == Enemy.St.COMBAT
+			fought = fought or (e.st == Enemy.St.COMBAT and clock >= SHOW_AT)
 			all_posse = all_posse and e.st == Enemy.St.POSSE
 	if fought and all_posse and regrouped_at < 0.0:
 		regrouped_at = clock
