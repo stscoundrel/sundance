@@ -1391,6 +1391,18 @@
    "facing": 0
   },
   {
+   "kind": "sister",
+   "x": 30.4,
+   "y": 9.4,
+   "facing": 0
+  },
+  {
+   "kind": "barber",
+   "x": 13.5,
+   "y": 28.8,
+   "facing": 60
+  },
+  {
    "kind": "undertaker",
    "x": 56.4,
    "y": 30.6,

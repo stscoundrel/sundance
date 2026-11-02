@@ -32,9 +32,20 @@ extends Actor
 ## sets his own tables and chairs back up, bottles and all. Sweepers ("sweeper")
 ## sweep blood, glass and scorch into the dirt, the stranger's trail with it. Hen
 ## women ("henwife") shoo strays back home to the coops.
+## The sister ("role": "sister", placed "indoors" in the chapel) fears no one either.
+## At gunfire near the chapel she comes out to the door and calls the townsfolk in,
+## and those running nearby make for her door. If the padre is shot she runs out to
+## him, whatever's flying, and drags him in by the shoulders; what became of him
+## nobody learns. With him gone she blesses the dead in his place, once it's quiet.
+## The barber-surgeon ("role": "barber") minds his porch. Only gunfire close by sends
+## him in, and he's back out once it's stopped near his shop, the quiet elsewhere or
+## not. The stranger wounded within sight of his door, and nobody shooting at him:
+## out he comes and binds him up where he stands (once a level). He'll do the same
+## for any downed man near his shop, the gang's included: he gets paid either way.
 
 enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
-	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY, TO_FIX, FIX, TO_SWEEP, SWEEP, HERD }
+	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY, TO_FIX, FIX, TO_SWEEP, SWEEP, HERD,
+	SHELTER, TO_PADRE, CARRY_IN, TO_PATIENT, TREAT, TO_DOWNED, TEND }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -52,7 +63,7 @@ const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
 const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios mío!"]
 const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS, St.TO_GRAVE, St.MOURN, St.TO_GUN,
 	St.PICK, St.HAUL, St.TO_STUMP, St.ORATE, St.TO_SCAR, St.SURVEY, St.TO_FIX, St.FIX, St.TO_SWEEP, St.SWEEP,
-	St.HERD]
+	St.HERD, St.SHELTER, St.TO_PADRE, St.CARRY_IN, St.TO_PATIENT, St.TREAT, St.TO_DOWNED, St.TEND]
 const MEASURE_T := 3.5
 const BLESS_T := 4.0
 const MOURN_T := Vector2(20.0, 32.0)
@@ -67,6 +78,19 @@ const TOUR := 4            # wrecks a tour, then home
 const FIX_T := 12.0        # s at a broken crate, barrel, wagon...
 const MEND_T := 6.0        # s at a chair, table or coop
 const SWEEP_T := 4.0       # s sweeping a spot
+const GUNFIRE := ["shot", "enemy_shot", "blast"]
+const SHELTER_EAR := 320.0 # px from the chapel door: gunfire this near brings the sister out to it
+const SHELTER_FOR := 10.0  # s without a shot near it and she's back inside
+const NEAR_FIRE := 220.0   # px: gunfire this close to the barber, or his door, sends him in
+const SAFE_T := 6.0        # s since the last of it before he'll go out to anyone
+const BACK_T := 12.0       # s, and he's back out on his porch anyway
+const CARE_NEAR := 120.0   # px from his door: the stranger close enough for him to see to
+const THREAT_NEAR := 300.0 # px: a bandit fighting the stranger within this, in sight of him, and he stays put
+const TREAT_T := 5.0       # s binding the stranger up (his own bandage takes 10)
+const TEND_T := 8.0        # s over a downed man
+const TEND_NEAR := 180.0   # px from his door: downed men he'll go out to
+
+static var rng := RandomNumberGenerator.new()   # the sister's and the barber's dice (the town's stay as seeded)
 
 var kind := "townsman"
 var tdata: Dictionary
@@ -125,21 +149,31 @@ var trail := Vector2.ZERO    # where the last smear went down
 var shout := ""
 var shout_t := 0.0
 var t := 0.0
+var dice: RandomNumberGenerator   # null: the global dice, as the town always had
+var sister := false
+var barber := false
+var near_shot := -100.0      # game.clock of the last gunfire near her door, or his shop
+var patient: Actor           # the barber's: the stranger, or a downed man
+var treated := false         # the stranger has had his once
 
 
 func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {}) -> void:
 	setup_body(g, pos)
 	kind = k
 	tdata = g.civilian_type(k, overrides)
+	sister = tdata.get("role", "") == "sister"
+	barber = tdata.get("role", "") == "barber"
+	if sister or barber:
+		dice = rng
 	hp = 1
 	max_hp = 1
 	weapon = Weapon.new("unarmed", self)
 	var palettes: Array = tdata["palettes"]
-	set_character(tdata["template"], palettes[int(tdata.get("palette", randi() % palettes.size())) % palettes.size()])
+	set_character(tdata["template"], palettes[int(tdata.get("palette", _ri() % palettes.size())) % palettes.size()])
 	walk = WALK * float(tdata["speed"])
 	run = RUN * float(tdata["speed"])
-	nerve = randf_range(tdata["nerve"][0], tdata["nerve"][1])
-	snitch = randf() < float(tdata["snitch"])
+	nerve = _rr(tdata["nerve"][0], tdata["nerve"][1])
+	snitch = _rf() < float(tdata["snitch"])
 	undertaker = tdata.get("role", "") == "undertaker"
 	priest = tdata.get("role", "") == "priest"
 	brave = priest and tdata.get("brave", false)
@@ -168,11 +202,20 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		anim_gun = "keeper"      # a towel over his arm
 	elif sweeper or henwife:
 		anim_gun = "broom"
+	elif sister:
+		anim_gun = "nun"         # hands folded; beckoning, hauling, blessing
+	elif barber:
+		anim_gun = "barber"      # his bag, and the lint bandage
 	home = pos
+	if sister:   # her place is the chapel's own doorstep, on open ground
+		for d in g.doors:
+			if d.distance_to(pos) < home.distance_to(pos) or home == pos:
+				home = d
+		global_position = home
 	facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	desired = facing
-	wait = randf_range(1.0, 6.0)
-	t = randf() * 10.0
+	wait = _rr(1.0, 6.0)
+	t = _rf() * 10.0
 	if tdata.get("indoors", false):
 		_go_inside(false)
 		modulate.a = 0.0
@@ -188,6 +231,10 @@ func sees(pos: Vector2) -> bool:
 
 ## Gunfire: close, or in sight within earshot, and he's off.
 func hear(pos: Vector2, radius: float, _k: String, source: Node) -> void:
+	if (sister or barber) and alive:
+		if _k in GUNFIRE and source != self:
+			_hear_near(pos)
+		return
 	if not alive or st in [St.FLEE, St.COWER, St.GONE] or source == self:
 		return
 	var d := global_position.distance_to(pos)
@@ -205,7 +252,7 @@ func near_miss(from: Vector2) -> void:
 ## some, no friends of the gang, just get indoors and keep their mouths shut.
 func _saw_drag(p: Player) -> void:
 	set_meta("saw_drag", true)
-	if randf() < SCREAM:
+	if _rf() < SCREAM:
 		_say(_line("scream", SCREAM_LINES))
 		game.make_noise(p.global_position, 340.0, "scream", self)
 		game.stats["screams"] = game.stats.get("screams", 0) + 1
@@ -224,7 +271,7 @@ func witness_death(at: Vector2) -> void:
 func witness_murder(at: Vector2) -> void:
 	if alive and st != St.GONE and global_position.distance_to(at) < 220.0 \
 			and game.line_of_sight(global_position, at, false):
-		_say(MURDER_LINES.pick_random())
+		_say(_pick(MURDER_LINES))
 		alarm(at, true)
 
 
@@ -232,9 +279,12 @@ func witness_murder(at: Vector2) -> void:
 func alarm(from: Vector2, scary: bool) -> void:
 	if not alive or st in [St.FLEE, St.GONE]:
 		return
-	if priest:
+	if barber:
+		_duck_in()
+		return
+	if priest or sister:
 		# a holy man: he stands his ground, and may have a word for it
-		if shout_t <= 0.0 and randf() < 0.4:
+		if shout_t <= 0.0 and _rf() < 0.4:
 			_say(_line("calm", ["Peace, my son."]))
 		return
 	threat = from
@@ -248,9 +298,9 @@ func alarm(from: Vector2, scary: bool) -> void:
 	if st == St.COWER:
 		return
 	var freeze := (1.0 - nerve) * (0.7 if scary else 0.4)
-	if randf() < freeze:
+	if _rf() < freeze:
 		st = St.COWER
-		cower_t = randf_range(2.0, 5.0)
+		cower_t = _rr(2.0, 5.0)
 		velocity = Vector2.ZERO
 		return
 	_flee()
@@ -262,7 +312,7 @@ func _flee() -> void:
 	hid_at = game.refuge_for(global_position, threat)
 	path = game.find_path(global_position, hid_at)
 	path_i = 0
-	if randf() < 0.5:
+	if _rf() < 0.5:
 		_say(_line("flee", FLEE_LINES))
 	game.stats["civilian flees"] = game.stats.get("civilian flees", 0) + 1
 
@@ -277,6 +327,12 @@ func _physics_process(delta: float) -> void:
 		return
 	if st == St.GONE:
 		inside_t += delta
+		if sister:
+			_sister_inside()
+			return
+		if barber:
+			_barber_inside()
+			return
 		if game.state == "play" and inside_t > 10.0 and game.quiet_for() >= game.quiet_after + back_after:
 			if not mourner:
 				_come_out()
@@ -301,7 +357,7 @@ func _physics_process(delta: float) -> void:
 				velocity = Vector2.ZERO   # waits for her to catch up
 			elif _follow(walk):
 				st = St.IDLE
-				wait = randf_range(2.0, 5.0) if leads else randf_range(3.0, 8.0)
+				wait = _rr(2.0, 5.0) if leads else _rr(3.0, 8.0)
 		St.FLEE:
 			if _follow(run):
 				_go_inside()
@@ -337,6 +393,10 @@ func _physics_process(delta: float) -> void:
 			_sweep(delta)
 		St.HERD:
 			_herd(delta)
+		St.SHELTER, St.TO_PADRE, St.CARRY_IN:
+			_sister(delta)
+		St.TO_PATIENT, St.TREAT, St.TO_DOWNED, St.TEND:
+			_barber(delta)
 	if carried and pose == "":
 		pose = "carry"
 	if velocity.length() > 1.0 and not watching:
@@ -376,7 +436,7 @@ func _perceive(delta: float) -> void:
 				desired = to_him
 		elif not looked_away:
 			looked_away = true   # eyes down, none of his business
-			desired = (-to_him).rotated(randf_range(-1.2, 1.2))
+			desired = (-to_him).rotated(_rr(-1.2, 1.2))
 	else:
 		saw_t = max(0.0, saw_t - delta * 0.5)
 		if saw_t == 0.0:
@@ -386,6 +446,11 @@ func _perceive(delta: float) -> void:
 func _idle(delta: float) -> void:
 	velocity = sidle * walk * 0.6
 	wait -= delta
+	if sister:
+		_sister_idle()
+		return
+	if barber and _barber_idle():
+		return
 	if mourner:
 		_go_inside(false)   # home again, and in at the door
 		return
@@ -420,7 +485,7 @@ func _idle(delta: float) -> void:
 		desired = facing.rotated(sin(t * 0.4) * 0.02)
 	if wait <= 0.0:
 		var r: float = float(tdata["wander"])
-		var to: Vector2 = game.free_point_near(home, r) if r > 0.0 else home
+		var to: Vector2 = game.free_point_near(home, r, dice) if r > 0.0 else home
 		path = game.find_path(global_position, to)
 		path_i = 0
 		st = St.WALK
@@ -449,7 +514,7 @@ func _go_inside(hiding := true) -> void:
 	fade.tween_property(self, "modulate:a", 0.0, 0.4)
 	fade.tween_callback(func(): visible = false)
 	inside_t = 0.0
-	back_after = randf_range(0.0, 15.0)   # they don't all come out at once
+	back_after = _rr(0.0, 15.0)   # they don't all come out at once
 	if hiding:
 		game.stats["civilian hides"] = game.stats.get("civilian hides", 0) + 1
 
@@ -461,7 +526,7 @@ func _come_out() -> void:
 	crouched = false
 	saw_t = 0.0
 	looked_away = false
-	snitch = randf() < float(tdata["snitch"])
+	snitch = _rf() < float(tdata["snitch"])
 	collision_layer = Iso.LAYER_ACTOR
 	collision_mask = Iso.LAYER_WALL | Iso.LAYER_COVER | Iso.LAYER_POST | Iso.LAYER_ACTOR
 	hurtbox.collision_layer = Iso.LAYER_HURT
@@ -487,7 +552,7 @@ func _work(delta: float) -> void:
 				st = St.MEASURE
 				work_t = MEASURE_T
 				velocity = Vector2.ZERO
-				if randf() < 0.6:
+				if _rf() < 0.6:
 					_say(_line("work", ["Hm."]))
 		St.MEASURE:
 			# the tape out over him, head to boots
@@ -508,12 +573,12 @@ func _work(delta: float) -> void:
 				body.global_position = global_position - velocity.normalized() * 16.0
 			if body.global_position.distance_to(trail) > 9.0:
 				trail = body.global_position
-				game.decals.add(trail, randf_range(1.2, 2.2), Color(0.34, 0.07, 0.05, 0.4))
+				game.decals.add(trail, _rr(1.2, 2.2), Color(0.34, 0.07, 0.05, 0.4))
 			if there:
 				game.bury(body, grave)
 				body = null
 				st = St.IDLE
-				wait = randf_range(2.0, 4.0)
+				wait = _rr(2.0, 4.0)
 
 
 func _drop_body() -> void:
@@ -539,7 +604,7 @@ func _bless(delta: float) -> void:
 				st = St.BLESS
 				work_t = BLESS_T
 				velocity = Vector2.ZERO
-				if randf() < 0.7:
+				if _rf() < 0.7:
 					_say(_line("work", ["Requiescat in pace."]))
 		St.BLESS:
 			# on one knee, the sign of the cross over him
@@ -550,11 +615,12 @@ func _bless(delta: float) -> void:
 			work_t -= delta
 			if work_t <= 0.0:
 				body.set_meta("blessed", true)
-				game.sfx("bell", null, -14.0, 0.0)   # the church bell, far off
+				if priest:
+					game.sfx("bell", null, -14.0, 0.0)   # the church bell, far off (the sister rings none)
 				game.stats["blessings"] = game.stats.get("blessings", 0) + 1
 				_drop_body()
 				st = St.IDLE
-				wait = randf_range(1.5, 3.0)
+				wait = _rr(1.5, 3.0)
 
 
 # ------------------------------------------------------------------ mourners
@@ -567,7 +633,7 @@ func _to_a_grave() -> void:
 	_come_out()
 	mourning = g
 	# beside the mound, a little apart from whoever else is there
-	var spot: Vector2 = g["at"] + Vector2(randf_range(-16.0, 16.0), randf_range(10.0, 16.0))
+	var spot: Vector2 = g["at"] + Vector2(_rr(-16.0, 16.0), _rr(10.0, 16.0))
 	path = game.find_path(global_position, game.free_point_near(spot, 10.0))
 	path_i = 0
 	st = St.TO_GRAVE
@@ -578,9 +644,9 @@ func _mourn(delta: float) -> void:
 		St.TO_GRAVE:
 			if _follow(walk):
 				st = St.MOURN
-				work_t = randf_range(MOURN_T.x, MOURN_T.y)
+				work_t = _rr(MOURN_T.x, MOURN_T.y)
 				velocity = Vector2.ZERO
-				if randf() < 0.6:
+				if _rf() < 0.6:
 					_say(_line("work", ["..."]))
 		St.MOURN:
 			velocity = Vector2.ZERO
@@ -609,7 +675,7 @@ func _leave_grave() -> void:
 ## arms full, or nothing more nearby, home with the lot.
 func _next_gun() -> void:
 	if carried.is_empty():
-		load_size = randi_range(4, 5)
+		load_size = _rir(4, 5)
 	if carried.size() < load_size:
 		gun = game.claim_gun(self, global_position, INF if carried.is_empty() else GATHER_NEAR)
 		if not gun.is_empty():
@@ -647,7 +713,7 @@ func _gather(delta: float) -> void:
 			if work_t <= 0.0:
 				game.take_gun(gun)
 				carried.append({"kind": gun["kind"], "ammo_kind": gun["ammo_kind"]})
-				if randf() < 0.3:
+				if _rf() < 0.3:
 					_say(_line("work", ["Hm."]))
 				gun = {}
 				crouched = false
@@ -678,7 +744,7 @@ func _bluster(scary: bool) -> void:
 			velocity = Vector2.ZERO
 			_say(_line("cower", ["Don't shoot!"]))
 			game.stats["mayor cowers"] = game.stats.get("mayor cowers", 0) + 1
-		cower_t = randf_range(2.5, 4.5)
+		cower_t = _rr(2.5, 4.5)
 		return
 	if st == St.COWER or st == St.TO_STUMP or st == St.ORATE:
 		return
@@ -698,7 +764,7 @@ func _to_stump() -> void:
 func _mayor(delta: float) -> void:
 	if st in [St.TO_STUMP, St.ORATE] and game.quiet_for() >= HUSH:
 		st = St.IDLE
-		wait = randf_range(2.0, 4.0)
+		wait = _rr(2.0, 4.0)
 		return
 	match st:
 		St.TO_STUMP:
@@ -711,7 +777,7 @@ func _mayor(delta: float) -> void:
 			desired = (threat - global_position).normalized()
 			orate_t -= delta
 			if orate_t <= 0.0:
-				orate_t = randf_range(3.0, 4.5)
+				orate_t = _rr(3.0, 4.5)
 				_say(_line("calm", ["Gentlemen, please!"]))
 				game.stats["mayor speeches"] = game.stats.get("mayor speeches", 0) + 1
 		St.TO_SCAR:
@@ -724,7 +790,7 @@ func _mayor(delta: float) -> void:
 			pose = "survey"
 			desired = (scar["at"] - global_position).normalized()
 			work_t -= delta
-			if work_t <= SURVEY_T - 0.6 and work_t + delta > SURVEY_T - 0.6 and randf() < 0.75:
+			if work_t <= SURVEY_T - 0.6 and work_t + delta > SURVEY_T - 0.6 and _rf() < 0.75:
 				_say(_line("work", ["Tsk."]))
 			if work_t <= 0.0:
 				game.stats["damage surveyed"] = game.stats.get("damage surveyed", 0) + 1
@@ -744,7 +810,7 @@ func _next_scar() -> void:
 			st = St.WALK
 		toured = TOUR   # done for now
 		return
-	var at: Vector2 = scar["at"] + Vector2.from_angle(randf() * TAU) * 22.0 * Vector2(1.0, 0.5)
+	var at: Vector2 = scar["at"] + Vector2.from_angle(_rf() * TAU) * 22.0 * Vector2(1.0, 0.5)
 	path = game.find_path(global_position, at if game.is_free(at) else game.free_point_near(at, 20.0))
 	path_i = 0
 	st = St.TO_SCAR
@@ -821,7 +887,7 @@ func _mend(delta: float) -> void:
 			game.repair(job)
 			job = {}
 			crouched = false
-			if randf() < 0.5:
+			if _rf() < 0.5:
 				_say(_line("work", ["There."]))
 			st = St.IDLE
 			wait = 0.4
@@ -846,7 +912,7 @@ func _sweep(delta: float) -> void:
 			if work_t <= 0.0:
 				game.sweep_at(dirt, self)
 				dirt = Vector2.INF
-				if randf() < 0.2:
+				if _rf() < 0.2:
 					_say(_line("work", ["..."]))
 				st = St.IDLE
 				wait = 0.3
@@ -879,7 +945,7 @@ func _herd(delta: float) -> void:
 	pose = "shoo"
 	if hen.st != Chicken.S.HERD and global_position.distance_to(hen.position) < 26.0:
 		hen.herd(coop)
-		if shout_t <= 0.0 and randf() < 0.5:
+		if shout_t <= 0.0 and _rf() < 0.5:
 			_say(_line("work", ["¡Fuera!"]))
 
 
@@ -896,6 +962,320 @@ func _drop_job() -> void:
 		if hen.st == Chicken.S.HERD:
 			hen.st = Chicken.S.PECK
 	hen = null
+
+
+# ------------------------------------------------------------------ the sister
+
+## Gunfire: to her it means folk to get indoors; to him, his shop's in the line of it.
+func _hear_near(pos: Vector2) -> void:
+	if sister:
+		if pos.distance_to(home) < SHELTER_EAR or pos.distance_to(global_position) < SHELTER_EAR:
+			near_shot = game.clock
+			if st in [St.IDLE, St.WALK, St.TO_BLESS, St.BLESS]:
+				_drop_body()
+				_shelter()
+		return
+	if pos.distance_to(home) < NEAR_FIRE or pos.distance_to(global_position) < NEAR_FIRE:
+		near_shot = game.clock
+		_duck_in()
+
+
+## Indoors in the chapel: out to the padre if he's down, to the door if there's
+## shooting, and out to the dead once it's quiet if he's not there to see to them.
+func _sister_inside() -> void:
+	if game.state != "play":
+		return
+	var padre: Civilian = _fallen_padre()
+	if padre:
+		_come_out()
+		_to_padre(padre)
+	elif game.clock - near_shot < SHELTER_FOR and inside_t > 0.5:
+		_come_out()
+		_shelter()
+	elif inside_t > 10.0 and _padre_gone() and game.quiet_for() >= game.quiet_after + back_after:
+		var b: Actor = game.blessing_for(self)
+		if b:
+			_come_out()
+			_to_bless(b)
+
+
+func _sister_idle() -> void:
+	velocity = Vector2.ZERO
+	if _padre_gone() and game.quiet_for() >= game.quiet_after:
+		var b: Actor = game.blessing_for(self)
+		if b:
+			_to_bless(b)
+			return
+	if global_position.distance_to(home) > 6.0:
+		path = game.find_path(global_position, home)
+		path_i = 0
+		st = St.WALK
+		return
+	_go_inside(false)
+
+
+func _to_bless(b: Actor) -> void:
+	body = b
+	st = St.TO_BLESS
+	path = game.find_path(global_position, b.global_position)
+	path_i = 0
+
+
+## The padre shot, and nobody yet gone to him.
+func _fallen_padre() -> Civilian:
+	for c in game.civilians:
+		if c.priest and not c.alive and not c.has_meta("buried") \
+				and (not c.has_meta("rescued_by") or c.get_meta("rescued_by") == self):
+			return c
+	return null
+
+
+## No padre about to see to the dead: shot, or taken in.
+func _padre_gone() -> bool:
+	return not game.civilians.any(func(c): return c.priest and c.alive)
+
+
+func _shelter() -> void:
+	st = St.SHELTER
+	path = game.find_path(global_position, home)
+	path_i = 0
+	orate_t = 0.4
+
+
+func _to_padre(p: Civilian) -> void:
+	body = p
+	p.set_meta("rescued_by", self)
+	st = St.TO_PADRE
+	path = game.find_path(global_position, p.global_position)
+	path_i = 0
+	_say(_line("rescue", ["Father!"]))
+	game.stats["padre rescues"] = game.stats.get("padre rescues", 0) + 1
+
+
+func _sister(delta: float) -> void:
+	match st:
+		St.SHELTER:
+			var padre: Civilian = _fallen_padre()
+			if padre:
+				_to_padre(padre)
+				return
+			if _follow(run * 0.8):
+				# in the doorway, waving them in
+				pose = "beckon"
+				var near: Civilian = _nearest_fleeing()
+				desired = (near.global_position - global_position).normalized() if near \
+					else (game.last_gunfire_at - global_position).normalized()
+				orate_t -= delta
+				if orate_t <= 0.0:
+					orate_t = _rr(2.5, 4.0)
+					_say(_line("shelter", ["In here!"]))
+				if game.clock - near_shot > SHELTER_FOR:
+					_go_inside(false)
+		St.TO_PADRE:
+			if global_position.distance_to(body.global_position) < 14.0 or _follow(run):
+				st = St.CARRY_IN
+				path = game.find_path(global_position, home)
+				path_i = 0
+				trail = body.global_position
+		St.CARRY_IN:
+			# by the shoulders, backwards to the chapel door, as fast as she can
+			pose = "drag"
+			var there := _follow(walk * DRAG_SPEED * 1.2)
+			if velocity.length() > 1.0:
+				body.global_position = global_position - velocity.normalized() * 16.0
+			if body.global_position.distance_to(trail) > 9.0:
+				trail = body.global_position
+				game.decals.add(trail, _rr(1.2, 2.2), Color(0.34, 0.07, 0.05, 0.4))
+			if there:
+				_take_in(body)
+				body = null
+				_go_inside(false)
+
+
+## In through the door with him, and that's the last anyone sees of the padre.
+func _take_in(p: Actor) -> void:
+	p.set_meta("buried", true)   # (out of the story, as a buried man is)
+	p.set_meta("taken_in", true)
+	var tw := p.create_tween()
+	tw.tween_property(p, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(func(): p.visible = false)
+	game.stats["padre taken in"] = 1
+
+
+func _nearest_fleeing() -> Civilian:
+	var best := 260.0
+	var out: Civilian = null
+	for c in game.civilians:
+		if c != self and c.alive and c.st == St.FLEE:
+			var d: float = global_position.distance_to(c.global_position)
+			if d < best:
+				best = d
+				out = c
+	return out
+
+
+# ------------------------------------------------------------------ the barber-surgeon
+
+## Shooting near his shop: in he goes, whoever he was seeing to.
+func _duck_in() -> void:
+	if st in [St.FLEE, St.GONE]:
+		return
+	_let_go_of_patient()
+	st = St.FLEE
+	crouched = false
+	hid_at = home
+	path = game.find_path(global_position, home)
+	path_i = 0
+	if shout_t <= 0.0 and _rf() < 0.5:
+		_say(_line("flee", FLEE_LINES))
+	game.stats["barber ducks in"] = game.stats.get("barber ducks in", 0) + 1
+
+
+func _barber_inside() -> void:
+	if game.state != "play" or inside_t < 3.0 or game.clock - near_shot < SAFE_T:
+		return
+	if _wants_care() or _downed_near() or game.clock - near_shot >= BACK_T:
+		_come_out()
+
+
+## Anyone for him? The stranger first, then a man lying in the dirt nearby.
+func _barber_idle() -> bool:
+	if game.clock - near_shot < SAFE_T:
+		return false
+	if _wants_care():
+		patient = game.player
+		st = St.TO_PATIENT
+		repath_t = 0.0
+		_say(_line("care", ["Hold still."]))
+		return true
+	var d: Enemy = _downed_near()
+	if d:
+		patient = d
+		d.medic = self
+		st = St.TO_DOWNED
+		path = game.find_path(global_position, d.global_position)
+		path_i = 0
+		return true
+	return false
+
+
+## The stranger hurt, close by his door and in sight of it, and nobody at him.
+func _wants_care() -> bool:
+	var p: Player = game.player
+	if treated or not p.alive or game.state != "play" or game.clock - near_shot < SAFE_T:
+		return false
+	if p.hp >= p.max_hp and not p.bleeding and p.limp_t <= 0.0 and not p.down:
+		return false
+	if p.global_position.distance_to(home) > CARE_NEAR or not game.line_of_sight(home, p.global_position, false):
+		return false
+	return not _under_fire(p)
+
+
+func _under_fire(p: Player) -> bool:
+	for e in game.enemies:
+		if e.alive and e.revealed and e.st == Enemy.St.COMBAT \
+				and e.global_position.distance_to(p.global_position) < THREAT_NEAR \
+				and game.line_of_sight(e.global_position, p.global_position, false):
+			return true
+	return false
+
+
+## A downed man near the shop that none of his own have come for.
+func _downed_near() -> Enemy:
+	var best := TEND_NEAR
+	var out: Enemy = null
+	for e in game.enemies:
+		if not e.downed or e.rescuer != null or e.gasp != "" or (e.medic != null and e.medic != self):
+			continue
+		var d: float = e.global_position.distance_to(home)
+		if d < best:
+			best = d
+			out = e
+	return out
+
+
+func _barber(delta: float) -> void:
+	match st:
+		St.TO_PATIENT:
+			var p: Player = game.player
+			if not p.alive or p.global_position.distance_to(home) > CARE_NEAR * 1.6 or _under_fire(p):
+				_send_home()
+				return
+			if global_position.distance_to(p.global_position) < 16.0:
+				st = St.TREAT
+				work_t = TREAT_T
+				p.medic = self
+				game.sfx("tear", global_position, -8.0, 0.1, dice)
+				return
+			repath_t -= delta
+			if repath_t <= 0.0 or path_i >= path.size():
+				repath_t = 0.5
+				path = game.find_path(global_position, p.global_position)
+				path_i = 0
+			_follow(run * 0.6)
+		St.TREAT:
+			# binding him up where he stands (or lies): he keeps still, or it's to start over
+			var p: Player = game.player
+			velocity = Vector2.ZERO
+			desired = (p.global_position - global_position).normalized()
+			crouched = p.down
+			pose = "tend" if p.down else "treat"
+			if not p.alive or p.velocity.length() > 1.0 or global_position.distance_to(p.global_position) > 22.0:
+				p.medic = null
+				crouched = false
+				st = St.TO_PATIENT
+				return
+			work_t -= delta
+			if work_t <= 0.0:
+				p.medic = null
+				p.patched_up()
+				treated = true
+				_say(_line("done", ["There."]))
+				_send_home()
+		St.TO_DOWNED:
+			var d := patient as Enemy
+			if d == null or not is_instance_valid(d) or not d.downed or d.rescuer != null or d.gasp != "":
+				_send_home()
+				return
+			if global_position.distance_to(d.global_position) < 14.0 or _follow(run * 0.6):
+				st = St.TEND
+				work_t = TEND_T
+				game.sfx("tear", global_position, -8.0, 0.1, dice)
+				if _rf() < 0.6:
+					_say(_line("tend", ["Easy."]))
+		St.TEND:
+			var d := patient as Enemy
+			if d == null or not is_instance_valid(d) or not d.downed or d.gasp != "":
+				_send_home()
+				return
+			velocity = Vector2.ZERO
+			crouched = true
+			pose = "tend"
+			desired = (d.global_position - global_position).normalized()
+			work_t -= delta
+			if work_t <= 0.0:
+				d.medic = null
+				d.revive()
+				game.stats["barber saves"] = game.stats.get("barber saves", 0) + 1
+				_send_home()
+
+
+## Done, or given up on him: back to the porch.
+func _send_home() -> void:
+	_let_go_of_patient()
+	crouched = false
+	st = St.WALK
+	path = game.find_path(global_position, home)
+	path_i = 0
+
+
+func _let_go_of_patient() -> void:
+	if patient is Enemy and is_instance_valid(patient) and (patient as Enemy).medic == self:
+		(patient as Enemy).medic = null
+	if patient is Player and (patient as Player).medic == self:
+		(patient as Player).medic = null
+	patient = null
+	crouched = false
 
 
 # ------------------------------------------------------------------ couples
@@ -991,8 +1371,30 @@ func _say(s: String) -> void:
 
 func _line(key: String, stock: Array) -> String:
 	var own: Dictionary = tdata.get("shouts", {})
-	return (own[key] if own.has(key) else stock).pick_random()
+	return _pick(own[key] if own.has(key) else stock)
 
 
 func gone() -> bool:
 	return st == St.GONE
+
+
+# ------------------------------------------------------------------ dice
+
+func _rf() -> float:
+	return dice.randf() if dice else randf()
+
+
+func _rr(a: float, b: float) -> float:
+	return dice.randf_range(a, b) if dice else randf_range(a, b)
+
+
+func _ri() -> int:
+	return dice.randi() if dice else randi()
+
+
+func _rir(a: int, b: int) -> int:
+	return dice.randi_range(a, b) if dice else randi_range(a, b)
+
+
+func _pick(a: Array) -> Variant:
+	return a[dice.randi() % a.size()] if dice else a.pick_random()

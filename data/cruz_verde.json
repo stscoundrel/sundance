@@ -1454,6 +1454,12 @@
    "brave": true
   },
   {
+   "kind": "sister",
+   "x": 21.5,
+   "y": 23.5,
+   "facing": 90
+  },
+  {
    "kind": "peon",
    "x": 28.6,
    "y": 29.8,

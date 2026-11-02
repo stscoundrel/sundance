@@ -67,7 +67,8 @@ def template_guns():
     for t in _DATA["civilians"]["types"].values():
         need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith",
                                   "mayor": "mayor", "carpenter": "carpentry", "sweeper": "broom",
-                                  "henwife": "broom", "keeper": "keeper"}.get(t.get("role", ""), "unarmed"))
+                                  "henwife": "broom", "keeper": "keeper", "sister": "nun",
+                                  "barber": "barber"}.get(t.get("role", ""), "unarmed"))
     # a level's waves may hand their men other guns ("arms"): whoever might walk in
     # with them is baked holding them too
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -470,6 +471,19 @@ def _hat(look, z):
             out += Cloud(hood.P[keep], hood.N[keep], hood.C[keep], hood.S[keep])
             out += frustum((-0.05, 0, z - 0.1), (-0.07, 0, z - 0.4), 0.09, 0.17, col, su=0.8, caps=False)
         return out
+    if kind == "habit":
+        # a nun's black veil over the head and down the back, and under it the white
+        # coif framing her face
+        with look.tag("hat"):
+            hood = ellipsoid((-0.005, 0, z - 0.075), (0.114, 0.106, 0.137), col)
+            keep = ~((hood.P[:, 0] > 0.03) & (hood.P[:, 2] < z - 0.0))
+            out += Cloud(hood.P[keep], hood.N[keep], hood.C[keep], hood.S[keep])
+            out += frustum((-0.05, 0, z - 0.1), (-0.08, 0, z - 0.42), 0.09, 0.16, col, su=0.8, caps=False)
+        coif = ellipsoid((0.0, 0, z - 0.075), (0.108, 0.1, 0.13), (236, 234, 228))
+        face = (coif.P[:, 0] > 0.07) & (np.abs(coif.P[:, 1]) < 0.06) & (coif.P[:, 2] < z - 0.035) & (coif.P[:, 2] > z - 0.17)
+        keep = (coif.P[:, 0] > 0.0) & ~face
+        out += Cloud(coif.P[keep], coif.N[keep], coif.C[keep], coif.S[keep])
+        return out
     if kind in ("kepi", "cap"):
         # an officer's kepi, its crown tipped forward; or a general's peaked cap,
         # wide on top; each with a braided band and a short leather visor
@@ -694,6 +708,14 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         m += frustum((0, 0, 0.5), (0, 0, 0.63), 0.05, 0.05, look.c("skin"))
     if look.get("collar"):   # a priest's white collar
         m += frustum((0, 0, 0.585), (0, 0, 0.625), 0.092, 0.088, (232, 228, 218))
+    if look.get("wimple"):   # a nun's white wimple, close round the throat and over the shoulders
+        m += frustum((0, 0, 0.66), (0, 0, 0.5), 0.085, 0.16, (236, 234, 228), su=0.85, caps=False)
+    if look.get("rosary"):   # wooden beads hung from her belt, a small cross at the end
+        for i in range(9):
+            f = i / 8.0
+            m += ellipsoid((0.1 + 0.03 * f, 0.13 - 0.02 * f, 0.18 - 0.3 * f), (0.013, 0.013, 0.013), (70, 46, 30))
+        m += beam((0.135, 0.11, -0.13), (0.135, 0.11, -0.2), 0.009, (70, 46, 30))
+        m += beam((0.135, 0.085, -0.155), (0.135, 0.135, -0.155), 0.009, (70, 46, 30))
     if look.get("scarf"):
         with look.tag("accent"):
             m += frustum((0, 0, 0.5), (0, 0, 0.6), 0.1, 0.075, look.c("accent"))
@@ -731,6 +753,9 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         e, h = np.array(e, float), np.array(h, float)
         with look.tag(sleeve):
             m += frustum(s, e, 0.058, 0.05, look.c(sleeve))
+        if look.get("garters"):   # sleeve garters, holding his cuffs up out of the lather
+            with look.tag("band"):
+                m += frustum(s + (e - s) * 0.5, s + (e - s) * 0.64, 0.062, 0.058, look.c("band"))
         with look.tag(forearm):
             m += frustum(e, h, 0.05, 0.042, look.c(forearm))
         with look.tag("skin"):
@@ -795,6 +820,14 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     if up.get("towel"):   # a bar towel over his arm
         h = np.array(up["hL"], float)
         m += box(tuple(h + [-0.05, -0.04, -0.12]), tuple(h + [0.04, 0.04, 0.02]), (232, 228, 214))
+    if up.get("bag"):   # the barber-surgeon's black leather bag, hanging from his hand
+        h = np.array(up["hL"], float)
+        m += box(tuple(h + [-0.09, -0.04, -0.17]), tuple(h + [0.09, 0.04, -0.04]), (30, 24, 22))
+        m += beam(h + [-0.03, 0, -0.04], h + [0.03, 0, -0.04], 0.01, BRASS)
+    if up.get("gauze"):   # a roll of lint bandage in his right hand, a strip of it run to the left
+        hL, hR = np.array(up["hL"], float), np.array(up["hR"], float)
+        m += ellipsoid(hR + [0.02, 0, 0], (0.035, 0.035, 0.035), (240, 236, 226))
+        m += beam(hR, hL, 0.012, (236, 232, 222))
     if up.get("hanky"):   # a white handkerchief pressed to her eyes
         h = np.array(up["hR"], float)
         m += box(tuple(h + [-0.02, -0.03, -0.04]), tuple(h + [0.03, 0.03, 0.03]), (232, 228, 220))
@@ -964,6 +997,34 @@ def _key_poses(w):
                            gun=G((0.14, -0.14, 0.34), (0.95, 0.28, 0.12)))
         k["carry"] = dict(eL=V(0.1, 0.24, 0.22), hL=V(0.26, 0.12, 0.3), eR=V(0.1, -0.24, 0.22),
                           hR=V(0.26, -0.12, 0.3), armful=True, gun=None)
+        return k
+    if w == "nun":
+        # the sister: hands folded before her; at the chapel door beckoning them in;
+        # hauling the padre by the shoulders; and blessing the dead as he would have
+        k = _key_poses("unarmed")
+        k["aim"] = P(k["aim"], eL=V(0.05, 0.22, 0.26), hL=V(0.18, 0.03, 0.2), eR=V(0.05, -0.22, 0.26),
+                     hR=V(0.18, -0.03, 0.21), nod=0.12)
+        k["beckon_a"] = dict(eR=V(0.16, -0.3, 0.42), hR=V(0.4, -0.3, 0.62), **HANG_L)
+        k["beckon_b"] = dict(eR=V(0.08, -0.32, 0.4), hR=V(0.14, -0.26, 0.66), **HANG_L)
+        k["drag"] = dict(eL=V(-0.12, 0.24, 0.14), hL=V(-0.32, 0.12, -0.2), eR=V(-0.12, -0.24, 0.14),
+                         hR=V(-0.32, -0.12, -0.2), lean=0.3, nod=0.1)
+        base = dict(eL=V(0.06, 0.25, 0.28), hL=V(0.2, 0.08, 0.32), eR=V(0.22, -0.2, 0.45), lean=0.25, nod=0.25)
+        k["bless_a"] = P(base, hR=V(0.44, -0.06, 0.66))
+        k["bless_b"] = P(base, hR=V(0.44, -0.06, 0.36), eR=V(0.2, -0.22, 0.32))
+        k["bless_c"] = P(base, hR=V(0.42, 0.1, 0.52))
+        k["bless_d"] = P(base, hR=V(0.42, -0.24, 0.52))
+        return k
+    if w == "barber":
+        # the barber-surgeon: his bag in hand; binding a man up where he stands, and
+        # down on one knee over one lying in the dirt
+        k = _key_poses("unarmed")
+        k["aim"] = P(k["aim"], bag=True)
+        stand = dict(eL=V(0.2, 0.2, 0.32), eR=V(0.2, -0.2, 0.32), lean=0.1, nod=0.2, gauze=True)
+        k["treat_a"] = P(stand, hL=V(0.44, 0.08, 0.4), hR=V(0.46, -0.1, 0.5))
+        k["treat_b"] = P(stand, hL=V(0.46, 0.12, 0.44), hR=V(0.5, 0.02, 0.34))
+        low = dict(eL=V(0.16, 0.25, 0.14), eR=V(0.16, -0.25, 0.14), lean=0.5, nod=0.35, gauze=True)
+        k["tend_a"] = P(low, hL=V(0.4, 0.14, -0.12), hR=V(0.42, -0.08, -0.06))
+        k["tend_b"] = P(low, hL=V(0.38, 0.1, -0.14), hR=V(0.44, 0.06, -0.14))
         return k
     if w == "grief":
         # empty hands clasped before her, head bowed; now and then a handkerchief
@@ -1188,7 +1249,7 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
@@ -1213,6 +1274,16 @@ def upper_anims(w):
     elif w == "grief":
         a_, b_ = k["mourn_a"], k["mourn_b"]
         add("mourn", [a_, a_, a_, a_, lerp_pose(a_, b_, 0.5), b_, b_, b_, lerp_pose(a_, b_, 0.5)], 1.5, True)
+    elif w == "nun":
+        add("beckon", [k["beckon_a"], k["beckon_a"], lerp_pose(k["beckon_a"], k["beckon_b"], 0.5), k["beckon_b"],
+                       k["beckon_b"], lerp_pose(k["beckon_a"], k["beckon_b"], 0.5)], 5, True)
+        add("drag", [k["drag"]], 1, True)
+        add("bless", [k["bless_a"], k["bless_b"], k["bless_c"], k["bless_d"]], 2.5, True)
+    elif w == "barber":
+        add("treat", [k["treat_a"], k["treat_a"], lerp_pose(k["treat_a"], k["treat_b"], 0.5), k["treat_b"], k["treat_b"],
+                      lerp_pose(k["treat_b"], k["treat_a"], 0.5)], 4, True)
+        add("tend", [k["tend_a"], k["tend_a"], lerp_pose(k["tend_a"], k["tend_b"], 0.5), k["tend_b"], k["tend_b"],
+                     lerp_pose(k["tend_b"], k["tend_a"], 0.5)], 4, True)
     elif w == "tools":
         add("measure", [k["measure_a"], k["measure_b"]], 2, True)
         add("drag", [k["drag"]], 1, True)
@@ -1304,7 +1375,7 @@ def upper_anims(w):
         kick = P(sky, hR=V(0.06, -0.2, 1.06), gun=G((0.02, -0.2, 1.02), (-0.15, 0.0, 1.0)))
         add("salute", [lerp_pose(k["aim"], sky, 0.5), sky, sky, kick, kick, sky, sky, lerp_pose(sky, k["aim"], 0.5)], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber"):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
                         lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         add("haul", [k["haul"]], 1, True)

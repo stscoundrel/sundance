@@ -193,6 +193,7 @@ func _ready() -> void:
 		Enemy.schofield_rng.randomize()
 		Enemy.champion_rng.randomize()
 		Wounds.rng.randomize()
+		Civilian.rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -204,6 +205,7 @@ func _ready() -> void:
 		Enemy.schofield_rng.seed = 31
 		Enemy.champion_rng.seed = 37
 		Wounds.rng.seed = 41
+		Civilian.rng.seed = 43
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -1259,9 +1261,10 @@ func _length(from: Vector2, route: PackedVector2Array) -> float:
 	return total
 
 
-func free_point_near(p: Vector2, radius: float) -> Vector2:
+func free_point_near(p: Vector2, radius: float, dice: RandomNumberGenerator = null) -> Vector2:
 	for i in 12:
-		var q := p + Vector2.from_angle(randf() * TAU) * randf_range(radius * 0.3, radius)
+		var q := p + (Vector2.from_angle(dice.randf() * TAU) * dice.randf_range(radius * 0.3, radius) if dice
+			else Vector2.from_angle(randf() * TAU) * randf_range(radius * 0.3, radius))
 		var c := _cell(q)
 		if not astar.is_point_solid(c):
 			return q
@@ -1462,9 +1465,15 @@ func refuge_for(from: Vector2, threat: Vector2) -> Vector2:
 	var away := (from - threat).normalized()
 	var best := Vector2.INF
 	var best_score := INF
+	var haven := Vector2.INF   # the sister in the chapel doorway, calling folk in
+	for c in civilians:
+		if c.sister and c.alive and c.st == Civilian.St.SHELTER:
+			haven = c.home
 	for d in doors:
 		var to := d - from
 		var score := to.length()
+		if haven != Vector2.INF and d.distance_to(haven) < 30.0 and from.distance_to(d) < SANCTUARY:
+			score -= 150.0
 		if to.length() > 8.0 and to.normalized().dot(away) < -0.3 and threat.distance_to(d) < from.distance_to(d):
 			score += 400.0   # past the gunman: only if there's nothing else
 		score += maxf(0.0, 90.0 - threat.distance_to(d)) * 4.0
@@ -1486,6 +1495,9 @@ func refuge_for(from: Vector2, threat: Vector2) -> Vector2:
 	if is_free(e) and from.distance_to(e) + maxf(0.0, 90.0 - threat.distance_to(e)) * 4.0 < best_score:
 		return e
 	return best if best != Vector2.INF else point_away(from, threat, 200.0)
+
+
+const SANCTUARY := 300.0   # px: townsfolk this near the chapel run to the sister's door
 
 
 ## A bandit type: the defaults, then the type, then any per-placement overrides.
@@ -1758,7 +1770,12 @@ func _tally() -> String:
 	var line := "%d of the gang by your hand" % n if n > 0 else "not one of the gang by your hand"
 	if stats.get("kills while down", 0) > 0:
 		line += " (%d from the dirt)" % stats["kills while down"]
-	return line + "   -   " + _innocents_line()
+	return line + "   -   " + _innocents_line() + _padre_line()
+
+
+## The sister took him in: nobody's saying more than that.
+func _padre_line() -> String:
+	return "the padre: in God's hands   -   " if stats.has("padre taken in") else ""
 
 
 func _innocents_line() -> String:
@@ -2845,7 +2862,7 @@ func take_back_gun(e: Enemy) -> void:
 ## will: they don't leave their own in the dirt).
 func _send_rescuers() -> void:
 	for d in enemies:
-		if not d.downed or d.rescuer != null or d.gasp != "":
+		if not d.downed or d.rescuer != null or d.medic != null or d.gasp != "":
 			continue
 		var best: Enemy = null
 		var best_d := Enemy.RESCUE_NEAR
@@ -3275,22 +3292,25 @@ func _takes(name: String) -> Array[AudioStream]:
 	return takes
 
 
-func sfx(name: String, pos: Variant = null, vol := 0.0, pitch_var := 0.06) -> void:
+## `dice`: for a sound the seeded tests never had, its own dice rather than the global ones.
+func sfx(name: String, pos: Variant = null, vol := 0.0, pitch_var := 0.06, dice: RandomNumberGenerator = null) -> void:
 	if not _streams.has(name):
 		_streams[name] = _takes(name)
-	var stream: AudioStream = _streams[name].pick_random()
+	var takes: Array = _streams[name]
+	var stream: AudioStream = takes[dice.randi() % takes.size()] if dice else takes.pick_random()
+	var pitch := 1.0 + (dice.randf_range(-pitch_var, pitch_var) if dice else randf_range(-pitch_var, pitch_var))
 	var p: Node
 	if pos == null:
 		var ap := AudioStreamPlayer.new()
 		ap.stream = stream
 		ap.volume_db = vol
-		ap.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
+		ap.pitch_scale = pitch
 		p = ap
 	else:
 		var ap2 := AudioStreamPlayer2D.new()
 		ap2.stream = stream
 		ap2.volume_db = vol
-		ap2.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
+		ap2.pitch_scale = pitch
 		ap2.position = pos
 		if name in LOUD:
 			# gunfire carries right across town

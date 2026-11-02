@@ -185,6 +185,10 @@ func _draw_status(p: Player) -> void:
 		_text(Vector2(54, 338), "BANDAGING", 8, INK)
 		draw_rect(Rect2(104, 332, 40, 5), Color(0.1, 0.06, 0.05, 0.85))
 		draw_rect(Rect2(105, 333, 38 * f, 3), Color(0.92, 0.9, 0.84))
+	elif p.medic and p.medic.alive and p.medic.st == Civilian.St.TREAT:   # the barber at work on him
+		_text(Vector2(54, 338), "PATCHING UP", 8, INK)
+		draw_rect(Rect2(114, 332, 40, 5), Color(0.1, 0.06, 0.05, 0.85))
+		draw_rect(Rect2(115, 333, 38 * (1.0 - p.medic.work_t / Civilian.TREAT_T), 3), Color(0.92, 0.9, 0.84))
 	elif p.down:   # the last stand: his blood running out, a bar draining
 		var left: float = 1.0 - p.down_t / Player.STAND_BLEED
 		var pulse := 0.7 + 0.3 * sin(Time.get_ticks_msec() / 140.0)

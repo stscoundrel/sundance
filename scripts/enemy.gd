@@ -198,6 +198,7 @@ var downed := false
 var down_t := 0.0
 var groan_t := 0.0
 var rescuer: Enemy = null    # who's come for him
+var medic: Civilian = null   # the barber-surgeon, if he's come for him instead
 var rescuing: Enemy = null   # (as the rescuer) who he's come for
 var rescue_phase := ""       # "go", "drag", "treat"
 var smear := Vector2.ZERO
@@ -1545,7 +1546,10 @@ func _downed_tick(delta: float) -> void:
 		_think_gasp(delta)
 	if rescuer != null and (not is_instance_valid(rescuer) or not rescuer.alive or rescuer.rescuing != self):
 		rescuer = null
-	var held := rescuer != null and rescuer.rescue_phase in ["drag", "treat"]
+	if medic != null and (not is_instance_valid(medic) or not medic.alive or medic.patient != self):
+		medic = null
+	var held := rescuer != null and rescuer.rescue_phase in ["drag", "treat"] \
+		or medic != null and medic.st == Civilian.St.TEND
 	if not held:
 		down_t += delta   # bleeding out (he presses the wound while someone's got him)
 	if down_t >= BLEED_T:
@@ -1567,8 +1571,8 @@ func _think_gasp(delta: float) -> void:
 	if gasp_look > 0.0:
 		return
 	gasp_look = 1.0
-	if rescuer != null and rescuer.rescue_phase in ["drag", "treat"]:
-		return   # being got clear: no call for it
+	if rescuer != null and rescuer.rescue_phase in ["drag", "treat"] or medic != null:
+		return   # being got clear, or seen to: no call for it
 	var gun := _gasp_gun()
 	var p: Player = game.player
 	var dist := global_position.distance_to(p.global_position)
@@ -1740,6 +1744,7 @@ func revive() -> void:
 	alive = true
 	hp = 1
 	rescuer = null
+	medic = null
 	bleeding = false
 	limp_t = randf_range(5.0, 8.0)
 	shaken = 1.0

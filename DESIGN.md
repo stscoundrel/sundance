@@ -942,6 +942,40 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   running or cowering (at most he calls out "Put down your guns!"). He still waits
   for the quiet before going out to the dead. Animations: the
   "prayer" set.
+- **The sister** (`role: "sister"`, placed `indoors`; in San Miguel's church and
+  Cruz Verde's chapel): a black habit, a white coif and wimple, a rosary at her belt.
+  She stays inside, and fears no one, the stranger included. Gunfire within ~320 px
+  of the door brings her out onto the doorstep, beckoning ("¡Adentro, hijos!", "In
+  here, quickly!"): townsfolk running from shooting within ~300 px make for her door
+  over any other. Ten seconds without a shot near it and she's back in. If the padre
+  is shot she runs out to him at once, whatever's flying ("¡Padre!"), and drags him
+  back by the shoulders, leaving a smear, in through the door, and nobody sees him
+  again. What became of him is left unsaid: the end card says only "the padre: in
+  God's hands". With him gone she sees to the dead in his place once the town is
+  quiet, kneeling and crossing them ("Descansa en paz."), but no bell tolls for
+  hers; the undertakers still take a blessed man first. Shot herself, she drops
+  where she is, and so does he. Animations: the "nun" set (folded hands, beckon,
+  drag, bless).
+- **The barber-surgeon** (`role: "barber"`, San Miguel only): shirtsleeves with red
+  sleeve garters, braces, an apron and a black leather bag; he stands on the porch
+  of the barber's (BATHS). Only gunfire close by (~220 px of him or his door), a
+  round past him or a man dropping in front of him sends him in, and he doesn't wait
+  for the town's quiet to come back out: 12 s without a shot near his shop will do,
+  however it's going elsewhere. If the stranger is wounded (bars down, bleeding or
+  limping, or in his last stand) within ~120 px of the door and in sight of it,
+  and no bandit fighting him has him in view within ~300 px, the barber comes out
+  ("Hold still, friend.") and binds him up where he stands: 5 s (a bandage takes
+  10), the stranger keeping still ("PATCHING UP" on the HUD; moving starts it over,
+  and firing sends him back in). Done, the stranger is whole again, the bleeding and
+  the limp stopped, up out of the dirt if he was down, his own bandage kept. Once a
+  level, so bandages still count. With the stranger seen to, he'll kneel by any
+  downed man within ~180 px of his door that none of the gang has come for (the
+  bleed-out clock stops while he works), and 8 s later the bandit's back on his
+  feet with one HP: he gets paid either way. Animations: the "barber" set (bag in
+  hand, binding a man standing, tending one on the ground).
+  The sister and the barber roll their own dice (`Civilian.rng` through each one's
+  `dice`, which `game.sfx` and `game.free_point_near` also take), so the seeded
+  tests play out as they did before them.
 - **Couples**: two placements sharing a `couple` id stroll together while all is
   calm: the first leads (with a long `wander`), the second walks on his arm,
   finding her way round anything in the way, and he waits if she falls behind.
@@ -1048,6 +1082,15 @@ cartridges with the guns, and that shooting him spills his armful, cartridges an
 all. `tests/test_mayor.gd` checks the mayor goes out to speak at gunfire, cowers
 at a near miss and stays down while it goes on, gets back up in the calm, steps
 down in the quiet and then tours every bit of damage and goes home.
+`tests/test_sister.gd` checks the sister starts indoors (and Cruz Verde has one),
+comes to the door at gunfire with a townsman running for her door, goes back in
+once it's quiet there, drags the shot padre in under fire (gone for good), then
+blesses a dead bandit, and that the end card leaves his fate unsaid.
+`tests/test_barber.gd` checks the barber leaves a stranger too far off, or under a
+bandit's gun, alone; patches him up close by, in under the bandage's time, his own
+bandage kept, and only once; ignores shooting across town but ducks in at shooting
+by the shop and is back out while the town is still loud; and gets a downed bandit
+by his shop back on his feet.
 `tests/test_shutters.gd` checks creeping down main street slams far fewer shutters
 than walking it, that the far end of town stays open, that a shot slams those
 around it, and that they open again once it's quiet. `tests/test_perf.gd` times a

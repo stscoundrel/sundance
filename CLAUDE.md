@@ -26,7 +26,8 @@ changing it.
   per-type tuning are data in `data/enemies.json`; levels and waves in `data/levels.json`.
 - Anything random that tests replay must not draw on the global RNG if it's new: give it
   its own `RandomNumberGenerator`, seeded in `game.gd` under the `fixed_seed` meta (see
-  `loot_rng`, `Enemy.rabble_rng`, `Enemy.return_rng`, `Enemy.schofield_rng`). Adding
+  `loot_rng`, `Enemy.rabble_rng`, `Enemy.return_rng`, `Enemy.schofield_rng`, `Civilian.rng`;
+  `game.sfx` and `game.free_point_near` take a `dice` for this). Adding
   global `randf()` calls shifts every seeded test.
 - Never let the wall clock (`Time.get_ticks_msec()`) decide anything that draws a
   random number, plays a sound (`game.sfx` draws two) or steers the AI: a headless test

@@ -81,6 +81,7 @@ var exposed_t := 0.0           # he's just fired: up over his cover, flash and s
 var bandages := 1
 var bandage_t := -1.0          # time into bandaging; < 0 when not at it
 var down := false              # in his last stand
+var medic: Civilian            # the barber-surgeon binding him up, while he keeps still
 var stand_used := false        # (once a level)
 var down_t := 0.0              # bleeding out
 var lie_facing := Vector2.RIGHT   # the way his boots point, lying there
@@ -699,12 +700,27 @@ func _down_tick(delta: float) -> void:
 		weapon.trigger()
 
 
+## The barber-surgeon's done with him: whole again, the bleeding and the limp
+## stopped, and up out of the dirt if that's where he was (his own bandage kept).
+func patched_up() -> void:
+	if down:
+		_get_up(false)
+	bandage_t = -1.0   # (if he was at it himself: he keeps the bandage)
+	pose = ""
+	hp = max_hp
+	limp_t = 0.0
+	bleeding = false
+	game.hud.toast("Patched up")
+	game.stats["patched up"] = game.stats.get("patched up", 0) + 1
+
+
 ## Bound up: back on his feet, one bar of him left and a limp, the gun he had.
-func _get_up() -> void:
+func _get_up(own := true) -> void:
 	down = false
 	propped = false
 	bandage_t = -1.0
-	bandages -= 1
+	if own:
+		bandages -= 1
 	hp = 1
 	bleeding = false
 	limp_t = 6.0

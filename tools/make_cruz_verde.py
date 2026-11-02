@@ -151,6 +151,7 @@ CIVILIANS = [
     {"kind": "saloon_girl", "x": 42.3, "y": 44.0, "facing": 60},
     {"kind": "saloon_girl", "x": 37.6, "y": 36.8, "facing": 200},
     {"kind": "priest", "x": 21.5, "y": 23.7, "facing": 90, "brave": True},   # he goes to the dead under fire
+    {"kind": "sister", "x": 21.5, "y": 23.5, "facing": 90},   # indoors, in the chapel
     {"kind": "peon", "x": 28.6, "y": 29.8, "facing": 0},
     {"kind": "peon", "x": 39.4, "y": 27.4, "facing": 180},
     {"kind": "peon", "x": 54.0, "y": 21.8, "facing": 120},

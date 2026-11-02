@@ -169,6 +169,11 @@ CIVILIANS = [
     {"kind": "henwife", "x": 51.2, "y": 41.6, "facing": 250, "palette": 1},
     # the padre at the church door
     {"kind": "priest", "x": 31.2, "y": 9.0, "facing": 0},
+    # and the sister indoors behind him: out to the door to call folk in when the
+    # shooting starts, out to him if he falls
+    {"kind": "sister", "x": 30.4, "y": 9.4, "facing": 0},
+    # the barber-surgeon on his porch, his bag in hand
+    {"kind": "barber", "x": 13.5, "y": 28.8, "facing": 60},
     # the undertaker at his door, his apprentice up on boot hill
     {"kind": "undertaker", "x": 56.4, "y": 30.6, "facing": 90},
     {"kind": "apprentice", "x": 9.6, "y": 50.4, "facing": 45},
