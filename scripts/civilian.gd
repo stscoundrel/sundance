@@ -47,7 +47,9 @@ extends Actor
 ## graves, a coffin waiting by each: dug, the coffin let down, filled in, and on to
 ## the next. There's nearly always shooting at the fort, so only gunfire by the
 ## graves or at the gate nearest them ("ward") scatters them, off the edge of the
-## map, and they're back as soon as it's stopped there.
+## map, and they're back as soon as it's stopped there. Anyone else placed "local"
+## (Cruz Verde's carpenter and sweepers) minds only gunfire close by in the same
+## way, and gets on with the work without waiting for the whole town to go quiet.
 
 enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
 	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY, TO_FIX, FIX, TO_SWEEP, SWEEP, HERD,
@@ -172,6 +174,7 @@ var digger := false
 var wards := PackedVector2Array()   # where gunfire also concerns the cemetery folk: their gate
 var pit: Dictionary = {}     # the open grave the digger's at
 var kneel := false
+var local := false           # minds only gunfire close by, and works through the rest
 
 
 func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {}) -> void:
@@ -182,9 +185,10 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	barber = tdata.get("role", "") == "barber"
 	visitor = tdata.get("role", "") == "visitor"
 	digger = tdata.get("role", "") == "digger"
+	local = visitor or digger or tdata.get("local", false)
 	if tdata.has("ward"):
 		wards.append(Iso.to_screen(Vector2(tdata["ward"][0], tdata["ward"][1])))
-	if sister or barber or visitor or digger:
+	if sister or barber or local:
 		dice = rng
 	hp = 1
 	max_hp = 1
@@ -256,7 +260,7 @@ func sees(pos: Vector2) -> bool:
 
 ## Gunfire: close, or in sight within earshot, and he's off.
 func hear(pos: Vector2, radius: float, _k: String, source: Node) -> void:
-	if (sister or barber or visitor or digger) and alive:
+	if (sister or barber or local) and alive:
 		if _k in GUNFIRE and source != self:
 			_hear_near(pos)
 		return
@@ -307,7 +311,7 @@ func alarm(from: Vector2, scary: bool) -> void:
 	if barber:
 		_duck_in()
 		return
-	if visitor or digger:
+	if local:
 		near_shot = game.clock   # (a fright of any kind: they give it a while before coming back)
 	if priest or sister:
 		# a holy man: he stands his ground, and may have a word for it
@@ -360,7 +364,7 @@ func _physics_process(delta: float) -> void:
 		if barber:
 			_barber_inside()
 			return
-		if visitor or digger:
+		if local:
 			if game.state == "play" and inside_t > 4.0 and game.clock - near_shot > RETURN_T:
 				_come_out()
 			return
@@ -511,7 +515,7 @@ func _idle(delta: float) -> void:
 			_next_scar()
 			if st != St.IDLE:
 				return
-	if game.quiet_for() >= game.quiet_after and _find_work():
+	if _calm() and _find_work():
 		return
 	if priest and (brave or game.quiet_for() >= game.quiet_after):
 		body = game.blessing_for(self)
@@ -871,14 +875,14 @@ func _find_work() -> bool:
 		if not job.is_empty():
 			var at: Vector2 = game.job_at(job)
 			var stand := at + (global_position - at).normalized() * 16.0
-			path = game.find_path(global_position, stand if game.is_free(stand) else game.free_point_near(stand, 16.0))
+			path = game.find_path(global_position, stand if game.is_free(stand) else game.free_point_near(stand, 16.0, dice))
 			path_i = 0
 			st = St.TO_FIX
 			return true
 	if sweeper:
 		dirt = game.dirt_job(self)
 		if dirt != Vector2.INF:
-			path = game.find_path(global_position, dirt if game.is_free(dirt) else game.free_point_near(dirt, 12.0))
+			path = game.find_path(global_position, dirt if game.is_free(dirt) else game.free_point_near(dirt, 12.0, dice))
 			path_i = 0
 			st = St.TO_SWEEP
 			return true
@@ -923,7 +927,7 @@ func _mend(delta: float) -> void:
 				knock_t -= delta
 				if knock_t <= 0.0:
 					knock_t = 1.1
-					game.sfx("hammer", global_position, -12.0, 0.1)
+					game.sfx("hammer", global_position, -12.0, 0.1, dice)
 			work_t -= delta
 			if work_t > 0.0:
 				return
@@ -953,7 +957,7 @@ func _sweep(delta: float) -> void:
 			knock_t -= delta
 			if knock_t <= 0.0:
 				knock_t = 0.9
-				game.sfx("sweep", global_position, -14.0, 0.15)
+				game.sfx("sweep", global_position, -14.0, 0.15, dice)
 			work_t -= delta
 			if work_t <= 0.0:
 				game.sweep_at(dirt, self)
@@ -1014,7 +1018,7 @@ func _drop_job() -> void:
 
 ## Gunfire: to her it means folk to get indoors; to him, his shop's in the line of it.
 func _hear_near(pos: Vector2) -> void:
-	if visitor or digger:
+	if local:
 		var near := pos.distance_to(global_position) < GRAVE_EAR or pos.distance_to(home) < GRAVE_EAR
 		for w in wards:
 			near = near or pos.distance_to(w) < GRAVE_EAR
@@ -1331,6 +1335,12 @@ func _let_go_of_patient() -> void:
 		(patient as Player).medic = null
 	patient = null
 	crouched = false
+
+
+## Quiet enough to get on with the work: the whole town quiet a while, or, for
+## those who only mind what's close, nothing near them for a few seconds.
+func _calm() -> bool:
+	return game.clock - near_shot > RETURN_T if local else game.quiet_for() >= game.quiet_after
 
 
 # ------------------------------------------------------------------ the cemetery

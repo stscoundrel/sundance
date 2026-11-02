@@ -105,6 +105,7 @@ var charges: Array[Charge] = []
 const BANDAGE_DROP := 0.2     # chance a dead man leaves a bandage he hadn't used
 const STICK_DROP := 0.5       # and the dynamite he hadn't thrown
 var loot_rng := RandomNumberGenerator.new()
+var litter_rng := RandomNumberGenerator.new()   # (how last night's bottles lie)
 var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
 # Blood trails: every drop a wounded man leaves. The gang can follow the stranger's.
 const TRAIL_FRESH := 45.0   # s a drop stays a lead worth following
@@ -199,6 +200,7 @@ func _ready() -> void:
 		Enemy.rollingblock_rng.randomize()
 		Wounds.rng.randomize()
 		Civilian.rng.randomize()
+		litter_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -212,6 +214,7 @@ func _ready() -> void:
 		Enemy.rollingblock_rng.seed = 41
 		Wounds.rng.seed = 41
 		Civilian.rng.seed = 43
+		litter_rng.seed = 47
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -681,11 +684,17 @@ func _build_world() -> void:
 	for o in level["objects"]:
 		var spr := _place_object(o["type"], Vector2(o["x"], o["y"]))
 		var og := Vector2(o["x"], o["y"])
+		if o.has("worn"):   # shot up before the stranger ever got here
+			for prop in props:
+				if prop["sprite"] == spr:
+					prop["hp"] = 0 if int(o["worn"]) >= 2 else int(PROP_HP[prop["kind"]] * 0.5)
+					_prop_state(prop, int(o["worn"]), true)
 		if o["type"] == "open_grave":
 			open_graves.append({"g": og, "sprite": spr, "at": Iso.to_screen(og + Vector2(1.1, 1.55)),
 				"dug": 0.0, "filled": 0.0, "in": false, "done": false, "digger": null})
 		elif o["type"] in GRAVES and _on_boot_hill(og):
 			old_graves.append(Iso.to_screen(og + Vector2(0.25, 0.12)))
+	_litter()
 	for item in fragile:
 		if item["kind"] == "coop":
 			for i in HENS_OUT:
@@ -1664,6 +1673,18 @@ func bury(body: Actor, at: Vector2) -> void:
 	_fresh_grave(at)
 
 
+## Last night's broken bottles (the level's "litter"), lying where they were dropped:
+## green and brown glass and a dark stain of what was in them. On their own dice.
+func _litter() -> void:
+	for p in level.get("litter", []):
+		var at := Iso.to_screen(Vector2(p[0], p[1]))
+		var col: Color = [Color(0.4, 0.66, 0.4), Color(0.68, 0.44, 0.2), Color(0.86, 0.94, 0.98)][litter_rng.randi() % 3]
+		decals.add(at + Vector2(litter_rng.randf_range(-3, 3), 2), litter_rng.randf_range(5.5, 7.5), Color(0.2, 0.12, 0.07, 0.4))
+		for i in litter_rng.randi_range(8, 11):
+			decals.add(at + Vector2(litter_rng.randf_range(-8, 8), litter_rng.randf_range(-4, 4)),
+				litter_rng.randf_range(1.1, 1.9), Color(col.r, col.g, col.b, 0.95))
+
+
 func _on_boot_hill(g: Vector2) -> bool:
 	for r in level.get("boothills", []):
 		if g.x >= r[0] and g.x <= r[2] and g.y >= r[1] and g.y <= r[3]:
@@ -2422,7 +2443,8 @@ func hit_prop(prop: Dictionary, dmg: int, pierce: int, at: Vector2, by: Actor = 
 	return pierce >= PROP_TOUGH[prop["kind"]]
 
 
-func _prop_state(prop: Dictionary, n: int) -> void:
+## `quiet`: as the level's laid out, so no sound and nothing counted.
+func _prop_state(prop: Dictionary, n: int, quiet := false) -> void:
 	prop["state"] = n
 	var m: Dictionary = meta["objects"][prop["kind"]]
 	var st: Dictionary = m["states"][n - 1]
@@ -2436,7 +2458,8 @@ func _prop_state(prop: Dictionary, n: int) -> void:
 		_leak(c + Vector2(0, 10), 14.0 if n == 1 else 24.0)   # the water's getting out, into the street
 	if n == 2:
 		# down to a heap of boards: no cover, nothing in anyone's way
-		sfx("wood_break", c, -2.0, 0.1)
+		if not quiet:
+			sfx("wood_break", c, -2.0, 0.1)
 		if prop["body"]:
 			prop["body"].queue_free()
 			prop["body"] = null
@@ -2444,8 +2467,9 @@ func _prop_state(prop: Dictionary, n: int) -> void:
 		for p in prop["covers"]:
 			cover_points.erase(p)
 		spr.z_index = -1   # it lies flat now: people walk over it
-		stats["cover wrecked"] = stats.get("cover wrecked", 0) + 1
-	else:
+		if not quiet:
+			stats["cover wrecked"] = stats.get("cover wrecked", 0) + 1
+	elif not quiet:
 		stats["cover damaged"] = stats.get("cover damaged", 0) + 1
 
 

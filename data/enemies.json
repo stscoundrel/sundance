@@ -420,7 +420,8 @@
         "speed": 0.9, "nerve": [0.3, 0.8],
         "shouts": {"flee": ["Not my good saw!", "¡Ay, mi madre!"], "work": ["Good as new.", "Hm. Needs a nail.", "Who keeps doing this?", "Measure twice..."]},
         "palettes": [
-          {"shirt": [196, 176, 140], "trousers": [96, 82, 64], "accent": [146, 116, 80], "boots": [64, 46, 32], "hat": [110, 92, 70], "band": [70, 58, 46], "skin": [196, 146, 110], "hair": [120, 86, 54]}]},
+          {"shirt": [196, 176, 140], "trousers": [96, 82, 64], "accent": [146, 116, 80], "boots": [64, 46, 32], "hat": [110, 92, 70], "band": [70, 58, 46], "skin": [196, 146, 110], "hair": [120, 86, 54]},
+          {"shirt": [222, 214, 196], "trousers": [206, 198, 178], "accent": [130, 100, 70], "boots": [96, 70, 48], "hat": [176, 148, 98], "band": [110, 46, 34], "skin": [160, 106, 74], "hair": [40, 32, 28]}]},
       "sweeper": {"name": "Sweeper", "template": "peon", "role": "sweeper", "snitch": 0.0, "wander": 30, "speed": 0.9,
         "nerve": [0.1, 0.6],
         "shouts": {"flee": ["¡Ay, no, otra vez!", "¡Corran!"], "work": ["Tanta sangre...", "Ay, Dios.", "¡Qué cochinada!", "..."]},

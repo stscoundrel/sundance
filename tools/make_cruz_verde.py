@@ -77,6 +77,17 @@ KEG_SPOTS = [("keg", 18.75, 27.25), ("barrel", 19.4, 27.3),        # the west ga
              ("keg", 46.05, 37.65),                                # the east breach
              ("dyn_crate", 28.2, 19.6), ("dyn_crate", 35.2, 19.4), ("dyn_crate", 34.5, 39.6)]
 PROPS += KEG_SPOTS
+# Last night the leaders drank to the revolution: broken bottles about the fort,
+# thickest round the cantina, the general's house and the plaza tables. Two sweepers
+# are at them from the start.
+LITTER = [(35.6, 37.0), (36.8, 36.6), (39.6, 36.8), (41.0, 37.4), (38.2, 42.6), (40.4, 44.6),
+          (36.2, 24.4), (38.8, 24.8), (41.6, 25.0), (31.6, 29.6), (33.4, 33.4), (37.6, 31.0),
+          (25.4, 33.6), (44.2, 29.0), (30.0, 22.6), (23.6, 40.6)]
+
+# Shot up in the last battle for the fort, and not all mended yet: 1 holed, 2 wrecked.
+# The carpenter's working through them when the stranger arrives.
+WORN = {(27.4, 29.0): 1, (40.6, 32.4): 2, (36.4, 25.6): 1, (29.5, 39.2): 1, (30.4, 40.2): 2, (29.6, 40.6): 1,
+        (25.5, 37.6): 1, (33.6, 42.2): 1, (44.0, 32.2): 2, (22.4, 27.0): 1, (35.0, 35.8): 1}
 
 # The cemetery: rings of crosses, mounds and headstones round a circle of stones,
 # and rows of graves below the west road.
@@ -157,6 +168,12 @@ CIVILIANS = [
     {"kind": "saloon_girl", "x": 37.6, "y": 36.8, "facing": 200},
     {"kind": "priest", "x": 21.5, "y": 23.7, "facing": 90, "brave": True},   # he goes to the dead under fire
     {"kind": "sister", "x": 21.5, "y": 23.5, "facing": 90},   # indoors, in the chapel
+    # the fort's carpenter, mending what the last battle broke: only shooting close by
+    # stops him, and he's straight back to it
+    {"kind": "carpenter", "x": 32.0, "y": 36.8, "facing": 300, "local": True, "palette": 1},
+    # and two with brooms, sweeping up after last night
+    {"kind": "sweeper", "x": 34.2, "y": 36.4, "facing": 30, "local": True, "palette": 0},
+    {"kind": "sweeper", "x": 38.0, "y": 27.6, "facing": 200, "local": True, "palette": 1},
     # out in the cemetery: the grave digger at his new row, and the families of the
     # revolution's dead going from grave to grave round the stone circle
     {"kind": "digger", "x": 11.2, "y": 33.0, "facing": 180, "ward": WEST_GATE},
@@ -187,6 +204,10 @@ PLAYER = {"x": 15.0, "y": 26.2}   # outside the west gate, flat against the wall
 def main():
     placed = FORT + INSIDE + OUTSIDE + PROPS + cemetery()
     objects = [{"type": k, "x": x, "y": y} for k, x, y in placed]
+    for o in objects:
+        if (o["x"], o["y"]) in WORN:
+            o["worn"] = WORN[(o["x"], o["y"])]
+    assert sum("worn" in o for o in objects) == len(WORN), "a worn spot with nothing at it"
     solid = layout.check(N, objects, ENEMIES + SLEEPERS + CIVILIANS + ENTRIES + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")],
                          joined={k for k, *_ in FORT})
     kinds = {k for k, *_ in INSIDE + OUTSIDE}
@@ -198,6 +219,7 @@ def main():
         "streets": STREETS,
         "mud": MUD,
         "boothills": [[0.5, 14.0, 15.0, 50.0]],
+        "litter": [list(p) for p in LITTER],
         "objects": objects,
         "player": PLAYER,
         "enemies": ENEMIES,

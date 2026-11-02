@@ -1016,6 +1016,19 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
     scatters them, and a near miss or a man dropping by them. They run off the west
     edge of the map rather than into town, and they're back 8 s after it stops there,
     however it's going in the fort; the digger takes up his grave where he left it.
+  - *The fort's carpenter*: Cruz Verde opens with the last battle's damage not all
+    mended: eleven crates, barrels and thrown-over tables shot up (`worn` on the
+    map's objects: 1 holed, 2 wrecked flat, no cover), set silently as the level
+    loads. The town's carpenter is placed there `local`: like the cemetery folk he
+    minds only gunfire close by, and he doesn't wait for the town's quiet, so he's
+    at the damage from the moment the stranger arrives, nearest first, and back at
+    it 8 s after shooting near him stops. Whatever he mends is cover again.
+  - *The morning after*: the revolution's leaders drank late, and broken bottles lie
+    about the fort (the map's `litter`: thickest round the cantina, the general's
+    house and the plaza tables), green, brown and clear glass by a dark stain, laid
+    down on their own dice (`litter_rng`). Two sweepers, placed `local` like the
+    carpenter, are at them from the start, and at whatever blood and glass the
+    fight adds.
   Animations: "grief" (both templates) and "spade" (dig, lever, throw). They roll the
   townsfolk's own dice like the sister and the barber.
   The sister and the barber roll their own dice (`Civilian.rng` through each one's
@@ -1141,6 +1154,12 @@ cemetery, carry on through shooting in the fort, scatter off the map at shooting
 the west gate and are back soon after it moves off (the fort still loud), and that
 the digger digs out all three graves, lets each coffin down and fills it in, and the
 families mourn at each fresh grave.
+`tests/test_fort_carpenter.gd` checks Cruz Verde opens with eleven props worn
+(three wrecked, out of the way), uncounted; the carpenter starts on them at once,
+works through shooting across the fort, runs from shooting by him and is soon back,
+and in the end mends every one, cover again.
+`tests/test_litter.gd` checks Cruz Verde opens with last night's bottles lying about
+the fort and the two sweepers start on them at once and sweep up every one.
 `tests/test_shutters.gd` checks creeping down main street slams far fewer shutters
 than walking it, that the far end of town stays open, that a shot slams those
 around it, and that they open again once it's quiet. `tests/test_perf.gd` times a
