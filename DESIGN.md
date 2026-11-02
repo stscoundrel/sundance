@@ -137,7 +137,8 @@ starts the waves) and has the autopilot hold out a few minutes against the waves
 | RMB | Revolver: fan the hammer (hold) · Coach gun: fire both barrels |
 | C / Ctrl | Toggle crouch |
 | R | Reload (press fire to stop a partial reload) |
-| 1 / 2 / 3, wheel | Colt / coach gun / Yellow Boy (the ones he has) |
+| 1 / 2 / 3, wheel | Revolver / shotgun / rifle slot (the ones he has) |
+| F | Swap the gun in that slot for the one at his feet |
 | E | Knife: a silent takedown from behind, or a rush |
 | Enter | Restart after win or loss |
 | Esc | Quit |
@@ -220,17 +221,42 @@ px of him hear and come to see; the rest, no friends of the gang, slip off indoo
 without a word. The undertaker won't claim a body the stranger has hold of.
 `tests/test_drag.gd`.
 
-**Loadout and loot.** After the title card the stranger chooses his irons: any of
-the Colt, the coach gun and the Winchester, at least one (1 2 3 or a click to take
-or put back; Enter or "ride in"; all three are allowed for now, for testing, and
-`LOADOUT_SIZE` in `game.gd` limits it). The choice is kept across restarts. He
-rides in with those and their belts of cartridges. Any of the three a dead man
-drops is his for walking over it, part-spent as it was left; a gun he already has,
-or one he can't use yet (derringer, Sharps, howdah, sawn-off), stays where it lies,
-and the gunsmith may get to it first. Cartridges for a gun he hasn't got still go
-in his belt, ready for when he finds one. Three small slots over the gun panel show
-which he has (the one in hand outlined), and a line there says what he picked up.
-`tests/test_loadout.gd` covers the screen, the switching, and picking guns up.
+**Loadout and loot.** After the title card the stranger chooses his irons: one gun
+a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
+listing what goes in it (Colt, Navy or horse pistol; coach gun or escopeta;
+Winchester, Spencer or Springfield) with a line on what the chosen one is like. 1 2 3
+or a click on a card goes on through its guns and then none; a click on a gun's
+name takes it, or puts it back. Enter or "ride in". The choice is kept across
+restarts. He rides in with those and their cartridges (`Player.RESERVE`; guns
+sharing powder and ball add theirs to the one belt). Cartridges for a gun he hasn't
+got still go in his belt, ready for when he finds one. Three small slots over the
+gun panel show which he has (the one in hand outlined), and a line there says what
+he picked up. `tests/test_loadout.gd` covers the screen, the switching, and picking
+guns up.
+
+**Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
+never change meaning: **1** a revolver or pistol (Colt, Navy, horse pistol), **2** a
+shotgun (coach gun, escopeta), **3** a rifle (Winchester, Spencer, Springfield).
+`Player.SLOT` lists what he can carry; the derringer, Sharps, howdah and sawn-off
+still stay where they lie, and the gunsmith may get to them first.
+- A gun for an **empty slot** is his for walking over it.
+- One for a **slot he's filled** is a swap he has to mean: standing over it, it
+  glints, and a line over the gun panel names it, what's in it and what he'd give
+  for it ("[F] SPENCER CARBINE (5 loaded) for your WINCHESTER 1866"), there being no
+  telling one gun from another in a heap of the dead. **F** swaps: the new one in
+  his hand, his own left lying where the other lay, loaded as it was. He can take it
+  back the same way.
+- A dead man's gun is **loaded as he left it** (what he'd fired is fired), so a dry
+  Colt can be dropped for a loaded Navy off the nearest body and the fight goes on
+  without a reload.
+- The dead man's cartridges, lying by his gun, come with it (his bandolier): a few
+  rounds, never a full belt.
+- **Ammo is by kind, on one belt**: .45 Colt, 10-gauge shells, .44 rimfire, Spencer
+  rimfire, and powder and ball for the cap-and-ball Navy and the muzzle-loaders
+  (horse pistol, escopeta, Springfield), so those share. Every dead man drops the
+  rounds for his gun, whether the stranger has one or not.
+The revolution's guns are worse than his own; they earn a slot when his are dry.
+`tests/test_pickups.gd`.
 
 ## Weapons (period-authentic)
 

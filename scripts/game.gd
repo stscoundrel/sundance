@@ -49,8 +49,10 @@ var _quiet := 0.0
 var graves := PackedVector2Array()
 var to_mourn: Array[Dictionary] = []
 # Guns lying about: {kind, sprite, at, under (the body it fell with, or null),
-# ammo (the cartridges dropped beside it: a Pickup, or null), ammo_kind, claimed_by}
+# ammo (the cartridges dropped beside it: a Pickup, or null), ammo_kind, claimed_by,
+# weapon (how it was left loaded, if known), his (the stranger put it down)}
 var loose_guns: Array[Dictionary] = []
+var at_feet: Dictionary = {}   # the gun the stranger's standing over, his to take (F)
 # The gang's reserve, drinking in the den (the saloon) until the shooting comes close
 # and loud enough (heat), or a runner fetches them. Silence the street first and
 # they never come; once out, they have to die too.
@@ -136,8 +138,7 @@ var cover_points := PackedVector2Array()
 var astar := AStarGrid2D.new()
 
 var state := "title"   # title, loadout, play, won, lost
-const LOADOUT_SIZE := 3   # all three for now, for testing
-static var picked: Array[String] = ["colt", "coach"]   # the loadout screen's choice, kept across restarts
+static var picked: Array[String] = ["colt", "coach"]   # the loadout screen's choice (a gun a slot at most), kept across restarts
 var start_guns: Array = Player.ORDER   # what he rides in with (tests: all three)
 var shake := 0.0
 var hurt_fx := 0.0
@@ -219,7 +220,7 @@ func _ready() -> void:
 	wind.play()
 	sfx("bell", null, -4.0, 0.0)
 	if _args.has("guns"):
-		start_guns = Array(_args["guns"].split(",")).filter(func(k): return k in Player.ORDER)
+		start_guns = Array(_args["guns"].split(",")).filter(func(k): return Player.SLOT.has(k))
 	if _args.has("skip-title"):
 		begin()
 	elif _args.has("freeze"):
@@ -386,7 +387,7 @@ func _setup_input() -> void:
 	var keys := {
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN],
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
-		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E], "bandage": [KEY_B], "throw": [KEY_G],
+		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E], "bandage": [KEY_B], "throw": [KEY_G], "take": [KEY_F],
 		"weapon_1": [KEY_1], "weapon_2": [KEY_2], "weapon_3": [KEY_3],
 		"restart": [KEY_ENTER], "quit": [KEY_ESCAPE],
 	}
@@ -489,14 +490,15 @@ func _to_loadout() -> void:
 	hud.hide_title()
 
 
-## 1 2 3 or a click on a gun picks it or puts it back (up to LOADOUT_SIZE; past
-## that a new pick replaces the first); Enter, Space or "ride in" starts with them.
+## One gun a slot, or none. 1 2 3 (or a click on the card) goes through a slot's
+## guns and then none; a click on a gun's name takes it, or puts it back if taken.
+## Enter, Space or "ride in" starts with them.
 func _loadout_input(event: InputEvent) -> void:
 	var k := ""
 	if event is InputEventKey:
 		match event.keycode:
 			KEY_1, KEY_2, KEY_3:
-				k = Player.ORDER[event.keycode - KEY_1]
+				k = "slot:" + Player.ORDER[event.keycode - KEY_1]
 			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 				_ride_in()
 				return
@@ -506,15 +508,38 @@ func _loadout_input(event: InputEvent) -> void:
 			_ride_in()
 			return
 		k = hit
+	_loadout_pick(k)
+
+
+## `k`: a gun's name clicked, or "slot:<slot>" to go on to that slot's next gun.
+func _loadout_pick(k: String) -> void:
 	if k == "":
 		return
-	if k in picked:
+	if k.begins_with("slot:"):
+		var slot := k.trim_prefix("slot:")
+		var options: Array = Player.choices(slot) + [""]
+		var now := options.find(picked_for(slot))
+		_take_for_slot(slot, options[(now + 1) % options.size()])
+	elif k in picked:
 		picked.erase(k)
 	else:
-		picked.append(k)
-		if picked.size() > LOADOUT_SIZE:
-			picked.pop_front()
+		_take_for_slot(Player.SLOT[k], k)
 	sfx("close", null, -10.0)
+
+
+## The gun taken for this slot on the loadout screen, or "".
+func picked_for(slot: String) -> String:
+	for k in picked:
+		if Player.SLOT.get(k, "") == slot:
+			return k
+	return ""
+
+
+func _take_for_slot(slot: String, k: String) -> void:
+	picked.erase(picked_for(slot))
+	if k != "":
+		picked.append(k)
+	picked.sort_custom(func(a, b): return Player.ORDER.find(Player.SLOT[a]) < Player.ORDER.find(Player.SLOT[b]))
 
 
 func _ride_in() -> void:
@@ -1619,8 +1644,8 @@ func _on_enemy_died(e: Actor) -> void:
 	if _args.has("bot"):
 		print("%.1fs  %s down, %d left" % [(Time.get_ticks_msec() - start_time) / 1000.0, e.kind, alive_enemies()])
 	_drop_kit(e)
-	var ammo: String = e.weapon.d.get("ammo", e.weapon.kind)
-	if player.weapons.has(ammo):   # nothing to take from a derringer
+	var ammo: String = e.weapon.ammo()
+	if Pickup.AMOUNT.has(ammo):   # nothing to take from a derringer
 		var p := _drop_ammo(ammo, e.global_position + Vector2(randf_range(-6, 6), 4))
 		for g in loose_guns:
 			if g["under"] == e:
@@ -1782,10 +1807,15 @@ func muzzle_flash(holder: Actor, dir: Vector2) -> void:
 ## A dead man's gun falls from his hand and lands in the dirt beside him (or a
 ## living one throws his empty long gun down).
 func drop_gun(a: Actor) -> void:
-	for kind in a.weapon.d.get("drops", [a.weapon.kind]):
+	var drops: Array = a.weapon.d.get("drops", [a.weapon.kind])
+	for kind in drops:
 		var side := a.facing.orthogonal() * randf_range(-10.0, 10.0) - a.facing * randf_range(2.0, 8.0)
 		var g := _place_gun(kind, a.global_position + side + Vector2(0, 2), a.gun_height())
 		g["under"] = null if a.alive else a
+		if drops.size() == 1:   # loaded as he left it (a pair: some of each fired off, picked up)
+			var w := Weapon.new(kind, null)
+			w.copy_load(a.weapon)
+			g["weapon"] = w
 
 
 func _place_gun(kind: String, at: Vector2, fall: float) -> Dictionary:
@@ -2968,20 +2998,55 @@ func _leak(at: Vector2, r: float) -> void:
 		tw.tween_callback(func(): decals.add(at + Vector2(randf_range(-8, 8), i * 2.5), r * (0.5 + 0.2 * i), wet))
 
 
-## The stranger walks over a gun he hasn't got (a Colt, a coach gun, a Winchester):
-## it's his. The cartridges lying by it are his to pick up as usual.
+## The stranger walks over a gun for a slot he hasn't filled: it's his. One for a
+## slot he has is a swap he has to mean (F): the gun he could take glints, and the
+## HUD names it. The cartridges lying by it are his to pick up as usual.
 func _pick_up_guns() -> void:
-	if not player.alive:
+	var g: Dictionary = player.gun_at_feet() if player.alive and not player.down else {}
+	if g != at_feet:
+		if not at_feet.is_empty() and is_instance_valid(at_feet["sprite"]):
+			at_feet["sprite"].modulate = Color.WHITE
+		at_feet = g
+	if g.is_empty():
 		return
-	for g in loose_guns:
-		var k: String = g["kind"]
-		if k in Player.ORDER and not k in player.owned and player.global_position.distance_to(g["at"]) < 12.0:
-			loose_guns.erase(g)
-			g["sprite"].queue_free()
-			player.take_up(k)
-			hud.toast("%s  picked up  [%d]" % [player.weapons[k].d["name"], Player.ORDER.find(k) + 1])
-			stats["guns picked up"] = stats.get("guns picked up", 0) + 1
-			return
+	if not Player.SLOT[g["kind"]] in player.owned and not g.get("his", false):
+		_take_up(g)
+		return
+	g["sprite"].modulate = Color(1, 1, 1).lerp(Color(1.9, 1.6, 1.0), 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.008))
+
+
+## F: the gun at his feet into his hand, and his own in that slot left lying there.
+func swap_gun() -> void:
+	if not at_feet.is_empty() and player.alive and not player.down and loose_guns.has(at_feet):
+		_take_up(at_feet)
+
+
+func _take_up(g: Dictionary) -> void:
+	var k: String = g["kind"]
+	var bandolier := 0
+	var ammo = g["ammo"]   # (his cartridges by him: off his belt with the gun)
+	if ammo != null and is_instance_valid(ammo) and not ammo.is_queued_for_deletion():
+		bandolier = Pickup.AMOUNT[ammo.kind]
+		player.belt[ammo.kind] = player.belt.get(ammo.kind, 0) + bandolier
+		ammo.queue_free()
+	loose_guns.erase(g)
+	g["sprite"].queue_free()
+	at_feet = {}
+	var old: Weapon = player.take_up(k, g.get("weapon"))
+	var w: Weapon = player.weapons[Player.SLOT[k]]
+	var says := "%s  picked up  [%d]" % [w.d["name"], Player.ORDER.find(Player.SLOT[k]) + 1]
+	if old:   # down in the dirt where the other lay, as loaded as it was
+		var left := _place_gun(old.kind, g["at"], 6.0)
+		var keep := Weapon.new(old.kind, null)
+		keep.copy_load(old)
+		left["weapon"] = keep
+		left["his"] = true
+		says = "%s  for the %s" % [w.d["name"], old.d["name"]]
+		stats["guns swapped"] = stats.get("guns swapped", 0) + 1
+	if bandolier > 0:
+		says += "  +%d" % bandolier
+	hud.toast(says)
+	stats["guns picked up"] = stats.get("guns picked up", 0) + 1
 
 
 ## Picked up: off the ground, and the cartridges lying with it go too.

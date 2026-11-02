@@ -50,7 +50,7 @@ const DATA := {
 	# an age. A little weaker, and a fog of black powder smoke. The bandidos' gun.
 	"navy": {"name": "COLT NAVY 1851", "action": "revolver", "damage": 1, "speed": 600.0, "range": 330.0,
 		"spread": 3.2, "pellets": 1, "noise": 360.0, "sfx": "colt", "cycle": 0.38, "shake": 2.0, "smoke": 15,
-		"smoke_push": 1.2, "eject": [0.2, "gate"], "insert": [1.5, "shell_in"],
+		"smoke_push": 1.2, "eject": [0.2, "gate"], "insert": [1.5, "shell_in"], "ammo": "powder",
 		"status": {"cycle": "COCKING", "open": "POWDER AND BALL", "close": "CAPPED"}},
 	# Spencer 1860 carbine, the revolution's cast-off repeater: seven rounds in a tube
 	# through the butt, and between shots both the lever and the hammer to work.
@@ -65,14 +65,14 @@ const DATA := {
 	"springfield": {"name": "SPRINGFIELD 1861", "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
 		"damage": 3, "pierce": 1, "speed": 950.0, "range": 700.0, "spread": 0.5, "pellets": 1, "noise": 560.0,
 		"sfx": "musket", "cycle": 0.5, "shake": 4.0, "smoke": 24, "smoke_push": 1.6,
-		"open": [1.0, "gate"], "eject": [1.1, "pour"], "insert": [3.4, "ram"], "close": [1.2, "cock"],
+		"open": [1.0, "gate"], "eject": [1.1, "pour"], "insert": [3.4, "ram"], "close": [1.2, "cock"], "ammo": "powder",
 		"status": {"cycle": "COCKING", "open": "CARTRIDGE TORN", "close": "CAPPED"}},
 	# Escopeta: an old single-barrel percussion fowling piece, the peon's gun. Powder,
 	# wad, shot, wad, all rammed down from the front: one shot and he'll want his pistol.
 	"escopeta": {"name": "ESCOPETA", "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
 		"damage": 1, "speed": 470.0, "range": 150.0, "spread": 11.0, "pellets": 8, "noise": 470.0,
 		"sfx": "coach", "cycle": 0.4, "shake": 3.5, "smoke": 26, "smoke_push": 1.8,
-		"open": [1.0, "pour"], "eject": [1.2, "pour"], "insert": [4.0, "ram"], "close": [1.2, "cock"],
+		"open": [1.0, "pour"], "eject": [1.2, "pour"], "insert": [4.0, "ram"], "close": [1.2, "cock"], "ammo": "powder",
 		"status": {"cycle": "COCKING", "open": "POWDER", "close": "CAPPED"}},
 	# Pistola: an old single-shot percussion horse pistol (a Model 1842, or the like),
 	# smoothbore and muzzle-loaded: one big soft ball that wanders, then powder, ball
@@ -80,7 +80,7 @@ const DATA := {
 	"pistola": {"name": "HORSE PISTOL", "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
 		"damage": 1, "speed": 520.0, "range": 260.0, "spread": 4.5, "pellets": 1, "noise": 420.0,
 		"sfx": "colt", "cycle": 0.4, "shake": 2.5, "smoke": 18, "smoke_push": 1.3,
-		"open": [0.9, "pour"], "eject": [1.0, "pour"], "insert": [3.2, "ram"], "close": [1.0, "cock"],
+		"open": [0.9, "pour"], "eject": [1.0, "pour"], "insert": [3.2, "ram"], "close": [1.0, "cock"], "ammo": "powder",
 		"status": {"cycle": "COCKING", "open": "POWDER", "close": "CAPPED"}},
 	# Empty hands: townsfolk. Never fires; drops nothing.
 	"unarmed": {"name": "", "action": "none", "damage": 0, "speed": 0.0, "range": 0.0, "spread": 0.0,
@@ -112,7 +112,18 @@ var action: String
 var holder: Actor
 var state := S.READY
 var timer := 0.0
-var reserve := 0
+# Spare rounds. The stranger's come out of his belt (Player.belt, by ammo()), so
+# two guns of his that take the same share them, and a gun he drops leaves them
+# with him; anyone else's are the gun's own.
+var _reserve := 0
+var reserve: int:
+	get:
+		return holder.belt.get(ammo(), 0) if holder is Player else _reserve
+	set(v):
+		if holder is Player:
+			holder.belt[ammo()] = v
+		else:
+			_reserve = v
 var stop_requested := false
 var reload_idx := 0
 var slow := 1.0   # every action takes this much longer (the stranger shooting from the dirt)
@@ -156,6 +167,21 @@ func part_spent() -> void:
 					barrels[i] = 2
 		"lever":
 			tube = randi_range(0, cap())
+
+
+## As another left it: the same chambers, barrels or tube loaded and fired.
+func copy_load(o: Weapon) -> void:
+	chambers = o.chambers.duplicate()
+	cur = o.cur
+	cocked = o.cocked
+	barrels = o.barrels.duplicate()
+	tube = o.tube
+	chambered = o.chambered
+
+
+## What it's loaded with: the cartridges (or powder and ball) on a belt.
+func ammo() -> String:
+	return d.get("ammo", kind)
 
 
 ## Rounds a lever gun's tube holds.

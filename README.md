@@ -13,7 +13,7 @@ godot --path .
 
 WASD move · mouse aim · LMB fire · RMB fan the Colt / fire both barrels · C or Ctrl crouch ·
 R reload (fire stops a partial reload) · 1/2/3 or wheel to switch guns · E knife (hold to drag
-a body) · B bandage · G throw dynamite · Enter restart · Esc quit.
+a body) · B bandage · G throw dynamite · F swap for the gun at your feet · Enter restart · Esc quit.
 
 ## Assets
 
@@ -71,6 +71,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_kegs.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_laststand.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_rally.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_returnfire.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_pickups.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_corners.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_cover.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_fragile.gd
@@ -86,6 +87,6 @@ godot --headless --path . --fixed-fps 60 -s tests/test_perf.gd
 godot --path . -s tests/profile.gd                        # where a big fight's frame goes (also --headless)
 ```
 
-Flags go after `--`: `--skip-title` (no title or loadout screen; rides in with all three guns, or `--guns=colt,rifle`), `--level=ID` (a level from `data/levels.json`, e.g. `san_miguel_35`), `--at=GX,GY` (start tile), `--bot` (autopilot that shoots
+Flags go after `--`: `--skip-title` (no title or loadout screen; rides in with Colt, coach gun and Winchester, or `--guns=navy,spencer`, one a slot), `--level=ID` (a level from `data/levels.json`, e.g. `san_miguel_35`), `--at=GX,GY` (start tile), `--bot` (autopilot that shoots
 and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--alert` (trigger the close-up), `--rattle` (near-miss every bandit once), `--freeze` (no title, bandits stand still), `--shot=PATH --shot-time=SECONDS` (save a
 screenshot and quit).

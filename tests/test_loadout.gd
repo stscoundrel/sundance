@@ -1,6 +1,7 @@
 extends SceneTree
 ## The loadout screen and picking guns up. From the title the stranger chooses his
-## guns (any of the three, at least one); he rides in with only those and can't
+## guns (one a slot, at least one: 1 2 3 go through a slot's guns, a click on a
+## name takes it); he rides in with only those and can't
 ## switch to the other. Cartridges for it still go in his belt. Walking over that gun
 ## lying in the dirt makes it his (part-spent, as a dead man left it); a gun he
 ## already has, or one he can't use yet (a sawn-off), stays where it lies:
@@ -36,6 +37,13 @@ func _key(k: Key) -> void:
 	game._loadout_input(e)
 
 
+## A click on a gun's name on the loadout screen.
+func _click(k: String) -> void:
+	var i := Player.ORDER.find(Player.SLOT[k])
+	var at: Vector2 = game.hud._option(i, Player.choices(Player.SLOT[k]).find(k)).get_center()
+	game._loadout_pick(game.hud.loadout_hit(at))
+
+
 func _process(_delta: float) -> bool:
 	frame += 1
 	var p: Player = game.player
@@ -46,7 +54,20 @@ func _process(_delta: float) -> bool:
 		_key(KEY_3)
 		check(game.picked == ["colt", "coach", "rifle"], "all three should go (%s)" % [game.picked])
 		_key(KEY_2)
-		check(game.picked == ["colt", "rifle"], "picking a gun again should put it back (%s)" % [game.picked])
+		check(game.picked == ["colt", "escopeta", "rifle"], "2 should go on to the escopeta, in the coach gun's place (%s)" % [game.picked])
+		_key(KEY_2)
+		check(game.picked == ["colt", "rifle"], "and then to no shotgun at all (%s)" % [game.picked])
+		_key(KEY_1)
+		_key(KEY_1)
+		check(game.picked == ["pistola", "rifle"], "1 twice should come to the horse pistol (%s)" % [game.picked])
+		_click("spencer")
+		_click("colt")
+		check(game.picked == ["colt", "spencer"], "a click on a gun's name should take it for its slot (%s)" % [game.picked])
+		p.arm(game.picked)
+		check(p.weapons["rifle"].kind == "spencer" and p.weapons["rifle"].reserve == Player.RESERVE["spencer"],
+			"riding in with a Spencer, he hasn't one, or its rounds")
+		_click("spencer")
+		_key(KEY_3)
 		_key(KEY_ENTER)
 		check(game.state == "play", "Enter should ride in")
 		check(p.owned == ["colt", "rifle"], "he should ride in with the two he picked (%s)" % [p.owned])

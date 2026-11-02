@@ -1,9 +1,10 @@
 class_name Pickup
 extends Area2D
-## Cartridges dropped by a dead bandit, for the weapon he carried; or a bandage he
-## never got to use, or the stick of dynamite he never got to throw.
+## Cartridges dropped by a dead bandit, for the weapon he carried (powder and ball,
+## for the cap-and-ball and muzzle-loaders); or a bandage he never got to use, or
+## the stick of dynamite he never got to throw.
 
-const AMOUNT := {"colt": 6, "coach": 4, "rifle": 7, "bandage": 1, "dynamite": 1}
+const AMOUNT := {"colt": 6, "coach": 4, "rifle": 7, "spencer": 5, "powder": 4, "bandage": 1, "dynamite": 1}
 const CARRY := {"bandage": 1, "dynamite": 1}   # one of each on him at a time: the rest stay where they lie
 
 var game: Node
@@ -40,7 +41,7 @@ func _on_body(b: Node) -> void:
 				b.sticks += 1
 				game.hud.toast("Dynamite picked up  [G]")
 			_:
-				b.weapons[kind].reserve += AMOUNT[kind]
+				b.belt[kind] = b.belt.get(kind, 0) + AMOUNT[kind]
 		if kind in CARRY:
 			game.stats[kind + " picked up"] = game.stats.get(kind + " picked up", 0) + 1
 		game.sfx("pickup", null, 0.0)
@@ -66,6 +67,12 @@ func _draw() -> void:
 		draw_rect(Rect2(-4, -2, 8, 3), Color(0.68, 0.14, 0.1).lerp(Color(0.9, 0.3, 0.2), glint * 0.4))
 		draw_rect(Rect2(-1, -2, 1, 3), Color(0.85, 0.78, 0.6))
 		draw_line(Vector2(4, -1), Vector2(6, -3), Color(0.22, 0.17, 0.12), 1.0)
+		draw_rect(Rect2(Vector2(-4, 1), Vector2(9, 1)), Color(0, 0, 0, 0.3))
+		return
+	if kind == "powder":   # paper cartridges, twisted shut, and a powder flask
+		for i in 3:
+			draw_rect(Rect2(Vector2(-4 + i * 2, -3 + (i % 2)), Vector2(1, 3)), Color(0.86, 0.8, 0.64).lerp(Color.WHITE, glint * 0.3))
+		draw_circle(Vector2(3, -1), 2.0, Color(0.5, 0.32, 0.16).lerp(brass, glint * 0.4))
 		draw_rect(Rect2(Vector2(-4, 1), Vector2(9, 1)), Color(0, 0, 0, 0.3))
 		return
 	for i in 3:

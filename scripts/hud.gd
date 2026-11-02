@@ -252,14 +252,15 @@ func _draw_weapon(p: Player) -> void:
 		_text(r.position + Vector2(3, 9), str(i + 1), 8, INK if have else Color(INK, 0.3))
 	if toast_t > 0.0:
 		_text(Vector2(0, 286), toast_text, 8, Color(0.95, 0.75, 0.35, clampf(toast_t, 0.0, 1.0)), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
+	_draw_take(p)
 	var w := p.weapon
 	var box := Rect2(510, 304, 124, 50)
 	draw_rect(box, PANEL)
 	draw_rect(box, Color(0.5, 0.36, 0.2), false, 1.0)
 	_text(Vector2(516, 316), w.d["name"], 8, INK)
 	var c := Vector2(536, 336)
-	match w.kind:
-		"colt":
+	match w.action:
+		"revolver":
 			draw_circle(c, 15, Color(0.2, 0.2, 0.22))
 			draw_circle(c, 3, Color(0.12, 0.12, 0.13))
 			for i in 6:
@@ -276,32 +277,49 @@ func _draw_weapon(p: Player) -> void:
 						draw_circle(pos, 3.5, Color(0.04, 0.04, 0.04))
 			var hammer := Color(0.8, 0.8, 0.82) if w.cocked else Color(0.35, 0.35, 0.38)
 			draw_colored_polygon(PackedVector2Array([c + Vector2(-3, -21), c + Vector2(3, -21), c + Vector2(0, -17)]), hammer)
-		"coach":
-			for i in 2:
-				var pos := c + Vector2(-8 + i * 16, 0)
+		"breech":
+			var n := w.barrels.size()
+			for i in n:
+				var pos := c + Vector2(-8 * (n - 1) + i * 16, 0)
 				draw_circle(pos, 8, Color(0.22, 0.22, 0.24))
 				match w.barrels[i]:
 					1:
-						draw_circle(pos, 6, BRASS)
-						draw_circle(pos, 4.5, SHELL)
+						draw_circle(pos, 6, BRASS if not w.d.get("muzzle", false) else Color(0.62, 0.6, 0.58))
+						draw_circle(pos, 4.5, SHELL if not w.d.get("muzzle", false) else Color(0.1, 0.09, 0.08))
 					2:
 						draw_circle(pos, 6, BRASS_DARK)
 						draw_circle(pos, 3, Color(0.05, 0.04, 0.03))
 					_:
 						draw_circle(pos, 6, Color(0.04, 0.04, 0.04))
-		"rifle":
+		"lever":
 			var ch := Rect2(c.x - 14, c.y - 8, 5, 16)
 			draw_rect(ch, BRASS if w.chambered else Color(0.1, 0.1, 0.1))
 			draw_rect(Rect2(ch.position.x, ch.position.y - 2, 5, 3), Color(0.5, 0.45, 0.4) if w.chambered else Color(0.1, 0.1, 0.1))
 			for i in w.cap():
 				var r := Rect2(c.x - 6 + i * 4, c.y - 6, 3, 12)
 				draw_rect(r, BRASS if i < w.tube else Color(0.12, 0.1, 0.08))
-	_text(Vector2(box.position.x + 70 if w.kind != "rifle" else box.position.x + 4, box.position.y + 47), "+%d" % w.reserve, 8, INK)
+	_text(Vector2(box.position.x + 70 if w.action != "lever" else box.position.x + 4, box.position.y + 47), "+%d" % w.reserve, 8, INK)
 	var st := w.status()
 	if st != "":
 		_text(Vector2(box.position.x, box.position.y - 4), st, 8, Color(1, 0.8, 0.4), null, HORIZONTAL_ALIGNMENT_RIGHT, box.size.x)
 	if w.kind == "colt" and w.fanning:
 		_text(Vector2(box.position.x + 66, box.position.y + 34), "FANNING", 8, Color(1, 0.5, 0.3))
+
+
+## The gun at his feet he could swap for (F): its name and what's in it, there being
+## no telling one from another in a heap of the dead.
+func _draw_take(p: Player) -> void:
+	var g: Dictionary = game.at_feet
+	if g.is_empty() or game.state != "play" or toast_t > 0.0:
+		return
+	var slot: String = Player.SLOT[g["kind"]]
+	var name: String = Weapon.DATA[g["kind"]]["name"]
+	var w = g.get("weapon")
+	var held := "%d loaded" % w.loaded() if w else "part fired"
+	var line := "[F]  %s  (%s)" % [name, held]
+	if slot in p.owned:
+		line += "  for your %s" % p.weapons[slot].d["name"]
+	_text(Vector2(0, 286), line, 8, Color(0.95, 0.75, 0.35), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
 
 
 func _draw_crosshair(p: Player) -> void:
@@ -381,43 +399,71 @@ func _draw_levels() -> void:
 # ------------------------------------------------------------------ loadout
 
 const CARD_W := 150.0
-const CARD := Vector2(75, 112)
+const CARD := Vector2(75, 104)
+const CARD_H := 160.0
 const RIDE := Rect2(250, 286, 140, 26)
+const SLOT_NAME := {"colt": "SIDEARM", "coach": "SHOTGUN", "rifle": "RIFLE"}
+const BLURB := {"colt": "six, quick to load, fanned", "navy": "six, weak, slow to load",
+	"pistola": "one ball, then the ramrod", "coach": "two barrels, or both at once",
+	"escopeta": "one barrel, a long reload", "rifle": "thirteen, a quick lever",
+	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load"}
+const OPTION_Y := 118.0   # the first of a card's guns to pick from, and 12 px apart
 
 
 func _card(i: int) -> Rect2:
-	return Rect2(CARD.x + i * (CARD_W + 20), CARD.y, CARD_W, 140)
+	return Rect2(CARD.x + i * (CARD_W + 20), CARD.y, CARD_W, CARD_H)
 
 
-## What's under the cursor on the loadout screen: a gun, "ride", or nothing.
+func _option(i: int, j: int) -> Rect2:
+	var r := _card(i)
+	return Rect2(r.position.x + 20, r.position.y + OPTION_Y + j * 12.0 - 9.0, CARD_W - 40, 12)
+
+
+## What's under the cursor on the loadout screen: a gun's name, a slot's card
+## ("slot:colt"), "ride", or nothing.
 func loadout_hit(pos: Vector2) -> String:
 	for i in Player.ORDER.size():
+		var slot: String = Player.ORDER[i]
+		var options := Player.choices(slot)
+		for j in options.size():
+			if _option(i, j).has_point(pos):
+				return options[j]
 		if _card(i).has_point(pos):
-			return Player.ORDER[i]
+			return "slot:" + slot
 	return "ride" if RIDE.has_point(pos) else ""
 
 
-func _draw_loadout(p: Player) -> void:
+func _draw_loadout(_p: Player) -> void:
 	draw_rect(Rect2(0, 0, 640, 360), Color(0.03, 0.02, 0.02, 0.86))
 	_text(Vector2(0, 62), "CHOOSE YOUR IRONS", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
-	_text(Vector2(0, 84), "The guns you ride in with. Any other you'll have to take off a dead man.", 8,
+	_text(Vector2(0, 84), "One gun a slot, or none. Any other you'll have to take off a dead man.", 8,
 		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	var mouse := get_local_mouse_position()
 	for i in Player.ORDER.size():
-		var k: String = Player.ORDER[i]
+		var slot: String = Player.ORDER[i]
+		var k: String = game.picked_for(slot)
+		var on := k != ""
 		var r := _card(i)
-		var on: bool = k in game.picked
 		draw_rect(r, Color(0.16, 0.1, 0.07, 0.95) if on else PANEL)
 		draw_rect(r, BRASS if on else (Color(0.5, 0.36, 0.2) if r.has_point(mouse) else Color(0.3, 0.22, 0.15)), false, 2.0 if on else 1.0)
-		var t: Texture2D = game.tex(game.meta["ui"]["guns"][k])
-		var sz := t.get_size()
-		sz *= minf(2.0, 124.0 / sz.x)
-		draw_texture_rect(t, Rect2(r.get_center() + Vector2(-sz.x / 2, -sz.y / 2 - 18), sz), false,
-			Color.WHITE if on else Color(0.6, 0.6, 0.6))
-		var name: String = p.weapons[k].d["name"]
-		_text(Vector2(r.position.x, r.end.y - 34), name, 8, INK if on else Color(INK, 0.6), null, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)
-		_text(Vector2(r.position.x, r.end.y - 14), "[%d]%s" % [i + 1, "  TAKEN" if on else ""], 10,
+		_text(Vector2(r.position.x, r.position.y + 14), "%s  [%d]" % [SLOT_NAME[slot], i + 1], 10,
 			Color(0.95, 0.75, 0.35) if on else Color(INK, 0.5), font, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)
+		if on:
+			var t: Texture2D = game.tex(game.meta["ui"]["guns"][k])
+			var sz := t.get_size()
+			sz *= minf(2.0, 124.0 / sz.x)
+			draw_texture_rect(t, Rect2(r.position + Vector2(CARD_W / 2 - sz.x / 2, 50 - sz.y / 2), sz), false)
+			_text(Vector2(r.position.x, r.position.y + 88), Weapon.DATA[k]["name"], 8, INK, null, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)
+			_text(Vector2(r.position.x, r.position.y + 100), BLURB[k], 8, Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)
+		else:
+			_text(Vector2(r.position.x, r.position.y + 88), "NONE", 8, Color(INK, 0.45), null, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)
+		var options := Player.choices(slot)
+		for j in options.size():
+			var o: String = options[j]
+			var orr := _option(i, j)
+			var col := Color(0.95, 0.75, 0.35) if o == k else (INK if orr.has_point(mouse) else Color(INK, 0.5))
+			_text(Vector2(orr.position.x, orr.position.y + 9), ("> " if o == k else "") + Weapon.DATA[o]["name"], 8, col,
+				null, HORIZONTAL_ALIGNMENT_CENTER, orr.size.x)
 	var ready: bool = not game.picked.is_empty()
 	draw_rect(RIDE, Color(0.22, 0.12, 0.08, 0.95) if ready else PANEL)
 	draw_rect(RIDE, BRASS if ready and RIDE.has_point(mouse) else Color(0.5, 0.36, 0.2), false, 1.0)

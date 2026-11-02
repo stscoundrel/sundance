@@ -1,11 +1,18 @@
 class_name Player
 extends Actor
-## The gunslinger: WASD to move, mouse to aim. He rides in with the guns picked on
-## the loadout screen and takes up any of the others a dead man drops by walking
-## over it; cartridges go in his belt whether he has the gun for them yet or not.
+## The gunslinger: WASD to move, mouse to aim. Three slots, one gun in each: a
+## revolver or pistol (1), a shotgun (2), a rifle (3), each slot named for the gun
+## he can ride in with. He rides in with the guns picked on the loadout screen; a
+## dead man's gun for an empty slot is his for walking over it, and one for a slot
+## he's filled is a swap (F), his own left lying in its place, as loaded as it was.
+## Cartridges go in his belt whether he has the gun for them yet or not.
 
 const ORDER := ["colt", "coach", "rifle"]
-const RESERVE := {"colt": 30, "coach": 10, "rifle": 26}   # what he rides in with, per gun
+const SLOT := {"colt": "colt", "navy": "colt", "pistola": "colt", "coach": "coach", "escopeta": "coach",
+	"rifle": "rifle", "spencer": "rifle", "springfield": "rifle"}   # the guns he can take up, by slot
+const RESERVE := {"colt": 30, "navy": 24, "pistola": 12, "coach": 10, "escopeta": 8,
+	"rifle": 26, "spencer": 21, "springfield": 12}   # what he rides in with, per gun (to his belt)
+const REACH := 13.0   # px: a gun at his feet
 # The knife (E). Up close behind a man who isn't on to him, a silent takedown; a
 # few paces off from one who is, a rush: he lunges, and it's decided as he gets
 # there: if the man can shoot (gun loaded and ready, facing him, not reeling or
@@ -50,8 +57,9 @@ const STICK_MIN := 40.0      # px: never at his own feet
 const STICK_MAX := 230.0
 const STICK_FUMBLE := 0.25   # chance a hit in the wind-up makes him drop it at his feet
 
-var weapons := {}
-var owned: Array[String] = []   # the guns he has, in ORDER
+var weapons := {}               # slot -> the gun in it (or the one he'd ride in with, if empty)
+var owned: Array[String] = []   # the slots he has a gun in, in ORDER
+var belt := {}                  # spare rounds, by Weapon.ammo()
 var current := "colt"
 var switch_t := 0.0
 var step_t := 0.0
@@ -191,6 +199,8 @@ func _handle_actions() -> void:
 		light_stick()
 	if stick:
 		return   # (both hands busy)
+	if Input.is_action_just_pressed("take") and not dragging:
+		game.swap_gun()
 	if Input.is_action_just_pressed("crouch"):
 		crouched = not crouched
 	if Input.is_action_just_pressed("reload"):
@@ -204,34 +214,73 @@ func _handle_actions() -> void:
 		return
 	if Input.is_action_just_pressed("fire"):
 		weapon.trigger()
-	if weapon.kind == "colt":
+	if weapon.kind == "colt":   # (fanning: the Colt's alone)
 		weapon.fanning = Input.is_action_pressed("alt")
 	elif Input.is_action_just_pressed("alt"):
 		weapon.alt_trigger()
 
 
-## The guns he rides in with (at least one), each with its belt of cartridges.
+## The guns that go in each slot, in the order the loadout screen offers them.
+static func choices(slot: String) -> Array:
+	return SLOT.keys().filter(func(k): return SLOT[k] == slot)
+
+
+## The guns he rides in with (at least one, one a slot), each with its cartridges.
 func arm(guns: Array) -> void:
 	owned.clear()
-	for k in ORDER:
-		weapons[k] = Weapon.new(k, self)
-		if k in guns:
-			owned.append(k)
-			weapons[k].reserve = RESERVE[k]
+	belt.clear()
+	for slot in ORDER:
+		var mine: Array = guns.filter(func(k): return SLOT.get(k, "") == slot)
+		weapons[slot] = Weapon.new(slot if mine.is_empty() else mine[0], self)
+		if not mine.is_empty():
+			owned.append(slot)
+			weapons[slot].reserve += RESERVE[mine[0]]
 	current = owned[0]
 	weapon = weapons[current]
 
 
-## A dead man's gun, picked up off the ground with whatever he left in it.
-func take_up(k: String) -> void:
-	var w := Weapon.new(k, self)
-	w.reserve = weapons[k].reserve   # cartridges he picked up before he had the gun
-	w.part_spent()
-	weapons[k] = w
-	owned.append(k)
-	owned.sort_custom(func(a, b): return ORDER.find(a) < ORDER.find(b))
+## A gun off the ground into its slot, loaded as it lies (`w`: how it was left, or
+## null for a dead man's, some of it fired off). Whatever was in the slot goes down
+## at his feet in its place; returns it, or null if the slot was empty.
+func take_up(k: String, w: Weapon = null) -> Weapon:
+	var slot: String = SLOT[k]
+	var gun := Weapon.new(k, self)
+	if w:
+		gun.copy_load(w)
+	else:
+		gun.part_spent()
+	var old: Weapon = weapons[slot] if slot in owned else null
+	if old:
+		old.abort()
+		old.fanning = false
+	weapons[slot] = gun
+	if not slot in owned:
+		owned.append(slot)
+		owned.sort_custom(func(a, b): return ORDER.find(a) < ORDER.find(b))
+	if slot == current or old:
+		current = slot   # (a swap: it's the one in his hand now)
+		weapon = gun
+		switch_t = 0.3
 	game.sfx("pickup", null, 0.0)
 	game.sfx("close", null, -6.0)
+	return old
+
+
+## The gun lying at his feet he could take up (F), or {}: the one nearest, of those
+## he can carry, his own last-dropped aside if there's another.
+func gun_at_feet() -> Dictionary:
+	var best: Dictionary = {}
+	var best_d := REACH
+	for g in game.loose_guns:
+		if not SLOT.has(g["kind"]):
+			continue
+		var dd: float = global_position.distance_to(g["at"])
+		if g.get("his", false):
+			dd += 4.0
+		if dd < best_d:
+			best_d = dd
+			best = g
+	return best
 
 
 # ------------------------------------------------------------------ the dead
@@ -557,12 +606,11 @@ func _go_down(from_dir: Vector2, shooter: Actor) -> void:
 	weapon.abort()
 	weapon.fanning = false
 	held_before = current
-	if "colt" in owned:
+	if "colt" in owned:   # (his revolver, or whatever pistol he's taken up in its place)
 		switch_to("colt")
 		switch_t = 0.0
-	else:   # a revolver out of his boot, loaded, and his Colt cartridges if he's picked any up
+	else:   # a revolver out of his boot, loaded, and whatever rounds for it he has on his belt
 		boot = Weapon.new(BOOT_GUNS.pick_random(), self)
-		boot.reserve = weapons["colt"].reserve if boot.kind == "colt" else 0
 		weapon = boot
 	weapon.slow = STAND_SLOW
 	lie_facing = -from_dir if from_dir.length() > 0.1 else facing

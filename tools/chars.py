@@ -37,7 +37,8 @@ NEUTRAL = (200, 200, 200)   # recolourable parts are baked in grey; a shader pai
 def template_guns():
     """Which guns each body template must be baked holding (every gun its types carry).
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
-    out = {"hero": ["colt", "coach", "rifle"]}
+    # the stranger: his own three, and what he can take off the revolution's dead
+    out = {"hero": ["colt", "coach", "rifle", "navy", "pistola", "escopeta", "spencer", "springfield"]}
 
     def need(template, g):
         out.setdefault(template, [])
