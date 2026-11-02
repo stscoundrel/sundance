@@ -550629,7 +550629,8 @@
       6.088
      ]
     }
-   ]
+   ],
+   "paint": "wood"
   },
   "bank": {
    "file": "res://assets/sprites/world/bank.png",
@@ -550692,7 +550693,8 @@
       7.087999999999999
      ]
     }
-   ]
+   ],
+   "paint": "wood"
   },
   "adobe_a": {
    "file": "res://assets/sprites/world/adobe_a.png",
@@ -550883,7 +550885,8 @@
      6.4,
      4.16
     ]
-   ]
+   ],
+   "paint": "wood"
   },
   "stable": {
    "file": "res://assets/sprites/world/stable.png",
@@ -550910,7 +550913,8 @@
      3.0,
      5.4
     ]
-   ]
+   ],
+   "paint": "wood"
   },
   "water_tower": {
    "file": "res://assets/sprites/world/water_tower.png",
@@ -550950,7 +550954,8 @@
      1.84
     ]
    ],
-   "doors": []
+   "doors": [],
+   "paint": "wood"
   },
   "gallows": {
    "file": "res://assets/sprites/world/gallows.png",
@@ -553419,7 +553424,8 @@
      1
     ]
    ],
-   "doors": []
+   "doors": [],
+   "paint": "adobe"
   },
   "wall_x4": {
    "file": "res://assets/sprites/world/wall_x4.png",
@@ -553441,7 +553447,8 @@
      1
     ]
    ],
-   "doors": []
+   "doors": [],
+   "paint": "adobe"
   },
   "wall_y8": {
    "file": "res://assets/sprites/world/wall_y8.png",
@@ -553463,7 +553470,8 @@
      8
     ]
    ],
-   "doors": []
+   "doors": [],
+   "paint": "adobe"
   },
   "wall_y4": {
    "file": "res://assets/sprites/world/wall_y4.png",
@@ -553485,7 +553493,8 @@
      4
     ]
    ],
-   "doors": []
+   "doors": [],
+   "paint": "adobe"
   },
   "gate_x": {
    "file": "res://assets/sprites/world/gate_x.png",
@@ -553513,7 +553522,8 @@
      1
     ]
    ],
-   "doors": []
+   "doors": [],
+   "paint": "adobe"
   },
   "gate_y": {
    "file": "res://assets/sprites/world/gate_y.png",
@@ -553541,7 +553551,8 @@
      5
     ]
    ],
-   "doors": []
+   "doors": [],
+   "paint": "adobe"
   },
   "bastion": {
    "file": "res://assets/sprites/world/bastion.png",
@@ -553600,7 +553611,7 @@
      "z": 2.6
     }
    ],
-   "paint": "wood",
+   "paint": "adobe",
    "glass": []
   },
   "rubble": {
@@ -553650,7 +553661,8 @@
      2.5,
      6.4
     ]
-   ]
+   ],
+   "paint": "adobe"
   },
   "barracks": {
    "file": "res://assets/sprites/world/barracks.png",
@@ -553739,7 +553751,7 @@
      "z": 1.2
     }
    ],
-   "paint": "wood",
+   "paint": "adobe",
    "glass": []
   },
   "casa_grande": {
@@ -553767,7 +553779,8 @@
      4.0,
      6.4
     ]
-   ]
+   ],
+   "paint": "adobe"
   },
   "jacal": {
    "file": "res://assets/sprites/world/jacal.png",
@@ -553814,7 +553827,7 @@
      "z": 1.0
     }
    ],
-   "paint": "wood",
+   "paint": "adobe",
    "glass": []
   },
   "jacal_b": {
@@ -553862,7 +553875,7 @@
      "z": 1.0
     }
    ],
-   "paint": "wood",
+   "paint": "adobe",
    "glass": []
   },
   "well": {

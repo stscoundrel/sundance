@@ -26,6 +26,7 @@ var size := 40
 
 var world: Node2D
 var decals: Decals
+var rubble: Wounds.Rubble   # (what blasts knock out of the walls: not for sweeping)
 var cone_layer: Node2D
 var statics: Node2D
 var ghost_layer: Node2D
@@ -93,6 +94,7 @@ const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon":
 # Props that go up when hit (see Charge): anyone's round, or a blast close by.
 const EXPLOSIVE := ["keg", "dyn_crate"]
 const CHAIN := Vector2(0.15, 0.35)   # s: a keg in reach of a blast goes up this soon after
+const WOUND_RAYS := 40               # rays fanned out from a blast to find the walls it marks
 const RUNS_FROM := 2                 # rank: officers know a lit keg when they see one, and run
 const SPOT_STICK := 0.35             # chance one of the rest sees the stranger's stick land in time
 var charges: Array[Charge] = []
@@ -190,6 +192,7 @@ func _ready() -> void:
 		Enemy.return_rng.randomize()
 		Enemy.schofield_rng.randomize()
 		Enemy.champion_rng.randomize()
+		Wounds.rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -200,6 +203,7 @@ func _ready() -> void:
 		Enemy.return_rng.seed = 29
 		Enemy.schofield_rng.seed = 31
 		Enemy.champion_rng.seed = 37
+		Wounds.rng.seed = 41
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -644,6 +648,9 @@ func _build_world() -> void:
 	decals = Decals.new()
 	decals.z_index = -15
 	add_child(decals)
+	rubble = Wounds.Rubble.new()
+	rubble.z_index = -14
+	add_child(rubble)
 	cone_layer = Node2D.new()
 	cone_layer.z_index = -10
 	add_child(cone_layer)
@@ -2208,6 +2215,7 @@ func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE) -> vo
 			if sh == null or not sh.shut:
 				while item["state"] < item["last"]:
 					hit_fragile(item, item["at"])
+	_wound_walls(at, r)
 	for e in enemies:
 		if e.alive and e.global_position.distance_to(at) < r * 2.2:
 			e.shaken = minf(1.0, e.shaken + 0.3)
@@ -2217,6 +2225,43 @@ func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE) -> vo
 	sfx("boom", at, 2.0 + 3.0 * (big - 1.0), 0.08)
 	add_shake(lerpf(10.0, 2.0, clampf(player.global_position.distance_to(at) / 500.0, 0.0, 1.0)) * big)
 	make_noise(at, 650.0 * big, "blast", by)
+
+
+## The walls a blast reaches are marked for good where it struck them: soot, and
+## close enough a hole knocked in them, the worse the bigger the bang. Only the faces
+## you can see (as with the bullet holes), and nothing about the wall changes but
+## its look. Rays fanned out along the ground find the nearest place on each face.
+func _wound_walls(at: Vector2, r: float) -> void:
+	var near := {}   # building wall face -> its nearest hit
+	for i in WOUND_RAYS:
+		var hit := ray(at, at + Vector2.from_angle(TAU * i / WOUND_RAYS) * r, Iso.LAYER_WALL)
+		if hit.is_empty() or not hit["collider"].has_meta("building") or hit["normal"].y <= 0.05:
+			continue
+		var key := "%d %d" % [hit["collider"].get_instance_id(), signf(hit["normal"].x)]
+		var d: float = hit["position"].distance_to(at)
+		if not near.has(key) or d < near[key]["d"]:
+			near[key] = {"d": d, "hit": hit}
+	for key in near:
+		var hit: Dictionary = near[key]["hit"]
+		var col: Object = hit["collider"]
+		var spr: Sprite2D = col.get_meta("building")
+		var w: Wounds = spr.get_node_or_null("Wounds")
+		if w == null:
+			w = Wounds.new()
+			w.name = "Wounds"
+			w.setup(spr, tex_scale, col.get_meta("paint") == "adobe")
+			spr.add_child(w)
+			var over := 0   # (over its holes and shutters: a hole blown in a window; under its signs and lanterns)
+			for i in spr.get_child_count():
+				if spr.get_child(i) is Shutter or spr.get_child(i) is Holes:
+					over = i + 1
+			spr.move_child(w, over)
+		var d: float = near[key]["d"]
+		var size := ((1.0 - d / r) * 0.8 + 0.25) * r / Dynamite.R
+		w.add(hit["position"] - spr.position, hit["normal"], size)
+		if size >= Wounds.HOLE:
+			rubble.heap(hit["position"], hit["normal"], minf(size, Wounds.BIGGEST), w.adobe)
+		stats["walls wounded"] = stats.get("walls wounded", 0) + 1
 
 
 ## A keg or a crate of dynamite hit (by a round, or a blast nearby: then `delay`):

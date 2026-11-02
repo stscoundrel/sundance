@@ -85,6 +85,11 @@ def gen_characters(meta):
             meta["guns"][kind].append({"file": save(img, f"sprites/fx/gun_{kind}_{v}.png"), "anchor": list(anchor)})
 
 
+# The buildings with mud-brick walls (the rest are timber).
+ADOBE = {"adobe_a", "adobe_b", "cantina", "wall_x8", "wall_x4", "wall_y8", "wall_y4", "gate_x", "gate_y",
+         "bastion", "chapel", "barracks", "casa_grande", "jacal", "jacal_b"}
+
+
 def gen_world(meta):
     # SUNDANCE_OBJECTS=coop,hencrate re-bakes only those objects and keeps the rest.
     only = [o for o in os.environ.get("SUNDANCE_OBJECTS", "").split(",") if o]
@@ -107,6 +112,8 @@ def gen_world(meta):
                                  "collide": collide, "fade": fade,
                                  "colliders": colliders or [[0, 0, fp[0], fp[1]]],
                                  "doors": _doorsteps(world.DOORS)}
+        if collide == "wall":   # what a round or a blast lays bare: raw planks, or mud brick
+            meta["objects"][name]["paint"] = "adobe" if name in ADOBE else "wood"
         if name in world.FRAGILE:   # each hit a step further gone
             meta["objects"][name]["states"] = []
             for i, sm in enumerate(world.FRAGILE[name]()[1:]):
@@ -122,7 +129,6 @@ def gen_world(meta):
                                                         "anchor": list(anc)})
         if world.WINDOWS:
             meta["objects"][name]["shutters"] = _shutters(name, list(world.WINDOWS), model)
-            meta["objects"][name]["paint"] = "adobe" if name.startswith("adobe") or name == "cantina" else "wood"
             panes = [i for i, g in enumerate(world.GLAZED) if g]
             meta["objects"][name]["glass"] = _overlays(name, "glass", model,
                                                        [[world.broken_glass(world.WINDOWS[i], i)] for i in panes])

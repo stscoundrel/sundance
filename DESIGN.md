@@ -470,8 +470,25 @@ carried, which you collect by walking over them.
   it out again once it's quiet. Rounds into a building's walls leave holes there
   for good (on the faces you can see; up to 150 a building, the oldest going),
   drawn with the building so they sort and fade with it: raw wood round them, or
-  chipped plaster on adobe. Windows and shut shutters still take their own rounds.
+  chipped plaster on adobe (the cantina, the adobe houses and everything in Cruz
+  Verde: its walls, gates and buildings; `ADOBE` in `tools/gen_assets.py`). Windows and shut shutters still take their own rounds.
   `tests/test_signs.gd`.
+- **Blast wounds** (`scripts/wounds.gd`, `tests/test_wounds.gd`): a blast (a stick, a
+  keg or a crate of dynamite) marks the walls in its reach for good. Rays fanned out
+  along the ground find the nearest place on each face it can reach, on the faces you
+  can see only, as with the bullet holes; the bigger the bang and the closer the wall,
+  the worse the wound. Soot blackens the face up from where it struck, widest at the
+  foot; close enough (size 0.55 and up: a stick within about 40 px, a crate from
+  further off) it knocks a ragged hole in it: mud brick and cracks round a breach at
+  the foot of an adobe or the fort's walls, splintered board ends round one at knee
+  height in planks (the bottom of a timber wall is mud-stained and reads as porch
+  boards). Rubble is heaped in the dirt below, lumps of adobe or splinters. Another
+  blast near an old wound makes it worse; twelve a building, the oldest going. It's
+  only a look: the wall stops rounds and eyes as before, there's no new way through,
+  nobody mends it and the sweepers leave the rubble be. The wounds are painted on a
+  copy of the building's picture that clips them to it (so one by a corner never
+  hangs in the air), over its shutters (a hole blown in a window) and under its
+  signs and lanterns. Their own dice.
 - **Patching up**: most bandits carry a bandage (`bandages`; not the bandidos or
   drunks). Hit and still standing, one may break off (`patch` chance, more likely
   the more rattled he is, less for a bold one): "¡Me dieron!", into cover away from
@@ -565,7 +582,8 @@ carried, which you collect by walking over them.
   barrel in between takes 2 of it. It blows nearby cover apart (crates, coffins and
   barrels near it, troughs badly, wagons only right by it), scorches the street,
   shakes the screen and is heard all over town (the saloon too, three shots' worth).
-  Not yet: throwing it back, shooting the stick.
+  It marks the walls it reaches, too (see "Blast wounds"). He can't throw it back or
+  shoot it: once it's down, the thing to do is get clear.
 - **The stranger's dynamite** (G; `tests/test_rally.gd`): Cruz Verde gives him one
   stick, and a dead carrier leaves his unthrown stick half the time. One at a time:
   with a stick on him, the next stays lying there till he's thrown his.
@@ -986,7 +1004,7 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   and the carpenter dropping his job at a shot.
 - **Shutters**: every glazed window on the wooden buildings and every small window
   on the adobes has a pair of shutters (weathered planks on the wood, painted
-  turquoise, blue, green or oxblood on the adobes; one colour per building, picked
+  turquoise, blue, green or oxblood on the adobes, the fort's included; one colour per building, picked
   in game). The townsfolk behind them slam them shut as the stranger comes into
   view (~150 px, line of sight), one after another ahead of him with a bang of
   wood; crouched, he's only noticed within ~70 px. Gunfire slams every shutter
