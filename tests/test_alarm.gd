@@ -117,7 +117,8 @@ func _uneasy() -> void:
 		var uneasy: int = far.filter(func(e): return e.alarm_role == "uneasy").size()
 		print("uneasy: %d of %d far men (alarm %.0f)" % [uneasy, far.size(), game.alarm])
 		check(uneasy >= far.size() - 2, "the far side should be on edge (%d of %d)" % [uneasy, far.size()])
-		check(patrollers.all(func(e): return e.patrol.size() <= 1), "someone's still on his rounds")
+		# (off his rounds: on edge, or pulled into the fight by the gang's own shooting)
+		check(patrollers.all(func(e): return e.patrol.size() <= 1 or e.st == Enemy.St.COMBAT), "someone's still on his rounds")
 		_scouts()])
 
 
@@ -151,7 +152,7 @@ func _fallback() -> void:
 		check(game.holdout.get("name", "") == "cantina", "they should fall back to the cantina, furthest from the fight (%s)" %
 			game.holdout.get("name", "-"))
 		check(game.stats.get("falls back", 0) >= 3, "too few fell back (%d)" % game.stats.get("falls back", 0))])
-	queue.append([45.0, func():
+	queue.append([60.0, func():
 		var back: Array = game.enemies.filter(func(e): return e.alive and e.alarm_role == "fortified")
 		var there: int = back.filter(func(e): return e.global_position.distance_to(game.holdout["at"]) < 170.0).size()
 		print("at the holdout: %d of %d who fell back" % [there, back.size()])

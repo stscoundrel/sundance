@@ -102,6 +102,7 @@ const TRAIL_FRESH := 45.0   # s a drop stays a lead worth following
 const TRAIL_SEE := 170.0    # px: a bandit notices a drop this close (in view)
 const TRAIL_CLOSE := 70.0   # px: following a trail, he picks up the next drop this close anywhere round him
 var trails: Array[Dictionary] = []   # {at, t, player}
+const CORNER_NEAR := 60.0   # px: how close to his spot the corner they shoot at must be
 var blood_pools: Array[Dictionary] = []   # where bandits fell: {at, body, known (who's seen it bare)}
 # Things gunfire breaks that are no cover at all: window panes, porch lanterns,
 # tables of bottles, chairs, clay jars. Each hit moves one a look further gone.
@@ -181,6 +182,7 @@ func _ready() -> void:
 		wind_rng.randomize()
 		loot_rng.randomize()
 		Enemy.rabble_rng.randomize()
+		Enemy.return_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -188,6 +190,7 @@ func _ready() -> void:
 		wind_rng.seed = 17
 		loot_rng.seed = 19
 		Enemy.rabble_rng.seed = 23
+		Enemy.return_rng.seed = 29
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -2706,6 +2709,32 @@ func _send_rescuers() -> void:
 ## The freshest drop of the stranger's blood this bandit can see, newer than the
 ## last one he followed (and not too old to be worth it); or none. Once he's on the
 ## trail he's reading the ground: drops close by count even outside his gaze.
+## Where to put rounds at a man you can't see, from `from`: his spot itself if
+## there's a view of it; else his freshest blood in view near it; else the nearest
+## open ground by it that's in view (the corner he's behind, the edge of the doorway).
+## INF if there's nothing within reach of him to aim at.
+func corner_near(from: Vector2, spot: Vector2) -> Vector2:
+	if line_of_sight(from, spot, false):
+		return spot
+	for i in range(trails.size() - 1, -1, -1):
+		var d: Dictionary = trails[i]
+		if clock - d["t"] > 4.0:
+			break
+		if d["player"] and d["at"].distance_to(spot) < CORNER_NEAR and line_of_sight(from, d["at"], false):
+			return d["at"]
+	var away := (from - spot).normalized()
+	for r in [16.0, 28.0, 42.0, 58.0]:
+		var best := Vector2.INF
+		for k in 12:
+			var p: Vector2 = spot + Vector2.from_angle(k * TAU / 12.0) * r
+			if is_free(p) and line_of_sight(from, p, false) and \
+					(best == Vector2.INF or (p - spot).dot(away) < (best - spot).dot(away)):
+				best = p   # (of those, the furthest round towards him: the edge itself)
+		if best != Vector2.INF:
+			return best
+	return Vector2.INF
+
+
 func trail_lead(e: Enemy, newer: float) -> Dictionary:
 	var on_it := newer >= 0.0 and clock - newer < TRAIL_FRESH
 	for i in range(trails.size() - 1, -1, -1):

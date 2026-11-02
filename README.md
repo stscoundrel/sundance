@@ -70,6 +70,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_arsenal.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_kegs.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_laststand.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_rally.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_returnfire.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_corners.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_cover.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_fragile.gd

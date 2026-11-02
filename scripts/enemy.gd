@@ -111,6 +111,13 @@ var hold_t := 0.0        # a beat after calling for cover, before breaking it
 var cover_call_cd := 0.0
 var blocked_t := 0.0
 var single_shot := false   # suppression is a lone harassing shot
+# Fire with fire: one of theirs shot at, by a man round a corner none of them can
+# see. Those with their wits about them put rounds into the corner he's behind (or
+# his blood by it) for a few seconds; not for long, and not again at once.
+const RETURN_FOR := Vector2(2.0, 3.5)   # s of it
+const RETURN_REST := Vector2(6.0, 9.0)  # s after before he'll do it again
+static var return_rng := RandomNumberGenerator.new()
+var return_ok_at := 0.0
 var blocked_steps := 0
 var order_cd := 0.0
 var panic_cd := 0.0
@@ -424,9 +431,13 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 				if not sees_player:
 					last_known = pos
 					lost_t = 0.0
+					if k == "shot":
+						_return_fire(pos)
 			elif d < radius * 0.6:
 				enter_combat(pos, false, true)
 				queue_reaction(pos, false)
+				if k == "shot":
+					_return_fire(pos)
 			elif not revealed:
 				pass   # a distant shot: let someone else go and look
 			else:
@@ -2136,6 +2147,31 @@ func suppress(at: Vector2, seconds: float) -> bool:
 	suppress_at = at + Vector2(randf_range(-14, 14), randf_range(-8, 8))
 	shot_cd = randf_range(0.0, 0.5)
 	return true
+
+
+## The stranger's fired from somewhere he can't see: unless it's put the fear into
+## him (or he's got other work: watching that corner, reloading, finishing him), he
+## answers it, rounds into the corner he's behind.
+func _return_fire(pos: Vector2) -> void:
+	if not alive or not revealed or sees_player or reaction != "" or pending != "" or finishing \
+			or suppress_t > 0.0 or watch_at != Vector2.INF or rabble_left > 0.0 \
+			or weapon.is_reloading() or weapon.needs_reload() or game.clock < return_ok_at:
+		return
+	var at: Vector2 = game.corner_near(global_position, pos)
+	if at == Vector2.INF or global_position.distance_to(at) > weapon.d["range"] * 0.8:
+		return
+	single_shot = false
+	breaking = {}
+	suppress_t = return_rng.randf_range(RETURN_FOR.x, RETURN_FOR.y)
+	suppress_at = at + Vector2(return_rng.randf_range(-6, 6), return_rng.randf_range(-4, 4))
+	shot_cd = maxf(0.5, return_rng.randf_range(0.6, 1.2) * reflex)   # (a moment to swing round and find the corner)
+	return_ok_at = game.clock + suppress_t + return_rng.randf_range(RETURN_REST.x, RETURN_REST.y)
+	game.stats["return fire"] = game.stats.get("return fire", 0) + 1
+	if shout_t <= 0.0 and return_rng.randf() < 0.3:
+		var lines: Array = tdata.get("shouts", {}).get("return", ["There! The corner!", "¡Ahí, en la esquina!",
+			"Light him up!", "¡Fuego, fuego!"])
+		_say(lines[return_rng.randi() % lines.size()])
+	_log("returns fire at the corner")
 
 
 ## One unaimed shot at where the stranger was last seen, to keep him honest

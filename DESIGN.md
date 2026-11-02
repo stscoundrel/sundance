@@ -579,6 +579,19 @@ carried, which you collect by walking over them.
   after ~2.5 s without one. From 5 to 12 s only one bandit at a time takes a lone
   harassing shot at the last known spot, about every 3 s; after that, silence until
   someone sees or hears him again.
+- **Fire with fire** (`tests/test_returnfire.gd`): the stranger fires from somewhere a
+  bandit can't see (one of theirs shot at round a corner): unless it's frightened him
+  (a reaction coming), or he's busy (watching a corner for him, reloading, empty,
+  finishing him off, standing about with the rabble), every bandit who hears it close
+  (in the fight already, or near enough to join it) answers it, on his own, no order
+  needed. He puts rounds for 2-3.5 s into the corner the stranger's behind
+  (`game.corner_near`: his spot if there's a view of it, else his freshest blood in
+  view near it, else the nearest open ground by it in view, the one furthest round
+  towards him: the edge he'd come out of), so it's still never a wall. It takes him a
+  moment to swing round and find it (0.6-1.2 s by his reflexes, never under half a
+  second), it stops with the rest of the covering fire once nobody's seen or heard him
+  for 2.5 s, and he won't do it again for 6-9 s after. The corner watchers keep their
+  guns still on their corners instead. Its own dice.
 - `tests/test_tactics.gd` runs a standing firefight and checks that free bandits
   shoot within a few seconds, that cover calls, leaders' orders and panic shots
   all happen, and that the shooting dies down once the stranger vanishes.
