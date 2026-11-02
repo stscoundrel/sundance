@@ -224,7 +224,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
 listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun, sawn-off, Champion or escopeta;
-Winchester, Spencer or Springfield) with a line on what the chosen one is like. 1 2 3
+Winchester, Spencer, Springfield or cut-down Rolling Block) with a line on what the chosen one is like. 1 2 3
 or a click on a card goes on through its guns and then none; a click on a gun's
 name takes it, or puts it back. Enter or "ride in". The choice is kept across
 restarts. He rides in with those and their cartridges (`Player.RESERVE`; guns
@@ -237,7 +237,7 @@ guns up.
 **Points.** Each choice costs points, out of the level's `budget` in
 `data/levels.json` (12 where none is named, for now enough for everything). A gun's
 price is its `points` in `Weapon.DATA`, by how good it is, not by its slot: junk is
-free (horse pistol, escopeta), the poor or one-job guns 1 (Navy, Champion,
+free (horse pistol, escopeta, cut-down Rolling Block), the poor or one-job guns 1 (Navy, Champion,
 Springfield), the solid ones 2 (Colt and Schofield alike: as strong, each with its
 own faults; sawn-off, Spencer), the coach gun 3 and the Winchester, the best gun in
 the game, 4. Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
@@ -251,7 +251,7 @@ keep the level's own kit (a bandage, the level's sticks). `tests/test_budget.gd`
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
 never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, horse pistol), **2** a
-shotgun (coach gun, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Spencer, Springfield).
+shotgun (coach gun, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Spencer, Springfield, cut-down Rolling Block).
 `Player.SLOT` lists what he can carry; the derringer, Sharps and howdah
 still stay where they lie, and the gunsmith may get to them first.
 - A gun for an **empty slot** is his for walking over it.
@@ -267,7 +267,8 @@ still stay where they lie, and the gunsmith may get to them first.
 - The dead man's cartridges, lying by his gun, come with it (his bandolier): a few
   rounds, never a full belt.
 - **Ammo is by kind, on one belt**: .45 Colt, shotgun shells (coach gun, sawn-off and Champion), .44 rimfire, Spencer
-  rimfire (the Schofield takes the Colt's .45), and powder and ball for the cap-and-ball Navy and the muzzle-loaders
+  rimfire, the Sharps' big .50 (the cut-down Rolling Block's too: few men drop them, so
+  he lives on what he rode in with and what poachers leave) (the Schofield takes the Colt's .45), and powder and ball for the cap-and-ball Navy and the muzzle-loaders
   (horse pistol, escopeta, Springfield), so those share. Every dead man drops the
   rounds for his gun, whether the stranger has one or not.
 The revolution's guns are worse than his own; they earn a slot when his are dry.
@@ -323,6 +324,27 @@ slung beside the sidearm, and the stranger can take one up for his shotgun slot.
   (`pistols_only`), nor one passing as townsfolk. A wave's arms option can carry its
   own chance: the rabble's is 0.12, rarer than their Navies and horse pistols.
   `tests/test_champion.gd`.
+
+### Remington Rolling Block carbine, cut down — single shot, on the Sharps' .50 rounds
+The rifle slot's junk gun, free on the loadout screen: a carbine somebody took a saw
+to, the stock cut back to a pistol grip and the barrel short of the fore-end, so it
+rides under a poncho. The spaghetti westerns' own: in Corbucci's *The Great Silence*,
+*Compañeros* and *Minnesota Clay*, and in a kid's hands in Leone's *Duck, You Sucker!*.
+- A rifle's round still: damage 2 (no pierce: what's left of the barrel doesn't
+  drive it through).
+- But short and wild: range 320 (the Winchester 620), spread 2.6 (0.6): nothing
+  left to aim it with, and little past pistol range.
+- The quickest single-shot to load: thumb the hammer back, roll the block, a round
+  in, close: about 1.2 s (the Sharps about 1.7 s, the Springfield about 7 s).
+- Takes the Sharps' cartridges, off the same belt: 10 to ride in with; dead
+  poachers drop four (on no dice: they fall where he lies, so seeded fights stay as
+  they were).
+- In the gang's hands it's a crafty man's hidden gun, rarer than the Champion: a
+  type's `"rollingblock"` is the chance a man who'd carry only a sidearm has one as
+  well (pistolero 0.12, under the poncho; revolucionario 0.06, after the Champion's
+  roll), on its own dice (`Enemy.rollingblock_rng`, seed 41). One shot from the edge
+  of pistol range, then likely the revolver (`draw_sidearm` 0.7). Never a man out
+  of a door, nor (yet) one passing as townsfolk. `tests/test_rollingblock.gd`.
 
 ### Winchester Model 1866 "Yellow Boy" carbine, .44 Henry rimfire — 13 rounds
 - Lever worked between shots (~0.45 s).
@@ -770,7 +792,7 @@ generator:
 
 | Type | Look | Guns | Character |
 |---|---|---|---|
-| Pistolero | poncho, sombrero (3 serapes) | Colt | rank and file, often breaks under fire |
+| Pistolero | poncho, sombrero (3 serapes) | Colt, now and then a cut-down Rolling Block under the poncho | rank and file, often breaks under fire |
 | Bandido | peasant whites, straw sombrero, bandolier, coloured sash (3) | Colt Navy (cap-and-ball), now and then a Champion too | 1 HP, poor aim, thin nerve, slow to react; dangerous for six shots, then an age reloading |
 | Cowboy | vest, bandana (3 palettes) | Colt, a Champion slung for one in four | steady mid-range gunman |
 | Rifleman | duster, bowler (2) | Winchester + Colt | good shot, leader (orders covering fire) |

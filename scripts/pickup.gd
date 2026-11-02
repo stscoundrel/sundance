@@ -4,7 +4,7 @@ extends Area2D
 ## for the cap-and-ball and muzzle-loaders); or a bandage he never got to use, or
 ## the stick of dynamite he never got to throw.
 
-const AMOUNT := {"colt": 6, "coach": 4, "rifle": 7, "spencer": 5, "powder": 4, "bandage": 1, "dynamite": 1}
+const AMOUNT := {"colt": 6, "coach": 4, "rifle": 7, "spencer": 5, "sharps": 4, "powder": 4, "bandage": 1, "dynamite": 1}
 const CARRY := {"bandage": 1, "dynamite": 1}   # one of each on him at a time: the rest stay where they lie
 
 var game: Node
@@ -80,6 +80,9 @@ func _draw() -> void:
 		if kind == "coach":
 			draw_rect(Rect2(p + Vector2(0, -3), Vector2(2, 3)), shell)
 			draw_rect(Rect2(p, Vector2(2, 1)), brass)
+		elif kind == "sharps":   # long buffalo rounds, a grey lead nose
+			draw_rect(Rect2(p + Vector2(0, -4), Vector2(1, 5)), brass)
+			draw_rect(Rect2(p + Vector2(0, -5), Vector2(1, 1)), Color(0.55, 0.55, 0.58))
 		else:
 			draw_rect(Rect2(p + Vector2(0, -3), Vector2(1, 4)), brass)
 	draw_rect(Rect2(Vector2(-4, 1), Vector2(9, 1)), Color(0, 0, 0, 0.3))

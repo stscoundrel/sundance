@@ -49,12 +49,12 @@
     "hp": 2, "range": [70, 170], "cadence": [0.7, 1.3], "aim": 1.0, "speed": 1.0,
     "reflex": [0.6, 1.8], "nerve": [0.15, 0.9], "rank": 0, "cover_call": 0.5,
     "fires_on_move": false, "draw_sidearm": 0.0, "flank": 0.6, "bold": 0.0, "opportunist": 0.0,
-    "concealed": false, "boss": false, "coordinator": false, "dynamite": 0, "fumble": 0.0, "bandages": 1, "patch": 0.6, "gasp": 0.0, "finish": 0.0, "rabble": 0.0, "champion": 0.0, "shouts": {}
+    "concealed": false, "boss": false, "coordinator": false, "dynamite": 0, "fumble": 0.0, "bandages": 1, "patch": 0.6, "gasp": 0.0, "finish": 0.0, "rabble": 0.0, "champion": 0.0, "rollingblock": 0.0, "shouts": {}
   },
 
   "types": {
     "pistolero": {
-      "finish": 0.5, "rabble": 0.3, "name": "Pistolero", "gasp": 0.55, "template": "poncho", "dynamite": 1, "loadout": ["colt"],
+      "finish": 0.5, "rabble": 0.3, "name": "Pistolero", "gasp": 0.55, "template": "poncho", "dynamite": 1, "loadout": ["colt"], "rollingblock": 0.12,
       "loadouts": [{"guns": ["colt"], "weight": 9},
                    {"guns": ["sawnoff"], "weight": 1, "range": [25, 80], "fires_on_move": true, "flank": 0.75}],
       "palettes": [
@@ -224,7 +224,7 @@
     },
 
     "revolucionario": {
-      "finish": 0.2, "rabble": 0.6, "name": "Revolucionario", "gasp": 0.45, "template": "revolucionario", "dynamite": 1, "loadout": ["navy"], "champion": 0.25,
+      "finish": 0.2, "rabble": 0.6, "name": "Revolucionario", "gasp": 0.45, "template": "revolucionario", "dynamite": 1, "loadout": ["navy"], "champion": 0.25, "rollingblock": 0.06,
       "loadouts": [{"guns": ["navy"], "weight": 5}, {"guns": ["colt"], "weight": 3},
                    {"guns": ["spencer", "navy"], "weight": 1, "range": [110, 260], "draw_sidearm": 0.5},
                    {"guns": ["springfield", "navy"], "weight": 1, "range": [140, 320], "cadence": [1.2, 2.0], "aim": 1.6,

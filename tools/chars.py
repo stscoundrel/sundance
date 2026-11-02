@@ -39,7 +39,7 @@ def template_guns():
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
     out = {"hero": ["colt", "coach", "rifle", "schofield", "navy", "pistola", "sawnoff", "champion", "escopeta", "spencer",
-                    "springfield"]}
+                    "springfield", "rollingblock"]}
 
     def need(template, g, t=None):
         out.setdefault(template, [])
@@ -49,19 +49,23 @@ def template_guns():
         if g == "colt" and (t is None or t.get("schofield", 0.3) > 0):
             need(template, "schofield")
 
-    def champion(template, chance, guns):
-        # a man with only a sidearm may have a Champion slung too (Enemy.CHAMPION)
+    def champion(template, chance, guns, cut=0):
+        # a man with only a sidearm may have a Champion slung too (Enemy.CHAMPION), or
+        # a cut-down Rolling Block under his coat (Enemy.ROLLINGBLOCK)
         if chance > 0 and len(guns) == 1:
             need(template, "champion")
+        if cut > 0 and len(guns) == 1:
+            need(template, "rollingblock")
     for t in _DATA["types"].values():
         for g in t["loadout"]:
             need(t["template"], g, t)
         for option in t.get("loadouts", []):
             for g in option["guns"]:
                 need(t["template"], g, t)
-            champion(t["template"], option.get("champion", t.get("champion", 0)), option["guns"])
+            champion(t["template"], option.get("champion", t.get("champion", 0)), option["guns"],
+                     option.get("rollingblock", t.get("rollingblock", 0)))
         if not t.get("loadouts"):
-            champion(t["template"], t.get("champion", 0), t["loadout"])
+            champion(t["template"], t.get("champion", 0), t["loadout"], t.get("rollingblock", 0))
         if t.get("concealed"):
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():
@@ -88,7 +92,7 @@ def template_guns():
     return out
 
 
-GUN_LEN = {"colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
+GUN_LEN = {"colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
@@ -341,6 +345,18 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
         out += beam(at(0.35, (0, -0.024)), at(0.58, (0, -0.024)), 0.028, WOOD)
         out += beam(at(0.22, (0, 0.04)), at(0.24, (0, 0.075)), 0.008, STEEL)            # tang sight
         out += beam(at(0.3, (0, 0.03)), at(0.33, (0, 0.06)), 0.01, STEEL)              # hammer
+    elif kind == "rollingblock":
+        # a Remington Rolling Block carbine cut down: the stock sawn to a pistol grip,
+        # the case-hardened action with its big hammer and the breech block that rolls
+        # back under the thumb, a short round barrel and a stub of fore-end
+        out += frustum(at(0.0, (0, -0.075)), at(0.22, (0, -0.005)), 0.04, 0.03, WOOD)     # sawn grip
+        out += box(tuple(at(0.22) - 0.034), tuple(at(0.36) + 0.034), (128, 120, 112))
+        roll = 0.9 * lever                                                            # the block, rolled back
+        out += beam(at(0.33, (0, 0.03)), at(0.33, (0, 0.03)) + (up * math.cos(roll) - a * math.sin(roll)) * 0.04,
+                    0.012, STEEL)
+        out += beam(at(0.36, (0, 0.012)), at(1.0, (0, 0.012)), 0.02, GUNMETAL)
+        out += beam(at(0.36, (0, -0.022)), at(0.56, (0, -0.022)), 0.026, WOOD)          # fore-end stub
+        out += beam(at(0.26, (0, 0.03)), at(0.29, (0, 0.07)), 0.012, STEEL)              # hammer
     elif kind == "howdah":
         # Howdah pistol: two fat side-by-side barrels on a heavy grip, breaks open
         out += beam(at(0.0, (0, -0.09)), at(0.24, (0, 0.0)), 0.03, WOOD)
@@ -902,6 +918,15 @@ def _key_poses(w):
         k["insert_a"] = P(k["insert_a"], lever=1.0)
         k["insert_b"] = P(k["insert_b"], lever=1.0)
         return k
+    if w == "rollingblock":
+        # worked like the Sharps, but the short gun sits forward, its sawn grip in the
+        # right hand where a full stock's wrist would be
+        k = _key_poses("sharps")
+        for name, pose in list(k.items()):
+            if pose.get("gun") is not None:
+                pose = P(pose, gun=G(pose["gun"]["B"] + pose["gun"]["D"] * 0.2, pose["gun"]["D"]))
+            k[name] = pose
+        return k
     if w == "spencer":
         k = _key_poses("rifle")
         k["cock"] = P(k["aim"], eR=V(-0.04, -0.28, 0.3), hR=V(0.16, -0.08, 0.44))     # thumb back on the hammer
@@ -1313,7 +1338,7 @@ def upper_anims(w):
     elif w == "tools":
         add("measure", [k["measure_a"], k["measure_b"]], 2, True)
         add("drag", [k["drag"]], 1, True)
-    elif w == "sharps":
+    elif w in ("sharps", "rollingblock"):
         add("cock", [k["cock"], k["aim"]], 5)
         add("reload_open", _frames([k["aim"], k["load"]], 2), 6)
         add("reload_eject", [k["eject_a"], k["eject_b"]], 6, events={1: "brass"})

@@ -88,6 +88,16 @@ const DATA := {
 		"sfx": "musket", "cycle": 0.5, "shake": 4.0, "smoke": 24, "smoke_push": 1.6,
 		"open": [1.0, "gate"], "eject": [1.1, "pour"], "insert": [3.4, "ram"], "close": [1.2, "cock"], "ammo": "powder",
 		"status": {"cycle": "COCKING", "open": "CARTRIDGE TORN", "close": "CAPPED"}},
+	# A Remington Rolling Block carbine somebody took a saw to: the stock cut back to a
+	# grip, the barrel short of the fore-end, so it rides under a coat. A big .50
+	# round that still hits like a rifle, and the block rolls back for the next one
+	# quicker than anything else single-shot; but there's nothing left to aim it with,
+	# and nothing much past pistol range. The Sharps' cartridges fit it.
+	"rollingblock": {"name": "CUT-DOWN ROLLING BLOCK", "points": 0, "action": "breech", "barrels": 1, "hammer": true,
+		"damage": 2, "speed": 800.0, "range": 320.0, "spread": 2.6, "pellets": 1, "noise": 520.0,
+		"sfx": "sharps", "cycle": 0.35, "shake": 3.5, "smoke": 14, "smoke_push": 1.2, "ammo": "sharps",
+		"open": [0.25, "lever"], "eject": [0.25, "eject"], "insert": [0.4, "shell_in"], "close": [0.25, "lever"],
+		"status": {"cycle": "COCKING", "open": "BLOCK ROLLED BACK", "close": "BLOCK UP"}},
 	# Escopeta: an old single-barrel percussion fowling piece, the peon's gun. Powder,
 	# wad, shot, wad, all rammed down from the front: one shot and he'll want his pistol.
 	"escopeta": {"name": "ESCOPETA", "points": 0, "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,

@@ -196,6 +196,7 @@ func _ready() -> void:
 		Enemy.return_rng.randomize()
 		Enemy.schofield_rng.randomize()
 		Enemy.champion_rng.randomize()
+		Enemy.rollingblock_rng.randomize()
 		Wounds.rng.randomize()
 		Civilian.rng.randomize()
 	else:
@@ -208,6 +209,7 @@ func _ready() -> void:
 		Enemy.return_rng.seed = 29
 		Enemy.schofield_rng.seed = 31
 		Enemy.champion_rng.seed = 37
+		Enemy.rollingblock_rng.seed = 41
 		Wounds.rng.seed = 41
 		Civilian.rng.seed = 43
 	_parse_args()
@@ -1786,7 +1788,10 @@ func _on_enemy_died(e: Actor) -> void:
 	_drop_kit(e)
 	var ammo: String = e.weapon.ammo()
 	if Pickup.AMOUNT.has(ammo):   # nothing to take from a derringer
-		var p := _drop_ammo(ammo, e.global_position + Vector2(randf_range(-6, 6), 4))
+		# (the poacher's Sharps rounds, new to the table, fall where he lies: no dice,
+		# so the fights the tests replay stay as they were)
+		var off := Vector2(3, 4) if ammo == "sharps" else Vector2(randf_range(-6, 6), 4)
+		var p := _drop_ammo(ammo, e.global_position + off)
 		for g in loose_guns:
 			if g["under"] == e:
 				g["ammo"] = p   # it goes with his gun

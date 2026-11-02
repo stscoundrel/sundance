@@ -226,6 +226,12 @@ static var schofield_rng := RandomNumberGenerator.new()
 # he throws it down and goes to the revolver. Its own dice as well.
 const CHAMPION_STYLE := {"range": [50, 180], "draw_sidearm": 0.8, "fires_on_move": false}
 static var champion_rng := RandomNumberGenerator.new()
+# Now and then a crafty one has a cut-down Rolling Block under his coat beside the
+# sidearm (data "rollingblock": the chance). Short, but a rifle's round: one shot
+# from the edge of pistol range, then most likely the revolver. Rarer than the
+# Champion, and its own dice too.
+const ROLLINGBLOCK_STYLE := {"range": [70, 220], "draw_sidearm": 0.7, "fires_on_move": false}
+static var rollingblock_rng := RandomNumberGenerator.new()
 const FINISH_NEAR := 34.0    # px: as close as a man walking up to finish the stranger comes
 const GASP_LINES := ["You first, gringo...", "¡Hasta el infierno!", "Not... alone...", "¡Muere, cabrón!",
 	"Come here... stranger..."]
@@ -261,6 +267,12 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 		loadout = ["champion"] + loadout
 		for key in CHAMPION_STYLE:
 			tdata[key] = CHAMPION_STYLE[key]
+	var cut: float = tdata.get("rollingblock", 0.0)
+	if cut > 0.0 and loadout.size() == 1 and loadout[0] in PISTOLS and not tdata.get("pistols_only", false) \
+			and not tdata["concealed"] and rollingblock_rng.randf() < cut:
+		loadout = ["rollingblock"] + loadout
+		for key in ROLLINGBLOCK_STYLE:
+			tdata[key] = ROLLINGBLOCK_STYLE[key]
 	var top: float = tdata.get("schofield", SCHOFIELD)
 	loadout = loadout.map(func(gun): return "schofield" if gun == "colt" and schofield_rng.randf() < top else gun)
 	stats = {"keep": _v2(tdata["range"]), "cadence": _v2(tdata["cadence"])}

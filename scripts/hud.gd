@@ -415,7 +415,8 @@ const BLURB := {"colt": "six, quick to load, fanned", "schofield": "six, all out
 	"sawnoff": "two short barrels, murder up close",
 	"champion": "one barrel, reaches further",
 	"escopeta": "one barrel, a long reload", "rifle": "thirteen, a quick lever",
-	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load"}
+	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load",
+	"rollingblock": "one hard shot, short, quick to load"}
 const OPTION_Y := 118.0   # the first of a card's guns to pick from, and 12 px apart
 
 
