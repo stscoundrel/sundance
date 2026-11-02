@@ -99,12 +99,20 @@ them) at thirty, spread out so that a small place doesn't overrun him all at onc
 the fight. Kill the five outside without a shot and the quiet is noticed in the end:
 out they come, wary, to look. The title counts all fifteen; the bandit count only
 those he can see. The waves count from that first shot (`"waves_from": "first_shot"`),
-so none walks past him while he's still creeping about; then they never really stop:
-the first a minute after that shot (time enough to clear the fort), then every
-half minute a band of six to twelve comes down one or two of the five roads
-(west, east, north, south, and through the cemetery), ninety in all, close
+so none walks past him while he's still creeping about. Seven waves, 64 men (79 of
+the gang in all with the garrison): the first a minute after that shot (time enough
+to clear the fort), then every half minute a band of six to ten comes down one or two
+of the five roads (west, east, north, south, and through the cemetery), close
 together (a man every half second), so a gun at the gate can't pick off a whole band
-before the rest are in among the walls. No more than 40 of the gang are about at once
+before the rest are in among the walls. After the fifth (three minutes in) there's a
+lull of 75 s, and word of it ("The enemy is rallying their troops outside the
+fort!", 20 s after the fifth: `"rally"` on the wave): time to bandage and scavenge.
+Then the last two, thirteen and twelve, half a minute apart: the scrapings, badly
+armed (a wave's `"arms"`, the "rabble" set in levels.json: Navies and single-shot
+horse pistols, some with a brace of them; he's no doubt badly hurt by then), a
+coronel at their head with his own Colt. A win is meant to be a narrow survival with
+the dead stacked everywhere. He rides in with a stick of dynamite here (the level's
+`"dynamite"`), for the choke points at the gates; he can carry no more than one. No more than 40 of the gang are about at once
 (the frame time: past that the rest wait out on the road for room). There's no posse
 here at all (`"posse": false` in the map): it's a fort, not a town to get lost in,
 and the last of them just hold it. The waves have their own mix (`"wave_kinds"` in the map, by weight): mostly
@@ -143,8 +151,9 @@ he survives two clean hits. No health pickups.
 Crouching: half speed, silent footsteps, tighter spread and a smaller visual
 profile (see Stealth).
 
-**Bandages** (B). He rides in with one (the count is kept, so more can come
-later). Down on one knee, gun set aside, winding it round: ten seconds, and only
+**Bandages** (B). He rides in with one, and can pick more up: a dead bandit now and
+then leaves the one he never used (one in five), lying by him; walk over it to take it.
+One at a time: with a bandage on him, the next stays lying there till he's used his. Down on one knee, gun set aside, winding it round: ten seconds, and only
 crouched and still. Moving, firing, reloading, the knife or a hit breaks it off
 (he keeps the bandage, not the time). Done, it gives back two bars (never more than
 he started with), ends a limp and stops the bleeding. The long wait is the point:
@@ -480,7 +489,23 @@ carried, which you collect by walking over them.
   barrel in between takes 2 of it. It blows nearby cover apart (crates, coffins and
   barrels near it, troughs badly, wagons only right by it), scorches the street,
   shakes the screen and is heard all over town (the saloon too, three shots' worth).
-  Not yet: throwing it back, shooting the stick, the stranger carrying it.
+  Not yet: throwing it back, shooting the stick.
+- **The stranger's dynamite** (G; `tests/test_rally.gd`): Cruz Verde gives him one
+  stick, and a dead carrier leaves his unthrown stick half the time. One at a time:
+  with a stick on him, the next stays lying there till he's thrown his.
+  Lit off his cigar, a wind-up (the gang's "throw"), and lobbed at the cursor, 40 to 230
+  px; his own fuse is cut shorter (3.2 s from lighting). Officers see it land and run;
+  the rest only now and then (35%). A hit in the wind-up makes him fumble it at his
+  feet one time in four (always, if it kills him). The HUD shows his sticks after his
+  bandages.
+- **The rabble** (`"rabble"` per type; `tests/test_rally.gd`): in a big fight, with
+  eight or more of them in combat round the stranger, the rank and file given to it
+  (drunks most, revolucionarios, soldaderas and bandidos often, a few cowboys,
+  pistoleros and hillbillies) now and then stand in the open wasting it for a couple
+  of seconds: a round loosed at the sky with a "¡Viva Villa!" (a salute pose: arm up,
+  the gun at the sky; the round is spent and heard, nothing flies), or bawling the
+  others on ("We got him now!") with a point. Not in a posse of a few, and never the
+  officers or marksmen. Their own dice, so seeded fights stay as they were.
   `tests/test_dynamite.gd` covers who carries it, when it's thrown, the blast, and
   the dropped and fumbled stick.
 - **Powder kegs and dynamite crates** (Cruz Verde; `scripts/charge.gd`,
@@ -737,6 +762,10 @@ cast-offs (see "The revolution's arsenal" below).
   But a muzzle-loader: one shot, then he stands it on its butt, tears the cartridge,
   pours, rams and caps, about 6.7 s. In revolutionary hands its aim is worse than the
   gun deserves (`"aim"` on the loadout).
+- **Pistola**: a single-shot percussion horse pistol (a Model 1842 or the like):
+  smoothbore, a big soft ball that wanders (damage 1), then powder, ball and rammer
+  all over again (about 6 s). The last waves' gun; some carry a brace, fire one, throw
+  it down and draw the other.
 - **Escopeta**: an old single-barrel percussion fowling piece, the peon's gun: a
   fistful of shot at close range, then powder, wad, shot, wad, all rammed down from
   the front (about 7.4 s). Nobody waits for that: fire it once, throw it down, go to

@@ -174,6 +174,12 @@ func _draw_status(p: Player) -> void:
 	for i in p.bandages:
 		draw_rect(Rect2(bx + i * 9, 345, 7, 6), Color(0.92, 0.9, 0.84))
 		draw_line(Vector2(bx + i * 9 + 2, 345), Vector2(bx + i * 9 + 2, 351), Color(0.7, 0.66, 0.6), 1.0)
+	# and a red stick for each of dynamite he carries (G)
+	var sx := bx + p.bandages * 9 + (4 if p.bandages > 0 else 0)
+	for i in p.sticks:
+		draw_rect(Rect2(sx + i * 6, 343, 4, 9), Color(0.7, 0.14, 0.1))
+		draw_rect(Rect2(sx + i * 6, 346, 4, 1), Color(0.85, 0.78, 0.6))
+		draw_line(Vector2(sx + i * 6 + 2, 343), Vector2(sx + i * 6 + 3, 341), Color(0.25, 0.2, 0.15), 1.0)
 	if p.bandage_t >= 0.0:
 		var f: float = p.bandage_t / (Player.STAND_BANDAGE_T if p.down else Player.BANDAGE_T)
 		_text(Vector2(54, 338), "BANDAGING", 8, INK)

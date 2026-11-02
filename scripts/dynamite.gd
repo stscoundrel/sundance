@@ -14,7 +14,7 @@ const HAND := 14.0       # px up: where it leaves his hand
 enum S { HELD, FLY, GROUND }
 
 var game: Node
-var by: Enemy            # who lit it (and gets the blame)
+var by: Actor            # who lit it (and gets the blame): one of them, or the stranger
 var st := S.HELD
 var fuse := FUSE
 var z := 0.0
@@ -27,7 +27,7 @@ var ring: Node2D
 var hiss: AudioStreamPlayer2D
 
 
-func setup(g: Node, thrower: Enemy) -> void:
+func setup(g: Node, thrower: Actor) -> void:
 	game = g
 	by = thrower
 	global_position = thrower.global_position + Vector2(0, 1)

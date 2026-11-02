@@ -12,7 +12,8 @@ godot --path .
 ```
 
 WASD move · mouse aim · LMB fire · RMB fan the Colt / fire both barrels · C or Ctrl crouch ·
-R reload (fire stops a partial reload) · 1/2/3 or wheel to switch guns · Enter restart · Esc quit.
+R reload (fire stops a partial reload) · 1/2/3 or wheel to switch guns · E knife (hold to drag
+a body) · B bandage · G throw dynamite · Enter restart · Esc quit.
 
 ## Assets
 
@@ -68,6 +69,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_general.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arsenal.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_kegs.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_laststand.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_rally.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_corners.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_cover.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_fragile.gd

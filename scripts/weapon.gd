@@ -74,6 +74,14 @@ const DATA := {
 		"sfx": "coach", "cycle": 0.4, "shake": 3.5, "smoke": 26, "smoke_push": 1.8,
 		"open": [1.0, "pour"], "eject": [1.2, "pour"], "insert": [4.0, "ram"], "close": [1.2, "cock"],
 		"status": {"cycle": "COCKING", "open": "POWDER", "close": "CAPPED"}},
+	# Pistola: an old single-shot percussion horse pistol (a Model 1842, or the like),
+	# smoothbore and muzzle-loaded: one big soft ball that wanders, then powder, ball
+	# and ramrod all over again. The last men in from the roads carry them.
+	"pistola": {"name": "HORSE PISTOL", "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
+		"damage": 1, "speed": 520.0, "range": 260.0, "spread": 4.5, "pellets": 1, "noise": 420.0,
+		"sfx": "colt", "cycle": 0.4, "shake": 2.5, "smoke": 18, "smoke_push": 1.3,
+		"open": [0.9, "pour"], "eject": [1.0, "pour"], "insert": [3.2, "ram"], "close": [1.0, "cock"],
+		"status": {"cycle": "COCKING", "open": "POWDER", "close": "CAPPED"}},
 	# Empty hands: townsfolk. Never fires; drops nothing.
 	"unarmed": {"name": "", "action": "none", "damage": 0, "speed": 0.0, "range": 0.0, "spread": 0.0,
 		"pellets": 0, "noise": 0.0, "sfx": "", "cycle": 0.0, "shake": 0.0, "smoke": 0, "drops": [],
@@ -265,6 +273,29 @@ func alt_trigger() -> void:
 			barrels[i] = 2
 	_shoot(n)
 	_cycle(d["cycle"] * 2.0)
+
+
+## A round loosed at the sky, for the noise and the nerve of it: spent, no bullet.
+func salute() -> void:
+	if state != S.READY:
+		return
+	match action:
+		"revolver":
+			if not cocked or chambers[cur] != 1:
+				return
+			chambers[cur] = 2
+			cocked = false
+		"breech":
+			var i := barrels.find(1)
+			if i < 0:
+				return
+			barrels[i] = 2
+		_:
+			return
+	holder.game.muzzle_flash(holder, Vector2.UP)
+	_snd(d["sfx"])
+	holder.game.make_noise(holder.global_position, d["noise"], "enemy_shot", holder)
+	_cycle(d["cycle"])
 
 
 func start_reload() -> bool:

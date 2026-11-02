@@ -43,6 +43,12 @@ const STAND_TURN := 1.6       # rad/s he can swing it round
 const STAND_SLOW := 1.5       # one-handed, flat on his back: everything takes this much longer
 const STAND_GUN_H := 6.0      # px: the gun's height off the dirt
 const BOOT_GUNS := ["colt", "navy"]
+# Dynamite of his own: lit, a wind-up, and lobbed at the cursor. A shorter fuse than
+# the gang's: he cuts his own.
+const STICK_FUSE := 3.2      # s from lighting to the bang
+const STICK_MIN := 40.0      # px: never at his own feet
+const STICK_MAX := 230.0
+const STICK_FUMBLE := 0.25   # chance a hit in the wind-up makes him drop it at his feet
 
 var weapons := {}
 var owned: Array[String] = []   # the guns he has, in ORDER
@@ -72,6 +78,9 @@ var lie_facing := Vector2.RIGHT   # the way his boots point, lying there
 var held_before := ""          # the gun he had in hand when he fell
 var boot: Weapon = null        # the revolver from his boot, if he had no Colt
 var _bot_down_t := 0.0
+var sticks := 0                # dynamite he carries
+var stick: Dynamite = null     # lit, in his hand
+var throw_t := 0.0             # the wind-up left
 
 
 func setup(g: Node, pos: Vector2) -> void:
@@ -110,6 +119,11 @@ func _physics_process(delta: float) -> void:
 		velocity = input * WALK * DRAG_SPEED * limp_factor()
 	if bandage_t >= 0.0:
 		_bandage(delta, input)
+	if stick:
+		velocity *= 0.5   # (winding up)
+		throw_t -= delta
+		if throw_t <= 0.0:
+			_let_go()
 	move_and_slide()
 	_find_knife_target()
 	if dragging:
@@ -173,6 +187,10 @@ func _handle_actions() -> void:
 				break
 	if Input.is_action_just_pressed("bandage"):
 		start_bandage()
+	if Input.is_action_just_pressed("throw"):
+		light_stick()
+	if stick:
+		return   # (both hands busy)
 	if Input.is_action_just_pressed("crouch"):
 		crouched = not crouched
 	if Input.is_action_just_pressed("reload"):
@@ -306,6 +324,45 @@ func stop_bandage() -> void:
 		_pose_stand("gasp_rise")   # (back up on his elbow)
 	game.hud.toast("Bandaging broken off")
 	game.stats["bandaging broken off"] = game.stats.get("bandaging broken off", 0) + 1
+
+
+# ------------------------------------------------------------------ dynamite
+
+## Lit off his cigar: a wind-up, then it's away (see _let_go).
+func light_stick() -> bool:
+	if sticks <= 0 or stick or bandage_t >= 0.0 or knife_t >= 0.0 or dragging or down:
+		return false
+	sticks -= 1
+	weapon.abort()
+	weapon.fanning = false
+	stick = Dynamite.new()
+	game.world.add_child(stick)
+	stick.setup(game, self)
+	stick.fuse = STICK_FUSE
+	throw_t = Enemy.WINDUP
+	play_action("throw")
+	game.stats["his dynamite"] = game.stats.get("his dynamite", 0) + 1
+	return true
+
+
+## Away towards the cursor (as near or as far as he can throw).
+func _let_go() -> void:
+	var to := get_global_mouse_position()
+	if game._args.has("throw-at"):   # (for the tests: grid x,y)
+		var xy: PackedStringArray = game._args["throw-at"].split(",")
+		to = Iso.to_screen(Vector2(float(xy[0]), float(xy[1])))
+	var off := to - global_position
+	to = global_position + off.normalized() * clampf(off.length(), STICK_MIN, STICK_MAX)
+	stick.throw(to)
+	stick = null
+
+
+## Hit with it lit in his hand: now and then it falls at his feet. Run.
+func _drop_stick(sure := false) -> void:
+	if stick and (sure or game.loot_rng.randf() < STICK_FUMBLE):
+		stick.drop()
+		stick = null
+		throw_t = 0.0
 
 
 # ------------------------------------------------------------------ the knife
@@ -452,6 +509,7 @@ func gun_height() -> float:
 func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 	stop_bandage()
 	drop_body()   # (a round in him: he lets go)
+	_drop_stick(hp - dmg <= 0)
 	if alive and not down and hp - dmg <= 0 and _goes_down(dmg, shooter):
 		flash_t = 0.12
 		game.blood(global_position, from_dir, gun_height())

@@ -12,7 +12,7 @@ extends SceneTree
 ##   ways in  - from every road there's a way to the plaza, and each gate and
 ##              breach is a way through the walls on its own.
 ##   fight    - the autopilot holds out a few minutes: the waves keep coming down
-##              the roads, every half minute, and nothing goes wrong.
+##              the roads, every half minute for the first five, and nothing goes wrong.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_cruz_verde.gd
 
 var game: Node
@@ -97,7 +97,7 @@ func _process(delta: float) -> bool:
 	print("after %.0f s: %s; %d of %d down, %d walked in; stats %s" % [t, game.state,
 		game.enemies.filter(func(e): return not e.alive).size(), game.enemies.size(), game.stats.get("arrivals", 0), game.stats])
 	check(game.stats.get("arrivals", 0) >= 12, "only %d walked in by %.0f s" % [game.stats.get("arrivals", 0), t])
-	check(game.stats.get("waves warned", 0) >= 6, "too few warnings")
+	check(game.stats.get("waves warned", 0) >= 5, "too few warnings")
 	check(blessed_under_fire >= 1, "the padre never went to the dead under fire (%d blessings)" % blessings)
 	print("the padre with the dead under fire for %.0f s; %d blessings" % [blessed_under_fire / 60.0, blessings])
 	print("Cruz Verde test: ", "OK" if failures == 0 else "%d failures" % failures)

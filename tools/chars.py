@@ -55,11 +55,26 @@ def template_guns():
         need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith",
                                   "mayor": "mayor", "carpenter": "carpentry", "sweeper": "broom",
                                   "henwife": "broom", "keeper": "keeper"}.get(t.get("role", ""), "unarmed"))
+    # a level's waves may hand their men other guns ("arms"): whoever might walk in
+    # with them is baked holding them too
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    level_data = json.load(open(os.path.join(root, "data", "levels.json")))
+    for lv in level_data["levels"]:
+        mp = json.load(open(os.path.join(root, lv["map"].replace("res://", ""))))
+        for w in lv.get("waves", []):
+            for gr in w["groups"]:
+                arms = gr.get("arms", w.get("arms")) or []
+                if isinstance(arms, str):
+                    arms = level_data["arms"][arms]
+                for k in gr.get("kinds") or list(mp.get("wave_kinds", {})):
+                    for option in arms:
+                        for g in option["guns"]:
+                            need(_DATA["types"][k]["template"], g)
     return out
 
 
 GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6, "navy": 0.36,
-           "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3}
+           "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
 # in the left hand (pose key "gun2").
@@ -261,6 +276,17 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
         out += beam(at(0.38, (0, 0.012)), at(1.0, (0, 0.012)), 0.019, GUNMETAL)         # octagon barrel
         out += beam(at(0.4, (0, -0.02)), at(0.74, (0, -0.02)), 0.01, STEEL)             # loading lever
         out += beam(at(0.12, (0, 0.03)), at(0.19, (0, 0.06)), 0.01, STEEL)              # hammer
+    elif kind == "pistola":
+        # a percussion horse pistol: a curved walnut grip with a brass cap, the stock run
+        # most of the way up a round barrel, a brass band, the ramrod swivelled beneath
+        out += beam(at(0.0, (0, -0.08)), at(0.24, (0, -0.005)), 0.03, (122, 78, 46))      # grip
+        out += ellipsoid(at(0.0, (0, -0.085)), (0.03, 0.03, 0.03), BRASS)                # butt cap
+        out += beam(at(0.22, (0, -0.012)), at(0.82, (0, -0.012)), 0.024, (122, 78, 46))   # fore-stock
+        out += beam(at(0.22, (0, 0.012)), at(1.0, (0, 0.012)), 0.019, GUNMETAL)          # barrel
+        out += beam(at(0.62), at(0.66), 0.03, BRASS)                                     # band
+        out += beam(at(0.3, (0, -0.034)), at(0.95, (0, -0.034)), 0.007, STEEL)          # ramrod
+        out += beam(at(0.2, (0.02, 0.03)), at(0.24, (0.02, 0.065)), 0.011, STEEL)       # hammer
+        out += beam(at(0.18, (0, -0.045)), at(0.27, (0, -0.04)), 0.01, BRASS)            # trigger guard
     elif kind == "derringer":
         # Remington double derringer: pearl grip, two stacked barrels that flip up
         out += beam(at(0.0, (0, -0.07)), at(0.25, (0, 0.0)), 0.022, (226, 220, 206))
@@ -924,7 +950,7 @@ def _key_poses(w):
                     pose = P(pose, **{g: G(pose[g]["B"] + pose[g]["D"] * 0.17, pose[g]["D"])})
             k[name] = pose
         return k
-    if w == "navy":
+    if w in ("navy", "pistola"):
         return _key_poses("colt")   # held and loaded like any Colt
     if w == "derringer":
         k = _key_poses("colt")
@@ -1175,6 +1201,13 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 8, events={1: "brass"})
         add("reload_insert", [k["insert_a"], k["insert_b"]], 5.5, True)
         add("reload_close", [k["holster"], k["aim"]], 7)
+    elif w == "pistola":
+        # one charge: powder poured, the ball rammed home with the swivel rod, a cap
+        add("cock", [k["cock"], k["aim"]], 6)
+        add("reload_open", _frames([k["aim"], k["load"]], 2), 4)
+        add("reload_eject", [k["eject_a"], k["eject_b"]], 3)
+        add("reload_insert", [k["insert_a"], k["insert_b"], k["eject_b"], k["insert_b"]], 2.6, True)
+        add("reload_close", _frames([k["load"], k["aim"]], 2), 4)
     elif w == "navy":
         # no brass to shake out: a spent cap picked off, then each chamber charged and rammed
         add("cock", [k["cock"], k["aim"]], 6)
@@ -1200,6 +1233,11 @@ def upper_anims(w):
         add("reload_insert", [k["insert_a"], k["insert_b"]], 4.8, True)
         add("reload_close", [k["break_half"], k["aim"]], 6)
     add("point", [k["point_half"], k["point"], k["point"]], 6)
+    if w in PISTOLS:   # a round into the air, for the noise of it: arm straight up, the gun at the sky
+        sky = dict(eR=V(0.06, -0.26, 0.76), hR=V(0.1, -0.2, 1.02), eL=V(0.0, 0.27, 0.22), hL=V(0.04, 0.22, -0.02),
+                   gun=G((0.06, -0.2, 0.98), (0.12, 0.0, 1.0)))
+        kick = P(sky, hR=V(0.06, -0.2, 1.06), gun=G((0.02, -0.2, 1.02), (-0.15, 0.0, 1.0)))
+        add("salute", [lerp_pose(k["aim"], sky, 0.5), sky, sky, kick, kick, sky, sky, lerp_pose(sky, k["aim"], 0.5)], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
     if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper"):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
@@ -1304,7 +1342,7 @@ DEATH_FPS = {"death_back": 9, "death_knees": 6, "death_spin": 8, "death_slump": 
 
 # A downed man with a pistol to hand may prop himself up on an elbow, feet towards
 # the stranger, and get a round or two off before he sinks back. One-handed guns only.
-PISTOLS = ("colt", "colts", "navy", "derringer", "howdah")
+PISTOLS = ("colt", "colts", "navy", "derringer", "howdah", "pistola")
 LYING = {"H": 0.13, "sway": 0.0, "crouch": True,
          "legs": [((0, 0.1, 0.13), (0.42, 0.13, 0.12), (0.82, 0.15, 0.08)),
                   ((0, -0.1, 0.13), (0.38, -0.12, 0.2), (0.76, -0.17, 0.08))]}   # one knee half up

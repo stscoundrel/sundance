@@ -91,7 +91,11 @@ const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon":
 const EXPLOSIVE := ["keg", "dyn_crate"]
 const CHAIN := Vector2(0.15, 0.35)   # s: a keg in reach of a blast goes up this soon after
 const RUNS_FROM := 2                 # rank: officers know a lit keg when they see one, and run
+const SPOT_STICK := 0.35             # chance one of the rest sees the stranger's stick land in time
 var charges: Array[Charge] = []
+const BANDAGE_DROP := 0.2     # chance a dead man leaves a bandage he hadn't used
+const STICK_DROP := 0.5       # and the dynamite he hadn't thrown
+var loot_rng := RandomNumberGenerator.new()
 var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
 # Blood trails: every drop a wounded man leaves. The gang can follow the stranger's.
 const TRAIL_FRESH := 45.0   # s a drop stays a lead worth following
@@ -175,11 +179,15 @@ func _ready() -> void:
 		Chicken.rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
+		loot_rng.randomize()
+		Enemy.rabble_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
 		Enemy.gasp_rng.seed = 13
 		wind_rng.seed = 17
+		loot_rng.seed = 19
+		Enemy.rabble_rng.seed = 23
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -375,7 +383,7 @@ func _setup_input() -> void:
 	var keys := {
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN],
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
-		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E], "bandage": [KEY_B],
+		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E], "bandage": [KEY_B], "throw": [KEY_G],
 		"weapon_1": [KEY_1], "weapon_2": [KEY_2], "weapon_3": [KEY_3],
 		"restart": [KEY_ENTER], "quit": [KEY_ESCAPE],
 	}
@@ -727,6 +735,7 @@ func _spawn_actors() -> void:
 		var xy: PackedStringArray = _args["at"].split(",")
 		start = Vector2(float(xy[0]), float(xy[1]))
 	player.setup(self, Iso.to_screen(start))
+	player.sticks = int(level_entry.get("dynamite", 0))
 	if level_entry.has("count"):
 		level["enemies"] = shuffled_gang(level, int(level_entry["count"]), usable_post)
 	for e in level["enemies"]:
@@ -1606,6 +1615,7 @@ func _on_enemy_died(e: Actor) -> void:
 		c.witness_death(e.global_position)
 	if _args.has("bot"):
 		print("%.1fs  %s down, %d left" % [(Time.get_ticks_msec() - start_time) / 1000.0, e.kind, alive_enemies()])
+	_drop_kit(e)
 	var ammo: String = e.weapon.d.get("ammo", e.weapon.kind)
 	if player.weapons.has(ammo):   # nothing to take from a derringer
 		var p := _drop_ammo(ammo, e.global_position + Vector2(randf_range(-6, 6), 4))
@@ -1794,6 +1804,18 @@ func _place_gun(kind: String, at: Vector2, fall: float) -> Dictionary:
 
 
 ## Cartridges for the stranger's guns, dropped by the dead (or spilled).
+## What else he had on him for the stranger to take: now and then the bandage he
+## never used, and the stick of dynamite he never threw (most of the time). Its own
+## dice, so the fights the tests replay stay as they were.
+func _drop_kit(e: Actor) -> void:
+	if not e is Enemy:
+		return
+	if e.bandages > 0 and loot_rng.randf() < BANDAGE_DROP:
+		_drop_ammo("bandage", e.global_position + Vector2(loot_rng.randf_range(-8, 8), 6))
+	if e.sticks > 0 and e.stick == null and loot_rng.randf() < STICK_DROP:
+		_drop_ammo("dynamite", e.global_position + Vector2(loot_rng.randf_range(-8, 8), -2))
+
+
 func _drop_ammo(kind: String, at: Vector2) -> Pickup:
 	var p := Pickup.new()
 	p.setup(self, at, kind)
@@ -2015,12 +2037,16 @@ func light_stick(by: Enemy) -> Dynamite:
 	return d
 
 
-## It's down and fizzing: anyone close who knows what that is gets clear of it.
+## It's down and fizzing: anyone close who knows what that is gets clear of it. One
+## of their own, they all know; the stranger's, mostly only the officers see it in
+## time (the rest blunder about, or spot it too late).
 func stick_landed(d: Dynamite) -> void:
 	var at := d.global_position
+	var his: bool = d.by == player
 	for e in enemies:
 		if e.alive and e.global_position.distance_to(at) < Dynamite.R + 20.0:
-			e.dodge(at, d.fuse)
+			if not his or e.rank >= RUNS_FROM or loot_rng.randf() < SPOT_STICK:
+				e.dodge(at, d.fuse)
 	for c in civilians:
 		if c.alive and c.global_position.distance_to(at) < Dynamite.R + 40.0:
 			c.alarm(at, true)

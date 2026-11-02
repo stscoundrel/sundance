@@ -15,6 +15,11 @@ extends Node
 ## that first shot instead of from the start ("waves_from": "first_shot"). No more
 ## than CROWD of the gang are about at once: past that, the rest wait out on the
 ## road till there's room (the frame time's the reason, and a fair fight).
+##
+## A wave marked "rally" comes after a lull: word comes, a little after the one
+## before it, that they're gathering outside the walls. A wave (or one of its
+## groups) can hand its men other guns than their own ("arms": a set named in
+## levels.json; [] for their own): the last of them, scraped together, are badly armed.
 
 const WARN := 15.0          # s of warning: which roads they're coming down
 const EVERY := 0.45         # s between men walking in off the same road (a band, not a file)
@@ -23,6 +28,7 @@ const HEAR_FOR := 8.0       # s: is a fight going on (they go to it)
 const CROWD := 40           # alive at once, at most: the rest wait out on the road for room
 const READY := Vector2(1.5, 2.5)     # s: out of the door, the ones who were ready
 const ASLEEP := Vector2(12.0, 18.0)  # s: the ones who had to wake up first
+const RALLY_AFTER := 20.0   # s after a wave's due that word comes of the next one rallying, after a lull
 
 var game: Node
 var waves: Array = []
@@ -38,6 +44,8 @@ var sleepers: Array = []    # still indoors: {kind, at (screen, outside his door
 var roused := -1.0          # when the first shot was fired (or the quiet noticed), or -1
 var quiet := false          # roused by the quiet, not the shooting
 var from_shot := false      # the waves count from the first shot
+var rallied := -1           # the last wave word has come of it rallying
+var arms_sets := {}         # name -> loadout options (levels.json "arms")
 
 
 func setup(g: Node, wave_list: Array, from_first_shot := false) -> void:
@@ -45,6 +53,7 @@ func setup(g: Node, wave_list: Array, from_first_shot := false) -> void:
 	waves = wave_list
 	from_shot = from_first_shot
 	rng.seed = 7919 + waves.size()
+	arms_sets = g._load_json("res://data/levels.json").get("arms", {})
 	for sl in g.level.get("sleepers", []):
 		var r: Vector2 = READY if sl.get("ready", false) else ASLEEP
 		var delay := rng.randf_range(r.x, r.y)
@@ -111,6 +120,11 @@ func _process(delta: float) -> void:
 	var wc := wave_clock()
 	if next < waves.size() and wc >= 0.0:
 		var w: Dictionary = waves[next]
+		if w.get("rally", false) and rallied < next and next > 0 and wc >= float(waves[next - 1]["at"]) + RALLY_AFTER:
+			rallied = next
+			game.hud.banner("The enemy is rallying their troops outside the fort!")
+			game.sfx("sting", null, -14.0, 0.0)
+			game.stats["rallies"] = game.stats.get("rallies", 0) + 1
 		if warned < next and wc >= float(w["at"]) - WARN:
 			warned = next
 			var names: Array = w["groups"].map(func(gr): return gr["from"])
@@ -187,7 +201,10 @@ func _send(w: Dictionary) -> void:
 		var kinds: Array = gr.get("kinds", [])
 		if kinds.is_empty():
 			kinds = range(int(gr["count"])).map(func(_i): return _a_kind())
-		lines.append(kinds.map(func(k): return [entries[gr["from"]], k]))
+		var arms = gr.get("arms", w.get("arms", []))
+		if arms is String:
+			arms = arms_sets[arms]
+		lines.append(kinds.map(func(k): return [entries[gr["from"]], k, arms]))
 	var longest := 0
 	for l in lines:
 		longest = maxi(longest, l.size())
@@ -226,7 +243,9 @@ func _walk_in(q: Array) -> void:
 	var at: Vector2 = entry["at"]
 	if not game.is_free(at):
 		at = game.free_point_near(at, 30.0)
-	var en: Enemy = game._add_enemy(q[1], at, PackedVector2Array(), rad_to_deg((entry["into"] - entry["at"]).angle()))
+	var arms: Array = q[2]
+	var en: Enemy = game._add_enemy(q[1], at, PackedVector2Array(), rad_to_deg((entry["into"] - entry["at"]).angle()),
+		{} if arms.is_empty() else {"loadouts": arms})
 	arrived += 1
 	game.stats["arrivals"] = game.stats.get("arrivals", 0) + 1
 	if game.leaderless:   # word on the road: their general's dead

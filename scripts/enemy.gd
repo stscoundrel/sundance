@@ -91,6 +91,16 @@ var peek_t := 0.0
 var aim_t := 0.0
 var since_shot := 99.0   # seconds since he last fired
 var finishing := false   # the stranger's down: he's walking up to finish him
+# The rabble: in the thick of a big fight, with plenty of his own about, a man of the
+# rank and file may stand there wasting it: a round loosed at the sky for the noise
+# of it, or bawling the others on (data: "rabble", how given he is to it).
+const CROWD_R := 240.0       # px round the stranger: his comrades this close make a crowd
+const RABBLE_CROWD := 8      # this many and it starts: a big fight, not a posse
+const RABBLE_EVERY := 2.0    # s between thinking about it
+static var rabble_rng := RandomNumberGenerator.new()
+var rabble_cd := 0.0
+var rabble_left := 0.0       # s left of it
+var rabble_shot := -1.0      # s till the round at the sky (-1: none)
 var finish_repath := 0.0
 var pinned_t := 0.0      # >0 while rounds are landing near him
 # Suppressive fire: blazing away at where the stranger probably is.
@@ -197,7 +207,7 @@ const GASP_SPREAD := 2.0    # x his usual spread: on his back and bleeding
 const GASP_LOST := 3.0      # s the stranger can be out of sight before he gives it up
 const GASP_PERISH := 0.5    # chance the effort is the end of him
 const GASP_COST := 12.0     # s off his clock if it isn't
-const PISTOLS := ["colt", "colts", "navy", "derringer", "howdah"]
+const PISTOLS := ["colt", "colts", "navy", "derringer", "howdah", "pistola"]
 const FINISH_NEAR := 34.0    # px: as close as a man walking up to finish the stranger comes
 const GASP_LINES := ["You first, gringo...", "¡Hasta el infierno!", "Not... alone...", "¡Muere, cabrón!",
 	"Come here... stranger..."]
@@ -1198,6 +1208,9 @@ func _combat(delta: float) -> void:
 	if finishing and not weapon.is_reloading():
 		_finish(delta, p, to, dist)
 		return
+	if rabble_left > 0.0 or _rabble_roll(delta, p):
+		_rabble(delta)
+		return
 
 	# Reloading: get behind cover and crouch. A bold man with a pair of guns comes
 	# back out as soon as one of them is full.
@@ -1905,6 +1918,57 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 				_sidestep()
 		elif weapon.state == Weapon.S.READY:
 			weapon.trigger()
+
+
+## Is he going to stand about? Only a man given to it, his gun loaded and nothing
+## else on his mind, in a crowd of his own round the stranger.
+func _rabble_roll(delta: float, p: Player) -> bool:
+	rabble_cd -= delta
+	var r := float(tdata.get("rabble", 0.0))
+	if r <= 0.0 or rabble_cd > 0.0 or weapon.is_reloading() or reaction != "" or p.down:
+		return false
+	rabble_cd = RABBLE_EVERY
+	var crowd := 0
+	for e in game.enemies:
+		if e.alive and e.st == St.COMBAT and e.global_position.distance_to(p.global_position) < CROWD_R:
+			crowd += 1
+	if crowd < RABBLE_CROWD or rabble_rng.randf() >= r * minf(1.0, (crowd - RABBLE_CROWD + 1) / 6.0) * 0.5:
+		return false
+	rabble_left = rabble_rng.randf_range(1.6, 2.4)
+	rabble_cd = rabble_rng.randf_range(6.0, 10.0)
+	velocity = Vector2.ZERO
+	crouched = false
+	if weapon.can_fire() and kind_of_gun() == "pistol" and rabble_rng.randf() < 0.55 and has_anim(_upper_key("salute")):
+		rabble_shot = 0.5   # (when the gun's up)
+		play_action("salute")
+		_say(_rabble_line("rabble", ["¡Viva Villa!", "¡Viva la revolución!", "¡Yaaa-haa!", "¡Ajúa!"]))
+		game.stats["rounds at the sky"] = game.stats.get("rounds at the sky", 0) + 1
+	else:
+		rabble_shot = -1.0
+		play_action("point")
+		_say(_rabble_line("cheer", ["We got him now!", "¡Ya lo tenemos!", "Get him, boys!", "¡Échenle bala!", "He's finished!"]))
+		game.stats["rabble cheers"] = game.stats.get("rabble cheers", 0) + 1
+	return true
+
+
+func _rabble_line(key: String, stock: Array) -> String:
+	var lines: Array = tdata.get("shouts", {}).get(key, stock)
+	return lines[rabble_rng.randi() % lines.size()]
+
+
+func kind_of_gun() -> String:
+	return "pistol" if weapon.kind in PISTOLS else "long"
+
+
+## Standing there in the open, doing no good at all.
+func _rabble(delta: float) -> void:
+	velocity = Vector2.ZERO
+	crouched = false
+	rabble_left -= delta
+	if rabble_shot >= 0.0:
+		rabble_shot -= delta
+		if rabble_shot < 0.0 and alive:
+			weapon.salute()
 
 
 ## The stranger's down in the dirt: he walks up (no hurry, no cover, gun on him)
