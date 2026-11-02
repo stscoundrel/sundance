@@ -403,7 +403,8 @@ const CARD := Vector2(75, 104)
 const CARD_H := 160.0
 const RIDE := Rect2(250, 286, 140, 26)
 const SLOT_NAME := {"colt": "SIDEARM", "coach": "SHOTGUN", "rifle": "RIFLE"}
-const BLURB := {"colt": "six, quick to load, fanned", "navy": "six, weak, slow to load",
+const BLURB := {"colt": "six, quick to load, fanned", "schofield": "six, all out and in at once",
+	"navy": "six, weak, slow to load",
 	"pistola": "one ball, then the ramrod", "coach": "two barrels, or both at once",
 	"escopeta": "one barrel, a long reload", "rifle": "thirteen, a quick lever",
 	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load"}

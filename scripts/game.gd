@@ -184,6 +184,7 @@ func _ready() -> void:
 		loot_rng.randomize()
 		Enemy.rabble_rng.randomize()
 		Enemy.return_rng.randomize()
+		Enemy.schofield_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -192,6 +193,7 @@ func _ready() -> void:
 		loot_rng.seed = 19
 		Enemy.rabble_rng.seed = 23
 		Enemy.return_rng.seed = 29
+		Enemy.schofield_rng.seed = 31
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -3073,15 +3075,25 @@ func spill_guns(c: Civilian) -> void:
 
 
 ## Animation events: brass flicking out of a Winchester or Colt, shells out of the
-## coach gun.
-func anim_event(a: Actor, ev: String) -> void:
+## coach gun; and (from the gun itself) a Schofield's whole cylinder, `n` of them,
+## thrown out together and dropping round his feet.
+func anim_event(a: Actor, ev: String, n := 1) -> void:
 	if ev == "brass" and a.weapon and a.weapon.action == "lever" and not a.weapon.ejecting:
 		return   # working the lever on an empty chamber: nothing to throw out
 	var puff := Puff.new()
 	puff.position = a.global_position + Vector2(0, 2)
 	var at: Vector2 = a.muzzle_offset() - a.facing * 6.0
 	var side := a.facing.orthogonal()
-	var n := 2 if ev == "shells" else 1
+	if ev == "dump":   # out of the gun held up at his chest, straight down round his boots
+		var gun := Vector2(a.facing.x * 4.0, -a.gun_height() * 0.8)
+		for i in n:
+			puff.add(gun + Vector2(randf_range(-1.5, 1.5), randf_range(-1, 1)),
+				Vector2(randf_range(-18, 18), -randf_range(0, 15)), randf_range(2.2, 3.0), 1.0,
+				Color(0.9, 0.72, 0.3).darkened(randf_range(0.0, 0.25)), 0.0, 900.0)
+		world.add_child(puff)
+		return
+	if ev == "shells":
+		n = 2
 	for i in n:
 		var c := Color(0.72, 0.16, 0.12) if ev == "shells" else Color(0.9, 0.72, 0.3)
 		puff.add(at, side * randf_range(15, 35) * (1 if randf() < 0.5 else -1) + Vector2(0, -randf_range(25, 45)),

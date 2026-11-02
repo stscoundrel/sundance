@@ -7,6 +7,8 @@ extends SceneTree
 ##              and firing, his empty Colt lying where it was. F again: his Colt
 ##              back, the Navy left as he fired it.
 ##   belt     - the Navy and a horse pistol take the same powder and ball off his belt.
+##   schofield - some of the gang's Colts are Schofields; one taken up loads from his
+##              Colt rounds.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_pickups.gd
 
 var game: Node
@@ -137,5 +139,24 @@ func _plan() -> void:
 			var b := Weapon.new("pistola", p)
 			check(a.ammo() == "powder" and a.reserve == 9 and b.reserve == 9, "the Navy and pistol don't share his powder")
 			b.reserve -= 2
-			check(a.reserve == 7 and p.belt["powder"] == 7, "the belt's not one belt")],
+			check(a.reserve == 7 and p.belt["powder"] == 7, "the belt's not one belt")
+			step = "schofield"
+			var n := 0
+			for i in 40:
+				var e: Enemy = game._add_enemy("pistolero", Iso.to_screen(Vector2(2, 2)) + Vector2(i * 4, 0), PackedVector2Array(), 0.0)
+				e.process_mode = Node.PROCESS_MODE_DISABLED
+				if e.weapon.kind == "schofield":
+					n += 1
+				game.enemies.erase(e)
+				e.queue_free()
+			print("  %d of 40 pistoleros came with a Schofield" % n)
+			check(n >= 5 and n <= 22, "%d of 40 with a Schofield" % n)
+			p.belt["colt"] = 12
+			gun = _dead_man("schofield", 6)],
+		[0.3, func():
+			p.global_position = gun["at"]],
+		[0.3, func():
+			game.swap_gun()
+			check(p.weapon.kind == "schofield" and p.weapon.reserve == 12 + Pickup.AMOUNT["colt"],
+				"a Schofield should take his Colt rounds (%s, %d)" % [p.weapon.kind, p.weapon.reserve])],
 	]

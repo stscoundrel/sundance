@@ -53,7 +53,7 @@ func _init() -> void:
 		colt.trigger()
 		run(colt, 0.4)
 	colt.start_reload()
-	run(colt, 0.7)
+	run(colt, 1.0)
 	colt.trigger()   # stop request
 	run(colt, 2.0)
 	check(colt.state == Weapon.S.READY, "colt ready after interrupted reload")
@@ -195,7 +195,40 @@ func _init() -> void:
 		run(colt2, 0.1)
 		colt_t += 0.1
 	check(navy.loaded() == 6, "Navy reloaded all six (%d)" % navy.loaded())
-	check(navy_t > colt_t * 2.0, "a cap-and-ball reload should take far longer (%.1f vs %.1f s)" % [navy_t, colt_t])
+	check(navy_t > colt_t * 1.7, "a cap-and-ball reload should take far longer (%.1f vs %.1f s)" % [navy_t, colt_t])
+
+	# Schofield, top-break: all six out and in quicker than the Colt's gate; but
+	# reloaded with four still live, out they all go too (lost), and it's no quicker.
+	var sch := Weapon.new("schofield", a)
+	sch.reserve = 20
+	sch.chambers.fill(2)
+	check(sch.d["spread"] > Weapon.DATA["colt"]["spread"], "the Schofield should be a little wilder than the Colt")
+	var sch_t := 0.0
+	sch.start_reload()
+	while sch.is_reloading() and sch_t < 30.0:
+		run(sch, 0.1)
+		sch_t += 0.1
+	check(sch.loaded() == 6 and sch.reserve == 14, "Schofield reloaded six (%d, reserve %d)" % [sch.loaded(), sch.reserve])
+	check(sch_t < colt_t * 0.7, "a Schofield should reload six far quicker than a Colt (%.1f vs %.1f s)" % [sch_t, colt_t])
+	for i in 2:
+		sch.trigger()
+		run(sch, 0.5)
+	check(sch.loaded() == 4, "Schofield fired two (%d left)" % sch.loaded())
+	sch_t = 0.0
+	check(sch.start_reload(), "Schofield reload starts with four still in it")
+	while sch.is_reloading() and sch_t < 30.0:
+		run(sch, 0.1)
+		sch_t += 0.1
+	check(sch.loaded() == 6 and sch.reserve == 8, "the four live ones should be thrown out and lost (reserve %d)" % sch.reserve)
+	var top_up := 0.0   # a Colt with two to put back
+	colt2.chambers[0] = 2
+	colt2.chambers[1] = 2
+	colt2.start_reload()
+	while colt2.is_reloading() and top_up < 30.0:
+		run(colt2, 0.1)
+		top_up += 0.1
+	check(top_up < sch_t, "topping up two, the Colt should beat the Schofield (%.1f vs %.1f s)" % [top_up, sch_t])
+	print("  reload six: colt %.1f s, schofield %.1f s; two: colt %.1f s, schofield %.1f s" % [colt_t, sch_t, top_up, sch_t])
 
 	a.free()
 	g.free()

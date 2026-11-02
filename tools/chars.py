@@ -38,18 +38,21 @@ def template_guns():
     """Which guns each body template must be baked holding (every gun its types carry).
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
-    out = {"hero": ["colt", "coach", "rifle", "navy", "pistola", "escopeta", "spencer", "springfield"]}
+    out = {"hero": ["colt", "coach", "rifle", "schofield", "navy", "pistola", "escopeta", "spencer", "springfield"]}
 
-    def need(template, g):
+    def need(template, g, t=None):
         out.setdefault(template, [])
         if g not in out[template]:
             out[template].append(g)
+        # a Colt may come out a Schofield (Enemy.SCHOFIELD, or the type's "schofield")
+        if g == "colt" and (t is None or t.get("schofield", 0.3) > 0):
+            need(template, "schofield")
     for t in _DATA["types"].values():
         for g in t["loadout"]:
-            need(t["template"], g)
+            need(t["template"], g, t)
         for option in t.get("loadouts", []):
             for g in option["guns"]:
-                need(t["template"], g)
+                need(t["template"], g, t)
         if t.get("concealed"):
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():
@@ -70,11 +73,11 @@ def template_guns():
                 for k in gr.get("kinds") or list(mp.get("wave_kinds", {})):
                     for option in arms:
                         for g in option["guns"]:
-                            need(_DATA["types"][k]["template"], g)
+                            need(_DATA["types"][k]["template"], g, _DATA["types"][k])
     return out
 
 
-GUN_LEN = {"colt": 0.31, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6, "navy": 0.36,
+GUN_LEN = {"colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6, "navy": 0.36,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
@@ -267,6 +270,25 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
         out += beam(at(0.4, (0, 0.016)), at(1.0, (0, 0.016)), 0.018, GUNMETAL)        # barrel
         out += beam(at(0.4, (0, -0.014)), at(0.78, (0, -0.014)), 0.009, STEEL)        # ejector rod
         out += beam(at(0.12, (0, 0.03)), at(0.2, (0, 0.06)), 0.01, STEEL)             # hammer spur
+    elif kind == "schofield":
+        # Smith & Wesson Schofield: blued, walnut grips with the hump at the top of the
+        # backstrap, and a top-break: unlatched, barrel and cylinder swing down on the
+        # hinge at the front of the frame and the extractor star throws the six out
+        out += beam(at(0.0, (0, -0.08)), at(0.2, (0, 0.0)), 0.027, (110, 72, 44))       # walnut grip
+        out += ellipsoid(at(0.14, (0, 0.022)), (0.016, 0.013, 0.014), GUNMETAL)         # the hump
+        out += beam(at(0.16, (0, -0.045)), at(0.24, (0, -0.04)), 0.01, GUNMETAL)        # trigger guard
+        out += beam(at(0.12, (0, 0.03)), at(0.19, (0, 0.06)), 0.01, STEEL)             # hammer spur
+        hinge = at(0.22, (0, -0.03))
+        ang = -1.0 * broken
+        ab = a * math.cos(ang) + up * math.sin(ang)
+        ub = up * math.cos(ang) - a * math.sin(ang)
+
+        def hb(t, off):
+            return hinge + ab * (L * (t - 0.22)) + ub * (off + 0.03)
+        out += frustum(hb(0.2, 0.0), hb(0.42, 0.0), 0.042, 0.042, GUNMETAL)            # cylinder
+        out += beam(hb(0.42, 0.016), hb(1.0, 0.016), 0.017, GUNMETAL)                  # barrel
+        out += beam(hb(0.42, 0.04), hb(0.5, 0.045), 0.012, STEEL)                      # the barrel latch
+        out += beam(hb(0.42, -0.012), hb(0.62, -0.012), 0.009, STEEL)                  # extractor rod
     elif kind == "navy":
         # Colt Navy 1851: walnut grip, brass frame and trigger guard, a long octagonal
         # barrel with the loading lever folded under it
@@ -953,7 +975,7 @@ def _key_poses(w):
         return k
     if w in ("navy", "pistola"):
         return _key_poses("colt")   # held and loaded like any Colt
-    if w == "derringer":
+    if w in ("derringer", "schofield"):   # held like a Colt; broken open to load
         k = _key_poses("colt")
         for name in ("load", "eject_a", "eject_b", "insert_a", "insert_b"):
             k[name] = P(k[name], broken=1.0)
@@ -1190,6 +1212,13 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 6, events={1: "brass"})
         add("reload_insert", [k["insert_a"], k["insert_b"]], 4.5, True)
         add("reload_close", [k["load_half"], k["aim"]], 6)
+    elif w == "schofield":
+        # unlatched and tipped open, a flick that throws all six, six in quick, snapped shut
+        add("cock", [k["cock"], k["aim"]], 7)
+        add("reload_open", [k["load_half"], k["load"]], 5)
+        add("reload_eject", [k["eject_a"], k["eject_b"]], 7)
+        add("reload_insert", [k["insert_a"], k["insert_b"]], 9, True)
+        add("reload_close", [k["load_half"], k["aim"]], 6)
     elif w == "derringer":
         add("cock", [k["cock"], k["aim"]], 7)
         add("reload_open", [k["load_half"], k["load"]], 6)
@@ -1343,7 +1372,7 @@ DEATH_FPS = {"death_back": 9, "death_knees": 6, "death_spin": 8, "death_slump": 
 
 # A downed man with a pistol to hand may prop himself up on an elbow, feet towards
 # the stranger, and get a round or two off before he sinks back. One-handed guns only.
-PISTOLS = ("colt", "colts", "navy", "derringer", "howdah", "pistola")
+PISTOLS = ("colt", "colts", "schofield", "navy", "derringer", "howdah", "pistola")
 LYING = {"H": 0.13, "sway": 0.0, "crouch": True,
          "legs": [((0, 0.1, 0.13), (0.42, 0.13, 0.12), (0.82, 0.15, 0.08)),
                   ((0, -0.1, 0.13), (0.38, -0.12, 0.2), (0.76, -0.17, 0.08))]}   # one knee half up
@@ -1535,7 +1564,7 @@ def jobs_for(template, guns):
         jobs += [(template, "upper", w, n) for n in upper_anims(w)]
     jobs += [(template, "full", None, n) for n in DEATH_FPS]
     # the stranger's last stand: his Colt, or a revolver from his boot if he rode in without one
-    for w in dict.fromkeys(list(guns) + (["colt", "navy"] if template == "hero" else [])):
+    for w in dict.fromkeys(list(guns) + (["colt", "schofield", "navy"] if template == "hero" else [])):
         if w in PISTOLS:
             jobs += [(template, "gasp", w, n) for n in gasp_anims()]
     return jobs

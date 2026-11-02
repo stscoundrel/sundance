@@ -168,7 +168,7 @@ length): the moment slows, a sting, and the colour starts going out of it. He li
 propped on an elbow, boots towards whoever dropped him, in the same poses as the
 gang's last gasp, with one bar left. He can't move; he can swing the gun about 60
 degrees either way, slowly. It's his Colt if he rode in with one; if not, a revolver
-comes out of his boot (a Colt or a Navy, loaded). Everything takes half as long again
+comes out of his boot (a Colt, a Schofield or a Navy, loaded). Everything takes half as long again
 one-handed in the dirt (no fanning), and lying flat he's a small target: his hurtbox
 lies along him, and he counts as crouched, so low cover stops everything. A heartbeat
 slows and the screen greys as he bleeds; "BLEEDING OUT" drains in 25 s. The only way
@@ -223,7 +223,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
-listing what goes in it (Colt, Navy or horse pistol; coach gun or escopeta;
+listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun or escopeta;
 Winchester, Spencer or Springfield) with a line on what the chosen one is like. 1 2 3
 or a click on a card goes on through its guns and then none; a click on a gun's
 name takes it, or puts it back. Enter or "ride in". The choice is kept across
@@ -235,7 +235,7 @@ he picked up. `tests/test_loadout.gd` covers the screen, the switching, and pick
 guns up.
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
-never change meaning: **1** a revolver or pistol (Colt, Navy, horse pistol), **2** a
+never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, horse pistol), **2** a
 shotgun (coach gun, escopeta), **3** a rifle (Winchester, Spencer, Springfield).
 `Player.SLOT` lists what he can carry; the derringer, Sharps, howdah and sawn-off
 still stay where they lie, and the gunsmith may get to them first.
@@ -252,7 +252,7 @@ still stay where they lie, and the gunsmith may get to them first.
 - The dead man's cartridges, lying by his gun, come with it (his bandolier): a few
   rounds, never a full belt.
 - **Ammo is by kind, on one belt**: .45 Colt, 10-gauge shells, .44 rimfire, Spencer
-  rimfire, and powder and ball for the cap-and-ball Navy and the muzzle-loaders
+  rimfire (the Schofield takes the Colt's .45), and powder and ball for the cap-and-ball Navy and the muzzle-loaders
   (horse pistol, escopeta, Springfield), so those share. Every dead man drops the
   rounds for his gun, whether the stranger has one or not.
 The revolution's guns are worse than his own; they earn a slot when his are dry.
@@ -264,8 +264,23 @@ The revolution's guns are worse than his own; they earn a slot when his are dry.
 - Single action: the hammer is thumbed back between shots (~0.35 s).
 - Fanning (hold RMB): fast, very inaccurate fire.
 - Reloading, per chamber: hammer at half-cock and loading gate open, then for
-  each chamber the ejector rod pushes out the spent case and a fresh round goes
-  in. Slow, and it can be stopped at any point. Closing the gate cocks it again.
+  each chamber the ejector rod pushes out the spent case (0.36 s) and a fresh round
+  goes in (0.5 s): about 6 s for all six. Slow, and it can be stopped at any point.
+  Closing the gate cocks it again.
+- Damage 2 · fast bullet · medium range.
+
+### Smith & Wesson Schofield, .45 — 6 rounds
+The Colt's rival, a top-break: an alternative for the sidearm slot, and in about a
+third of the gang's hands where they'd have a Colt (`Enemy.SCHOFIELD`, a type's
+`"schofield"` chance; its own dice, `schofield_rng`).
+- Reloading: unlatched, the barrel swings down and the extractor throws out **all
+  six at once, spent and live alike**; the live ones are lost in the dirt. Then six
+  go in quickly, with no turning the cylinder to each. A full six in about 3.5 s
+  (the Colt: about 6 s), but no topping up a round or two in a hurry: two spent
+  and four live costs the four, and takes as long as six (the Colt: about 2.4 s).
+- The hump-backed grip sits oddly in most hands: a little wilder than the Colt
+  (spread 3.0 against 2.2). No fanning; that's the Colt's alone.
+- Takes the Colt's .45 rounds, off the same belt.
 - Damage 2 · fast bullet · medium range.
 
 ### Coach gun — side-by-side 10-gauge double, external hammers, two triggers

@@ -118,7 +118,7 @@ func _gasp() -> void:
 	var hp0: int = game.player.hp
 	queue = [[3.5, func():
 		check(rise_at >= 0.0, "he never tried it")
-		check(a.gasp_gun == "colt", "with a %s" % a.gasp_gun)
+		check(a.gasp_gun in ["colt", "schofield"], "with a %s" % a.gasp_gun)
 		check(not game.loose_guns.any(func(g): return g["under"] == a), "his Colt is still lying in the dirt")],
 		[12.5, func():
 			print("rose at %.1f s; shots at %s" % [rise_at, shot_at.map(func(x): return "%.1f" % (x - rise_at))])
@@ -142,7 +142,7 @@ func _sidearm() -> void:
 	rise_at = -1.0
 	a = _down("rifleman")
 	queue.append([3.5, func():
-		check(a.gasp_gun == "colt", "a rifleman should draw his Colt (%s)" % a.gasp_gun)
+		check(a.gasp_gun in ["colt", "schofield"], "a rifleman should draw his Colt (%s)" % a.gasp_gun)
 		check(game.loose_guns.any(func(g): return g["under"] == a and g["kind"] == "rifle"), "his rifle should stay lying")
 		_no_pistol()])
 

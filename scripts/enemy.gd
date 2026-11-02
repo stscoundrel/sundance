@@ -214,7 +214,11 @@ const GASP_SPREAD := 2.0    # x his usual spread: on his back and bleeding
 const GASP_LOST := 3.0      # s the stranger can be out of sight before he gives it up
 const GASP_PERISH := 0.5    # chance the effort is the end of him
 const GASP_COST := 12.0     # s off his clock if it isn't
-const PISTOLS := ["colt", "colts", "navy", "derringer", "howdah", "pistola"]
+const PISTOLS := ["colt", "colts", "schofield", "navy", "derringer", "howdah", "pistola"]
+# Now and then a man's Colt is a Schofield instead (data "schofield": the chance,
+# for his type). Its own dice, so the fights the tests replay stay as they were.
+const SCHOFIELD := 0.3
+static var schofield_rng := RandomNumberGenerator.new()
 const FINISH_NEAR := 34.0    # px: as close as a man walking up to finish the stranger comes
 const GASP_LINES := ["You first, gringo...", "¡Hasta el infierno!", "Not... alone...", "¡Muere, cabrón!",
 	"Come here... stranger..."]
@@ -244,6 +248,8 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	kind = k
 	tdata = g.enemy_type(k, overrides)
 	loadout = _pick_loadout()
+	var top: float = tdata.get("schofield", SCHOFIELD)
+	loadout = loadout.map(func(gun): return "schofield" if gun == "colt" and schofield_rng.randf() < top else gun)
 	stats = {"keep": _v2(tdata["range"]), "cadence": _v2(tdata["cadence"])}
 	hp = int(tdata["hp"])
 	max_hp = hp

@@ -8,9 +8,9 @@ extends Actor
 ## Cartridges go in his belt whether he has the gun for them yet or not.
 
 const ORDER := ["colt", "coach", "rifle"]
-const SLOT := {"colt": "colt", "navy": "colt", "pistola": "colt", "coach": "coach", "escopeta": "coach",
+const SLOT := {"colt": "colt", "schofield": "colt", "navy": "colt", "pistola": "colt", "coach": "coach", "escopeta": "coach",
 	"rifle": "rifle", "spencer": "rifle", "springfield": "rifle"}   # the guns he can take up, by slot
-const RESERVE := {"colt": 30, "navy": 24, "pistola": 12, "coach": 10, "escopeta": 8,
+const RESERVE := {"colt": 30, "schofield": 30, "navy": 24, "pistola": 12, "coach": 10, "escopeta": 8,
 	"rifle": 26, "spencer": 21, "springfield": 12}   # what he rides in with, per gun (to his belt)
 const REACH := 13.0   # px: a gun at his feet
 # The knife (E). Up close behind a man who isn't on to him, a silent takedown; a
@@ -49,7 +49,7 @@ const STAND_ARC := 1.05       # rad either side of the way he fell: as far as he
 const STAND_TURN := 1.6       # rad/s he can swing it round
 const STAND_SLOW := 1.5       # one-handed, flat on his back: everything takes this much longer
 const STAND_GUN_H := 6.0      # px: the gun's height off the dirt
-const BOOT_GUNS := ["colt", "navy"]
+const BOOT_GUNS := ["colt", "schofield", "navy"]
 # Dynamite of his own: lit, a wind-up, and lobbed at the cursor. A shorter fuse than
 # the gang's: he cuts his own.
 const STICK_FUSE := 3.2      # s from lighting to the bang

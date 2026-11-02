@@ -5,6 +5,7 @@ extends RefCounted
 ##   revolver - Colt Single Action Army: six chambers, cocked per shot, gate loading.
 ##              A pair ("twin") holds twelve, fired right hand, left hand, in turn.
 ##              The old cap-and-ball Navy loads each chamber from the front: slow.
+##              The Schofield ("topbreak") breaks open and dumps all six at once.
 ##   lever    - Winchester 1866: tube magazine, a lever stroke between shots. The
 ##              Spencer too: a smaller tube, and the hammer thumbed back as well.
 ##   breech   - everything that opens to load: coach gun, sawn-off, derringer, Sharps,
@@ -22,8 +23,18 @@ const TUBE_CAP := 12   # plus one in the chamber (a lever gun's "tube" may hold 
 const DATA := {
 	"colt": {"name": "COLT SINGLE ACTION ARMY", "action": "revolver", "damage": 2, "speed": 650.0,
 		"range": 380.0, "spread": 2.2, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.32,
-		"shake": 2.0, "smoke": 9,
+		"shake": 2.0, "smoke": 9, "eject": [0.36, "eject"], "insert": [0.5, "shell_in"],
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
+	# Smith & Wesson Schofield: a top-break. Unlatched, the barrel swings down and the
+	# extractor throws out all six at once, spent and live alike (the live ones are
+	# lost in the dirt); then six go in quick, no turning the cylinder to each. No
+	# topping up a round or two, then. The hump-backed grip sits oddly in the hand:
+	# a little wilder than the Colt. Takes the same .45 rounds.
+	"schofield": {"name": "SCHOFIELD", "action": "revolver", "topbreak": true, "damage": 2, "speed": 640.0,
+		"range": 370.0, "spread": 3.0, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.34,
+		"shake": 2.0, "smoke": 9, "ammo": "colt", "open": [0.6, "break_open"], "eject": [0.4, "eject"],
+		"insert": [0.33, "shell_in"], "close": [0.45, "close"],
+		"status": {"cycle": "COCKING", "open": "BROKEN OPEN", "close": "LATCHED, COCKING"}},
 	"rifle": {"name": "WINCHESTER 1866", "action": "lever", "damage": 2, "pierce": 1, "speed": 900.0, "range": 620.0,
 		"spread": 0.6, "pellets": 1, "noise": 480.0, "sfx": "rifle", "cycle": 0.45, "shake": 2.5, "smoke": 11,
 		"status": {"cycle": "LEVER", "open": "LOADING GATE", "close": ""}},
@@ -343,6 +354,10 @@ func start_reload() -> bool:
 	if holder.has_method("on_reload"):
 		holder.on_reload()
 	match action:
+		"revolver" when d.has("open"):
+			timer = d["open"][0]
+			cocked = false
+			_snd(d["open"][1])
 		"revolver":
 			timer = 0.35
 			cocked = false
@@ -410,6 +425,24 @@ func _reload_step() -> void:
 		_close()
 		return
 	match action:
+		"revolver" when d.get("topbreak", false):
+			if chambers.has(1) or chambers.has(2):   # out they all come: the live ones too
+				if reload_idx == 0:
+					var out := chambers.size() - chambers.count(0)
+					chambers.fill(0)
+					cur = 0
+					_step(S.EJECT, d["eject"][0], d["eject"][1])
+					var g = holder.get("game") if holder else null
+					if g and g.has_method("anim_event"):   # all of them in the dirt at once
+						g.anim_event(holder, "dump", out)
+					return
+			var i := chambers.find(0)
+			if i >= 0 and reserve > 0:
+				chambers[i] = 1
+				reserve -= 1
+				reload_idx += 1
+				_step(S.INSERT, d["insert"][0], d["insert"][1])
+				return
 		"revolver":
 			while reload_idx < chambers.size():
 				var c := (cur + reload_idx) % chambers.size()
@@ -458,6 +491,9 @@ func _step(s: S, t: float, snd: String) -> void:
 func _close() -> void:
 	state = S.CLOSE
 	match action:
+		"revolver" when d.has("close"):
+			timer = d["close"][0]
+			_snd(d["close"][1])
 		"revolver":
 			timer = 0.3
 			_snd("cock")

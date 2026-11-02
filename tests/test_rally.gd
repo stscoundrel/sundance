@@ -88,7 +88,7 @@ func _waves() -> void:
 	for e in game.enemies.slice(game.enemies.size() - 13):
 		guns[e.weapon.kind] = guns.get(e.weapon.kind, 0) + 1
 		if e.kind == "coronel":
-			check(e.weapon.kind == "colt", "the coronel came with a %s" % e.weapon.kind)
+			check(e.weapon.kind in ["colt", "schofield"], "the coronel came with a %s" % e.weapon.kind)
 		else:
 			check(e.weapon.kind in ["navy", "pistola"], "a %s came with a %s" % [e.kind, e.weapon.kind])
 	print("  the sixth wave's guns: %s" % guns)

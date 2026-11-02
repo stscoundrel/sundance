@@ -403,7 +403,7 @@ def gen_ui(meta):
     meta["ui"]["portrait"] = save(p, "sprites/ui/portrait.png")
     # the guns the stranger can carry, side-on, for the loadout screen (Player.SLOT)
     meta["ui"]["guns"] = {}
-    for kind in ("colt", "navy", "pistola", "coach", "escopeta", "rifle", "spencer", "springfield"):
+    for kind in ("colt", "schofield", "navy", "pistola", "coach", "escopeta", "rifle", "spencer", "springfield"):
         L = chars.GUN_LEN[kind]
         d = np.array([1.0, -1.0, 0.0]) / math.sqrt(2)   # along the screen, muzzle to the right
         img, _ = render(chars.weapon_model(kind, -d * L / 2, d), scale=PIX * (2.4 if kind in chars.PISTOLS else 1.2),
