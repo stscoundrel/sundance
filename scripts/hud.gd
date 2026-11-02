@@ -406,6 +406,7 @@ const SLOT_NAME := {"colt": "SIDEARM", "coach": "SHOTGUN", "rifle": "RIFLE"}
 const BLURB := {"colt": "six, quick to load, fanned", "schofield": "six, all out and in at once",
 	"navy": "six, weak, slow to load",
 	"pistola": "one ball, then the ramrod", "coach": "two barrels, or both at once",
+	"champion": "one barrel, reaches further",
 	"escopeta": "one barrel, a long reload", "rifle": "thirteen, a quick lever",
 	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load"}
 const OPTION_Y := 118.0   # the first of a card's guns to pick from, and 12 px apart

@@ -223,7 +223,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
-listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun or escopeta;
+listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun, Champion or escopeta;
 Winchester, Spencer or Springfield) with a line on what the chosen one is like. 1 2 3
 or a click on a card goes on through its guns and then none; a click on a gun's
 name takes it, or puts it back. Enter or "ride in". The choice is kept across
@@ -236,7 +236,7 @@ guns up.
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
 never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, horse pistol), **2** a
-shotgun (coach gun, escopeta), **3** a rifle (Winchester, Spencer, Springfield).
+shotgun (coach gun, Champion, escopeta), **3** a rifle (Winchester, Spencer, Springfield).
 `Player.SLOT` lists what he can carry; the derringer, Sharps, howdah and sawn-off
 still stay where they lie, and the gunsmith may get to them first.
 - A gun for an **empty slot** is his for walking over it.
@@ -251,7 +251,7 @@ still stay where they lie, and the gunsmith may get to them first.
   without a reload.
 - The dead man's cartridges, lying by his gun, come with it (his bandolier): a few
   rounds, never a full belt.
-- **Ammo is by kind, on one belt**: .45 Colt, 10-gauge shells, .44 rimfire, Spencer
+- **Ammo is by kind, on one belt**: .45 Colt, shotgun shells (coach gun and Champion), .44 rimfire, Spencer
   rimfire (the Schofield takes the Colt's .45), and powder and ball for the cap-and-ball Navy and the muzzle-loaders
   (horse pistol, escopeta, Springfield), so those share. Every dead man drops the
   rounds for his gun, whether the stranger has one or not.
@@ -288,6 +288,26 @@ third of the gang's hands where they'd have a Colt (`Enemy.SCHOFIELD`, a type's
 - 9 buckshot pellets per barrel with a wide spread. Deadly up close, weak at range.
 - Reloading: break open, pull spent shells, load two shells, close (cocks the hammers).
 - Pellet damage 1 · short range · loudest weapon.
+
+### Johnson & Bye Champion (1879) — single-barrel break-open shotgun, 12-gauge
+The cheap single gun every hardware store sold: the low end of the gang carries one
+slung beside the sidearm, and the stranger can take one up for his shotgun slot.
+- One long, choked barrel: the shot goes further and holds tighter than the coach
+  gun's (range 240 against 175, spread 5.5 against 9), the same nine pellets.
+- One shot, then the side lever snaps it open, the shell's pulled, a fresh one in,
+  shut and the hammer back: about 1.3 s (the coach gun: about 2.3 s for two; the
+  escopeta: about 7.4 s with the ramrod).
+- Weaker in a fast fight than the coach gun: one shot, never both barrels at once.
+- Takes the coach gun's shells, off the same belt.
+- In the gang's hands it's one shot from a little further off, then more often than
+  not it's thrown down for the revolver (`draw_sidearm` 0.8): fire once, ditch it,
+  go to the pistol. A type's `"champion"` is the chance a man who would carry only a
+  sidearm has one slung as well (cowboy 0.25, bandido 0.3, drunkard 0.2,
+  revolucionario 0.25, soldadera 0.2), on its own dice (`Enemy.champion_rng`), so the
+  rest of a seeded fight stays as it was. Never a man caught indoors
+  (`pistols_only`), nor one passing as townsfolk. A wave's arms option can carry its
+  own chance: the rabble's is 0.12, rarer than their Navies and horse pistols.
+  `tests/test_champion.gd`.
 
 ### Winchester Model 1866 "Yellow Boy" carbine, .44 Henry rimfire — 13 rounds
 - Lever worked between shots (~0.45 s).
@@ -718,12 +738,12 @@ generator:
 | Type | Look | Guns | Character |
 |---|---|---|---|
 | Pistolero | poncho, sombrero (3 serapes) | Colt | rank and file, often breaks under fire |
-| Bandido | peasant whites, straw sombrero, bandolier, coloured sash (3) | Colt Navy (cap-and-ball) | 1 HP, poor aim, thin nerve, slow to react; dangerous for six shots, then an age reloading |
-| Cowboy | vest, bandana (3 palettes) | Colt | steady mid-range gunman |
+| Bandido | peasant whites, straw sombrero, bandolier, coloured sash (3) | Colt Navy (cap-and-ball), now and then a Champion too | 1 HP, poor aim, thin nerve, slow to react; dangerous for six shots, then an age reloading |
+| Cowboy | vest, bandana (3 palettes) | Colt, a Champion slung for one in four | steady mid-range gunman |
 | Rifleman | duster, bowler (2) | Winchester + Colt | good shot, leader (orders covering fire) |
 | Red Scarf | vest, red scarf | coach gun + Colt | rushes in, fires on the move |
 | El Jefe | red duster, sombrero | coach gun + Colt | 4 HP, nerves of steel, leader |
-| Drunkard | shirt, suspenders, slouch hat (2) | Colt | wild aim, slow, scared, slurs |
+| Drunkard | shirt, suspenders, slouch hat (2) | Colt, now and then a Champion | wild aim, slow, scared, slurs |
 | Gambler | frock coat, top hat (2) | Remington derringer | quick hands, cool head |
 | Saloon girl | dress and shawl (3) | derringer (3 in 4) or Colt | opportunist, passes as townsfolk until something's up |
 | Poacher | buckskin, fringe, coonskin cap, beard (2) | Sharps 1874 | sniper: very long range, deadly, slow single-shot reload |
@@ -784,14 +804,14 @@ cast-offs (see "The revolution's arsenal" below).
 
 - **Revolucionario**: white campesino cottons, two bandoliers crossed over the chest,
   a striped serape over the left shoulder, a big straw sombrero; mostly a Navy or a
-  Colt (8 in 11), else a Spencer, a Springfield or an escopeta with a Navy to fall
+  Colt (8 in 11, and a Champion slung for one in four of those), else a Spencer, a Springfield or an escopeta with a Navy to fall
   back on; 2 HP; "¡Tierra y libertad!".
 - **Tirador**: the same in plainer cloth, with a long eye: a Springfield (less
   accurate than it should be, in his hands), a Spencer, or a captured Winchester.
 - **Sargento**: bearded, sashed, coach gun (or a Spencer) and Colt; calls the orders
   (rank 1).
 - **Soldadera**: a woman of the revolution in a long dress, crossed bandoliers and a
-  sombrero; a Navy or a Colt more often than not, else a Spencer or an escopeta.
+  sombrero; a Navy or a Colt more often than not (now and then a Champion with it), else a Spencer or an escopeta.
   (Not the saloon girls: they're still about.)
 - **Coronel**: an olive tunic with two rows of brass, a red collar, gold epaulettes, a
   kepi, a cavalry sabre at the hip (for show) and a Colt; 3 HP, rank 2.

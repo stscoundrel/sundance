@@ -50,6 +50,15 @@ const DATA := {
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 22, "smoke_push": 1.7, "ammo": "coach",
 		"open": [0.32, "break_open"], "eject": [0.3, "eject"], "insert": [0.38, "shell_in"], "close": [0.3, "close"],
 		"status": {"cycle": "", "open": "BREAKING OPEN", "close": "CLOSING"}},
+	# Johnson & Bye Champion (1879): the cheap single-barrel break-open gun every
+	# hardware store sold. One long choked barrel throws the shot tighter and further
+	# than the coach gun, and the side lever snaps it open quick for the next shell;
+	# but it's one shot, and the hammer to thumb back. Takes the coach gun's shells.
+	"champion": {"name": "CHAMPION 12 GA", "action": "breech", "barrels": 1, "hammer": true,
+		"damage": 1, "speed": 560.0, "range": 240.0, "spread": 5.5, "pellets": 9, "noise": 450.0,
+		"sfx": "coach", "cycle": 0.3, "shake": 3.5, "smoke": 18, "smoke_push": 1.5, "ammo": "coach",
+		"open": [0.3, "break_open"], "eject": [0.3, "eject"], "insert": [0.4, "shell_in"], "close": [0.3, "cock"],
+		"status": {"cycle": "COCKING", "open": "SNAPPED OPEN", "close": "CLOSING"}},
 	# A pair of Colts, one in each hand. Chambers alternate between the guns, so the
 	# left is already cocked as the right fires; reloading is one gun at a time.
 	"colts": {"name": "PAIR OF COLTS", "action": "revolver", "twin": true, "chambers": 12, "damage": 2,

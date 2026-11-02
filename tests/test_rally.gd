@@ -89,6 +89,8 @@ func _waves() -> void:
 		guns[e.weapon.kind] = guns.get(e.weapon.kind, 0) + 1
 		if e.kind == "coronel":
 			check(e.weapon.kind in ["colt", "schofield"], "the coronel came with a %s" % e.weapon.kind)
+		elif e.weapon.kind == "champion":   # (now and then one slung beside the pistol)
+			check(e.loadout[1] in ["navy", "pistola"], "a %s's Champion with a %s" % [e.kind, e.loadout[1]])
 		else:
 			check(e.weapon.kind in ["navy", "pistola"], "a %s came with a %s" % [e.kind, e.weapon.kind])
 	print("  the sixth wave's guns: %s" % guns)

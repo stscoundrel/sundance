@@ -38,7 +38,8 @@ def template_guns():
     """Which guns each body template must be baked holding (every gun its types carry).
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
-    out = {"hero": ["colt", "coach", "rifle", "schofield", "navy", "pistola", "escopeta", "spencer", "springfield"]}
+    out = {"hero": ["colt", "coach", "rifle", "schofield", "navy", "pistola", "champion", "escopeta", "spencer",
+                    "springfield"]}
 
     def need(template, g, t=None):
         out.setdefault(template, [])
@@ -47,12 +48,20 @@ def template_guns():
         # a Colt may come out a Schofield (Enemy.SCHOFIELD, or the type's "schofield")
         if g == "colt" and (t is None or t.get("schofield", 0.3) > 0):
             need(template, "schofield")
+
+    def champion(template, chance, guns):
+        # a man with only a sidearm may have a Champion slung too (Enemy.CHAMPION)
+        if chance > 0 and len(guns) == 1:
+            need(template, "champion")
     for t in _DATA["types"].values():
         for g in t["loadout"]:
             need(t["template"], g, t)
         for option in t.get("loadouts", []):
             for g in option["guns"]:
                 need(t["template"], g, t)
+            champion(t["template"], option.get("champion", t.get("champion", 0)), option["guns"])
+        if not t.get("loadouts"):
+            champion(t["template"], t.get("champion", 0), t["loadout"])
         if t.get("concealed"):
             need(t["template"], "unarmed")
     for t in _DATA["civilians"]["types"].values():
@@ -74,10 +83,11 @@ def template_guns():
                     for option in arms:
                         for g in option["guns"]:
                             need(_DATA["types"][k]["template"], g, _DATA["types"][k])
+                        champion(_DATA["types"][k]["template"], option.get("champion", 0), option["guns"])
     return out
 
 
-GUN_LEN = {"colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6, "navy": 0.36,
+GUN_LEN = {"colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
@@ -353,6 +363,20 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
             out += beam(hinge + side * o + upb * 0.012, hinge + ab * bl + side * o + upb * 0.012, 0.024, GUNMETAL)
             out += beam(at(0.19, (o * 1.4, 0.03)), at(0.24, (o * 1.6, 0.075)), 0.012, STEEL)  # hammers
         out += beam(hinge - upb * 0.026, hinge + ab * (bl * 0.36) - upb * 0.026, 0.03, WOOD)
+    elif kind == "champion":
+        # Johnson & Bye Champion: a plain walnut stock, a long single barrel hinged to
+        # swing down, the side lever that snaps it open, and one hammer
+        out += frustum(at(0.0, (0, -0.042)), at(0.28), 0.056, 0.03, WOOD)
+        out += box(tuple(at(0.28) - 0.035), tuple(at(0.33) + 0.035), STEEL)
+        out += beam(at(0.29, (0.034, -0.01)), at(0.24, (0.036, -0.04)), 0.009, STEEL)  # side snap lever
+        hinge = at(0.33)
+        ang = 0.75 * broken
+        ab = a * math.cos(ang) - up * math.sin(ang)
+        upb = np.cross(side, ab)
+        bl = L * 0.67
+        out += beam(hinge + upb * 0.012, hinge + ab * bl + upb * 0.012, 0.022, GUNMETAL)
+        out += beam(hinge - upb * 0.016, hinge + ab * (bl * 0.34) - upb * 0.016, 0.026, WOOD)    # fore-end
+        out += beam(at(0.26, (0, 0.03)), at(0.3, (0, 0.075)), 0.012, STEEL)                   # hammer
     elif kind == "spencer":
         # Spencer carbine: walnut butt with the magazine tube's brass cap at its heel, a
         # dark case-hardened receiver, side hammer, a short fore-end and one barrel band
@@ -973,6 +997,11 @@ def _key_poses(w):
                     pose = P(pose, **{g: G(pose[g]["B"] + pose[g]["D"] * 0.17, pose[g]["D"])})
             k[name] = pose
         return k
+    if w == "champion":
+        # held at the hip and broken open like the coach gun; the thumb up to the hammer
+        k = _key_poses("coach")
+        k["cock"] = P(k["aim"], eR=V(-0.06, -0.29, 0.24), hR=V(0.08, -0.16, 0.2))
+        return k
     if w in ("navy", "pistola"):
         return _key_poses("colt")   # held and loaded like any Colt
     if w in ("derringer", "schofield"):   # held like a Colt; broken open to load
@@ -1257,6 +1286,12 @@ def upper_anims(w):
         add("reload_open", _frames([k["aim"], k["load"]], 2), 8)
         add("reload_insert", [k["insert_a"], k["insert_b"]], 5, True)
         add("reload_close", _frames([k["load"], k["aim"]], 2), 8)
+    elif w == "champion":
+        add("cock", [k["cock"], k["aim"]], 6)
+        add("reload_open", [k["break_half"], k["load"]], 6)
+        add("reload_eject", [k["eject_a"], k["eject_b"]], 6, events={1: "shells"})
+        add("reload_insert", [k["insert_a"], k["insert_b"]], 5, True)
+        add("reload_close", [k["break_half"], k["aim"]], 6)
     else:
         add("reload_open", [k["break_half"], k["load"]], 5)
         add("reload_eject", [k["eject_a"], k["eject_b"]], 6, events={1: "shells"})

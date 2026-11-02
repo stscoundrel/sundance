@@ -185,6 +185,7 @@ func _ready() -> void:
 		Enemy.rabble_rng.randomize()
 		Enemy.return_rng.randomize()
 		Enemy.schofield_rng.randomize()
+		Enemy.champion_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -194,6 +195,7 @@ func _ready() -> void:
 		Enemy.rabble_rng.seed = 23
 		Enemy.return_rng.seed = 29
 		Enemy.schofield_rng.seed = 31
+		Enemy.champion_rng.seed = 37
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -3074,8 +3076,8 @@ func spill_guns(c: Civilian) -> void:
 	c.carried.clear()
 
 
-## Animation events: brass flicking out of a Winchester or Colt, shells out of the
-## coach gun; and (from the gun itself) a Schofield's whole cylinder, `n` of them,
+## Animation events: brass flicking out of a Winchester or Colt, shells out of a
+## shotgun's barrels; and (from the gun itself) a Schofield's whole cylinder, `n` of them,
 ## thrown out together and dropping round his feet.
 func anim_event(a: Actor, ev: String, n := 1) -> void:
 	if ev == "brass" and a.weapon and a.weapon.action == "lever" and not a.weapon.ejecting:
@@ -3092,8 +3094,8 @@ func anim_event(a: Actor, ev: String, n := 1) -> void:
 				Color(0.9, 0.72, 0.3).darkened(randf_range(0.0, 0.25)), 0.0, 900.0)
 		world.add_child(puff)
 		return
-	if ev == "shells":
-		n = 2
+	if ev == "shells":   # a shell out of each barrel: two from a double gun, one from the Champion
+		n = a.weapon.barrels.size() if a.weapon and not a.weapon.barrels.is_empty() else 2
 	for i in n:
 		var c := Color(0.72, 0.16, 0.12) if ev == "shells" else Color(0.9, 0.72, 0.3)
 		puff.add(at, side * randf_range(15, 35) * (1 if randf() < 0.5 else -1) + Vector2(0, -randf_range(25, 45)),
