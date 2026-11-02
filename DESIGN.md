@@ -973,6 +973,29 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   bleed-out clock stops while he works), and 8 s later the bandit's back on his
   feet with one HP: he gets paid either way. Animations: the "barber" set (bag in
   hand, binding a man standing, tending one on the ground).
+- **Cruz Verde's cemetery** has its own folk, out among the graves west of the fort
+  by the stranger's start:
+  - *The families of the revolution's dead* (`role: "visitor"`: three women in
+    black, `widow`, and a peon, `widower`) go from grave to grave round the stone
+    circle (which is drawn under anyone crossing it, `game.FLAT`) (any cross, headstone or mound on the level's `boothills` within ~320 px
+    of where each started), standing or kneeling at each for 10-18 s, the grief
+    poses, now and then a word ("Mi hijo...", "Viva la revolución... para qué.").
+    A fresh grave nobody's wept over yet comes first.
+  - *The grave digger* (`role: "digger"`, beard, slouch hat, braces, a long-handled
+    spade) works down a row of three open graves (`open_grave`: the spoil heaped at
+    the back, a coffin like those about San Miguel's streets waiting, a cross on
+    its lid, the hole in front) along the west road:
+    24 s digging, the coffin let down (the pit then shows its lid,
+    `open_grave_in`), 12 s filling in, and it's a fresh mound and cross like the
+    undertaker's in San Miguel, for the families to come to. Then the next. He only
+    buries those coffins: the gang's dead in the fort stay where they fell.
+  - There's nearly always shooting at the fort, so only gunfire within ~220 px of
+    them, of where they started, or of the west gate (`ward` in the placement)
+    scatters them, and a near miss or a man dropping by them. They run off the west
+    edge of the map rather than into town, and they're back 8 s after it stops there,
+    however it's going in the fort; the digger takes up his grave where he left it.
+  Animations: "grief" (both templates) and "spade" (dig, lever, throw). They roll the
+  townsfolk's own dice like the sister and the barber.
   The sister and the barber roll their own dice (`Civilian.rng` through each one's
   `dice`, which `game.sfx` and `game.free_point_near` also take), so the seeded
   tests play out as they did before them.
@@ -1091,6 +1114,11 @@ bandit's gun, alone; patches him up close by, in under the bandage's time, his o
 bandage kept, and only once; ignores shooting across town but ducks in at shooting
 by the shop and is back out while the town is still loud; and gets a downed bandit
 by his shop back on his feet.
+`tests/test_cemetery.gd` checks the families go grave to grave and stay in the
+cemetery, carry on through shooting in the fort, scatter off the map at shooting by
+the west gate and are back soon after it moves off (the fort still loud), and that
+the digger digs out all three graves, lets each coffin down and fills it in, and the
+families mourn at each fresh grave.
 `tests/test_shutters.gd` checks creeping down main street slams far fewer shutters
 than walking it, that the far end of town stays open, that a shot slams those
 around it, and that they open again once it's quiet. `tests/test_perf.gd` times a

@@ -42,10 +42,16 @@ extends Actor
 ## not. The stranger wounded within sight of his door, and nobody shooting at him:
 ## out he comes and binds him up where he stands (once a level). He'll do the same
 ## for any downed man near his shop, the gang's included: he gets paid either way.
+## Out in Cruz Verde's cemetery the families of the revolution's dead ("visitor") go
+## from grave to grave, and the grave digger ("digger") works down a row of open
+## graves, a coffin waiting by each: dug, the coffin let down, filled in, and on to
+## the next. There's nearly always shooting at the fort, so only gunfire by the
+## graves or at the gate nearest them ("ward") scatters them, off the edge of the
+## map, and they're back as soon as it's stopped there.
 
 enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
 	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY, TO_FIX, FIX, TO_SWEEP, SWEEP, HERD,
-	SHELTER, TO_PADRE, CARRY_IN, TO_PATIENT, TREAT, TO_DOWNED, TEND }
+	SHELTER, TO_PADRE, CARRY_IN, TO_PATIENT, TREAT, TO_DOWNED, TEND, TO_PIT, DIG }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -63,7 +69,7 @@ const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
 const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios mío!"]
 const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS, St.TO_GRAVE, St.MOURN, St.TO_GUN,
 	St.PICK, St.HAUL, St.TO_STUMP, St.ORATE, St.TO_SCAR, St.SURVEY, St.TO_FIX, St.FIX, St.TO_SWEEP, St.SWEEP,
-	St.HERD, St.SHELTER, St.TO_PADRE, St.CARRY_IN, St.TO_PATIENT, St.TREAT, St.TO_DOWNED, St.TEND]
+	St.HERD, St.SHELTER, St.TO_PADRE, St.CARRY_IN, St.TO_PATIENT, St.TREAT, St.TO_DOWNED, St.TEND, St.TO_PIT, St.DIG]
 const MEASURE_T := 3.5
 const BLESS_T := 4.0
 const MOURN_T := Vector2(20.0, 32.0)
@@ -89,6 +95,12 @@ const THREAT_NEAR := 300.0 # px: a bandit fighting the stranger within this, in 
 const TREAT_T := 5.0       # s binding the stranger up (his own bandage takes 10)
 const TEND_T := 8.0        # s over a downed man
 const TEND_NEAR := 180.0   # px from his door: downed men he'll go out to
+const GRAVE_EAR := 220.0   # px: gunfire this near the cemetery folk (or their gate) scatters them
+const RETURN_T := 8.0      # s without it there, and they're back
+const VISIT_T := Vector2(10.0, 18.0)   # s at each grave
+const VISIT_NEAR := 320.0  # px from where she started: the graves she goes round
+const DIG_T := 24.0        # s digging a grave out
+const FILL_T := 12.0       # s filling it in over the coffin
 
 static var rng := RandomNumberGenerator.new()   # the sister's and the barber's dice (the town's stay as seeded)
 
@@ -155,6 +167,11 @@ var barber := false
 var near_shot := -100.0      # game.clock of the last gunfire near her door, or his shop
 var patient: Actor           # the barber's: the stranger, or a downed man
 var treated := false         # the stranger has had his once
+var visitor := false
+var digger := false
+var wards := PackedVector2Array()   # where gunfire also concerns the cemetery folk: their gate
+var pit: Dictionary = {}     # the open grave the digger's at
+var kneel := false
 
 
 func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {}) -> void:
@@ -163,7 +180,11 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	tdata = g.civilian_type(k, overrides)
 	sister = tdata.get("role", "") == "sister"
 	barber = tdata.get("role", "") == "barber"
-	if sister or barber:
+	visitor = tdata.get("role", "") == "visitor"
+	digger = tdata.get("role", "") == "digger"
+	if tdata.has("ward"):
+		wards.append(Iso.to_screen(Vector2(tdata["ward"][0], tdata["ward"][1])))
+	if sister or barber or visitor or digger:
 		dice = rng
 	hp = 1
 	max_hp = 1
@@ -206,6 +227,10 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		anim_gun = "nun"         # hands folded; beckoning, hauling, blessing
 	elif barber:
 		anim_gun = "barber"      # his bag, and the lint bandage
+	elif visitor:
+		anim_gun = "grief"
+	elif digger:
+		anim_gun = "spade"
 	home = pos
 	if sister:   # her place is the chapel's own doorstep, on open ground
 		for d in g.doors:
@@ -231,7 +256,7 @@ func sees(pos: Vector2) -> bool:
 
 ## Gunfire: close, or in sight within earshot, and he's off.
 func hear(pos: Vector2, radius: float, _k: String, source: Node) -> void:
-	if (sister or barber) and alive:
+	if (sister or barber or visitor or digger) and alive:
 		if _k in GUNFIRE and source != self:
 			_hear_near(pos)
 		return
@@ -282,6 +307,8 @@ func alarm(from: Vector2, scary: bool) -> void:
 	if barber:
 		_duck_in()
 		return
+	if visitor or digger:
+		near_shot = game.clock   # (a fright of any kind: they give it a while before coming back)
 	if priest or sister:
 		# a holy man: he stands his ground, and may have a word for it
 		if shout_t <= 0.0 and _rf() < 0.4:
@@ -309,7 +336,7 @@ func alarm(from: Vector2, scary: bool) -> void:
 func _flee() -> void:
 	st = St.FLEE
 	crouched = false
-	hid_at = game.refuge_for(global_position, threat)
+	hid_at = _west_edge() if visitor or digger else game.refuge_for(global_position, threat)
 	path = game.find_path(global_position, hid_at)
 	path_i = 0
 	if _rf() < 0.5:
@@ -332,6 +359,10 @@ func _physics_process(delta: float) -> void:
 			return
 		if barber:
 			_barber_inside()
+			return
+		if visitor or digger:
+			if game.state == "play" and inside_t > 4.0 and game.clock - near_shot > RETURN_T:
+				_come_out()
 			return
 		if game.state == "play" and inside_t > 10.0 and game.quiet_for() >= game.quiet_after + back_after:
 			if not mourner:
@@ -397,6 +428,8 @@ func _physics_process(delta: float) -> void:
 			_sister(delta)
 		St.TO_PATIENT, St.TREAT, St.TO_DOWNED, St.TEND:
 			_barber(delta)
+		St.TO_PIT, St.DIG:
+			_dig(delta)
 	if carried and pose == "":
 		pose = "carry"
 	if velocity.length() > 1.0 and not watching:
@@ -450,6 +483,12 @@ func _idle(delta: float) -> void:
 		_sister_idle()
 		return
 	if barber and _barber_idle():
+		return
+	if visitor:
+		if wait <= 0.0:
+			_next_grave()
+		return
+	if digger and _next_pit():
 		return
 	if mourner:
 		_go_inside(false)   # home again, and in at the door
@@ -644,19 +683,26 @@ func _mourn(delta: float) -> void:
 		St.TO_GRAVE:
 			if _follow(walk):
 				st = St.MOURN
-				work_t = _rr(MOURN_T.x, MOURN_T.y)
+				work_t = _rr(VISIT_T.x, VISIT_T.y) if visitor else _rr(MOURN_T.x, MOURN_T.y)
+				kneel = visitor and _rf() < 0.4
 				velocity = Vector2.ZERO
 				if _rf() < 0.6:
 					_say(_line("work", ["..."]))
 		St.MOURN:
 			velocity = Vector2.ZERO
 			pose = "mourn"
+			crouched = kneel
 			desired = (mourning["at"] - global_position).normalized()
 			work_t -= delta
 			if work_t <= 0.0:
 				mourning["done"] = true
 				mourning = {}
 				game.stats["mournings"] = game.stats.get("mournings", 0) + 1
+				if visitor:   # on to another of them
+					crouched = false
+					st = St.IDLE
+					wait = _rr(1.0, 3.0)
+					return
 				path = game.find_path(global_position, home)
 				path_i = 0
 				st = St.WALK
@@ -968,6 +1014,15 @@ func _drop_job() -> void:
 
 ## Gunfire: to her it means folk to get indoors; to him, his shop's in the line of it.
 func _hear_near(pos: Vector2) -> void:
+	if visitor or digger:
+		var near := pos.distance_to(global_position) < GRAVE_EAR or pos.distance_to(home) < GRAVE_EAR
+		for w in wards:
+			near = near or pos.distance_to(w) < GRAVE_EAR
+		if near:
+			near_shot = game.clock
+			if not st in [St.FLEE, St.GONE, St.COWER]:
+				alarm(pos, false)
+		return
 	if sister:
 		if pos.distance_to(home) < SHELTER_EAR or pos.distance_to(global_position) < SHELTER_EAR:
 			near_shot = game.clock
@@ -1276,6 +1331,87 @@ func _let_go_of_patient() -> void:
 		(patient as Player).medic = null
 	patient = null
 	crouched = false
+
+
+# ------------------------------------------------------------------ the cemetery
+
+## Another grave to stand at: a fresh one if there's one nobody's wept over, else one
+## of the old ones round about.
+func _next_grave() -> void:
+	var g: Dictionary = game.grave_to_mourn()
+	if g.is_empty():
+		var near: Array[Vector2] = []
+		for p in game.old_graves:
+			if p.distance_to(home) < VISIT_NEAR:
+				near.append(p)
+		if near.is_empty():
+			return
+		g = {"at": near[_ri() % near.size()], "mourners": 1, "done": false}
+	mourning = g
+	var spot: Vector2 = g["at"] + Vector2(_rr(-14.0, 14.0), _rr(10.0, 16.0))
+	path = game.find_path(global_position, spot if game.is_free(spot) else game.free_point_near(spot, 12.0, dice))
+	path_i = 0
+	st = St.TO_GRAVE
+
+
+## Off the west edge of the map: the cemetery's nearest way out of it all.
+func _west_edge() -> Vector2:
+	var g := Iso.to_grid(global_position)
+	for dy in [0.0, 1.0, -1.0, 2.0, -2.0, 3.0, -3.0]:
+		var e := Iso.to_screen(Vector2(0.6, g.y + dy))
+		if game.is_free(e):
+			return e
+	return game.refuge_for(global_position, threat)
+
+
+## The next open grave in his row, the nearest first.
+func _next_pit() -> bool:
+	var best := INF
+	pit = {}
+	for gr in game.open_graves:
+		if gr["done"] or (gr["digger"] != null and gr["digger"] != self):
+			continue
+		var d: float = global_position.distance_to(gr["at"])
+		if d < best:
+			best = d
+			pit = gr
+	if pit.is_empty():
+		return false
+	pit["digger"] = self
+	var stand := Iso.to_screen(pit["g"] + Vector2(2.45, 1.55))   # at the end of it
+	path = game.find_path(global_position, stand if game.is_free(stand) else game.free_point_near(stand, 10.0, dice))
+	path_i = 0
+	st = St.TO_PIT
+	return true
+
+
+func _dig(delta: float) -> void:
+	match st:
+		St.TO_PIT:
+			if _follow(walk):
+				st = St.DIG
+				knock_t = 0.0
+		St.DIG:
+			velocity = Vector2.ZERO
+			pose = "dig"
+			desired = (pit["at"] - global_position).normalized()
+			knock_t -= delta
+			if knock_t <= 0.0:
+				knock_t = 2.0   # (a spadeful a turn of the swing)
+				game.sfx("sweep", global_position, -16.0, 0.2, dice)
+			if not pit["in"]:
+				pit["dug"] += delta
+				if pit["dug"] >= DIG_T:
+					game.lower_coffin(pit)
+					if _rf() < 0.6:
+						_say(_line("work", ["Hm."]))
+			else:
+				pit["filled"] += delta
+				if pit["filled"] >= FILL_T:
+					game.fill_grave(pit)
+					pit = {}
+					st = St.IDLE
+					wait = _rr(2.0, 4.0)
 
 
 # ------------------------------------------------------------------ couples

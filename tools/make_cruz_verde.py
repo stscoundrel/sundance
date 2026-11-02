@@ -81,6 +81,8 @@ PROPS += KEG_SPOTS
 # The cemetery: rings of crosses, mounds and headstones round a circle of stones,
 # and rows of graves below the west road.
 CIRCLE = (4.5, 19.0)   # the stone circle's corner (it's 6 tiles across)
+OPEN_GRAVES = (1.2, 4.8, 8.4)   # the open graves' corners along y 31.8 (2.2 x 2 tiles)
+WEST_GATE = [16.5, 30.5]   # gunfire here, or by the graves, scatters the folk in the cemetery
 
 
 def cemetery():
@@ -101,6 +103,9 @@ def cemetery():
         for i, x in enumerate(range(2, 14, 2)):
             kind = ("cross", "headstone", "cross", "mound", "headstone_b", "cross")[(i + row) % 6]
             out.append((kind, x + (row % 2) * 0.6, y))
+    # a fresh row being dug along the road's edge, a coffin waiting by each
+    for x in OPEN_GRAVES:
+        out.append(("open_grave", x, 31.8))
     return out
 
 
@@ -152,6 +157,13 @@ CIVILIANS = [
     {"kind": "saloon_girl", "x": 37.6, "y": 36.8, "facing": 200},
     {"kind": "priest", "x": 21.5, "y": 23.7, "facing": 90, "brave": True},   # he goes to the dead under fire
     {"kind": "sister", "x": 21.5, "y": 23.5, "facing": 90},   # indoors, in the chapel
+    # out in the cemetery: the grave digger at his new row, and the families of the
+    # revolution's dead going from grave to grave round the stone circle
+    {"kind": "digger", "x": 11.2, "y": 33.0, "facing": 180, "ward": WEST_GATE},
+    {"kind": "visitor", "x": 12.4, "y": 24.4, "facing": 200, "ward": WEST_GATE, "palette": 0},
+    {"kind": "visitor", "x": 11.4, "y": 27.0, "facing": 230, "ward": WEST_GATE, "palette": 1},
+    {"kind": "visitor", "x": 2.6, "y": 18.4, "facing": 60, "ward": WEST_GATE, "palette": 0},
+    {"kind": "widower", "x": 9.8, "y": 27.8, "facing": 250, "ward": WEST_GATE},
     {"kind": "peon", "x": 28.6, "y": 29.8, "facing": 0},
     {"kind": "peon", "x": 39.4, "y": 27.4, "facing": 180},
     {"kind": "peon", "x": 54.0, "y": 21.8, "facing": 120},

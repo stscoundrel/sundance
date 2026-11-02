@@ -1183,6 +1183,26 @@ def mound():
     return m
 
 
+def open_grave(coffin_beside=True):
+    """A grave being dug: the spoil heaped up at the back, the coffin waiting before it, and the dark hole in front where it can be seen into; or (coffin_beside
+    False) the coffin down in the hole, its lid showing, for the earth to go back over."""
+    def earth(P, N):
+        c = np.tile(np.array([96.0, 68, 44]), (len(P), 1))
+        clod = hash01(np.floor(P[:, 0] * 14), np.floor(P[:, 1] * 14)) > 0.78
+        c[clod] = (72, 50, 34)
+        return c
+    m = ellipsoid((1.1, 0.24, 0.0), (0.95, 0.22, 0.3), earth)                        # the spoil
+    m += box((0.18, 1.15, 0.0), (2.02, 1.95, 0.012), solid((84, 58, 38)), skip=("-z",))  # the rim
+    m += box((0.3, 1.27, 0.012), (1.9, 1.83, 0.016), solid((30, 21, 16)), skip=("-z",))  # the hole
+    if coffin_beside:   # the same coffin as stands about San Miguel's streets, a cross on its lid
+        c = coffin()
+        c.translate((0.1, 0.4, 0))
+        m += c
+    else:
+        m += box((0.42, 1.36, 0.016), (1.78, 1.74, 0.02), solid((120, 90, 60)), skip=("-z",))  # the lid, below
+    return m
+
+
 def tumbleweed(frame, seed=4):
     rng = np.random.default_rng(seed)
     m = Cloud()
@@ -1599,6 +1619,8 @@ BUILDINGS = {
     "stone_circle": (stone_circle, (6, 6), "none", False, None),
     "agave": (lambda: agave(0), (0.6, 0.6), "none", False, None),
     "mound": (mound, (1.0, 0.56), "none", False, None),
+    "open_grave": (lambda: open_grave(True), (2.2, 2.0), "none", False, None),
+    "open_grave_in": (lambda: open_grave(False), (2.2, 2.0), "none", False, None),
     "olla": (olla, (0.4, 0.4), "none", False, None),
     "chair": (chair, (0.4, 0.4), "none", False, None),
     "table": (table, (0.56, 0.56), "none", False, None),

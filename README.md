@@ -65,6 +65,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_gunsmith.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_mayor.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_sister.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_barber.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_cemetery.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_loadout.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_budget.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_reinforcements.gd

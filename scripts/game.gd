@@ -50,6 +50,10 @@ var leaderless := false
 var _quiet := 0.0
 var graves := PackedVector2Array()
 var to_mourn: Array[Dictionary] = []
+var old_graves := PackedVector2Array()   # the long dead, for the families to go round
+var open_graves: Array[Dictionary] = []  # graves being dug, each with its coffin waiting
+const GRAVES := ["cross", "headstone", "headstone_b", "mound"]
+const FLAT := ["stone_circle"]   # things on the ground people walk across, drawn under them
 # Guns lying about: {kind, sprite, at, under (the body it fell with, or null),
 # ammo (the cartridges dropped beside it: a Pickup, or null), ammo_kind, claimed_by,
 # weapon (how it was left loaded, if known), his (the stranger put it down)}
@@ -673,7 +677,13 @@ func _build_world() -> void:
 	astar.update()
 
 	for o in level["objects"]:
-		_place_object(o["type"], Vector2(o["x"], o["y"]))
+		var spr := _place_object(o["type"], Vector2(o["x"], o["y"]))
+		var og := Vector2(o["x"], o["y"])
+		if o["type"] == "open_grave":
+			open_graves.append({"g": og, "sprite": spr, "at": Iso.to_screen(og + Vector2(1.1, 1.55)),
+				"dug": 0.0, "filled": 0.0, "in": false, "done": false, "digger": null})
+		elif o["type"] in GRAVES and _on_boot_hill(og):
+			old_graves.append(Iso.to_screen(og + Vector2(0.25, 0.12)))
 	for item in fragile:
 		if item["kind"] == "coop":
 			for i in HENS_OUT:
@@ -740,7 +750,7 @@ func _add_enemy(kind: String, pos: Vector2, patrol: PackedVector2Array, facing_d
 	return en
 
 
-func _place_object(type: String, g: Vector2) -> void:
+func _place_object(type: String, g: Vector2) -> Sprite2D:
 	var m: Dictionary = meta["objects"][type]
 	var fp := Vector2(m["footprint"][0], m["footprint"][1])
 	var spr := Sprite2D.new()
@@ -749,6 +759,8 @@ func _place_object(type: String, g: Vector2) -> void:
 	spr.position = Iso.to_screen(g + fp * 0.5)
 	spr.scale = Vector2.ONE * tex_scale
 	spr.offset = ((Iso.to_screen(g) - spr.position) / tex_scale - Vector2(m["anchor"][0], m["anchor"][1])).round()
+	if type in FLAT:
+		spr.z_index = -1   # low enough to walk over: under whoever's crossing it
 	world.add_child(spr)
 	if level.has("reserve") and type == level["reserve"]["den"] and not den.has("sprite") \
 			and not Engine.has_meta("no_reserve"):   # (tests of the street fight leave them indoors)
@@ -806,6 +818,7 @@ func _place_object(type: String, g: Vector2) -> void:
 			body.set_meta("prop", prop)
 	if m["fade"]:
 		buildings.append({"sprite": spr, "x0": g.x, "y0": g.y, "x1": g.x + fp.x, "y1": g.y + fp.y})
+	return spr
 
 
 func _block_cells(x0: float, y0: float, x1: float, y1: float, pad: float) -> Array[Vector2i]:
@@ -1645,13 +1658,42 @@ func bury(body: Actor, at: Vector2) -> void:
 	body.visible = false
 	body.set_meta("buried", true)
 	body.remove_meta("claimed_by")
-	# a heap of fresh earth with the cross at its head, unlike the old graves
+	stats["burials"] = stats.get("burials", 0) + 1
+	_fresh_grave(at)
+
+
+func _on_boot_hill(g: Vector2) -> bool:
+	for r in level.get("boothills", []):
+		if g.x >= r[0] and g.x <= r[2] and g.y >= r[1] and g.y <= r[3]:
+			return true
+	return false
+
+
+## The grave digger's done: the pit filled in over the coffin, and a fresh grave.
+func fill_grave(gr: Dictionary) -> void:
+	gr["done"] = true
+	gr["sprite"].visible = false
+	stats["graves dug"] = stats.get("graves dug", 0) + 1
+	_fresh_grave(gr["at"])
+
+
+## The coffin let down into the hole: the pit now shows its lid.
+func lower_coffin(gr: Dictionary) -> void:
+	gr["in"] = true
+	var m: Dictionary = meta["objects"]["open_grave_in"]
+	var spr: Sprite2D = gr["sprite"]
+	spr.texture = tex(m["file"])
+	spr.offset = ((Iso.to_screen(gr["g"]) - spr.position) / tex_scale - Vector2(m["anchor"][0], m["anchor"][1])).round()
+
+
+## A heap of fresh earth with the cross at its head, unlike the old graves, and one
+## for the mourners to come to.
+func _fresh_grave(at: Vector2) -> void:
 	var g := Iso.to_grid(at)
 	var mf: Array = meta["objects"]["mound"]["footprint"]
 	_place_object("mound", g - Vector2(mf[0], mf[1]) * 0.5)
 	var cf: Array = meta["objects"]["cross"]["footprint"]
 	_place_object("cross", g - Vector2(mf[0] * 0.5 + cf[0] * 0.6, cf[1] * 0.5))
-	stats["burials"] = stats.get("burials", 0) + 1
 	to_mourn.append({"at": at, "mourners": 0, "done": false})
 
 

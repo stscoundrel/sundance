@@ -68,7 +68,7 @@ def template_guns():
         need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith",
                                   "mayor": "mayor", "carpenter": "carpentry", "sweeper": "broom",
                                   "henwife": "broom", "keeper": "keeper", "sister": "nun",
-                                  "barber": "barber"}.get(t.get("role", ""), "unarmed"))
+                                  "barber": "barber", "visitor": "grief", "digger": "spade"}.get(t.get("role", ""), "unarmed"))
     # a level's waves may hand their men other guns ("arms"): whoever might walk in
     # with them is baked holding them too
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -817,6 +817,15 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         d = (grip - head) / np.linalg.norm(grip - head)
         m += frustum(head, head + d * 0.2, 0.08, 0.03, (206, 176, 106))
         m += beam(head + d * 0.18, head + d * 1.3, 0.016, (150, 112, 70))
+    if up.get("spade") is not None:   # a long-handled spade: blade at `spade`, the haft up through both hands
+        blade = np.array(up["spade"], float)
+        grip = np.array(up["hR"], float)
+        d = (grip - blade) / np.linalg.norm(grip - blade)
+        m += frustum(blade, blade + d * 0.24, 0.075, 0.05, (120, 116, 112))
+        m += beam(blade + d * 0.22, blade + d * 1.35, 0.016, (150, 112, 70))
+        m += beam(blade + d * 1.3, blade + d * 1.38, 0.03, (150, 112, 70))   # the D grip
+        if up.get("dirt"):
+            m += ellipsoid(blade + d * 0.06, (0.07, 0.07, 0.04), (92, 64, 42))
     if up.get("towel"):   # a bar towel over his arm
         h = np.array(up["hL"], float)
         m += box(tuple(h + [-0.05, -0.04, -0.12]), tuple(h + [0.04, 0.04, 0.02]), (232, 228, 214))
@@ -1013,6 +1022,20 @@ def _key_poses(w):
         k["bless_b"] = P(base, hR=V(0.44, -0.06, 0.36), eR=V(0.2, -0.22, 0.32))
         k["bless_c"] = P(base, hR=V(0.42, 0.1, 0.52))
         k["bless_d"] = P(base, hR=V(0.42, -0.24, 0.52))
+        return k
+    if w == "spade":
+        # the grave digger: his spade stood by him; driven into the ground with both
+        # hands, levered, and the earth thrown up onto the heap over his left shoulder
+        k = _key_poses("unarmed")
+        g = -H_REF + 0.04   # the ground, from the hip
+        k["aim"] = P(k["aim"], eR=V(0.02, -0.26, 0.22), hR=V(0.12, -0.2, 0.3), spade=V(0.18, -0.26, g))
+        two = dict(eL=V(0.16, 0.22, 0.28), eR=V(0.14, -0.22, 0.14))
+        k["dig_a"] = P(two, hL=V(0.3, 0.06, 0.5), hR=V(0.28, -0.06, 0.22), spade=V(0.52, 0.0, g - 0.06),
+                       lean=0.2, nod=0.3)
+        k["dig_b"] = P(two, hL=V(0.24, 0.08, 0.2), hR=V(0.18, -0.08, 0.04), spade=V(0.58, 0.02, g + 0.04),
+                       lean=0.42, nod=0.35, dirt=True)
+        k["dig_c"] = dict(eL=V(0.1, 0.28, 0.34), hL=V(0.18, 0.22, 0.48), eR=V(0.06, -0.12, 0.3),
+                          hR=V(0.12, 0.06, 0.3), spade=V(0.3, 0.62, 0.62), lean=0.05, nod=0.1, twist=0.35)
         return k
     if w == "barber":
         # the barber-surgeon: his bag in hand; binding a man up where he stands, and
@@ -1249,7 +1272,7 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
@@ -1279,6 +1302,9 @@ def upper_anims(w):
                        k["beckon_b"], lerp_pose(k["beckon_a"], k["beckon_b"], 0.5)], 5, True)
         add("drag", [k["drag"]], 1, True)
         add("bless", [k["bless_a"], k["bless_b"], k["bless_c"], k["bless_d"]], 2.5, True)
+    elif w == "spade":
+        a_, b_, c_ = k["dig_a"], k["dig_b"], k["dig_c"]
+        add("dig", [a_, a_, lerp_pose(a_, b_, 0.5), b_, b_, lerp_pose(b_, c_, 0.5), c_, lerp_pose(c_, a_, 0.5)], 4, True)
     elif w == "barber":
         add("treat", [k["treat_a"], k["treat_a"], lerp_pose(k["treat_a"], k["treat_b"], 0.5), k["treat_b"], k["treat_b"],
                       lerp_pose(k["treat_b"], k["treat_a"], 0.5)], 4, True)
@@ -1375,7 +1401,7 @@ def upper_anims(w):
         kick = P(sky, hR=V(0.06, -0.2, 1.06), gun=G((0.02, -0.2, 1.02), (-0.15, 0.0, 1.0)))
         add("salute", [lerp_pose(k["aim"], sky, 0.5), sky, sky, kick, kick, sky, sky, lerp_pose(sky, k["aim"], 0.5)], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade"):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
                         lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         add("haul", [k["haul"]], 1, True)

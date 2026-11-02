@@ -1305,6 +1305,21 @@
    "type": "cross",
    "x": 12.0,
    "y": 48.4
+  },
+  {
+   "type": "open_grave",
+   "x": 1.2,
+   "y": 31.8
+  },
+  {
+   "type": "open_grave",
+   "x": 4.8,
+   "y": 31.8
+  },
+  {
+   "type": "open_grave",
+   "x": 8.4,
+   "y": 31.8
   }
  ],
  "player": {
@@ -1458,6 +1473,59 @@
    "x": 21.5,
    "y": 23.5,
    "facing": 90
+  },
+  {
+   "kind": "digger",
+   "x": 11.2,
+   "y": 33.0,
+   "facing": 180,
+   "ward": [
+    16.5,
+    30.5
+   ]
+  },
+  {
+   "kind": "visitor",
+   "x": 12.4,
+   "y": 24.4,
+   "facing": 200,
+   "ward": [
+    16.5,
+    30.5
+   ],
+   "palette": 0
+  },
+  {
+   "kind": "visitor",
+   "x": 11.4,
+   "y": 27.0,
+   "facing": 230,
+   "ward": [
+    16.5,
+    30.5
+   ],
+   "palette": 1
+  },
+  {
+   "kind": "visitor",
+   "x": 2.6,
+   "y": 18.4,
+   "facing": 60,
+   "ward": [
+    16.5,
+    30.5
+   ],
+   "palette": 0
+  },
+  {
+   "kind": "widower",
+   "x": 9.8,
+   "y": 27.8,
+   "facing": 250,
+   "ward": [
+    16.5,
+    30.5
+   ]
   },
   {
    "kind": "peon",
