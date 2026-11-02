@@ -150,7 +150,7 @@ const FINISHERS := 2      # at most this many walking up to finish the stranger 
 var down_slow := 0.0      # the moment he goes down, slowed (unscaled seconds left)
 var heart_t := 0.0
 var finish_cd := 3.0
-var last_twang := -100000
+var last_twang := -100.0   # (game time: a wall clock here would let machine load decide the dice)
 var end_time := 0
 var start_time := 0
 
@@ -1607,7 +1607,7 @@ func alert_allies(caller: Enemy, radius: float, target: Vector2) -> void:
 ## The close-up is the stand-off moment: a bandit lays eyes on the stranger before a
 ## single shot has been fired. Alerts caused by the hero's own gunfire skip it.
 func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
-	var now := Time.get_ticks_msec()
+	var now := clock
 	if not alerted_once and spotted and not player_fired:
 		alerted_once = true
 		Engine.time_scale = 0.3
@@ -1615,7 +1615,7 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 		hud.show_eyes()
 		sfx("sting", null, -2.0, 0.0)
 		last_twang = now
-	elif now - last_twang > 7000:
+	elif now - last_twang > 7.0:
 		last_twang = now
 		sfx("twang", null, -6.0, 0.0)
 

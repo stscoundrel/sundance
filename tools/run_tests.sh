@@ -3,9 +3,9 @@
 # prints the ones that failed (non-zero exit, a FAIL line, or a script error).
 #   tools/run_tests.sh                    # every tests/test_*.gd but the perf test
 #   tools/run_tests.sh tests/test_kegs.gd tests/test_rally.gd
-# Logs go to .godot/test_logs/ (or $SUNDANCE_LOGS). Heavy parallel load makes a
-# few behaviour tests wobble now and then (test_downed most often): rerun a lone
-# failure on its own before believing it.
+# Logs go to .godot/test_logs/ (or $SUNDANCE_LOGS). The tests are deterministic, so
+# one that fails here but passes alone means wall-clock time is leaking into the
+# game (see CLAUDE.md).
 cd "$(dirname "$0")/.." || exit 1
 LOGS=${SUNDANCE_LOGS:-.godot/test_logs}
 rm -rf "$LOGS" && mkdir -p "$LOGS"

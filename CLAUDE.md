@@ -28,6 +28,10 @@ changing it.
   its own `RandomNumberGenerator`, seeded in `game.gd` under the `fixed_seed` meta (see
   `loot_rng`, `Enemy.rabble_rng`, `Enemy.return_rng`, `Enemy.schofield_rng`). Adding
   global `randf()` calls shifts every seeded test.
+- Never let the wall clock (`Time.get_ticks_msec()`) decide anything that draws a
+  random number, plays a sound (`game.sfx` draws two) or steers the AI: a headless test
+  runs faster than real time alone and slower under load, so the dice come out
+  differently. Use `game.clock` (game time). Wall clock is for visuals only.
 - Type GDScript variables explicitly where inference fails (`var e: Enemy = ...`).
 - Wave and stage logic belongs in `scripts/director.gd`, not `game.gd`.
 
@@ -43,9 +47,9 @@ godot --headless --path . --fixed-fps 60 -s tests/test_pickups.gd   # one, outpu
   ending `... test: OK`. New features get a `tests/test_<feature>.gd` and a line in README.
 - Engine metas switch things off for tests: `fixed_seed`, `level`, `no_civilians`,
   `no_reserve`, `no_downed`, `no_alarm`, `always_gasp`, `no_gasp`, `no_last_stand`.
-- Under heavy parallel load a few behaviour tests wobble (test_downed most often). Rerun
-  a lone failure on its own before believing it. test_perf is left out of the suite; it
-  needs a quiet machine.
+- A test that passes alone but fails in the suite is almost always the wall clock
+  leaking into the game (see above), not luck: find it. test_perf is left out of the
+  suite; it needs a quiet machine.
 - A level's opening runs for a few seconds after `game.begin()` before the stranger can
   act: wait for it (or poll for what you need) rather than counting frames.
 
