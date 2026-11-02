@@ -1,5 +1,5 @@
 {
- "_doc": "The levels the picker offers, in order. 'map' is a town file (tools/make_town.py writes San Miguel's). With 'count', the gang is shuffled: that many bandits on the map's guard posts, the count itself the seed (the same count, the same town), the gang's mix kept from the map's own. Without it, the map's hand-placed gang. 'hidden' ones are for the tests.",
+ "_doc": "The levels the picker offers, in order. 'map' is a town file (tools/make_town.py writes San Miguel's). With 'count', the gang is shuffled: that many bandits on the map's guard posts, the count itself the seed (the same count, the same town), the gang's mix kept from the map's own. Without it, the map's hand-placed gang. 'hidden' ones are for the tests. 'budget': the points the stranger spends on the loadout screen (guns and kit; 12 if none, enough for everything). 'dynamite': the sticks he has when a test skips the loadout screen.",
  "arms": {
   "_doc": "Guns a wave can hand its men instead of their own ('arms' on a wave or one of its groups, by name; [] for their own): loadout options, as in enemies.json.",
   "rabble": [{"guns": ["navy"], "weight": 3, "range": [60, 170], "champion": 0.12},

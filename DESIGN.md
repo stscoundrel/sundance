@@ -234,6 +234,21 @@ gun panel show which he has (the one in hand outlined), and a line there says wh
 he picked up. `tests/test_loadout.gd` covers the screen, the switching, and picking
 guns up.
 
+**Points.** Each choice costs points, out of the level's `budget` in
+`data/levels.json` (12 where none is named, for now enough for everything). A gun's
+price is its `points` in `Weapon.DATA`, by how good it is, not by its slot: junk is
+free (horse pistol, escopeta), the poor or one-job guns 1 (Navy, Champion,
+Springfield), the solid ones 2 (Colt and Schofield alike: as strong, each with its
+own faults; sawn-off, Spencer), the coach gun 3 and the Winchester, the best gun in
+the game, 4. Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
+or the box left of "ride in") and a stick of dynamite for 2 (G, the right box), in
+every level. What he doesn't buy he hasn't: no free bandage. Each
+gun line shows its price, greyed when he can't afford it with what else he's taken;
+1 2 3 pass those by, and a click on one gets a dry click. A choice kept from a
+richer level gives back its dearest thing first (kit before a gun of the same price)
+until it fits. Guns taken off the dead are free. The tests that skip the screen
+keep the level's own kit (a bandage, the level's sticks). `tests/test_budget.gd`.
+
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
 never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, horse pistol), **2** a
 shotgun (coach gun, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Spencer, Springfield).

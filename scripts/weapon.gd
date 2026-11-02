@@ -19,9 +19,10 @@ enum S { READY, CYCLE, OPEN, EJECT, INSERT, CLOSE }
 const TUBE_CAP := 12   # plus one in the chamber (a lever gun's "tube" may hold fewer)
 # For breech guns, open/eject/insert/close are [seconds, sound]; "hammer" means the
 # hammer is thumbed back after each shot; "volley" lets the right trigger fire every
-# loaded barrel at once.
+# loaded barrel at once. "points": what the stranger's gun costs on the loadout
+# screen, out of the level's budget (0 for junk, 4 for the Winchester).
 const DATA := {
-	"colt": {"name": "COLT SINGLE ACTION ARMY", "action": "revolver", "damage": 2, "speed": 650.0,
+	"colt": {"name": "COLT SINGLE ACTION ARMY", "points": 2, "action": "revolver", "damage": 2, "speed": 650.0,
 		"range": 380.0, "spread": 2.2, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.32,
 		"shake": 2.0, "smoke": 9, "eject": [0.36, "eject"], "insert": [0.5, "shell_in"],
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
@@ -30,22 +31,22 @@ const DATA := {
 	# lost in the dirt); then six go in quick, no turning the cylinder to each. No
 	# topping up a round or two, then. The hump-backed grip sits oddly in the hand:
 	# a little wilder than the Colt. Takes the same .45 rounds.
-	"schofield": {"name": "SCHOFIELD", "action": "revolver", "topbreak": true, "damage": 2, "speed": 640.0,
+	"schofield": {"name": "SCHOFIELD", "points": 2, "action": "revolver", "topbreak": true, "damage": 2, "speed": 640.0,
 		"range": 370.0, "spread": 3.0, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.34,
 		"shake": 2.0, "smoke": 9, "ammo": "colt", "open": [0.6, "break_open"], "eject": [0.4, "eject"],
 		"insert": [0.33, "shell_in"], "close": [0.45, "close"],
 		"status": {"cycle": "COCKING", "open": "BROKEN OPEN", "close": "LATCHED, COCKING"}},
-	"rifle": {"name": "WINCHESTER 1866", "action": "lever", "damage": 2, "pierce": 1, "speed": 900.0, "range": 620.0,
+	"rifle": {"name": "WINCHESTER 1866", "points": 4, "action": "lever", "damage": 2, "pierce": 1, "speed": 900.0, "range": 620.0,
 		"spread": 0.6, "pellets": 1, "noise": 480.0, "sfx": "rifle", "cycle": 0.45, "shake": 2.5, "smoke": 11,
 		"status": {"cycle": "LEVER", "open": "LOADING GATE", "close": ""}},
-	"coach": {"name": "COACH GUN  10 GA", "action": "breech", "barrels": 2, "volley": true,
+	"coach": {"name": "COACH GUN  10 GA", "points": 3, "action": "breech", "barrels": 2, "volley": true,
 		"damage": 1, "speed": 520.0, "range": 175.0, "spread": 9.0, "pellets": 9, "noise": 460.0,
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 20, "smoke_push": 1.5,
 		"open": [0.4, "break_open"], "eject": [0.35, "eject"], "insert": [0.42, "shell_in"], "close": [0.35, "close"],
 		"status": {"cycle": "", "open": "BREAKING OPEN", "close": "CLOSING"}},
 	# A double gun with the barrels and the stock cut down: easy to carry under a coat,
 	# useless past a few paces and murder inside them. Takes the coach gun's shells.
-	"sawnoff": {"name": "SAWN-OFF 12 GA", "action": "breech", "barrels": 2, "volley": true,
+	"sawnoff": {"name": "SAWN-OFF 12 GA", "points": 2, "action": "breech", "barrels": 2, "volley": true,
 		"damage": 1, "speed": 480.0, "range": 115.0, "spread": 15.0, "pellets": 9, "noise": 470.0,
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 22, "smoke_push": 1.7, "ammo": "coach",
 		"open": [0.32, "break_open"], "eject": [0.3, "eject"], "insert": [0.38, "shell_in"], "close": [0.3, "close"],
@@ -54,7 +55,7 @@ const DATA := {
 	# hardware store sold. One long choked barrel throws the shot tighter and further
 	# than the coach gun, and the side lever snaps it open quick for the next shell;
 	# but it's one shot, and the hammer to thumb back. Takes the coach gun's shells.
-	"champion": {"name": "CHAMPION 12 GA", "action": "breech", "barrels": 1, "hammer": true,
+	"champion": {"name": "CHAMPION 12 GA", "points": 1, "action": "breech", "barrels": 1, "hammer": true,
 		"damage": 1, "speed": 560.0, "range": 240.0, "spread": 5.5, "pellets": 9, "noise": 450.0,
 		"sfx": "coach", "cycle": 0.3, "shake": 3.5, "smoke": 18, "smoke_push": 1.5, "ammo": "coach",
 		"open": [0.3, "break_open"], "eject": [0.3, "eject"], "insert": [0.4, "shell_in"], "close": [0.3, "cock"],
@@ -68,28 +69,28 @@ const DATA := {
 	# Colt Navy 1851, cap-and-ball: no cartridges. Each chamber takes powder, a ball
 	# rammed home with the loading lever and a cap on the nipple, so a reload takes
 	# an age. A little weaker, and a fog of black powder smoke. The bandidos' gun.
-	"navy": {"name": "COLT NAVY 1851", "action": "revolver", "damage": 1, "speed": 600.0, "range": 330.0,
+	"navy": {"name": "COLT NAVY 1851", "points": 1, "action": "revolver", "damage": 1, "speed": 600.0, "range": 330.0,
 		"spread": 3.2, "pellets": 1, "noise": 360.0, "sfx": "colt", "cycle": 0.38, "shake": 2.0, "smoke": 15,
 		"smoke_push": 1.2, "eject": [0.2, "gate"], "insert": [1.5, "shell_in"], "ammo": "powder",
 		"status": {"cycle": "COCKING", "open": "POWDER AND BALL", "close": "CAPPED"}},
 	# Spencer 1860 carbine, the revolution's cast-off repeater: seven rounds in a tube
 	# through the butt, and between shots both the lever and the hammer to work.
 	# Slower than the Winchester and fewer rounds, with a heavier, slower bullet.
-	"spencer": {"name": "SPENCER CARBINE", "action": "lever", "tube": 7, "damage": 2, "pierce": 1, "speed": 820.0,
+	"spencer": {"name": "SPENCER CARBINE", "points": 2, "action": "lever", "tube": 7, "damage": 2, "pierce": 1, "speed": 820.0,
 		"range": 540.0, "spread": 0.9, "pellets": 1, "noise": 480.0, "sfx": "spencer", "cycle": 0.85, "shake": 2.8,
 		"smoke": 14, "smoke_push": 1.1, "insert": [0.5, "shell_in"],
 		"status": {"cycle": "LEVER, HAMMER", "open": "MAGAZINE OUT", "close": ""}},
 	# Springfield Model 1861 rifle-musket: a fine gun, a .58 Minie ball that carries far
 	# and hits hard, but a muzzle-loader. Bite the paper cartridge, pour, ram the ball
 	# home, cap the nipple. Good in good hands; the revolution's aren't always.
-	"springfield": {"name": "SPRINGFIELD 1861", "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
+	"springfield": {"name": "SPRINGFIELD 1861", "points": 1, "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
 		"damage": 3, "pierce": 1, "speed": 950.0, "range": 700.0, "spread": 0.5, "pellets": 1, "noise": 560.0,
 		"sfx": "musket", "cycle": 0.5, "shake": 4.0, "smoke": 24, "smoke_push": 1.6,
 		"open": [1.0, "gate"], "eject": [1.1, "pour"], "insert": [3.4, "ram"], "close": [1.2, "cock"], "ammo": "powder",
 		"status": {"cycle": "COCKING", "open": "CARTRIDGE TORN", "close": "CAPPED"}},
 	# Escopeta: an old single-barrel percussion fowling piece, the peon's gun. Powder,
 	# wad, shot, wad, all rammed down from the front: one shot and he'll want his pistol.
-	"escopeta": {"name": "ESCOPETA", "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
+	"escopeta": {"name": "ESCOPETA", "points": 0, "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
 		"damage": 1, "speed": 470.0, "range": 150.0, "spread": 11.0, "pellets": 8, "noise": 470.0,
 		"sfx": "coach", "cycle": 0.4, "shake": 3.5, "smoke": 26, "smoke_push": 1.8,
 		"open": [1.0, "pour"], "eject": [1.2, "pour"], "insert": [4.0, "ram"], "close": [1.2, "cock"], "ammo": "powder",
@@ -97,7 +98,7 @@ const DATA := {
 	# Pistola: an old single-shot percussion horse pistol (a Model 1842, or the like),
 	# smoothbore and muzzle-loaded: one big soft ball that wanders, then powder, ball
 	# and ramrod all over again. The last men in from the roads carry them.
-	"pistola": {"name": "HORSE PISTOL", "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
+	"pistola": {"name": "HORSE PISTOL", "points": 0, "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
 		"damage": 1, "speed": 520.0, "range": 260.0, "spread": 4.5, "pellets": 1, "noise": 420.0,
 		"sfx": "colt", "cycle": 0.4, "shake": 2.5, "smoke": 18, "smoke_push": 1.3,
 		"open": [0.9, "pour"], "eject": [1.0, "pour"], "insert": [3.2, "ram"], "close": [1.0, "cock"], "ammo": "powder",

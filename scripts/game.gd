@@ -3,6 +3,7 @@ extends Node2D
 ## (physics queries, pathfinding, noise, bullets, effects, sound) and the match flow.
 
 const LEVELS_PATH := "res://data/levels.json"
+const BUDGET := 12   # loadout points where a level names none: for now, enough for everything
 # The level picker's choice, kept over the scene reload that loads it; and where
 # that reload lands ("loadout" after a pick, "levels" after a restart).
 static var chosen_level := ""
@@ -140,6 +141,9 @@ var astar := AStarGrid2D.new()
 var state := "title"   # title, loadout, play, won, lost
 static var picked: Array[String] = ["colt", "coach"]   # the loadout screen's choice (a gun a slot at most), kept across restarts
 var start_guns: Array = Player.ORDER   # what he rides in with (tests: all three)
+static var kit: Array[String] = ["bandage", "dynamite"]   # the kit bought on the loadout screen, kept too
+var start_kit: Array = []      # the kit he rides in with...
+var kit_chosen := false        # ...once he's come through the loadout screen (tests keep the level's own)
 var shake := 0.0
 var hurt_fx := 0.0
 var alerted_once := false
@@ -442,6 +446,9 @@ func begin() -> void:
 		return
 	if not start_guns.is_empty():
 		player.arm(start_guns)
+	if kit_chosen:
+		player.bandages = 1 if "bandage" in start_kit else 0
+		player.sticks = 1 if "dynamite" in start_kit else 0
 	state = "play"
 	hud.hide_title()
 
@@ -491,7 +498,50 @@ func pick_level(i: int) -> void:
 ## The title card (or the level picker) gives way to choosing his guns.
 func _to_loadout() -> void:
 	state = "loadout"
+	_fit_budget()
 	hud.hide_title()
+
+
+## The points he has to spend on guns and kit: the level's, else enough for anything.
+func budget() -> int:
+	return int(level_entry.get("budget", BUDGET))
+
+
+## The kit on sale: a bandage and a stick, in every town (the budget decides).
+func kit_offered() -> Array:
+	return Player.KIT.keys()
+
+
+## What he's chosen costs: the guns, and the kit this level sells.
+func spent() -> int:
+	return Player.cost(picked, kit.filter(func(k): return k in kit_offered()))
+
+
+## Whether he could swap what's in `slot` for `k` ("" to empty it) and stay in budget.
+func affords(slot: String, k: String) -> bool:
+	var now := picked_for(slot)
+	var change := (Player.cost([k]) if k != "" else 0) - (Player.cost([now]) if now != "" else 0)
+	return spent() + change <= budget()
+
+
+## A choice kept from a richer level may cost more than this one gives: the dearest
+## thing goes back first, kit before a gun of the same price, until it fits.
+func _fit_budget() -> void:
+	while spent() > budget():
+		var dear := ""
+		var price := -1
+		for k in kit.filter(func(k): return k in kit_offered()):
+			if Player.KIT[k] > price:
+				dear = k
+				price = Player.KIT[k]
+		for k in picked:
+			if Player.cost([k]) > price:
+				dear = k
+				price = Player.cost([k])
+		if dear in kit:
+			kit.erase(dear)
+		else:
+			picked.erase(dear)
 
 
 ## One gun a slot, or none. 1 2 3 (or a click on the card) goes through a slot's
@@ -503,6 +553,10 @@ func _loadout_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_1, KEY_2, KEY_3:
 				k = "slot:" + Player.ORDER[event.keycode - KEY_1]
+			KEY_B:
+				k = "kit:bandage"
+			KEY_G:
+				k = "kit:dynamite"
 			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 				_ride_in()
 				return
@@ -515,7 +569,8 @@ func _loadout_input(event: InputEvent) -> void:
 	_loadout_pick(k)
 
 
-## `k`: a gun's name clicked, or "slot:<slot>" to go on to that slot's next gun.
+## `k`: a gun's name clicked, "slot:<slot>" to go on to that slot's next gun he can
+## afford, or "kit:<thing>" to buy it or give it back. Too dear: a dry click.
 func _loadout_pick(k: String) -> void:
 	if k == "":
 		return
@@ -523,11 +578,29 @@ func _loadout_pick(k: String) -> void:
 		var slot := k.trim_prefix("slot:")
 		var options: Array = Player.choices(slot) + [""]
 		var now := options.find(picked_for(slot))
-		_take_for_slot(slot, options[(now + 1) % options.size()])
+		for step in range(1, options.size() + 1):
+			var o: String = options[(now + step) % options.size()]
+			if affords(slot, o):
+				_take_for_slot(slot, o)
+				break
+	elif k.begins_with("kit:"):
+		var thing := k.trim_prefix("kit:")
+		if not thing in kit_offered():
+			return
+		if thing in kit:
+			kit.erase(thing)
+		elif spent() + Player.KIT[thing] <= budget():
+			kit.append(thing)
+		else:
+			sfx("dry", null, -6.0)
+			return
 	elif k in picked:
 		picked.erase(k)
-	else:
+	elif affords(Player.SLOT[k], k):
 		_take_for_slot(Player.SLOT[k], k)
+	else:
+		sfx("dry", null, -6.0)
+		return
 	sfx("close", null, -10.0)
 
 
@@ -551,6 +624,8 @@ func _ride_in() -> void:
 		sfx("dry", null, -6.0)
 		return
 	start_guns = picked.duplicate()
+	start_kit = kit.filter(func(k): return k in kit_offered())
+	kit_chosen = true
 	begin()
 
 

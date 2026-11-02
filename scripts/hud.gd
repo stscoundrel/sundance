@@ -402,6 +402,8 @@ const CARD_W := 150.0
 const CARD := Vector2(75, 104)
 const CARD_H := 160.0
 const RIDE := Rect2(250, 286, 140, 26)
+const KIT_BOX := {"bandage": Rect2(75, 286, 150, 26), "dynamite": Rect2(415, 286, 150, 26)}
+const KIT_NAME := {"bandage": "A BANDAGE  [B]", "dynamite": "A STICK OF DYNAMITE  [G]"}
 const SLOT_NAME := {"colt": "SIDEARM", "coach": "SHOTGUN", "rifle": "RIFLE"}
 const BLURB := {"colt": "six, quick to load, fanned", "schofield": "six, all out and in at once",
 	"navy": "six, weak, slow to load",
@@ -423,7 +425,7 @@ func _option(i: int, j: int) -> Rect2:
 
 
 ## What's under the cursor on the loadout screen: a gun's name, a slot's card
-## ("slot:colt"), "ride", or nothing.
+## ("slot:colt"), a piece of kit ("kit:bandage"), "ride", or nothing.
 func loadout_hit(pos: Vector2) -> String:
 	for i in Player.ORDER.size():
 		var slot: String = Player.ORDER[i]
@@ -433,14 +435,20 @@ func loadout_hit(pos: Vector2) -> String:
 				return options[j]
 		if _card(i).has_point(pos):
 			return "slot:" + slot
+	for k in game.kit_offered():
+		if KIT_BOX[k].has_point(pos):
+			return "kit:" + k
 	return "ride" if RIDE.has_point(pos) else ""
 
 
 func _draw_loadout(_p: Player) -> void:
 	draw_rect(Rect2(0, 0, 640, 360), Color(0.03, 0.02, 0.02, 0.86))
-	_text(Vector2(0, 62), "CHOOSE YOUR IRONS", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
-	_text(Vector2(0, 84), "One gun a slot, or none. Any other you'll have to take off a dead man.", 8,
+	_text(Vector2(0, 52), "CHOOSE YOUR IRONS", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	_text(Vector2(0, 72), "One gun a slot, or none, as far as your money goes. Any other you'll have to take off a dead man.", 8,
 		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	var left: int = game.budget() - game.spent()
+	_text(Vector2(0, 93), "%d OF %d POINTS LEFT" % [left, game.budget()], 10,
+		Color(0.95, 0.75, 0.35) if left > 0 else Color(INK, 0.6), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	var mouse := get_local_mouse_position()
 	for i in Player.ORDER.size():
 		var slot: String = Player.ORDER[i]
@@ -465,8 +473,20 @@ func _draw_loadout(_p: Player) -> void:
 			var o: String = options[j]
 			var orr := _option(i, j)
 			var col := Color(0.95, 0.75, 0.35) if o == k else (INK if orr.has_point(mouse) else Color(INK, 0.5))
+			if o != k and not game.affords(slot, o):
+				col = Color(INK, 0.18)   # too dear, with what else he's taken
 			_text(Vector2(orr.position.x, orr.position.y + 9), ("> " if o == k else "") + Weapon.DATA[o]["name"], 8, col,
 				null, HORIZONTAL_ALIGNMENT_CENTER, orr.size.x)
+			_text(Vector2(orr.end.x, orr.position.y + 9), str(Player.cost([o])), 8, col, null, HORIZONTAL_ALIGNMENT_RIGHT, 16)
+	for kk in game.kit_offered():
+		var kr: Rect2 = KIT_BOX[kk]
+		var has: bool = kk in game.kit
+		var can: bool = has or left >= Player.KIT[kk]
+		draw_rect(kr, Color(0.16, 0.1, 0.07, 0.95) if has else PANEL)
+		draw_rect(kr, BRASS if has else (Color(0.5, 0.36, 0.2) if kr.has_point(mouse) and can else Color(0.3, 0.22, 0.15)), false, 2.0 if has else 1.0)
+		var kc := Color(0.95, 0.75, 0.35) if has else (Color(INK, 0.6) if can else Color(INK, 0.18))
+		_text(Vector2(kr.position.x + 8, kr.position.y + 17), ("> " if has else "") + KIT_NAME[kk], 8, kc, null, HORIZONTAL_ALIGNMENT_LEFT, kr.size.x - 30)
+		_text(Vector2(kr.position.x, kr.position.y + 17), str(Player.KIT[kk]), 8, kc, null, HORIZONTAL_ALIGNMENT_RIGHT, kr.size.x - 8)
 	var ready: bool = not game.picked.is_empty()
 	draw_rect(RIDE, Color(0.22, 0.12, 0.08, 0.95) if ready else PANEL)
 	draw_rect(RIDE, BRASS if ready and RIDE.has_point(mouse) else Color(0.5, 0.36, 0.2), false, 1.0)
