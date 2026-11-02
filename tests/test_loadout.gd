@@ -4,7 +4,8 @@ extends SceneTree
 ## name takes it); he rides in with only those and can't
 ## switch to the other. Cartridges for it still go in his belt. Walking over that gun
 ## lying in the dirt makes it his (part-spent, as a dead man left it); a gun he
-## already has, or one he can't use yet (a sawn-off), stays where it lies:
+## already has, one for a slot he's filled (a sawn-off: a swap he has to mean, F),
+## or one he can't use yet (a Sharps), stays where it lies:
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_loadout.gd
 
 var game: Node
@@ -14,6 +15,7 @@ var at := Vector2.ZERO
 var coach: Dictionary
 var colt: Dictionary
 var sawn: Dictionary
+var sharps: Dictionary
 
 
 func _initialize() -> void:
@@ -54,7 +56,9 @@ func _process(_delta: float) -> bool:
 		_key(KEY_3)
 		check(game.picked == ["colt", "coach", "rifle"], "all three should go (%s)" % [game.picked])
 		_key(KEY_2)
-		check(game.picked == ["colt", "champion", "rifle"], "2 should go on to the Champion, in the coach gun's place (%s)" % [game.picked])
+		check(game.picked == ["colt", "sawnoff", "rifle"], "2 should go on to the sawn-off, in the coach gun's place (%s)" % [game.picked])
+		_key(KEY_2)
+		check(game.picked == ["colt", "champion", "rifle"], "and on to the Champion (%s)" % [game.picked])
 		_key(KEY_2)
 		check(game.picked == ["colt", "escopeta", "rifle"], "and on to the escopeta (%s)" % [game.picked])
 		_key(KEY_2)
@@ -91,6 +95,7 @@ func _process(_delta: float) -> bool:
 		coach = game._place_gun("coach", at + Vector2(60, 0), 0.0)
 		colt = game._place_gun("colt", at + Vector2(90, 0), 0.0)
 		sawn = game._place_gun("sawnoff", at + Vector2(120, 0), 0.0)
+		sharps = game._place_gun("sharps", at + Vector2(150, 0), 0.0)
 		set_meta("before", before)
 	if frame <= 3:
 		return false
@@ -104,7 +109,8 @@ func _process(_delta: float) -> bool:
 		check(not game.loose_guns.has(coach), "the coach gun is still lying there")
 		check(p.weapons["coach"].reserve > 0, "the shells he'd picked up should be his to load it with")
 		check(game.loose_guns.has(colt), "he picked up a Colt he already had")
-		check(game.loose_guns.has(sawn), "he picked up a sawn-off (not his to use yet)")
+		check(game.loose_guns.has(sawn) and p.weapons["coach"].kind == "coach", "walked over the sawn-off and it swapped without F")
+		check(game.loose_guns.has(sharps), "he picked up a Sharps (not his to use yet)")
 		check(game.hud.toast_text.contains("COACH"), "no word that he picked it up (%s)" % game.hud.toast_text)
 		p.switch_to("coach")
 		check(p.current == "coach", "he can't switch to the coach gun he picked up")

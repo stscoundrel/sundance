@@ -9,6 +9,8 @@ extends SceneTree
 ##   belt     - the Navy and a horse pistol take the same powder and ball off his belt.
 ##   schofield - some of the gang's Colts are Schofields; one taken up loads from his
 ##              Colt rounds.
+##   sawnoff  - a hillbilly's sawn-off goes in his empty shotgun slot, on coach shells,
+##              and lets go both barrels at once.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_pickups.gd
 
 var game: Node
@@ -158,5 +160,21 @@ func _plan() -> void:
 		[0.3, func():
 			game.swap_gun()
 			check(p.weapon.kind == "schofield" and p.weapon.reserve == 12 + Pickup.AMOUNT["colt"],
-				"a Schofield should take his Colt rounds (%s, %d)" % [p.weapon.kind, p.weapon.reserve])],
+				"a Schofield should take his Colt rounds (%s, %d)" % [p.weapon.kind, p.weapon.reserve])
+			step = "sawnoff"
+			p.arm(["colt"])
+			p.belt["coach"] = 3
+			p.global_position += Vector2(0, -40)
+			gun = _dead_man("sawnoff", 2)],
+		[0.3, func():
+			p.global_position = gun["at"]],
+		[0.3, func():
+			check("coach" in p.owned and p.weapons["coach"].kind == "sawnoff", "didn't take up the sawn-off (%s)" % [p.owned])
+			var w: Weapon = p.weapons["coach"]
+			check(w.loaded() == 2 and w.reserve == p.belt["coach"] and w.reserve >= 3 + Pickup.AMOUNT["coach"],
+				"the sawn-off isn't loaded as he left it, or off the coach shells (%d, %d)" % [w.loaded(), w.reserve])
+			p.switch_to("coach")
+			p.switch_t = 0.0
+			w.alt_trigger()
+			check(w.loaded() == 0, "both barrels didn't go at once (%d left)" % w.loaded())],
 	]

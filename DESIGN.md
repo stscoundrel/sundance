@@ -223,7 +223,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
-listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun, Champion or escopeta;
+listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun, sawn-off, Champion or escopeta;
 Winchester, Spencer or Springfield) with a line on what the chosen one is like. 1 2 3
 or a click on a card goes on through its guns and then none; a click on a gun's
 name takes it, or puts it back. Enter or "ride in". The choice is kept across
@@ -236,8 +236,8 @@ guns up.
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
 never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, horse pistol), **2** a
-shotgun (coach gun, Champion, escopeta), **3** a rifle (Winchester, Spencer, Springfield).
-`Player.SLOT` lists what he can carry; the derringer, Sharps, howdah and sawn-off
+shotgun (coach gun, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Spencer, Springfield).
+`Player.SLOT` lists what he can carry; the derringer, Sharps and howdah
 still stay where they lie, and the gunsmith may get to them first.
 - A gun for an **empty slot** is his for walking over it.
 - One for a **slot he's filled** is a swap he has to mean: standing over it, it
@@ -251,7 +251,7 @@ still stay where they lie, and the gunsmith may get to them first.
   without a reload.
 - The dead man's cartridges, lying by his gun, come with it (his bandolier): a few
   rounds, never a full belt.
-- **Ammo is by kind, on one belt**: .45 Colt, shotgun shells (coach gun and Champion), .44 rimfire, Spencer
+- **Ammo is by kind, on one belt**: .45 Colt, shotgun shells (coach gun, sawn-off and Champion), .44 rimfire, Spencer
   rimfire (the Schofield takes the Colt's .45), and powder and ball for the cap-and-ball Navy and the muzzle-loaders
   (horse pistol, escopeta, Springfield), so those share. Every dead man drops the
   rounds for his gun, whether the stranger has one or not.
@@ -787,7 +787,9 @@ stranger to take. Revolver reload steps are data (`eject`, `insert` per gun). Th
 coach gun's shells and volley, a much wider pattern (15 degrees) that is spent by
 ~115 px, and a quicker reload. It's carried at the hip like the coach gun, and a
 blast from it up close throws a man back just the same (`tests/test_hillbilly.gd`
-checks a hillbilly closes to its range and fights nearer than a cowboy).
+checks a hillbilly closes to its range and fights nearer than a cowboy). The
+stranger can take one up off a dead hillbilly for his shotgun slot, or ride in with
+it: murder in a doorway, useless across the street (`tests/test_pickups.gd`).
 
 Guns are data too (`Weapon.DATA` in `scripts/weapon.gd`): an action type (revolver,
 lever, or breech for anything that opens to load), stats, smoke, and for breech guns

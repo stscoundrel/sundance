@@ -38,7 +38,7 @@ def template_guns():
     """Which guns each body template must be baked holding (every gun its types carry).
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
-    out = {"hero": ["colt", "coach", "rifle", "schofield", "navy", "pistola", "champion", "escopeta", "spencer",
+    out = {"hero": ["colt", "coach", "rifle", "schofield", "navy", "pistola", "sawnoff", "champion", "escopeta", "spencer",
                     "springfield"]}
 
     def need(template, g, t=None):

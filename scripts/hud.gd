@@ -406,6 +406,7 @@ const SLOT_NAME := {"colt": "SIDEARM", "coach": "SHOTGUN", "rifle": "RIFLE"}
 const BLURB := {"colt": "six, quick to load, fanned", "schofield": "six, all out and in at once",
 	"navy": "six, weak, slow to load",
 	"pistola": "one ball, then the ramrod", "coach": "two barrels, or both at once",
+	"sawnoff": "two short barrels, murder up close",
 	"champion": "one barrel, reaches further",
 	"escopeta": "one barrel, a long reload", "rifle": "thirteen, a quick lever",
 	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load"}
@@ -487,7 +488,7 @@ func _draw_title() -> void:
 	_text(Vector2(0, 196), "%s.  %d bandits.  One stranger." % [town, game.enemies.size() + (game.director.indoors() if game.director else 0)], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	var lines := [
 		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   E knife (hold: drag a body)   B bandage   1 2 3 guns",
-		"RMB: fan the Colt's hammer  /  fire both barrels of the coach gun",
+		"RMB: fan the Colt's hammer  /  fire both barrels of a double gun",
 		"Stay out of their sight. Crouch behind cover. Kill them all.",
 	]
 	for i in lines.size():

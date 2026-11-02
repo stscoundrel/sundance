@@ -8,9 +8,9 @@ extends Actor
 ## Cartridges go in his belt whether he has the gun for them yet or not.
 
 const ORDER := ["colt", "coach", "rifle"]
-const SLOT := {"colt": "colt", "schofield": "colt", "navy": "colt", "pistola": "colt", "coach": "coach", "champion": "coach", "escopeta": "coach",
+const SLOT := {"colt": "colt", "schofield": "colt", "navy": "colt", "pistola": "colt", "coach": "coach", "sawnoff": "coach", "champion": "coach", "escopeta": "coach",
 	"rifle": "rifle", "spencer": "rifle", "springfield": "rifle"}   # the guns he can take up, by slot
-const RESERVE := {"colt": 30, "schofield": 30, "navy": 24, "pistola": 12, "coach": 10, "champion": 10, "escopeta": 8,
+const RESERVE := {"colt": 30, "schofield": 30, "navy": 24, "pistola": 12, "coach": 10, "sawnoff": 10, "champion": 10, "escopeta": 8,
 	"rifle": 26, "spencer": 21, "springfield": 12}   # what he rides in with, per gun (to his belt)
 const REACH := 13.0   # px: a gun at his feet
 # The knife (E). Up close behind a man who isn't on to him, a silent takedown; a
