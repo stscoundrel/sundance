@@ -37,6 +37,9 @@ godot --headless --path . --import
 
 ## Tests and debug flags
 
+`tools/run_tests.sh` runs them all in parallel and lists what failed (logs in
+`.godot/test_logs/`); or run one at a time:
+
 ```bash
 godot --headless --path . -s tests/test_weapons.gd
 godot --headless --path . -s tests/test_level.gd
