@@ -61,7 +61,7 @@ func _build_points() -> void:
 ## where he is.
 func form() -> void:
 	for e in game.enemies:
-		if e.alive:
+		if e.alive and not e.hangman:   # (he stays by his gallows)
 			members.append(e)
 	_pick_leader()
 	gathering = true

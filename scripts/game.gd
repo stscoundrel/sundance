@@ -2091,7 +2091,7 @@ func _send_runner() -> void:
 	var best: Enemy = null
 	var best_score := INF
 	for e in enemies:
-		if not e.alive or e.st != Enemy.St.COMBAT or e.in_posse or e.rank >= 2 or e.sees_player:
+		if not e.alive or e.st != Enemy.St.COMBAT or e.in_posse or e.rank >= 2 or e.sees_player or e.hangman:
 			continue
 		var score: float = e.global_position.distance_to(den["door"])
 		score += 0.0 if e.kind in ["bandido", "pistolero", "drunkard"] else 300.0
@@ -2946,7 +2946,7 @@ func _send_rescuers() -> void:
 		var best_d := Enemy.RESCUE_NEAR
 		for e in enemies:
 			if not e.alive or e.reaction != "" or e.runner_to != Vector2.INF or e.stick or not e.revealed \
-					or hanging and hanging.holds(e):
+					or e.hangman:   # (his place is at the gallows)
 				continue
 			var dist := e.global_position.distance_to(d.global_position)
 			if dist < best_d:

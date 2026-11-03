@@ -24,6 +24,8 @@ const NEAR := 95.0
 const FOV := deg_to_rad(70.0)
 const UNMASK := 40.0   # a concealed bandit only gives herself away to a hero this close
 const LOCAL := 150.0   # within this, a fight is close enough to rattle him unseen
+const LEASH := 140.0   # px: the hangman fights no further than this from his gallows
+const LEASH_LOST := 3.0   # s without a sight of the stranger, and he's back to it
 
 var kind := "pistolero"
 var tdata: Dictionary     # his type, merged with defaults and placement overrides
@@ -1003,6 +1005,8 @@ func _physics_process(delta: float) -> void:
 		_run_state(delta)
 		if st == St.COMBAT:
 			_leader_orders()
+	if hangman and game.hanging and not game.hanging.holds(self) and not is_staggered():
+		_tether()
 	velocity *= limp_factor()
 	if give_way_t > 0.0:
 		give_way_t -= delta
@@ -1111,6 +1115,34 @@ func _at_gallows(delta: float) -> void:
 	_guard(delta)
 	if st == St.COMBAT and velocity == Vector2.ZERO:
 		desired = (last_known - global_position).normalized()   # (watching for him where it's coming from)
+
+
+## The hangman once the hanging's done with, one way or another: still the gallows'
+## man. He fights the stranger while he can see him, but not from further off than
+## LEASH; lose him a moment, or be sent anywhere at all (a search, a scout, the
+## saloon), and he walks back to his place by the steps.
+func _tether() -> void:
+	runner_to = Vector2.INF
+	if reaction == "flee":
+		reaction = ""   # (he doesn't run off and leave it)
+	var away := global_position.distance_to(home)
+	if st == St.COMBAT and lost_t < LEASH_LOST:
+		if away > LEASH and velocity.dot(home - global_position) <= 0.0:
+			velocity = (home - global_position).normalized() * run   # (backing up to it, still shooting)
+		return
+	if reaction != "":
+		return   # (ducking a near miss: a moment, then back)
+	if st == St.COMBAT:
+		wary = true
+	if away < 8.0:
+		if st != St.GUARD:
+			st = St.GUARD
+			path = PackedVector2Array()
+		return
+	if st != St.RETURN or path.is_empty() or path[path.size() - 1].distance_to(home) > 6.0:
+		st = St.RETURN
+		path_to(home)
+	follow_path(run if away > LEASH else walk)
 
 
 func _patrol(delta: float) -> void:

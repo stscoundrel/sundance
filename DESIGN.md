@@ -78,7 +78,12 @@ done: no running to the fight, no ducking from it (a fright that would send him 
 cover leaves him where he is), nobody sends him to rescue a man or scout. Nine
 seconds without a sight of the stranger and he's out of the fight again, back to
 watching, warier (else the town would never go quiet: the mayor would keep his head
-down for good). The alarm doesn't hurry it; only the stranger in the hangman's own sights
+down for good). And when the hanging's over, one way or another, he's still the
+gallows' man: he fights the stranger while he can see him but never from more than
+140 px off his post (`Enemy.LEASH`), backing up to it if he has to; lose the
+stranger three seconds, or be sent anywhere (a search, a scout, a holdout), and he
+walks back to his place by the steps. The posse goes without him, and he's never
+the one sent running to the saloon for the reserve. The alarm doesn't hurry it; only the stranger in the hangman's own sights
 does, and then he goes for the lever ("¡Ahora!"): two seconds, and a shot in them
 stops it. With the hangman dead nobody drops him, not even at noon, and a banner
 says so ("The hangman's dead! Nobody left to drop him."), in case the stranger
@@ -109,8 +114,8 @@ has his hands back (the "unarmed" set). The bound set is meant to serve a prison
 tied to a post elsewhere too. `tests/test_hanging.gd` plays the rope shot aimed where it's drawn (from the
 west, north and south), the kicking out, the hangman spotting him early, the hangman
 stopped and the knife, a bandit's stray round, the stranger's round at the man (the
-rope, as far as he's concerned), and the hangman pinned under fire and calming
-down after; every other test on the default town sets `no_hanging`.
+rope, as far as he's concerned), the hangman pinned under fire and calming
+down after, and the hangman kept to the gallows once it's over (`tether`); every other test on the default town sets `no_hanging`.
 
 **Cruz Verde** (the second level: the ending of *The Wild Bunch*, and Sollima's and
 Corbucci's revolutionary westerns). A garrison's walled town: thick crenellated adobe
@@ -852,7 +857,7 @@ generator:
 | Poacher | buckskin, fringe, coonskin cap, beard (2) | Sharps 1874 | sniper: very long range, deadly, slow single-shot reload |
 | Old timer | old cavalry coat, slouch hat, white beard (Union / Confederate) | howdah pistol | 3 HP, slow, unshakeable, "Seen worse at Shiloh!" |
 | Gunslinger | black (or tan) vest, red scarf, flat hat, two holsters (2) | a pair of Colts | bold: walks in shooting, fast, scorns cover, "Draw, stranger!" |
-| Hangman | black hood with eye holes, dark shirt, suspenders | Colt | San Miguel's hanging only: keeps to the gallows steps till the man is dropped |
+| Hangman | black hood with eye holes, dark shirt, suspenders | Colt | San Miguel's hanging only: keeps to the gallows steps till the man is dropped, and fights from them after |
 | Hillbilly | bib overalls, straw slouch hat, beard (3) | sawn-off | 3 HP, closes in fast, fires on the move, "Git off my land!" |
 
 **Opportunists** (`opportunist`; saloon girls 0.85, with low nerve) shoot while

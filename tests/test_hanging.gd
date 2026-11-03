@@ -20,13 +20,17 @@ extends SceneTree
 ##   pinned  - gunfire all round him and the hangman keeps his place, and nobody
 ##             takes him off it to rescue a downed man. Once it stops he calms down
 ##             (no red cone, the town goes quiet again).
+##   tether  - with the man cut down, the hangman is still the gallows' man: sent off
+##             to scout he comes back, fighting the stranger he keeps within reach
+##             of his post, losing him he walks back to it, and the posse goes
+##             without him.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_hanging.gd
 
 var game: Node
 var frame := 0
 var failures := 0
 var step := ""
-var queue := ["setup", "rope", "rope_n", "rope_s", "kick", "spotted", "stopped", "stray", "aimed", "pinned"]
+var queue := ["setup", "rope", "rope_n", "rope_s", "kick", "spotted", "stopped", "stray", "aimed", "pinned", "tether"]
 # where the rope is shot from (tiles): across the plaza from the west, the north and the south
 const SIDES := {"rope": Vector2(27, 38), "rope_n": Vector2(32, 33.5), "rope_s": Vector2(31, 42)}
 var t := 0.0
@@ -228,6 +232,39 @@ func _process(delta: float) -> bool:
 			elif phase == 1 and t - mark > 0.5:
 				check(h().man.alive and h().state == "freed", "the stranger's round at him: %s, alive %s" % [h().state, h().man.alive])
 				check(h().man.global_position.distance_to(h().steps) < 20.0, "he didn't come down the steps")
+				_next()
+		"tether":
+			var hm: Enemy = h().hangman
+			var away: float = hm.global_position.distance_to(hm.home)
+			if phase == 0:
+				h().rope_shot(game.player)
+				check(h().state == "freed", "the man isn't loose: %s" % h().state)
+				var posse := Posse.new(game)
+				posse.form()
+				check(not hm in posse.members, "the posse took the hangman along")
+				for e in posse.members:
+					e.in_posse = false
+				hm.st = Enemy.St.GUARD
+				hm.scout(Iso.to_screen(Vector2(20, 25)))
+				phase = 1
+				mark = t
+			elif phase == 1:
+				check(away < Enemy.LEASH + 15.0, "off scouting, %.0f px from the gallows" % away)
+				if t - mark > 6.0:
+					# the stranger out in the plaza, in his sights, and the fight on
+					game.player.global_position = hm.home + Vector2(-150, 60)
+					hm.enter_combat(game.player.global_position, true, true)
+					phase = 2
+					mark = t
+			elif phase == 2:
+				check(away < Enemy.LEASH + 15.0, "fighting %.0f px from the gallows" % away)
+				if t - mark > 8.0:
+					game.player.global_position = Iso.to_screen(Vector2(-40, -40))   # gone
+					phase = 3
+					mark = t
+			elif phase == 3 and t - mark > 15.0:
+				check(away < 10.0, "he didn't go back to his place (%.0f px off, st %d)" % [away, hm.st])
+				check(hm.st != Enemy.St.COMBAT, "still fighting nobody")
 				_next()
 		"pinned":
 			var hm: Enemy = h().hangman
