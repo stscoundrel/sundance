@@ -94,6 +94,8 @@ var sticks := 0                # dynamite he carries
 var stick: Dynamite = null     # lit, in his hand
 var throw_t := 0.0             # the wind-up left
 var gun: MGun = null           # the machine gun he's on, if he is
+var shout := ""                # a line he says, over his head a moment (he hasn't much to say)
+var shout_t := 0.0
 
 
 func setup(g: Node, pos: Vector2) -> void:
@@ -109,6 +111,7 @@ func setup(g: Node, pos: Vector2) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	shout_t = maxf(0.0, shout_t - delta)
 	if not alive:
 		if dying():
 			update_anim(delta)
@@ -234,6 +237,12 @@ func _handle_actions() -> void:
 		weapon.fanning = Input.is_action_pressed("alt")
 	elif Input.is_action_just_pressed("alt"):
 		weapon.alt_trigger()
+
+
+## A line from him, over his head for `t` seconds.
+func say(s: String, t := 3.5) -> void:
+	shout = s
+	shout_t = t
 
 
 ## On the machine gun: down behind it, his hands on the grips.

@@ -29,6 +29,7 @@
              {"at": 285, "arms": "rabble",
               "groups": [{"from": "west road", "count": 5}, {"from": "south road", "count": 5}, {"from": "cemetery", "count": 2}]}]},
   {"id": "train", "name": "Paso Esperanza", "map": "res://data/train.json", "note": "Hold a wrecked train while the rifles go.",
+   "line": {"who": "stranger", "at": 2.5, "text": "Pintamos de rojo sol y cielo"},
    "cargo": {"loads": 40, "spare": 2},
    "waves": [{"at": 25, "groups": [{"from": "east road", "count": 7}, {"from": "south", "count": 5}]},
              {"loads": 6, "groups": [{"from": "south-east", "count": 9}, {"from": "south-east", "kinds": ["teniente", "abanderado"]}]},

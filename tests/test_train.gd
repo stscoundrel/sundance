@@ -8,6 +8,9 @@ extends SceneTree
 ##             the west pocket, up to the post by the tender, round to the
 ##             revolution's side of the line, out to each of the wagons, to the far
 ##             end of the train and down the east road.
+##   lines   - a moment in, the stranger says his line ("Pintamos de rojo sol y
+##             cielo"), and then the comandante calls to his carriers ("¡Estudiantes,
+##             rebeldes, bandoleros!").
 ##   quiet   - with no gang there it isn't won (or lost) by the count of them: it goes on.
 ##   sticks  - he picks a stick up, but only one at a time.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_train.gd
@@ -87,6 +90,13 @@ func _process(delta: float) -> bool:
 		return false
 	t += delta
 	if t < 20.0:
+		step = "lines"
+		if t > 3.5 and t < 3.6:
+			check(game.player.shout == "Pintamos de rojo sol y cielo" and game.player.shout_t > 0.0,
+				"the stranger's line: '%s'" % game.player.shout)
+		if t > 6.5 and t < 6.6:
+			var c: Civilian = game.cargo.leader
+			check(c.called and c.shout == "¡Estudiantes, rebeldes, bandoleros!", "the comandante's call: '%s'" % c.shout)
 		return false
 	step = "quiet"
 	check(game.state == "play", "it ended by itself: %s" % game.state)

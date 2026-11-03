@@ -113,7 +113,8 @@ const CARRY_BACK := 4.0    # s without one, and he's back out to it
 const CARRY_WALK := 34.0   # px/s with a load (a case is heavy; an armful of rifles a little less so)
 const CARRY_JOG := 44.0    # px/s back for the next
 const LIFT_T := 1.4        # s bent to the pile for a load
-const CARRY_SET := {"mg": "mgcarry"}   # (the pose set each load is carried in, where it isn't the load's own name)
+const CARRY_SET := {"mg": "mgcarry"}
+const CALL_AT := 5.0       # s in, the comandante's first call to them (his "call" line)   # (the pose set each load is carried in, where it isn't the load's own name)
 const STOW_T := 1.0        # s heaving it into the wagon
 const VISIT_T := Vector2(10.0, 18.0)   # s at each grave
 const VISIT_NEAR := 320.0  # px from where she started: the graves she goes round
@@ -162,6 +163,7 @@ var load_kind := ""          # what he has in his arms right now
 var src: Dictionary = {}     # the pile he's making for (Cargo's)
 var leader := false          # the carriers' comandante
 var urge_t := 0.0
+var called := false          # the comandante's had his first say
 var boarded := false         # on the last wagon
 var load_size := 5              # how many he'll carry this trip
 var mayor := false
@@ -275,6 +277,7 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		walk = CARRY_WALK * float(tdata["speed"])
 	elif leader:
 		anim_gun = "mayor"       # waving them on
+		urge_t = CALL_AT         # (his first call a moment after the stranger's had his say)
 	home = pos
 	if sister:   # her place is the chapel's own doorstep, on open ground
 		for d in g.doors:
@@ -962,7 +965,12 @@ func _lead(delta: float) -> void:
 		pose = "orate"
 	if urge_t <= 0.0:
 		urge_t = _rr(5.0, 9.0)
-		_say(_line("urge", ["¡Ándale, muchachos!"]))
+		if not called and tdata["shouts"].has("call"):
+			called = true
+			_say(_line("call", ["¡Ándale, muchachos!"]))   # (his own, first of all)
+			shout_t = 3.5
+		else:
+			_say(_line("urge", ["¡Ándale, muchachos!"]))
 
 
 ## Every load in.

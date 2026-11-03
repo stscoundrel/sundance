@@ -56,6 +56,7 @@ var haze := Vector2.ONE
 # he goes, and it's over: no more orders, every man shaken, the faint-hearted run.
 var leaderless := false
 var flags: Array[Dictionary] = []   # colours lying in the dirt: {at, rec}
+var said_line := false   # the level's line, said
 const FLAG_SEEN := 300.0    # px: men this near see the colours go down (or up again)
 const FLAG_RAISE := 340.0   # px: a regular this near runs to raise them
 const FLAG_BREAKS := 0.4    # chance a leva who sees them go down loses heart
@@ -1081,10 +1082,24 @@ func _process(delta: float) -> void:
 			Engine.time_scale = 1.0
 
 	_update_fades(delta)
+	_opening_line()
 	if state == "play":
 		for sh in shutters:
 			sh.tick(delta)
 	_maybe_screenshot(now)
+
+
+## The level's line (its "line": the stranger's, from "Vamos a matar, compañeros"),
+## said once, a moment into the fight, the title gone.
+func _opening_line() -> void:
+	if said_line or state != "play" or not level_entry.has("line"):
+		return
+	var l: Dictionary = level_entry["line"]
+	if clock < float(l.get("at", 2.5)):
+		return
+	said_line = true
+	if l.get("who", "stranger") == "stranger":
+		player.say(l["text"])
 
 
 func _update_fades(delta: float) -> void:

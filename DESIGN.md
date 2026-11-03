@@ -288,8 +288,14 @@ it. Shot down with a load, he drops it where he falls, a pile of one for the nex
 man. Two replacements (`spare`) come up from the wagons, eight seconds after a man
 falls; with them gone too and every carrier dead, it's lost: "NOBODY LEFT TO CARRY
 THEM". Their comandante (`"role": "leader"`, a coronel's body in a field coat)
-stands by the heap at the cab waving them on ("¡Ándale, muchachos!") and takes
-cover for nobody; shoot him and they carry on just the same.
+stands by the heap at the cab waving them on and takes cover for nobody; shoot
+him and they carry on just the same. His first call, five seconds in, is his own
+("¡Estudiantes, rebeldes, bandoleros!", his `"call"` shout, out of Morricone's
+"Vamos a matar, compañeros" for Corbucci's *Compañeros*), and it's among his urging
+after ("¡Ándale, muchachos!" and the rest). The stranger has his say first, two and
+a half seconds in: "Pintamos de rojo sol y cielo", from the same song (a level's
+`"line"`, said in a speech bubble over his head: `Player.say`, the same bubble the
+bandits and townsfolk have; he's not a talker, and says nothing else yet).
 
 With every load in, the carriers climb onto the last wagon, the comandante calls
 "¡Vámonos, muchachos!", and an arrow marks the wagon for the stranger. He gets to

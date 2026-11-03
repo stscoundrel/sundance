@@ -92,6 +92,7 @@ func _draw() -> void:
 		return
 	if title_alpha < 1.0:
 		_draw_enemy_marks()
+		_draw_his_line()
 		_draw_status(p)
 		_draw_weapon(p)
 		_draw_crosshair(p)
@@ -107,6 +108,27 @@ func _draw() -> void:
 		_draw_loadout(p)
 	elif game.state == "levels":
 		_draw_levels()
+
+
+## A line said, in a bubble over a head (screen space), fading out at the end.
+func _bubble(head: Vector2, text: String, t: float) -> void:
+	var y := head.y
+	var a: float = clamp(t * 2.0, 0.0, 1.0)
+	var sz := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 10)
+	var r := Rect2(head.x - sz.x / 2 - 4, y - 22, sz.x + 8, 14)
+	draw_rect(r, Color(0.95, 0.9, 0.78, 0.9 * a))
+	draw_rect(r, Color(0.2, 0.12, 0.08, a), false, 1.0)
+	draw_colored_polygon(PackedVector2Array([Vector2(head.x - 3, y - 8), Vector2(head.x + 3, y - 8), Vector2(head.x, y - 4)]), Color(0.95, 0.9, 0.78, 0.9 * a))
+	draw_string(font, Vector2(r.position.x + 4, y - 11), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.25, 0.08, 0.05, a))
+
+
+## The stranger's own line, when he has one: over his head like anyone's.
+func _draw_his_line() -> void:
+	var p: Player = game.player
+	if p == null or p.shout_t <= 0.0 or not p.alive:
+		return
+	var to_local := get_global_transform_with_canvas().affine_inverse()
+	_bubble(to_local * (p.get_global_transform_with_canvas() * Vector2(0, -16 if p.down else -40)), p.shout, p.shout_t)
 
 
 ## "!" / "?" markers, suspicion bars and shouted lines above the bandits' (and
@@ -125,13 +147,7 @@ func _draw_enemy_marks() -> void:
 			continue
 		var y := head.y
 		if e.shout_t > 0.0:
-			var a: float = clamp(e.shout_t * 2.0, 0.0, 1.0)
-			var sz := font.get_string_size(e.shout, HORIZONTAL_ALIGNMENT_LEFT, -1, 10)
-			var r := Rect2(head.x - sz.x / 2 - 4, y - 22, sz.x + 8, 14)
-			draw_rect(r, Color(0.95, 0.9, 0.78, 0.9 * a))
-			draw_rect(r, Color(0.2, 0.12, 0.08, a), false, 1.0)
-			draw_colored_polygon(PackedVector2Array([Vector2(head.x - 3, y - 8), Vector2(head.x + 3, y - 8), Vector2(head.x, y - 4)]), Color(0.95, 0.9, 0.78, 0.9 * a))
-			draw_string(font, Vector2(r.position.x + 4, y - 11), e.shout, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.25, 0.08, 0.05, a))
+			_bubble(head, e.shout, e.shout_t)
 			y -= 16
 		if e is Civilian:
 			if e.st == Civilian.St.SNITCH and e.told_t <= 0.0:
