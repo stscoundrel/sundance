@@ -213,8 +213,9 @@ starts the waves) and has the autopilot hold out a few minutes against the waves
 `tests/test_ambush.gd` does it with the knife, and the quiet brings them out.
 
 **Paso Esperanza** (the third level, in the making: a freight the revolution has
-stopped out in the scrub, after *A Bullet for the General* and *Compañeros*). So far
-it's the place only, nobody there and nothing to win: walk it to see how it lies
+stopped out in the scrub, after *A Bullet for the General* and *Compañeros*; its
+name after Esperanza, the town the train's bound for in Corbucci's *Navajo Joe*).
+No army there yet, only the revolution carrying off the train's arms: walk it to see how it lies
 (`tools/make_train.py`, `data/train.json`). The line runs down the middle (x 30,
 top right to bottom left on screen: the ground bake draws its dark cinder ballast,
 ties and rails from the map's `"rails"`), torn up south of the engine, where she
@@ -255,19 +256,50 @@ train's dead lie where they fell (the map's `"dead"`, `scripts/corpse.gd`: a bod
 template and palette, drawn from the last frame of a death, a pool under it;
 scenery, nothing to hit, haul or bury): the engineer and his fireman by the cab,
 the guards round their car. Smoke from the burnt car and steam from the boiler go
-up all level (`"smoke"`, `scripts/smoulder.gd`, its own dice). A map without anyone
-in it never ends by itself. `tests/test_train.gd` checks the pieces, the dead, the
-sticks, the smoke, the ways round (to the west pocket, the tender post and down the
-east road too) and that it doesn't end.
+up all level (`"smoke"`, `scripts/smoulder.gd`, its own dice). With no gang on the
+map, nothing ends it but the cargo (below). `tests/test_train.gd` checks the pieces,
+the dead, the sticks, the smoke, the ways round (to the west pocket, the tender post
+and down the east road too) and that the empty count doesn't end it.
 
-Coming, as agreed: the revolution's carriers hauling the cases to the carretas
-(the level's clock: a count of cases, set per level, 5 carriers and 40 cases to
-start; they don't fight; under fire they shelter in the boxcars, but not too
-easily; every carrier dead loses it), each wagon driving off loaded, the last
-waiting for the stranger, and a leader urging the carriers on; then the federal
-army from the east and south, many and mostly weak, closing on the train rather
-than standing off to shoot (their leaders' deaths break them); then the gun: one
-belt, firing through men, 180° to the south and east, its breastwork wearing away.
+**The cargo** (a level's `"cargo"`: `loads` and `spare`; the map's `"cargo"`: the
+piles and the wagons; run by `scripts/cargo.gd`). Five of the revolution's carriers
+(Civilian, `"role": "carrier"`, unarmed, in the revolucionarios' and soldaderas'
+clothes) take the train's arms to the wagons a load at a trip: three on cases
+(`"load": "case"`: a case held across the chest, a little slower), two on loose
+rifles (`"rifles"`: an armful, as the gunsmith gathers guns in San Miguel). Each
+goes to the nearest pile of his kind that isn't everybody's (stacked cases by the
+doors and the cab, the boxcars' own west doors, rifles heaped where cases broke
+and the guards' own by their car), bends to it, and takes a load to whichever wagon
+is loading: far one first, the last by the wagon trail. A case and an armful count
+the same, one load; 40 in all, the wagons holding 13, 13 and 14. An emptied pile is
+gone from the map. A full wagon drives off west under its own dust (slid, the mules
+unmoving: it's at the edge), out of everyone's way at once. The count is under the
+bandit count ("LOADED 12 / 40  CARRIERS 5").
+
+There's a fight on the other side of the train the whole time, so only a round
+within 90 px of a carrier (or a man dropping that close) sends him to cover: the
+nearest boxcar door, load and all; four seconds without another and he's back at
+it. Shot down with a load, he drops it where he falls, a pile of one for the next
+man. Two replacements (`spare`) come up from the wagons, eight seconds after a man
+falls; with them gone too and every carrier dead, it's lost: "NOBODY LEFT TO CARRY
+THEM". Their comandante (`"role": "leader"`, a coronel's body in a field coat)
+stands by the heap at the cab waving them on ("¡Ándale, muchachos!") and takes
+cover for nobody; shoot him and they carry on just the same.
+
+With every load in, the carriers climb onto the last wagon, the comandante calls
+"¡Vámonos, muchachos!", and an arrow marks the wagon for the stranger. He gets to
+it and he's on (out of sight) and away, and the level's won; the end card counts
+the loads away and the carriers lost. Killing every one of the gang doesn't win it
+here. With nobody shooting, the 40 loads take about two and a half minutes.
+`tests/test_cargo.gd` plays the trips, the comandante shot, a fright close by and
+none further off, a load dropped and a replacement, a wagon leaving, the run to
+the wagon, and the loss.
+
+Coming, as agreed: the federal army from the east and south, many and mostly weak,
+closing on the train rather than standing off to shoot (their leaders' deaths
+break them); then the gun: one belt, firing through men, 180° to the south and
+east, its breastwork wearing away; and men carrying loose machine guns off the
+train, belts over their shoulders, worth more to the revolution than anything.
 
 ## Controls
 

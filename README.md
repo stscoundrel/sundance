@@ -83,6 +83,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_waves.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_cruz_verde.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_ambush.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_train.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_cargo.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_general.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arsenal.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_champion.gd

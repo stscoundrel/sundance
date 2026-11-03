@@ -50,10 +50,19 @@ extends Actor
 ## map, and they're back as soon as it's stopped there. Anyone else placed "local"
 ## (Cruz Verde's carpenter and sweepers) minds only gunfire close by in the same
 ## way, and gets on with the work without waiting for the whole town to go quiet.
+## At Paso Esperanza the revolution's carriers ("role": "carrier", "load": "case" or
+## "rifles") take the train's arms to the wagons, a load at a trip (see Cargo): bent
+## to a pile, up with it, across to the wagon loading, in with it, and back. They've
+## a fight going on the other side of the train the whole time, so only a round
+## close by (or a man dropping beside them) sends them to the boxcars, load and all,
+## and they're out again in a few seconds. Their comandante ("role": "leader")
+## stands by the cargo waving them on and won't take cover for anyone; shoot him and
+## they carry on just the same.
 
 enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
 	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY, TO_FIX, FIX, TO_SWEEP, SWEEP, HERD,
-	SHELTER, TO_PADRE, CARRY_IN, TO_PATIENT, TREAT, TO_DOWNED, TEND, TO_PIT, DIG }
+	SHELTER, TO_PADRE, CARRY_IN, TO_PATIENT, TREAT, TO_DOWNED, TEND, TO_PIT, DIG,
+	TO_LOAD, LOAD, TO_WAGON, STOW, BOARD }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -99,6 +108,12 @@ const TEND_T := 8.0        # s over a downed man
 const TEND_NEAR := 180.0   # px from his door: downed men he'll go out to
 const GRAVE_EAR := 220.0   # px: gunfire this near the cemetery folk (or their gate) scatters them
 const RETURN_T := 8.0      # s without it there, and they're back
+const CARRY_EAR := 90.0    # px: a round this near a carrier, or a man down this near, and he takes cover
+const CARRY_BACK := 4.0    # s without one, and he's back out to it
+const CARRY_WALK := 34.0   # px/s with a load (a case is heavy; an armful of rifles a little less so)
+const CARRY_JOG := 44.0    # px/s back for the next
+const LIFT_T := 1.4        # s bent to the pile for a load
+const STOW_T := 1.0        # s heaving it into the wagon
 const VISIT_T := Vector2(10.0, 18.0)   # s at each grave
 const VISIT_NEAR := 320.0  # px from where she started: the graves she goes round
 const DIG_T := 24.0        # s digging a grave out
@@ -140,6 +155,13 @@ var mourning: Dictionary = {}   # the grave she's going to, or standing at
 var gunsmith := false
 var gun: Dictionary = {}        # the loose gun he's going for
 var carried: Array[Dictionary] = []   # what he's gathered: {kind, ammo_kind}
+var carrier := false         # one of the revolution's carriers, at the train
+var carries := ""            # what he carries: "case" or "rifles"
+var load_kind := ""          # what he has in his arms right now
+var src: Dictionary = {}     # the pile he's making for (Cargo's)
+var leader := false          # the carriers' comandante
+var urge_t := 0.0
+var boarded := false         # on the last wagon
 var load_size := 5              # how many he'll carry this trip
 var mayor := false
 var stump := Vector2.INF        # where he makes his speeches
@@ -189,7 +211,9 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	barber = tdata.get("role", "") == "barber"
 	visitor = tdata.get("role", "") == "visitor"
 	digger = tdata.get("role", "") == "digger"
-	local = visitor or digger or tdata.get("local", false)
+	carrier = tdata.get("role", "") == "carrier"
+	leader = tdata.get("role", "") == "leader"
+	local = visitor or digger or carrier or tdata.get("local", false)
 	condemned = tdata.get("role", "") == "condemned"
 	if tdata.has("ward"):
 		wards.append(Iso.to_screen(Vector2(tdata["ward"][0], tdata["ward"][1])))
@@ -244,6 +268,12 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		anim_gun = "spade"
 	elif condemned:
 		anim_gun = "bound"       # hands tied behind his back
+	elif carrier:
+		carries = tdata.get("load", "case")
+		anim_gun = carries       # a case across his chest, or an armful of rifles
+		walk = CARRY_WALK * float(tdata["speed"])
+	elif leader:
+		anim_gun = "mayor"       # waving them on
 	home = pos
 	if sister:   # her place is the chapel's own doorstep, on open ground
 		for d in g.doors:
@@ -271,6 +301,8 @@ func sees(pos: Vector2) -> bool:
 func hear(pos: Vector2, radius: float, _k: String, source: Node) -> void:
 	if bound:
 		return
+	if leader:
+		return   # (he's heard worse)
 	if (sister or barber or local) and alive:
 		if _k in GUNFIRE and source != self:
 			_hear_near(pos)
@@ -303,6 +335,8 @@ func _saw_drag(p: Player) -> void:
 
 
 func witness_death(at: Vector2) -> void:
+	if carrier and global_position.distance_to(at) > CARRY_EAR:
+		return   # (men are dropping all round the train)
 	if alive and global_position.distance_to(at) < 200.0 and game.line_of_sight(global_position, at, false):
 		alarm(at, true)
 
@@ -324,8 +358,11 @@ func alarm(from: Vector2, scary: bool) -> void:
 		return
 	if local:
 		near_shot = game.clock   # (a fright of any kind: they give it a while before coming back)
-	if priest or sister:
-		# a holy man: he stands his ground, and may have a word for it
+	if carrier and not src.is_empty():
+		game.cargo.release(src)   # (somebody else can have that pile)
+		src = {}
+	if priest or sister or leader:
+		# a holy man (or the comandante): he stands his ground, and may have a word for it
 		if shout_t <= 0.0 and _rf() < 0.4:
 			_say(_line("calm", ["Peace, my son."]))
 		return
@@ -389,6 +426,10 @@ func _physics_process(delta: float) -> void:
 			return
 		if barber:
 			_barber_inside()
+			return
+		if carrier:
+			if game.state == "play" and inside_t > 2.0 and game.clock - near_shot > CARRY_BACK and not boarded:
+				_come_out()
 			return
 		if local:
 			if game.state == "play" and inside_t > 4.0 and game.clock - near_shot > RETURN_T:
@@ -464,7 +505,9 @@ func _physics_process(delta: float) -> void:
 			_barber(delta)
 		St.TO_PIT, St.DIG:
 			_dig(delta)
-	if carried and pose == "":
+		St.TO_LOAD, St.LOAD, St.TO_WAGON, St.STOW, St.BOARD:
+			_carry(delta)
+	if (carried or load_kind != "") and pose == "":
 		pose = "carry"
 	if velocity.length() > 1.0 and not watching:
 		desired = velocity.normalized()
@@ -523,6 +566,13 @@ func _idle(delta: float) -> void:
 			_next_grave()
 		return
 	if digger and _next_pit():
+		return
+	if carrier:
+		if wait <= 0.0:
+			_next_trip()
+		return
+	if leader:
+		_lead(delta)
 		return
 	if mourner:
 		_go_inside(false)   # home again, and in at the door
@@ -609,6 +659,9 @@ func _come_out() -> void:
 	fade.tween_property(self, "modulate:a", 1.0, 0.5)
 	path = game.find_path(global_position, home)
 	path_i = 0
+	if carrier:
+		st = St.IDLE   # straight back to it, from the door
+		wait = 0.0
 	game.stats["civilian returns"] = game.stats.get("civilian returns", 0) + 1
 
 
@@ -811,6 +864,108 @@ func _let_go_of_gun() -> void:
 		gun["claimed_by"] = null
 	gun = {}
 	crouched = false
+
+
+# ------------------------------------------------------------------ the carriers
+
+## A load in his arms: to the wagon with it. Empty-handed: to the next pile. With it
+## all in, up on the last wagon.
+func _next_trip() -> void:
+	var cg: Cargo = game.cargo
+	if cg == null:
+		return
+	if cg.done and load_kind == "":
+		st = St.BOARD
+		path = game.find_path(global_position, cg.wagon_at())
+		path_i = 0
+		return
+	if load_kind != "":
+		st = St.TO_WAGON
+		path = game.find_path(global_position, cg.wagon_at())
+		path_i = 0
+		return
+	src = cg.source_for(self)
+	if src.is_empty():
+		wait = 2.0   # nothing of his to carry: he waits on it
+		return
+	st = St.TO_LOAD
+	path = game.find_path(global_position, src["at"])
+	path_i = 0
+
+
+func _carry(delta: float) -> void:
+	var cg: Cargo = game.cargo
+	match st:
+		St.TO_LOAD:
+			if not cg.sources.has(src):
+				src = {}
+				st = St.IDLE
+			elif _follow(CARRY_JOG * float(tdata["speed"])):
+				st = St.LOAD
+				work_t = LIFT_T
+		St.LOAD:
+			velocity = Vector2.ZERO
+			pose = "pick"
+			desired = (src.get("at", global_position) - global_position).normalized() if not src.is_empty() else desired
+			work_t -= delta
+			if work_t <= 0.0:
+				if cg.take(src):
+					load_kind = carries
+					if _rf() < 0.25:
+						_say(_line("work", ["¡Ándale!"]))
+				src = {}
+				st = St.IDLE
+		St.TO_WAGON:
+			var to: Vector2 = cg.wagon_at()
+			if path.size() > 0 and path[path.size() - 1].distance_to(to) > 30.0:
+				path = game.find_path(global_position, to)   # that one's gone: the next
+				path_i = 0
+			if _follow(walk):
+				st = St.STOW
+				work_t = STOW_T
+		St.STOW:
+			velocity = Vector2.ZERO
+			pose = "pick"
+			work_t -= delta
+			if work_t <= 0.0:
+				load_kind = ""
+				cg.stow(self)
+				st = St.IDLE
+		St.BOARD:
+			if _follow(CARRY_JOG * float(tdata["speed"])):
+				board()
+
+
+## Up on the wagon, out of sight in it.
+func board() -> void:
+	boarded = true
+	_go_inside(false)
+
+
+## The comandante: by the cargo, turned to whoever's carrying, waving them on.
+func _lead(delta: float) -> void:
+	velocity = Vector2.ZERO
+	urge_t -= delta
+	var near: Civilian = null
+	for c in game.civilians:
+		if c.carrier and c.alive and c.visible and (near == null or
+				c.global_position.distance_to(global_position) < near.global_position.distance_to(global_position)):
+			near = c
+	if near:
+		desired = (near.global_position - global_position).normalized()
+	if urge_t < 2.0:
+		pose = "orate"
+	if urge_t <= 0.0:
+		urge_t = _rr(5.0, 9.0)
+		_say(_line("urge", ["¡Ándale, muchachos!"]))
+
+
+## Every load in.
+func say_done() -> void:
+	_say(_line("done", ["¡Vámonos, muchachos!"]))
+	st = St.BOARD
+	path = game.find_path(global_position, game.cargo.wagon_at())
+	path_i = 0
 
 
 # ------------------------------------------------------------------ the mayor
@@ -1048,6 +1203,12 @@ func _drop_job() -> void:
 
 ## Gunfire: to her it means folk to get indoors; to him, his shop's in the line of it.
 func _hear_near(pos: Vector2) -> void:
+	if carrier:
+		if pos.distance_to(global_position) < CARRY_EAR:
+			near_shot = game.clock
+			if not st in [St.FLEE, St.GONE, St.COWER, St.BOARD]:
+				alarm(pos, false)
+		return
 	if local:
 		var near := pos.distance_to(global_position) < GRAVE_EAR or pos.distance_to(home) < GRAVE_EAR
 		for w in wards:

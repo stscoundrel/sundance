@@ -56,7 +56,7 @@ MG_SPOT = [36.3, 39.3]   # where the Colt-Browning will stand
 # the hurry, the carretas waiting along the west edge (mules facing out).
 CARGO = [
     ("rifle_crates", 26.4, 1.8), ("rifle_crate", 26.0, 3.4), ("rifle_crates", 26.2, 7.8),
-    ("rifle_crate_open", 25.0, 10.4), ("rifle_crate", 26.1, 11.2), ("rifle_crates", 26.3, 21.0),
+    ("rifle_crate_open", 25.0, 11.9), ("rifle_crate", 26.1, 11.2), ("rifle_crates", 26.3, 21.0),
     ("rifle_crate", 25.2, 23.4), ("ammo_box", 26.8, 23.0), ("rifle_crate_open", 20.6, 16.4),
     ("rifle_crate", 14.0, 20.2),     # dropped on the way
     # and a heap of it already out, by the engine's cab, where the stranger sees it go
@@ -64,7 +64,54 @@ CARGO = [
     ("rifle_crate", 21.0, 30.2), ("rifle_crate_open", 19.4, 26.6), ("ammo_box", 23.4, 27.4),
     ("rifle_crates", 21.4, 32.0), ("ammo_box", 20.0, 31.4),
     ("carreta", 1.0, 26.6), ("carreta", 1.0, 13.0), ("carreta", 9.0, 1.0),
+    # loose rifles heaped where cases broke open, and the guards' own by their car
+    ("rifle_pile", 18.4, 27.6), ("rifle_pile", 26.0, 17.6), ("rifle_pile", 20.6, 41.4),
 ]
+
+# What the carriers take, a load a trip (see scripts/cargo.gd): each pile (the
+# object, and how many loads are in it: a case, or an armful of rifles) or a boxcar's
+# west door, with the boxcar's own load behind it. More than the level asks for, so a
+# pile or two lost to the fight doesn't decide it.
+PILES = [
+    ("case", ("rifle_crates", 22.0, 26.4), 5), ("case", ("rifle_crates", 20.6, 28.2), 5),
+    ("case", ("rifle_crates", 22.6, 28.6), 5), ("case", ("rifle_crates", 21.4, 32.0), 5),
+    ("case", ("rifle_crate", 21.0, 30.2), 1), ("case", ("rifle_crates", 26.4, 1.8), 5),
+    ("case", ("rifle_crate", 26.0, 3.4), 1), ("case", ("rifle_crates", 26.2, 7.8), 5),
+    ("case", ("rifle_crate", 26.1, 11.2), 1), ("case", ("rifle_crates", 26.3, 21.0), 5),
+    ("case", ("rifle_crate", 25.2, 23.4), 1), ("case", ("rifle_crate", 14.0, 20.2), 1),
+    ("rifles", ("rifle_pile", 18.4, 27.6), 6), ("rifles", ("rifle_pile", 26.0, 17.6), 5),
+    ("rifles", ("rifle_pile", 20.6, 41.4), 4), ("rifles", ("rifle_crate_open", 25.0, 11.9), 3),
+    ("rifles", ("rifle_crate_open", 19.4, 26.6), 3),
+]
+DOORS = [("case", (28.4, 9.1), 8), ("case", (28.4, 22.3), 8)]   # the two boxcars
+# The wagons, in the order they load: the far one first, the last (by the wagon
+# trail) waiting for the stranger.
+WAGONS = [{"x": 9.0, "y": 1.0}, {"x": 1.0, "y": 13.0}, {"x": 1.0, "y": 26.6}]
+# The carriers, three on cases and two on rifles, and their comandante by the heap
+# at the cab.
+CARRIERS = [
+    {"kind": "cargador", "x": 20.0, "y": 24.8, "look": (22, 26)},
+    {"kind": "cargador", "x": 17.8, "y": 30.6, "look": (21, 30)},
+    {"kind": "cargador", "x": 23.8, "y": 20.4, "look": (28, 22)},
+    {"kind": "cargador_armas", "x": 19.2, "y": 25.0, "look": (19, 28)},
+    {"kind": "cargadora", "x": 17.2, "y": 28.4, "look": (18, 28)},
+    {"kind": "comandante", "x": 23.4, "y": 25.2, "look": (21, 28)},
+]
+for c in CARRIERS:
+    lx, ly = c.pop("look")
+    c["facing"] = layout.screen_deg(lx - c["x"], ly - c["y"])
+
+
+def piles():
+    """The cargo's sources, each with the spot a carrier stands to lift from it (on
+    the pile's west side, towards the wagons)."""
+    out = []
+    for kind, (obj, x, y), n in PILES:
+        w, h = BUILDINGS[obj][1]
+        out.append({"kind": kind, "x": round(x - 0.45, 2), "y": round(y + h / 2, 2), "count": n, "object": [obj, x, y]})
+    for kind, (x, y), n in DOORS:
+        out.append({"kind": kind, "x": x, "y": y, "count": n})
+    return out
 
 # What the ambush left: the rails they tore up, the wire they cut, the coal off the
 # tender, a wheelset, crates shot through and the guards where they fell.
@@ -171,7 +218,8 @@ def main():
             o["worn"] = WORN[(o["x"], o["y"])]
     assert sum("worn" in o for o in objects) == len(WORN), "a worn spot with nothing at it"
     joined = {k for k, *_ in placed if k.rsplit("_", 1)[0] in CHUNKED}
-    layout.check(N, objects, DEAD + PICKUPS + ENTRIES + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")],
+    layout.check(N, objects, DEAD + PICKUPS + ENTRIES + CARRIERS + piles()
+                 + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")],
                  joined=joined)
     layout.write("train.json", {
         "name": "Paso Esperanza",
@@ -183,7 +231,8 @@ def main():
         "objects": objects,
         "player": PLAYER,
         "enemies": [],
-        "civilians": [],
+        "civilians": CARRIERS,
+        "cargo": {"sources": piles(), "wagons": WAGONS},
         "dead": DEAD,
         "pickups": PICKUPS,
         "smoke": SMOKE,

@@ -224,7 +224,7 @@
   {
    "type": "rifle_crate_open",
    "x": 25.0,
-   "y": 10.4
+   "y": 11.9
   },
   {
    "type": "rifle_crate",
@@ -326,6 +326,21 @@
    "type": "carreta_1",
    "x": 11.5,
    "y": 1.0
+  },
+  {
+   "type": "rifle_pile",
+   "x": 18.4,
+   "y": 27.6
+  },
+  {
+   "type": "rifle_pile",
+   "x": 26.0,
+   "y": 17.6
+  },
+  {
+   "type": "rifle_pile",
+   "x": 20.6,
+   "y": 41.4
   },
   {
    "type": "rail_bent",
@@ -802,7 +817,261 @@
   "y": 35.6
  },
  "enemies": [],
- "civilians": [],
+ "civilians": [
+  {
+   "kind": "cargador",
+   "x": 20.0,
+   "y": 24.8,
+   "facing": 63
+  },
+  {
+   "kind": "cargador",
+   "x": 17.8,
+   "y": 30.6,
+   "facing": 19
+  },
+  {
+   "kind": "cargador",
+   "x": 23.8,
+   "y": 20.4,
+   "facing": 48
+  },
+  {
+   "kind": "cargador_armas",
+   "x": 19.2,
+   "y": 25.0,
+   "facing": 156
+  },
+  {
+   "kind": "cargadora",
+   "x": 17.2,
+   "y": 28.4,
+   "facing": 9
+  },
+  {
+   "kind": "comandante",
+   "x": 23.4,
+   "y": 25.2,
+   "facing": 178
+  }
+ ],
+ "cargo": {
+  "sources": [
+   {
+    "kind": "case",
+    "x": 21.55,
+    "y": 26.82,
+    "count": 5,
+    "object": [
+     "rifle_crates",
+     22.0,
+     26.4
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 20.15,
+    "y": 28.62,
+    "count": 5,
+    "object": [
+     "rifle_crates",
+     20.6,
+     28.2
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 22.15,
+    "y": 29.03,
+    "count": 5,
+    "object": [
+     "rifle_crates",
+     22.6,
+     28.6
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 20.95,
+    "y": 32.42,
+    "count": 5,
+    "object": [
+     "rifle_crates",
+     21.4,
+     32.0
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 20.55,
+    "y": 30.4,
+    "count": 1,
+    "object": [
+     "rifle_crate",
+     21.0,
+     30.2
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 25.95,
+    "y": 2.23,
+    "count": 5,
+    "object": [
+     "rifle_crates",
+     26.4,
+     1.8
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 25.55,
+    "y": 3.6,
+    "count": 1,
+    "object": [
+     "rifle_crate",
+     26.0,
+     3.4
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 25.75,
+    "y": 8.22,
+    "count": 5,
+    "object": [
+     "rifle_crates",
+     26.2,
+     7.8
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 25.65,
+    "y": 11.4,
+    "count": 1,
+    "object": [
+     "rifle_crate",
+     26.1,
+     11.2
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 25.85,
+    "y": 21.43,
+    "count": 5,
+    "object": [
+     "rifle_crates",
+     26.3,
+     21.0
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 24.75,
+    "y": 23.6,
+    "count": 1,
+    "object": [
+     "rifle_crate",
+     25.2,
+     23.4
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 13.55,
+    "y": 20.4,
+    "count": 1,
+    "object": [
+     "rifle_crate",
+     14.0,
+     20.2
+    ]
+   },
+   {
+    "kind": "rifles",
+    "x": 17.95,
+    "y": 27.95,
+    "count": 6,
+    "object": [
+     "rifle_pile",
+     18.4,
+     27.6
+    ]
+   },
+   {
+    "kind": "rifles",
+    "x": 25.55,
+    "y": 17.95,
+    "count": 5,
+    "object": [
+     "rifle_pile",
+     26.0,
+     17.6
+    ]
+   },
+   {
+    "kind": "rifles",
+    "x": 20.15,
+    "y": 41.75,
+    "count": 4,
+    "object": [
+     "rifle_pile",
+     20.6,
+     41.4
+    ]
+   },
+   {
+    "kind": "rifles",
+    "x": 24.55,
+    "y": 12.1,
+    "count": 3,
+    "object": [
+     "rifle_crate_open",
+     25.0,
+     11.9
+    ]
+   },
+   {
+    "kind": "rifles",
+    "x": 18.95,
+    "y": 26.8,
+    "count": 3,
+    "object": [
+     "rifle_crate_open",
+     19.4,
+     26.6
+    ]
+   },
+   {
+    "kind": "case",
+    "x": 28.4,
+    "y": 9.1,
+    "count": 8
+   },
+   {
+    "kind": "case",
+    "x": 28.4,
+    "y": 22.3,
+    "count": 8
+   }
+  ],
+  "wagons": [
+   {
+    "x": 9.0,
+    "y": 1.0
+   },
+   {
+    "x": 1.0,
+    "y": 13.0
+   },
+   {
+    "x": 1.0,
+    "y": 26.6
+   }
+  ]
+ },
  "dead": [
   {
    "template": "shirt",

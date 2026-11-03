@@ -73,9 +73,12 @@ def template_guns():
                                   "mayor": "mayor", "carpenter": "carpentry", "sweeper": "broom",
                                   "henwife": "broom", "keeper": "keeper", "sister": "nun",
                                   "barber": "barber", "visitor": "grief", "digger": "spade",
-                                  "condemned": "bound"}.get(t.get("role", ""), "unarmed"))
+                                  "condemned": "bound", "leader": "mayor"}.get(t.get("role", ""), "unarmed"))
         if t.get("role") == "condemned":
             need(t["template"], "unarmed")   # (and cut loose, running for it)
+        if t.get("role") == "carrier":
+            need(t["template"], t.get("load", "case"))
+            need(t["template"], "unarmed")   # (a carrier's dropped his load, running for cover)
     # a level's waves may hand their men other guns ("arms"): whoever might walk in
     # with them is baked holding them too
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -100,7 +103,7 @@ GUN_LEN = {"colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derrin
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
 # in the left hand (pose key "gun2").
-GUN_ART = {"colts": "colt", "smith": "rifle"}   # the gunsmith looks over a rifle
+GUN_ART = {"colts": "colt", "smith": "rifle", "rifles": "rifle"}   # the gunsmith looks over a rifle; so do the carriers
 
 
 class Look:
@@ -829,6 +832,18 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
                                         ("colt", (0.1, 1.0, 0.0)))):
             dv = np.array(d) / np.linalg.norm(d)
             m += weapon_model(kind, c + [0.03 * i, 0, 0.03 * i] - dv * GUN_LEN[kind] * 0.5, dv)
+    if up.get("rifles"):   # loose rifles gathered up in his arms, the barrels up over his shoulder
+        c = (np.array(up["hL"], float) + np.array(up["hR"], float)) / 2
+        for i in range(5):   # fanned out, so it reads as an armful and not one gun
+            d = rot_z((i - 2) * 0.22) @ np.array([0.25, 1.0, 0.5 - 0.06 * i])
+            d /= np.linalg.norm(d)
+            m += weapon_model("rifle", c + [0.04 * (i - 2), 0.05 * (i - 2), 0.03 * i] - d * GUN_LEN["rifle"] * 0.45, d)
+    if up.get("case") is not None:   # a case of rifles held in front of him, across his chest
+        c = np.array(up["case"], float)
+        pine = lambda P, N: np.where((np.abs(P[:, 2] - c[2]) < 0.025)[:, None], [[96, 74, 52]], [[182, 148, 102]])
+        m += box(tuple(c - [0.16, 0.4, 0.12]), tuple(c + [0.16, 0.4, 0.12]), pine)
+        for side in (-1, 1):   # the rope handles
+            m += beam(c + [-0.06, side * 0.41, 0.04], c + [0.06, side * 0.41, 0.04], 0.012, (190, 170, 120))
     if up.get("knife"):   # a Bowie knife in the off hand, blade forward
         e, h = np.array(up["eL"], float), np.array(up["hL"], float)
         d = (h - e) / np.linalg.norm(h - e)
@@ -1063,6 +1078,23 @@ def _key_poses(w):
                            gun=G((0.14, -0.14, 0.34), (0.95, 0.28, 0.12)))
         k["carry"] = dict(eL=V(0.1, 0.24, 0.22), hL=V(0.26, 0.12, 0.3), eR=V(0.1, -0.24, 0.22),
                           hR=V(0.26, -0.12, 0.3), armful=True, gun=None)
+        return k
+    if w == "rifles":
+        # a carrier of loose rifles: like the gunsmith, bent to the pile for them, and
+        # an armful of them to the wagon
+        k = _key_poses("smith")
+        k["carry"] = P(k["carry"], armful=False, rifles=True)
+        return k
+    if w == "case":
+        # a carrier of cases: bent to the pile, up with it, and off with it held across
+        # his chest, arms under it
+        k = _key_poses("unarmed")
+        k["pick_a"] = dict(eL=V(0.2, 0.25, 0.08), hL=V(0.42, 0.24, -0.2), eR=V(0.2, -0.25, 0.08),
+                           hR=V(0.42, -0.24, -0.2), lean=0.5, nod=0.3, gun=None)
+        k["carry"] = dict(eL=V(0.1, 0.26, 0.24), hL=V(0.3, 0.26, 0.18), eR=V(0.1, -0.26, 0.24),
+                          hR=V(0.3, -0.26, 0.18), case=(0.32, 0.0, 0.27), lean=-0.06, gun=None)
+        k["pick_b"] = P(k["carry"], lean=0.25, eL=V(0.16, 0.26, 0.14), hL=V(0.36, 0.26, 0.02),
+                        eR=V(0.16, -0.26, 0.14), hR=V(0.36, -0.26, 0.02), case=(0.38, 0.0, 0.1))
         return k
     if w == "nun":
         # the sister: hands folded before her; at the chapel door beckoning them in;
@@ -1343,7 +1375,7 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
@@ -1361,7 +1393,7 @@ def upper_anims(w):
         add("orate", [a_, a_, lerp_pose(a_, c_, 0.5), c_, c_, lerp_pose(c_, b_, 0.5), b_, b_, lerp_pose(b_, a_, 0.5)],
             3, True)
         add("survey", [k["survey_a"], k["survey_a"], k["survey_b"], k["survey_b"]], 1.4, True)
-    elif w == "smith":
+    elif w in ("smith", "rifles", "case"):
         add("pick", [k["pick_a"], k["pick_a"], lerp_pose(k["pick_a"], k["pick_b"], 0.5), k["pick_b"], k["pick_b"]],
             2.5, True)
         add("carry", [k["carry"]], 1, True)
@@ -1476,7 +1508,7 @@ def upper_anims(w):
         kick = P(sky, hR=V(0.06, -0.2, 1.06), gun=G((0.02, -0.2, 1.02), (-0.15, 0.0, 1.0)))
         add("salute", [lerp_pose(k["aim"], sky, 0.5), sky, sky, kick, kick, sky, sky, lerp_pose(sky, k["aim"], 0.5)], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case"):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
                         lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         add("haul", [k["haul"]], 1, True)

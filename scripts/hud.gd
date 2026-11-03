@@ -212,6 +212,8 @@ func _draw_status(p: Player) -> void:
 		_draw_hanging(game.hanging, p)
 	if game.captive:
 		_draw_captive(game.captive, p)
+	if game.cargo:
+		_draw_cargo(game.cargo)
 	if banner_t > 0.0:
 		var a := clampf(banner_t, 0.0, 1.0)
 		draw_rect(Rect2(150, 24, 340, 18), Color(0.3, 0.05, 0.03, 0.7 * a))
@@ -232,27 +234,47 @@ func _draw_waves(d: Director) -> void:
 	for r in d.arriving_from():
 		if not r in roads:
 			roads.append(r)
+	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 180.0)
+	for r in roads:
+		_pointer(r["at"], r["name"].to_upper(), Color(1, 0.55, 0.3, pulse), Color(1, 0.8, 0.45, pulse))
+
+
+## An arrow at a place in the world (or, off screen, on the edge pointing out to
+## it), named.
+func _pointer(world_at: Vector2, name: String, col: Color, ink: Color, above := false) -> void:
 	var to_local := get_global_transform_with_canvas().affine_inverse()
 	var view := get_viewport().get_canvas_transform()
 	var mid := Vector2(320, 180)
+	var at: Vector2 = to_local * (view * world_at)
+	var inset := Rect2(24, 66, 592, 236)   # (clear of the count, the banner and the countdown)
+	var dir := (at - mid).normalized()
+	var tip := at
+	if not inset.has_point(at):   # off screen: on the edge, pointing out to it
+		var k := INF
+		for axis in 2:
+			if absf(dir[axis]) > 0.001:
+				var lim: float = (inset.end[axis] if dir[axis] > 0.0 else inset.position[axis]) - mid[axis]
+				k = minf(k, lim / dir[axis])
+		tip = mid + dir * k
+	elif above:
+		dir = Vector2.DOWN   # on screen: over it, pointing down
+		tip = at + Vector2(0, -30)
+	var side := dir.orthogonal()
+	draw_colored_polygon(PackedVector2Array([tip + dir * 8.0, tip - dir * 4.0 + side * 6.0, tip - dir * 4.0 - side * 6.0]), col)
+	_text(tip - dir * 14.0 + Vector2(-60, 3), name, 8, ink, null, HORIZONTAL_ALIGNMENT_CENTER, 120)
+
+
+## The cargo's count under the bandit count; with it all in, the wagon marked.
+func _draw_cargo(c: Cargo) -> void:
+	var y := (64.0 if banner_t > 0.0 else 44.0) if game.director else (50.0 if banner_t > 0.0 else 30.0)
 	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 180.0)
-	for r in roads:
-		var at: Vector2 = to_local * (view * r["at"])
-		var inset := Rect2(24, 66, 592, 236)   # (clear of the count, the banner and the countdown)
-		var dir := (at - mid).normalized()
-		var tip := at
-		if not inset.has_point(at):   # off screen: on the edge, pointing out to it
-			var k := INF
-			for axis in 2:
-				if absf(dir[axis]) > 0.001:
-					var lim: float = (inset.end[axis] if dir[axis] > 0.0 else inset.position[axis]) - mid[axis]
-					k = minf(k, lim / dir[axis])
-			tip = mid + dir * k
-		var side := dir.orthogonal()
-		draw_colored_polygon(PackedVector2Array([tip + dir * 8.0, tip - dir * 4.0 + side * 6.0, tip - dir * 4.0 - side * 6.0]),
-			Color(1, 0.55, 0.3, pulse))
-		_text(tip - dir * 14.0 + Vector2(-60, 3), r["name"].to_upper(), 8, Color(1, 0.8, 0.45, pulse), null,
-			HORIZONTAL_ALIGNMENT_CENTER, 120)
+	if c.done:
+		_text(Vector2(0, y), "ALL LOADED  -  GET TO THE WAGON", 8, Color(1, 0.8, 0.45, pulse), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+		if game.state == "play":
+			_pointer(c.wagon_at(), "THE WAGON", Color(1, 0.55, 0.3, pulse), Color(1, 0.8, 0.45, pulse), true)
+		return
+	_text(Vector2(0, y), "LOADED  %d / %d     CARRIERS  %d" % [c.loaded, c.goal, c.carriers_alive()], 8, Color(INK, 0.85),
+		null, HORIZONTAL_ALIGNMENT_CENTER, 640)
 
 
 func _draw_weapon(p: Player) -> void:

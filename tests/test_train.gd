@@ -1,5 +1,5 @@
 extends SceneTree
-## Paso Esperanza, the stopped train (so far the place only, nobody there):
+## Paso Esperanza, the stopped train (the place; its cargo is test_cargo's):
 ##   map     - the train is there, its long things in pieces that fade as one
 ##             (each boxcar, the tender, the engine), the boxcars' doors open on both
 ##             sides; the dead lie where they fell (scenery: nothing hits them);
@@ -8,7 +8,7 @@ extends SceneTree
 ##             the west pocket, up to the post by the tender, round to the
 ##             revolution's side of the line, out to each of the wagons, to the far
 ##             end of the train and down the east road.
-##   quiet   - with nobody there it isn't won (or lost): it just goes on.
+##   quiet   - with no gang there it isn't won (or lost) by the count of them: it goes on.
 ##   sticks  - he picks a stick up, but only one at a time.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_train.gd
 
@@ -40,7 +40,7 @@ func _reaches(a: Vector2, b: Vector2) -> bool:
 
 func _map() -> void:
 	step = "map"
-	check(game.enemies.is_empty() and game.civilians.is_empty(), "somebody's there: %d, %d" % [game.enemies.size(), game.civilians.size()])
+	check(game.enemies.is_empty() and game.civilians.size() == 6, "who's there: %d, %d" % [game.enemies.size(), game.civilians.size()])   # (the carriers and their comandante)
 	var groups := {}
 	for b in game.buildings:
 		groups[b["group"]] = groups.get(b["group"], 0) + 1

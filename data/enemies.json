@@ -455,7 +455,26 @@
           {"dress": [70, 96, 80], "accent": [220, 210, 190], "hat": [140, 60, 44], "boots": [50, 36, 28], "skin": [190, 130, 96], "hair": [60, 44, 34]}]},
       "saloon_girl": {"name": "Saloon girl", "template": "dress", "nerve": [0.3, 0.9], "snitch": 0.3,
         "shouts": {"flee": ["Oh!", "¡Ay, no!", "Not in here!"], "snitch": ["Boys! There's a stranger in town!"]},
-        "palettes_from": "saloon_girl"}
+        "palettes_from": "saloon_girl"},
+      "cargador": {"name": "Cargador", "template": "revolucionario", "role": "carrier", "load": "case", "snitch": 0.0, "wander": 0,
+        "speed": 0.85, "nerve": [0.5, 0.9],
+        "shouts": {"work": ["¡Otra!", "¡Pesa, carajo!", "For the revolution.", "¡Ándale!"], "flee": ["¡Al vagón!", "¡Cuidado!"]},
+        "palettes_from": "revolucionario"},
+      "cargador_armas": {"name": "Cargador", "template": "revolucionario", "role": "carrier", "load": "rifles", "snitch": 0.0, "wander": 0,
+        "speed": 0.9, "nerve": [0.5, 0.9],
+        "shouts": {"work": ["¡Rifles para todos!", "Four more.", "¡Viva la revolución!"], "flee": ["¡Al vagón!", "¡Cuidado!"]},
+        "palettes_from": "revolucionario"},
+      "cargadora": {"name": "Cargadora", "template": "soldadera", "role": "carrier", "load": "rifles", "snitch": 0.0, "wander": 0,
+        "speed": 0.9, "nerve": [0.5, 0.9],
+        "shouts": {"work": ["¡Rifles para todos!", "¡Ándale!", "¡Tierra y libertad!"], "flee": ["¡Al vagón!", "¡Agáchense!"]},
+        "palettes_from": "soldadera"},
+      "comandante": {"name": "El Comandante", "template": "coronel", "role": "leader", "snitch": 0.0, "wander": 0,
+        "nerve": [0.9, 1.0],
+        "shouts": {"urge": ["¡Ándale, muchachos!", "¡Más rápido, compañeros!", "Every rifle a free man!", "¡Tierra y libertad!",
+                            "¡Que no se quede ni uno!", "The army won't wait for us!"],
+                   "done": ["¡Vámonos, muchachos!"]},
+        "palettes": [{"coat": [150, 120, 84], "trousers": [96, 84, 66], "accent": [176, 46, 36], "boots": [60, 40, 28], "hat": [190, 164, 108],
+                      "band": [176, 46, 36], "skin": [170, 116, 80], "hair": [24, 20, 18]}]}
     }
   }
 }

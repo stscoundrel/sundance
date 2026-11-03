@@ -2012,6 +2012,27 @@ def handcar():
     return _no_ground(m)
 
 
+def _loose_rifle(m, at, a, tilt=0.0):
+    """A rifle lying in the dirt: stock and barrel, along angle `a`."""
+    d = np.array([math.cos(a), math.sin(a), tilt])
+    at = np.array(at, float)
+    m += beam(at, at + d * 0.42, 0.035, (96, 64, 40))                  # the stock
+    m += beam(at + d * 0.42, at + d * 1.05, 0.016, (62, 62, 66))       # the barrel
+    m += beam(at + d * 0.5, at + d * 0.7, 0.024, (110, 76, 48))        # the forestock
+
+
+def rifle_pile():
+    """Rifles heaped on the ground where the cases broke open, and the guards' own
+    thrown on top, for the carriers to take an armful at a time."""
+    rng = np.random.default_rng(141)
+    m = Cloud()
+    for i in range(9):
+        layer = i // 4
+        _loose_rifle(m, (0.1 + rng.uniform(0, 0.2), 0.12 + rng.uniform(0, 0.55), 0.04 + layer * 0.05),
+                     rng.uniform(-0.35, 0.35), rng.uniform(-0.03, 0.06))
+    return m
+
+
 # Long things baked in pieces along their length, each its own sprite sorted at its
 # own middle, so a man beside one end of a boxcar is drawn in front of it, not
 # behind (one sprite sorts at the middle of the whole car). Name -> (axis, pieces);
@@ -2128,6 +2149,7 @@ BUILDINGS = {
     "wagon_over": (wagon_over, (2.6, 2.0), "cover", False, [[0.1, 0.0, 2.5, 1.2]]),
     "sacks": (sacks, (1.2, 0.6), "cover", False, None),
     "handcar": (handcar, (1.2, 1.8), "cover", False, None),
+    "rifle_pile": (rifle_pile, (1.0, 0.7), "none", False, None),
     "carreta": (carreta, (5.0, 1.3), "cover", False, None),
 }
 

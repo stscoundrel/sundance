@@ -45,6 +45,7 @@ var last_gunfire_at := Vector2.INF
 var director: Director = null   # a level's waves, if it has any
 var hanging: Hanging = null     # a man on the gallows to save, if the level has one
 var captive: Captive = null     # a man tied to a pole, if the level has one
+var cargo: Cargo = null         # the arms to be carried off, if the level has them (it's won at the wagon)
 # A gang with a coordinator (El General: "coordinator" in his type) fights to his
 # orders while he lives: the alarm sends men out and falls back on a holdout. Down
 # he goes, and it's over: no more orders, every man shaken, the faint-hearted run.
@@ -144,6 +145,7 @@ var innocent_t := 0.0               # the town's disapproval, on screen for a mo
 const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
 const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
 var buildings: Array[Dictionary] = []
+var placed: Array[Dictionary] = []   # every object put down from the map: {type, g, sprite, body, cells, covers}
 var _chunk_groups := 0   # (the pieces of each long thing placed so far, counted)
 var shutters: Array[Shutter] = []
 var cover_points := PackedVector2Array()
@@ -195,6 +197,7 @@ func _ready() -> void:
 		Shutter.rng.randomize()
 		Chicken.rng.randomize()
 		Smoulder.rng.randomize()
+		Cargo.rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
 		loot_rng.randomize()
@@ -227,6 +230,7 @@ func _ready() -> void:
 		Hanging.rng.seed = 53
 		Captive.rng.seed = 59
 		Smoulder.rng.seed = 67
+		Cargo.rng.seed = 71
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -803,6 +807,8 @@ func _place_object(type: String, g: Vector2) -> Sprite2D:
 		made.append(sh)
 	_add_fixtures(m, spr, g, made)
 	var collide: String = m["collide"]
+	var rec := {"type": type, "g": g, "sprite": spr, "body": null, "cells": [], "covers": []}
+	placed.append(rec)
 	var prop := {}
 	if m.get("fragile", false):
 		var item := _add_fragile(type, Iso.to_screen(g + fp * 0.5), spr, m["states"].size(), FRAGILE_R[type])
@@ -832,10 +838,13 @@ func _place_object(type: String, g: Vector2) -> Sprite2D:
 			var covers: Array[Vector2] = []
 			if collide != "post":
 				covers = _add_cover_points(x0, y0, x1, y1, collide == "wall")
+			rec["cells"].append_array(cells)
+			rec["covers"].append_array(covers)
 			if not prop.is_empty():
 				prop["cells"].append_array(cells)
 				prop["covers"].append_array(covers)
 		statics.add_child(body)
+		rec["body"] = body
 		if not prop.is_empty():
 			prop["body"] = body
 			body.set_meta("prop", prop)
@@ -857,6 +866,29 @@ func _block_cells(x0: float, y0: float, x1: float, y1: float, pad: float) -> Arr
 				_solid[c] = _solid.get(c, 0) + 1
 				out.append(c)
 	return out
+
+
+## Take a placed object out of the world's way (its collision, the cells it blocked,
+## its cover) and, unless it's to go on being seen (a wagon driving off), its sprite.
+func lift_object(rec: Dictionary, keep_sprite := false) -> void:
+	if rec["body"] != null:
+		rec["body"].queue_free()
+		rec["body"] = null
+		_unblock_cells(rec["cells"])
+		rec["cells"] = []
+		for p in rec["covers"]:
+			cover_points.erase(p)
+	if not keep_sprite and is_instance_valid(rec["sprite"]):
+		rec["sprite"].queue_free()
+	placed.erase(rec)
+
+
+## The placed object of a kind with its corner nearest `g` (tiles), within `within`.
+func placed_near(type: String, g: Vector2, within := 0.6) -> Dictionary:
+	for rec in placed:
+		if rec["type"] == type and rec["g"].distance_to(g) <= within:
+			return rec
+	return {}
 
 
 ## Free cells something no longer blocks (unless something else still does).
@@ -944,6 +976,10 @@ func _spawn_actors() -> void:
 		captive = Captive.new()
 		captive.setup(self, level_entry["captive"])
 		add_child(captive)
+	if level_entry.has("cargo") and level.has("cargo"):
+		cargo = Cargo.new()
+		add_child(cargo)
+		cargo.setup(self, level_entry["cargo"])
 	player.died.connect(_on_player_died)
 	player.make_ghost(ghost_layer, Color(0.92, 0.95, 1.0, 0.6))
 	for en in enemies:
@@ -1873,7 +1909,7 @@ func _on_enemy_died(e: Actor) -> void:
 		posse.form()
 	var coming: bool = den.has("door") and den["rallied"] and not den["squad"].is_empty() \
 		or director != null and not director.done()   # (more on the way: it isn't over)
-	if alive_enemies() == 0 and state == "play" and not coming:
+	if alive_enemies() == 0 and state == "play" and not coming and cargo == null:   # (the cargo's won at the wagon)
 		state = "won"
 		end_time = Time.get_ticks_msec()
 		hud.show_message("THE TOWN IS QUIET" if not player.down else "FROM THE DIRT", _tally() + "press Enter to ride again")
@@ -1888,6 +1924,7 @@ func _tally() -> String:
 	if stats.get("kills while down", 0) > 0:
 		line += " (%d from the dirt%s)" % [stats["kills while down"], ", and up again" if stats.has("rose from the dirt") else ""]
 	return line + "   -   " + (hanging.line() if hanging else "") + (captive.line() if captive else "") \
+		+ (cargo.line() if cargo else "") \
 		+ _innocents_line() + _padre_line()
 
 
@@ -1917,6 +1954,19 @@ func _on_civilian_died(c: Actor) -> void:
 				o.witness_murder(c.global_position)
 			else:
 				o.witness_death(c.global_position)
+
+
+## A level won or lost by something other than the gang or the stranger dying (the
+## cargo away, or nobody left to carry it).
+func end_level(won: bool, title: String) -> void:
+	if state != "play":
+		return
+	state = "won" if won else "lost"
+	end_time = Time.get_ticks_msec()
+	if not won:
+		Engine.time_scale = 0.35
+	hud.show_message(title, _tally() + "press Enter to ride again")
+	sfx("win" if won else "lose", null, -2.0, 0.0)
 
 
 func _on_player_died(_p: Actor) -> void:
