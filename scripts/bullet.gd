@@ -54,9 +54,12 @@ func _physics_process(delta: float) -> void:
 			var a: Actor = col.get_meta("actor")
 			# bandits don't gun each other down (nor finish their own)
 			if a is Civilian and a.bound and shooter.is_player and a.alive:
-				game.hanging.rope_shot(shooter)   # (the stranger's round at the man on the gallows: he meant the rope)
-				queue_free()
-				return
+				if game.hanging:
+					game.hanging.rope_shot(shooter)   # (the stranger's round at the man on the gallows: he meant the rope)
+					queue_free()
+					return
+				exclude.append(col.get_rid())   # (and the man at the pole: it goes past him)
+				continue
 			if (a.alive or (a is Enemy and a.downed)) and not (a is Enemy and shooter is Enemy):
 				a.take_hit(damage, vel.normalized(), shooter)
 				queue_free()

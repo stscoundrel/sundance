@@ -134,6 +134,7 @@ var flank_dir := Vector2.RIGHT
 var sidestep_t := 0.0
 var revealed := true     # false while a concealed type passes as one of the townsfolk
 var hangman := false     # keeps to the gallows while there's a man on it (see Hanging)
+var captor := false      # stands over the man tied to the pole (see Captive)
 var in_posse := false    # one of the last few, riding the town together (see Posse)
 var posse_slot := 0
 var posse_repath := 0.0
@@ -996,6 +997,8 @@ func _physics_process(delta: float) -> void:
 			pending = ""
 	if hangman and game.hanging and game.hanging.holds(self):
 		_at_gallows(delta)
+	elif game.captive and game.captive.holds(self):
+		_at_pole(delta)
 	elif is_staggered():
 		velocity = Vector2.ZERO   # reeling from the hit
 	elif reaction != "":
@@ -1005,7 +1008,7 @@ func _physics_process(delta: float) -> void:
 		_run_state(delta)
 		if st == St.COMBAT:
 			_leader_orders()
-	if hangman and game.hanging and not game.hanging.holds(self) and not is_staggered():
+	if posted() and not game.holding(self) and not is_staggered():
 		_tether()
 	velocity *= limp_factor()
 	if give_way_t > 0.0:
@@ -1117,8 +1120,33 @@ func _at_gallows(delta: float) -> void:
 		desired = (last_known - global_position).normalized()   # (watching for him where it's coming from)
 
 
+## Over the man at the pole with his gun at his head, counting (the guard, or El
+## General come out to do it himself): he goes straight there, whatever's flying,
+## and stays, his gun on nobody but the man. (Captive does the counting.)
+func _at_pole(delta: float) -> void:
+	reaction = ""
+	pending = ""
+	hiding = false
+	crouched = false
+	var spot: Vector2 = game.captive.spot_for(self)
+	if global_position.distance_to(spot) > 8.0:
+		if path.is_empty() or path[path.size() - 1].distance_to(spot) > 6.0:
+			path_to(spot)
+		follow_path(run)
+		return
+	velocity = Vector2.ZERO
+	desired = (game.captive.man.global_position - global_position).normalized()
+	aiming = true
+
+
+## Kept to one place for the whole level: the hangman by his gallows, the captor by
+## his pole. Neither goes with the posse, runs for the reserve or fetches the wounded.
+func posted() -> bool:
+	return hangman or captor
+
+
 ## The hangman once the hanging's done with, one way or another: still the gallows'
-## man. He fights the stranger while he can see him, but not from further off than
+## man (and the captor, the pole's). He fights the stranger while he can see him, but not from further off than
 ## LEASH; lose him a moment, or be sent anywhere at all (a search, a scout, the
 ## saloon), and he walks back to his place by the steps.
 func _tether() -> void:

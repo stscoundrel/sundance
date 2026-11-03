@@ -1512,6 +1512,16 @@ def flagpole():
     return m
 
 
+def pole():
+    """A rough post driven into the plaza by the well, for tying a man to: grey,
+    split old wood, and a few turns of rope round it at his wrists' height."""
+    wood = lambda P, N: np.tile([112.0, 92, 70], (len(P), 1)) * (0.78 + 0.3 * hash01(np.floor(P[:, 2] * 14), np.floor(P[:, 0] * 40)))[:, None]
+    m = frustum((0.15, 0.15, 0), (0.15, 0.15, 2.2), 0.09, 0.075, wood)
+    for z in (0.95, 1.02, 1.09):
+        m += frustum((0.15, 0.15, z), (0.15, 0.15, z + 0.04), 0.1, 0.1, (176, 156, 112), caps=False)
+    return m
+
+
 def headstone(seed=0):
     """A stone at a grave's head, worn and leaning a little: low cover."""
     rng = np.random.default_rng(91 + seed)
@@ -1614,6 +1624,7 @@ BUILDINGS = {
     "sandbags_y": (lambda: sandbags(False), (0.6, 2.0), "cover", False, None),
     "cannon": (cannon, (2.0, 1.0), "cover", False, None),
     "flagpole": (flagpole, (0.3, 0.3), "post", False, None),
+    "pole": (pole, (0.3, 0.3), "none", False, None),
     "headstone": (lambda: headstone(0), (0.5, 0.25), "cover", False, None),
     "headstone_b": (lambda: headstone(1), (0.5, 0.25), "cover", False, None),
     "stone_circle": (stone_circle, (6, 6), "none", False, None),

@@ -19,8 +19,9 @@ a gang of bandits. Built in Godot 4.
 Mode **Eliminate all enemies**. The player starts at the edge of town.
 Bandits patrol and guard. Pick them off quietly or start a shootout.
 Win when every bandit is dead, lose when the hero dies. Restart instantly.
-A level can add someone to save on top of that (San Miguel's hanging, below): he
-can die and the fight goes on, but the end card says the stranger failed him.
+A level can add someone to save on top of that (San Miguel's hanging, Cruz
+Verde's prisoner, below): he can die and the fight goes on, but the end card says
+the stranger failed him.
 
 ## Levels
 
@@ -116,6 +117,37 @@ west, north and south), the kicking out, the hangman spotting him early, the han
 stopped and the knife, a bandit's stray round, the stranger's round at the man (the
 rope, as far as he's concerned), the hangman pinned under fire and calming
 down after, and the hangman kept to the gallows once it's over (`tether`); every other test on the default town sets `no_hanging`.
+
+**The prisoner** (Cruz Verde: a level's `"captive"`, run by `scripts/captive.gd`).
+One of the stranger's own (the same `captive` body as San Miguel's condemned man,
+hands tied behind him) is tied to a rough post by the well (`pole`, a prop that
+stops nothing), a man of the garrison standing over him: the one placed nearest the
+level's `"guard"` spot, the plaza's north-south patrol, taken off his rounds for it
+(so the five outside are still five). Nothing happens while all is quiet; seeing
+the stranger isn't enough to tell them what they're up against. The first shot,
+whoever fires it, and the guard puts his gun to the man's head and counts ten
+("¡Alto o lo mato!" and the like, every couple of seconds; "THE GUARD: ¡ALTO O LO
+MATO! 7" under the wave countdown): he doesn't stir from the pole and doesn't turn
+his gun on anyone else while he counts. Dead or down in time, and the man lives
+("His guard's down! Cut him loose!"); at ten he shoots him. Then El General: the
+moment he's out of his house, if the man's still tied, he goes straight to the
+pole, whatever's flying, and counts it out himself (he's desperate, half his men
+outside the walls). Kill the guard with the knife before any shot and there's no
+count at all, till the general comes out. The stranger's rounds go past the man
+(he'd never aim at him); anyone else's don't. Dynamite going off round him
+doesn't trouble him (an old guerrilla, as used to the revolution's battles as the
+stranger is): only a blast right on him (12 px, `Captive.BLAST_ON`) kills him, kegs
+and crates as well as sticks. And the waves make for
+the middle of the fort, so a man still tied when the first one walks in (a minute
+after the first shot) is in the crossfire. The level opens with word of him ("Cut
+your compañero loose by the well: hold E!"). Hold E beside him (within 40 px,
+feet to feet) a second and he's loose (an "E" over his head, faint from a few
+strides off, bright once he's in reach, as over the man on the gallows): he runs for the chapel door and stays in. Killed: "They've killed him! Make
+the whole fort pay for it." The guard is posted like the hangman (`Enemy.posted`):
+tethered to the pole all level, never the posse's, a runner or a rescuer. The end
+card: "the prisoner: saved" or "shot dead, you failed him". `tests/test_captive.gd`
+plays the quiet, the count to the end, the guard stopped and El General's count, the
+knife, the rounds, and the blasts; every other Cruz Verde test sets `no_captive`.
 
 **Cruz Verde** (the second level: the ending of *The Wild Bunch*, and Sollima's and
 Corbucci's revolutionary westerns). A garrison's walled town: thick crenellated adobe

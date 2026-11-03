@@ -44,6 +44,7 @@ var last_gunfire := -1e9
 var last_gunfire_at := Vector2.INF
 var director: Director = null   # a level's waves, if it has any
 var hanging: Hanging = null     # a man on the gallows to save, if the level has one
+var captive: Captive = null     # a man tied to a pole, if the level has one
 # A gang with a coordinator (El General: "coordinator" in his type) fights to his
 # orders while he lives: the alarm sends men out and falls back on a holdout. Down
 # he goes, and it's over: no more orders, every man shaken, the faint-hearted run.
@@ -203,6 +204,7 @@ func _ready() -> void:
 		Civilian.rng.randomize()
 		litter_rng.randomize()
 		Hanging.rng.randomize()
+		Captive.rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -218,6 +220,7 @@ func _ready() -> void:
 		Civilian.rng.seed = 43
 		litter_rng.seed = 47
 		Hanging.rng.seed = 53
+		Captive.rng.seed = 59
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -917,6 +920,10 @@ func _spawn_actors() -> void:
 		hanging = Hanging.new()
 		hanging.setup(self, level_entry["hanging"])
 		add_child(hanging)
+	if level_entry.has("captive") and not Engine.has_meta("no_captive"):
+		captive = Captive.new()
+		captive.setup(self, level_entry["captive"])
+		add_child(captive)
 	player.died.connect(_on_player_died)
 	player.make_ghost(ghost_layer, Color(0.92, 0.95, 1.0, 0.6))
 	for en in enemies:
@@ -1421,6 +1428,17 @@ func report_sighting(pos: Vector2) -> void:
 	seen_pos = pos
 
 
+## The man the stranger's come to cut loose, if the level has one: the gallows' or
+## the pole's (both take the knife the same way).
+func rescue() -> Node:
+	return hanging if hanging else captive
+
+
+## Held to his place by a man to kill: the hangman at the lever, the captor counting.
+func holding(e: Enemy) -> bool:
+	return hanging != null and hanging.holds(e) or captive != null and captive.holds(e)
+
+
 ## Seconds since anyone in the gang saw or heard the stranger.
 func staleness() -> float:
 	return clock - seen_at
@@ -1845,7 +1863,8 @@ func _tally() -> String:
 	var line := "%d of the gang by your hand" % n if n > 0 else "not one of the gang by your hand"
 	if stats.get("kills while down", 0) > 0:
 		line += " (%d from the dirt)" % stats["kills while down"]
-	return line + "   -   " + (hanging.line() if hanging else "") + _innocents_line() + _padre_line()
+	return line + "   -   " + (hanging.line() if hanging else "") + (captive.line() if captive else "") \
+		+ _innocents_line() + _padre_line()
 
 
 ## The sister took him in: nobody's saying more than that.
@@ -2091,7 +2110,7 @@ func _send_runner() -> void:
 	var best: Enemy = null
 	var best_score := INF
 	for e in enemies:
-		if not e.alive or e.st != Enemy.St.COMBAT or e.in_posse or e.rank >= 2 or e.sees_player or e.hangman:
+		if not e.alive or e.st != Enemy.St.COMBAT or e.in_posse or e.rank >= 2 or e.sees_player or e.posted():
 			continue
 		var score: float = e.global_position.distance_to(den["door"])
 		score += 0.0 if e.kind in ["bandido", "pistolero", "drunkard"] else 300.0
@@ -2279,6 +2298,8 @@ func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE) -> vo
 		var d := a.global_position.distance_to(at)
 		if d > r or not line_of_sight(at, a.global_position, false):
 			continue
+		if captive and a == captive.man and d > Captive.BLAST_ON:
+			continue   # (an old hand at this: only a stick right on top of him)
 		var dmg := 8 if d < core else (3 if d < r * 0.7 else 1)
 		if d >= core and not line_of_sight(at, a.global_position, true):
 			dmg -= 2   # behind a crate: it takes the worst of it
@@ -2946,7 +2967,7 @@ func _send_rescuers() -> void:
 		var best_d := Enemy.RESCUE_NEAR
 		for e in enemies:
 			if not e.alive or e.reaction != "" or e.runner_to != Vector2.INF or e.stick or not e.revealed \
-					or e.hangman:   # (his place is at the gallows)
+					or e.posted():   # (his place is at the gallows, or the pole)
 				continue
 			var dist := e.global_position.distance_to(d.global_position)
 			if dist < best_d:

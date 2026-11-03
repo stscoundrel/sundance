@@ -178,6 +178,7 @@ var local := false           # minds only gunfire close by, and works through th
 var condemned := false       # the man on the gallows (see Hanging)
 var bound := false           # noosed and tied: going nowhere, whatever happens
 var still := false           # hanged: he's done moving
+var refuge := Vector2.INF    # where he runs once he's loose, if not just the nearest door
 
 
 func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {}) -> void:
@@ -365,7 +366,7 @@ func set_free(from: Vector2, thanks: String) -> void:
 func _flee() -> void:
 	st = St.FLEE
 	crouched = false
-	hid_at = _west_edge() if visitor or digger else game.refuge_for(global_position, threat)
+	hid_at = _west_edge() if visitor or digger else game.refuge_for(global_position, threat) if refuge == Vector2.INF else refuge
 	path = game.find_path(global_position, hid_at)
 	path_i = 0
 	if _rf() < 0.5:

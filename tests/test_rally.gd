@@ -25,6 +25,7 @@ var crowd: Array = []
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
 	Engine.set_meta("level", "cruz_verde")
+	Engine.set_meta("no_captive", true)   # (nobody at the pole: see test_captive)
 	Engine.set_meta("no_alarm", true)
 	seed(52)
 	game = load("res://scenes/main.tscn").instantiate()

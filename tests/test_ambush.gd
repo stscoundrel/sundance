@@ -13,6 +13,7 @@ var t := 0.0
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
 	Engine.set_meta("level", "cruz_verde")
+	Engine.set_meta("no_captive", true)   # (nobody at the pole: see test_captive)
 	Engine.set_meta("no_civilians", true)
 	seed(20)
 	game = load("res://scenes/main.tscn").instantiate()

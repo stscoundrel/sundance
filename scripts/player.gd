@@ -177,12 +177,13 @@ func _handle_actions() -> void:
 		if not Input.is_action_pressed("knife"):
 			drop_body()
 		return
+	var tied: Node = game.rescue()
 	if Input.is_action_pressed("knife") and knife_t < 0.0 and bandage_t < 0.0 \
-			and game.hanging and game.hanging.can_cut(global_position):
-		game.hanging.cutting(get_physics_process_delta_time())   # (the knife at the ropes, not at anyone)
+			and tied and tied.can_cut(global_position):
+		tied.cutting(get_physics_process_delta_time())   # (the knife at the ropes, not at anyone)
 		return
-	elif game.hanging:
-		game.hanging.cut_t = 0.0
+	elif tied:
+		tied.cut_t = 0.0
 	if Input.is_action_pressed("knife") and knife_t < 0.0 and bandage_t < 0.0:
 		grab_t += get_physics_process_delta_time()
 		if grab_t >= DRAG_GRAB:

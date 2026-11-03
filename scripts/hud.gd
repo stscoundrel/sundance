@@ -204,6 +204,8 @@ func _draw_status(p: Player) -> void:
 		_draw_waves(game.director)
 	if game.hanging:
 		_draw_hanging(game.hanging, p)
+	if game.captive:
+		_draw_captive(game.captive, p)
 	if banner_t > 0.0:
 		var a := clampf(banner_t, 0.0, 1.0)
 		draw_rect(Rect2(150, 24, 340, 18), Color(0.3, 0.05, 0.03, 0.7 * a))
@@ -329,7 +331,38 @@ func _draw_hanging(h: Hanging, p: Player) -> void:
 		"hanging":
 			_text(Vector2(0, y), "HE'S HANGING  -  SHOOT THE ROPE", 8, Color(1, 0.35, 0.25, pulse), null,
 				HORIZONTAL_ALIGNMENT_CENTER, 640)
-	if game.state == "play" and h.can_cut(p.global_position):
+	_draw_cut(h, h.man, p)
+
+
+## Whoever's counting over the man at the pole, under the wave countdown; and, at
+## the pole, the knife's prompt.
+func _draw_captive(c: Captive, p: Player) -> void:
+	var t := c.seconds_left()
+	if t >= 0.0:
+		var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 120.0)
+		var who := "THE GUARD" if c.state == "guard" else "EL GENERAL"
+		_text(Vector2(0, 64 if banner_t > 0.0 else 44), "%s: ¡ALTO O LO MATO!  %d" % [who, ceili(t)], 8,
+			Color(1, 0.35, 0.25, pulse), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	_draw_cut(c, c.man, p)
+
+
+## The knife's prompt for a tied man: over his head, faint once the stranger's near
+## enough to see it's meant for him, bright (and spelled out by the gun panel) once
+## he's in reach of the ropes.
+func _draw_cut(r: Node, man: Civilian, p: Player) -> void:
+	if game.state != "play" or not man.alive or not man.bound:
+		return
+	var close: bool = r.can_cut(p.global_position)
+	if not close and p.global_position.distance_to(man.global_position) > 140.0:
+		return
+	var to_local := get_global_transform_with_canvas().affine_inverse()
+	var view := get_viewport().get_canvas_transform()
+	var at: Vector2 = to_local * (view * (man.global_position + man.lift + Vector2(0, -36)))
+	var a := 0.75 + 0.25 * sin(Time.get_ticks_msec() / 150.0) if close else 0.4
+	draw_rect(Rect2(at + Vector2(-6, -7), Vector2(12, 12)), Color(0.12, 0.07, 0.05, 0.75 * a))
+	draw_rect(Rect2(at + Vector2(-6, -7), Vector2(12, 12)), Color(0.95, 0.75, 0.35, a), false, 1.0)
+	_text(at + Vector2(-6, 3), "E", 8, Color(0.95, 0.75, 0.35, a), null, HORIZONTAL_ALIGNMENT_CENTER, 12)
+	if close:
 		_text(Vector2(0, 286), "[hold E]  cut him loose", 8, Color(0.95, 0.75, 0.35), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
 
 

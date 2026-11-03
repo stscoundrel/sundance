@@ -615811,6 +615811,28 @@
     ]
    ],
    "doors": []
+  },
+  "pole": {
+   "file": "res://assets/sprites/world/pole.png",
+   "anchor": [
+    12,
+    106
+   ],
+   "footprint": [
+    0.3,
+    0.3
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.3,
+     0.3
+    ]
+   ],
+   "doors": []
   }
  },
  "tumbleweed": {
