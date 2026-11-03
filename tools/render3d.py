@@ -276,9 +276,11 @@ def shade(cloud):
 
 
 def render(cloud, size=None, anchor=None, shadow=True, outline=True, edges=True,
-           scale=PIX, ground=None, shadow_alpha=96, pad=6, shadow_extra=None, want_slots=False):
+           scale=PIX, ground=None, shadow_alpha=96, pad=6, shadow_extra=None, want_slots=False, want_coord=None):
     """Render to an RGBA array. Returns (img, anchor) where anchor is the pixel of
-    the model origin. ground: Cloud drawn first at ground level (pools, decals)."""
+    the model origin. ground: Cloud drawn first at ground level (pools, decals).
+    want_coord: an axis (0 x, 1 y); also returns, per pixel, that coordinate of the
+    point it shows (NaN where none), for cutting a sprite into pieces."""
     P = cloud.P
     sx, sy = project(P)
     sx, sy = sx * scale, sy * scale
@@ -368,6 +370,10 @@ def render(cloud, size=None, anchor=None, shadow=True, outline=True, edges=True,
         img[ring] = (*OUTLINE, 255)
     if want_slots:
         return img, anchor, slots
+    if want_coord is not None:
+        coord = np.full((H, W), np.nan)
+        coord.reshape(-1)[u] = P[ok][sel][:, want_coord]
+        return img, anchor, coord
     return img, anchor
 
 

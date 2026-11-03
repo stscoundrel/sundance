@@ -93,9 +93,9 @@ var dyn_cd := 0.0
 # hit them, look shot up past half, and fall to a heap of boards (no longer cover,
 # nor in anyone's way). A damaged trough leaks. Toughness decides which rounds go
 # straight through (a Winchester through a crate, a Sharps through a barrel too).
-const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33, "crate_stack": 16,
+const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33, "wagon_over": 33, "crate_stack": 16,
 	"upturned_n": 7, "upturned_s": 7, "upturned_e": 7, "upturned_w": 7, "keg": 1, "dyn_crate": 1}
-const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3, "crate_stack": 2,
+const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3, "wagon_over": 3, "crate_stack": 2,
 	"upturned_n": 1, "upturned_s": 1, "upturned_e": 1, "upturned_w": 1, "keg": 9, "dyn_crate": 9}
 # Props that go up when hit (see Charge): anyone's round, or a blast close by.
 const EXPLOSIVE := ["keg", "dyn_crate"]
@@ -144,6 +144,7 @@ var innocent_t := 0.0               # the town's disapproval, on screen for a mo
 const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
 const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
 var buildings: Array[Dictionary] = []
+var _chunk_groups := 0   # (the pieces of each long thing placed so far, counted)
 var shutters: Array[Shutter] = []
 var cover_points := PackedVector2Array()
 var astar := AStarGrid2D.new()
@@ -193,6 +194,7 @@ func _ready() -> void:
 		randomize()
 		Shutter.rng.randomize()
 		Chicken.rng.randomize()
+		Smoulder.rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
 		loot_rng.randomize()
@@ -224,6 +226,7 @@ func _ready() -> void:
 		rise_rng.seed = 61
 		Hanging.rng.seed = 53
 		Captive.rng.seed = 59
+		Smoulder.rng.seed = 67
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -837,7 +840,10 @@ func _place_object(type: String, g: Vector2) -> Sprite2D:
 			prop["body"] = body
 			body.set_meta("prop", prop)
 	if m["fade"]:
-		buildings.append({"sprite": spr, "x0": g.x, "y0": g.y, "x1": g.x + fp.x, "y1": g.y + fp.y})
+		if m.has("chunk") and int(m["chunk"][1]) == 0:
+			_chunk_groups += 1   # a long thing's pieces fade as one (a boxcar, the engine)
+		buildings.append({"sprite": spr, "x0": g.x, "y0": g.y, "x1": g.x + fp.x, "y1": g.y + fp.y,
+			"group": _chunk_groups if m.has("chunk") else -buildings.size() - 1})
 	return spr
 
 
@@ -919,6 +925,17 @@ func _spawn_actors() -> void:
 				else:
 					couples[k] = cv
 					cv.leads = true
+	for d in level.get("dead", []):   # killed before he got here
+		var body := Corpse.new()
+		world.add_child(body)
+		body.setup(self, d)
+		lay_pool(body)
+	for p in level.get("pickups", []):   # lying about for the taking
+		_drop_ammo(p["kind"], Iso.to_screen(Vector2(p["x"], p["y"])))
+	for d in level.get("smoke", []):
+		var sm := Smoulder.new()
+		sm.setup(self, d)
+		add_child(sm)
 	if level_entry.has("hanging") and not Engine.has_meta("no_hanging"):
 		hanging = Hanging.new()
 		hanging.setup(self, level_entry["hanging"])
@@ -1020,12 +1037,15 @@ func _update_fades(delta: float) -> void:
 	# it hides shows through as a silhouette.
 	var g := Iso.to_grid(player.global_position)
 	var cursor := get_global_mouse_position()
+	var targets := {}   # by group: one piece of a car seen through, the whole car
 	for b in buildings:
-		var spr: Sprite2D = b["sprite"]
 		var behind: bool = g.x < b["x1"] and g.y < b["y1"] and not (g.x > b["x0"] and g.y > b["y0"])
 		var hides_hero := behind and _covers(b, player.global_position)
 		var target := 0.35 if hides_hero or (state == "play" and _covers_point(b, cursor)) else 1.0
-		spr.modulate.a = move_toward(spr.modulate.a, target, delta * 4.0)
+		targets[b["group"]] = minf(targets.get(b["group"], 1.0), target)
+	for b in buildings:
+		var spr: Sprite2D = b["sprite"]
+		spr.modulate.a = move_toward(spr.modulate.a, targets[b["group"]], delta * 4.0)
 	_fade_frame += 1
 	if _fade_frame % 3 != 0:
 		return   # who's hidden behind what: 20 times a second is plenty for a silhouette

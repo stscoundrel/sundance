@@ -7,8 +7,9 @@ extends SceneTree
 ##              count a different one.
 ##   scale    - a smaller gang bands together into a smaller posse, and drinks in a
 ##              smaller reserve; the hand-drawn town keeps its seven and its five.
-##   picker   - the title gives way to the picker, which offers San Miguel and Cruz
-##              Verde (the rest are hidden, for the tests); picking another town
+##   picker   - the title gives way to the picker, which offers San Miguel, Cruz
+##              Verde and Paso Esperanza (the rest are hidden, for the tests), each
+##              note short enough for its row; picking another town
 ##              reloads with it, at the guns, and the drawn town keeps its 25 (and the hangman), its posse
 ##              of seven, its five; picking the town already loaded goes on to the guns.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
@@ -143,5 +144,8 @@ func _picker() -> void:
 	check(game.state == "title", "starts at %s" % game.state)
 	game._to_levels()
 	check(game.state == "levels", "the title didn't give way to the picker")
-	check(game.levels.map(func(l): return l["id"]) == ["san_miguel", "cruz_verde"],
+	check(game.levels.map(func(l): return l["id"]) == ["san_miguel", "cruz_verde", "train"],
 		"the picker offers %s" % [game.levels.map(func(l): return l["id"])])
+	for l in game.levels:   # (each note on one line in its row: a short one)
+		var w: float = game.hud.small.get_string_size(l.get("note", ""), HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
+		check(w <= game.hud.ROW.size.x - 46.0, "%s's note runs out of its row (%d px)" % [l["id"], w])

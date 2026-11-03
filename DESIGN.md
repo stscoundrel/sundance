@@ -25,7 +25,7 @@ the stranger failed him.
 
 ## Levels
 
-After the title card comes the level picker (San Miguel and Cruz Verde; the shuffled
+After the title card comes the level picker (San Miguel, Cruz Verde and Paso Esperanza; the shuffled
 San Miguels and the wave test are hidden, kept for the tests) ("Where to, stranger?"; up/down and
 Enter, a number or a click), then the loadout. The levels are listed in
 `data/levels.json`, each a map (a town file) and, optionally, a **count**: with one,
@@ -211,6 +211,63 @@ start, the ways through every gate and breach, a way in from every road), the am
 (nothing stirs while he waits; the first shot brings them out, ready and sleepy, and
 starts the waves) and has the autopilot hold out a few minutes against the waves;
 `tests/test_ambush.gd` does it with the knife, and the quiet brings them out.
+
+**Paso Esperanza** (the third level, in the making: a freight the revolution has
+stopped out in the scrub, after *A Bullet for the General* and *Compañeros*). So far
+it's the place only, nobody there and nothing to win: walk it to see how it lies
+(`tools/make_train.py`, `data/train.json`). The line runs down the middle (x 30,
+top right to bottom left on screen: the ground bake draws its dark cinder ballast,
+ties and rails from the map's `"rails"`), torn up south of the engine, where she
+went over: a 4-4-0 on her side west of the line, wheels in the air towards the
+fight, the tender dragged off the rails and leaning behind her. North of them the
+cars: a boxcar, the guards' car (burnt out round them to the floor and ribs, still
+smoking: low cover, seen over), another boxcar, a flatcar of cases under a canvas.
+The boxcars' doors are run open both sides, rifles stacked inside, a doorstep on
+each side for whoever carries them out; the gaps at the couplings are ways through.
+
+There's been a fight all round it. Along the cars' east side, where the guards held
+out: their wagon over on its side (`wagon_over`, breakable), mess tables thrown
+down, sacks (`sacks`), barrels and crates shot through. Off the front of the train,
+south of the engine: cases and barrels thrown when she went over, twisted rails and
+loose ties, the section gang's handcar knocked off the line (`handcar`).
+
+The revolution's side is the west: cases piled by the doors, and a heap of them
+already out by the engine's cab (where the stranger will see them carried off),
+the wagon trail they came in on, three carretas waiting along the west and north
+edges, mules in harness facing out. The army's side is the east and south. A road
+comes in from the east edge straight at the breastwork's flank, with the
+revolution's ambush positions along it (sandbags where they lay waiting for the
+train), rocks big and small (`rock_c` is the big one), a wagon over, cases: cover
+every few tiles, for an army to come down it from one to the next. The south is the
+same, thinner. Beyond, open scrub, rocks, cactus and agave.
+
+The stranger holds a breastwork in the angle between the engine and the line
+south: railroad ties stacked crib-fashion, sandbags and cases of rifles, a front
+facing south and a flank facing east, the corner where they meet kept for the
+Colt-Browning (the map's `"mg"`, empty for now), open at the back to the north. The
+front runs on west, under the engine's nose and across the torn-up line, to a pocket
+on the revolution's side looking up the west of the train at the cargo, for those
+who get past the train after it; and a post of crates and sandbags by the tender
+looks north up the cars' east side. Three sticks of dynamite lie about it (the
+map's `"pickups"`: one on him at a time, as ever), one in the west pocket. The
+telegraph runs down the west side, cut either side of the pole they felled. The
+train's dead lie where they fell (the map's `"dead"`, `scripts/corpse.gd`: a body
+template and palette, drawn from the last frame of a death, a pool under it;
+scenery, nothing to hit, haul or bury): the engineer and his fireman by the cab,
+the guards round their car. Smoke from the burnt car and steam from the boiler go
+up all level (`"smoke"`, `scripts/smoulder.gd`, its own dice). A map without anyone
+in it never ends by itself. `tests/test_train.gd` checks the pieces, the dead, the
+sticks, the smoke, the ways round (to the west pocket, the tender post and down the
+east road too) and that it doesn't end.
+
+Coming, as agreed: the revolution's carriers hauling the cases to the carretas
+(the level's clock: a count of cases, set per level, 5 carriers and 40 cases to
+start; they don't fight; under fire they shelter in the boxcars, but not too
+easily; every carrier dead loses it), each wagon driving off loaded, the last
+waiting for the stranger, and a leader urging the carriers on; then the federal
+army from the east and south, many and mostly weak, closing on the train rather
+than standing off to shoot (their leaders' deaths break them); then the gun: one
+belt, firing through men, 180° to the south and east, its breastwork wearing away.
 
 ## Controls
 
@@ -1290,6 +1347,12 @@ seconds. A body dragged away leaves it behind.
 - Gameplay runs on the screen-space ground plane. Bullets and sight lines are
   tested at foot level and drawn at gun height.
 - Pathfinding: `AStarGrid2D` on a half-tile grid.
+- Long things (a boxcar, the engine, a wagon and team: `CHUNKED` in `tools/world.py`)
+  are rendered once and cut into pieces a couple of tiles long, each its own
+  sprite and building sorted at its own middle: one sprite sorts at the middle of
+  the whole thing, so a man beside one end of a boxcar was drawn behind it. Each
+  pixel goes to the piece holding the point it shows, the outline to the piece it
+  rings, the shadow to where it falls; the pieces of one thing fade together.
 - Performance (a big fight, measured with `tests/profile.gd`): paths are
   string-pulled in one pass over the grid path's turns (not a ray to every later
   point), and at most two hunts are planned a frame; a bandit checks for cover to

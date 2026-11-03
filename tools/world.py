@@ -3,7 +3,7 @@ Every model has its origin at the footprint's minimum corner."""
 import math
 import numpy as np
 from render3d import (Cloud, make, box, quad, tri, frustum, ellipsoid, beam, hash01, TILE_M,
-                      rot_x, rot_z)
+                      rot_x, rot_y, rot_z)
 
 T = TILE_M
 BSP = 0.04  # building sample spacing
@@ -1062,7 +1062,7 @@ FRAGILE = {
 # ---------------------------------------------------------------- broken props
 
 # Props that shooting wears down: each gets a damaged and a wrecked look.
-BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon", "crate_stack",
+BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon", "crate_stack", "wagon_over",
              "upturned_n", "upturned_s", "upturned_e", "upturned_w", "keg", "dyn_crate")
 RAW_WOOD = np.array([214, 178, 128], float)   # fresh splinters
 
@@ -1559,6 +1559,467 @@ def agave(seed=0):
     return m
 
 
+# ---------------------------------------------------------------- the train
+
+# A freight held up on the line by the revolution: a 4-4-0 on its side where they
+# tore the rails up under her, the tender off the track behind, the cars standing
+# with their doors open and the cargo going out of them. Cars are built along y,
+# the way the line runs; the long ones are baked in chunks (CHUNKED, below).
+IRON = (66, 76, 82)          # the boiler's Russia iron
+BRASS = (196, 156, 64)
+LOCO_RED = (142, 46, 34)
+SOOT = (40, 38, 38)
+STEEL = (88, 84, 80)
+
+
+def _no_ground(m):
+    """Drop whatever's sunk below the dirt (a wreck lies half dug in)."""
+    keep = m.P[:, 2] >= 0.0
+    return Cloud(m.P[keep], m.N[keep], m.C[keep], m.S[keep])
+
+
+def _iron_wheel(c, r, axis="x"):
+    """A cast-iron car wheel: solid but for a few spokes, a bright tread."""
+    w = wheel(c, r, STEEL, axis=axis, spokes=10)
+    w += wheel(c, r * 0.55, (70, 66, 62), axis=axis, spokes=20)
+    return w
+
+
+def _trucks(W, D, ends=(1.15, None), r=0.42):
+    """The underframe of a car `W` x `D` metres: sills, couplers and a two-axle truck
+    under each end."""
+    m = Cloud()
+    m += box((0.1, 0.0, 0.85), (W - 0.1, D, 1.1), solid((52, 46, 42)), BSP)
+    for y in (-0.25, D):
+        m += box((W / 2 - 0.12, y, 0.8), (W / 2 + 0.12, y + 0.25, 1.0), solid(SOOT), 0.03)   # couplers
+    for yc in (ends[0], D - ends[0] if ends[1] is None else ends[1]):
+        for x in (W / 2 - 0.85, W / 2 + 0.7):
+            m += box((x, yc - 1.05, 0.3), (x + 0.15, yc + 1.05, 0.62), solid((48, 44, 42)), 0.03)   # side frames
+        for dy in (-0.72, 0.72):
+            for x in (W / 2 - 0.72, W / 2 + 0.72):
+                m += _iron_wheel((x, yc + dy, r), r)
+    return m
+
+
+def boxcar(col=(134, 58, 40), seed=3):
+    """A wooden boxcar, its sliding doors run open on both sides and cargo crates
+    stacked inside: rifles for the revolution."""
+    W, D = 2.4 * T, 6 * T
+    z0, z1 = 1.15, 3.35
+    m = _trucks(W, D)
+    DOORS.extend([("-x", D / 2, W, D), ("+x", D / 2, W, D)])   # (the way in, up off the dirt, for whoever's unloading)
+    wood = planks(col, board=0.16, vertical=True, seed=seed, mud=0.0)
+    dw = 1.7
+    d0, d1, zd = D / 2 - dw / 2, D / 2 + dw / 2, z0 + 2.0
+    for x0, x1 in ((0.0, 0.08), (W - 0.08, W)):
+        m += box((x0, 0, z0), (x1, d0, z1), wood, BSP)
+        m += box((x0, d1, z0), (x1, D, z1), wood, BSP)
+        m += box((x0, d0, zd), (x1, d1, z1), wood, BSP)
+    for y0, y1 in ((0.0, 0.08), (D - 0.08, D)):
+        m += box((0, y0, z0), (W, y1, z1), wood, BSP)
+    trim = solid(tuple(c * 0.62 for c in col))
+    for x0, x1 in ((-0.04, 0.0), (W, W + 0.04)):   # corner posts and the sill's edge
+        for y in (0.0, D - 0.12):
+            m += box((x0, y, z0), (x1, y + 0.12, z1), trim, 0.02)
+        m += box((x0, 0, z0), (x1, D, z0 + 0.1), trim, 0.02)
+    m += box((0.08, 0.08, z0 - 0.04), (W - 0.08, D - 0.08, z0), solid((66, 52, 40)), BSP, skip=("-z",))
+    m += box((-0.1, -0.1, z1), (W + 0.1, D + 0.1, z1 + 0.08), solid((74, 66, 62)), BSP)       # roof
+    m += box((W / 2 - 0.25, 0, z1 + 0.08), (W / 2 + 0.25, D, z1 + 0.12), planks((112, 88, 62), mud=0), 0.03)
+    m += wheel((W / 2, -0.12, z1 - 0.1), 0.24, SOOT, axis="y", spokes=4)   # the brake wheel
+    leaf = planks(tuple(c * 0.92 for c in col), board=0.16, vertical=True, seed=seed + 1, mud=0.0)
+    m += box((W + 0.04, d1, z0 - 0.04), (W + 0.11, d1 + dw, zd + 0.06), leaf, BSP)    # doors run back
+    m += box((-0.11, d0 - dw, z0 - 0.04), (-0.04, d0, zd + 0.06), leaf, BSP)
+    for x in (W + 0.12, -0.12):
+        m += beam((x, d0 - dw, zd + 0.1), (x, d1 + dw, zd + 0.1), 0.025, SOOT)
+    # inside, in the light from the door: cases of rifles and ammunition, piled high
+    dark = 0.55
+    for i, (x0, y0, h) in enumerate(((0.3, d0 + 0.1, 1.3), (1.5, d0 - 0.2, 0.9), (0.4, d0 + 0.85, 0.85),
+                                     (1.6, d0 + 0.75, 1.5), (0.9, d0 - 0.9, 1.6), (1.2, d1 + 0.1, 1.2))):
+        c = tuple(v * dark for v in ((176, 140, 96) if i % 2 else (150, 118, 80)))
+        m += box((x0, y0, z0), (x0 + 1.15, y0 + 0.6, z0 + h), planks(c, board=0.2, mud=0), BSP)
+    return m
+
+
+def boxcar_burnt():
+    """The guards' car, where they made their stand: burnt out to the floor, the
+    charred ribs standing, still smoking."""
+    W, D = 2.4 * T, 6 * T
+    z0 = 1.15
+    rng = np.random.default_rng(61)
+    m = _trucks(W, D)
+    char = lambda P, N: np.tile([46.0, 38, 34], (len(P), 1)) * (0.7 + 0.5 * hash01(np.floor(P[:, 0] * 9), np.floor(P[:, 1] * 9)))[:, None]
+    m += box((0.0, 0.0, z0 - 0.06), (W, D, z0), char, BSP)
+    for side in (0.0, W - 0.1):
+        for i, y in enumerate(np.linspace(0.05, D - 0.15, 9)):
+            h = rng.uniform(0.4, 2.2) if i not in (0, 8) else 2.2
+            m += box((side, y, z0), (side + 0.1, y + 0.1, z0 + h), char, 0.02)
+        for y in np.linspace(0.3, D - 0.6, 5):   # what's left of the boards, low down
+            m += box((side + 0.02, y, z0), (side + 0.08, y + rng.uniform(0.4, 0.9), z0 + rng.uniform(0.2, 0.7)), char, 0.03)
+    for y in (0.0, D - 0.1):
+        m += box((0, y, z0), (W, y + 0.1, z0 + 1.1), char, 0.03)
+        m += box((0.1, y, z0 + 1.1), (W * 0.45, y + 0.1, z0 + 2.2), char, 0.03)
+    # the roof's iron sheets, fallen in across the floor, and ash
+    for i in range(4):
+        y = 0.6 + i * 1.7
+        m += quad((0.2, y, z0 + 0.05 + i % 2 * 0.25), (W - 0.4, 0, 0.0), (0.1, 1.2, 0.2), solid((90, 76, 66)), BSP)
+    ash = lambda P, N: np.tile([92.0, 88, 84], (len(P), 1)) * (0.75 + 0.35 * hash01(np.floor(P[:, 0] * 14), np.floor(P[:, 1] * 14)))[:, None]
+    m += ellipsoid((W / 2, D * 0.35, z0), (0.9, 1.1, 0.12), ash, zmin=z0)
+    m += ellipsoid((W / 2 + 0.3, D * 0.75, z0), (0.7, 0.8, 0.1), ash, zmin=z0)
+    return m
+
+
+def flatcar():
+    """A flatcar: cases lashed down under a canvas, the canvas half thrown back where
+    they've started on it."""
+    W, D = 2.4 * T, 4.5 * T
+    z0 = 1.15
+    m = _trucks(W, D, ends=(1.05, None))
+    m += box((0, 0, z0 - 0.12), (W, D, z0), planks((116, 90, 64), board=0.18, mud=0), BSP)
+    for i, (y0, n) in enumerate(((0.3, 3), (2.6, 2))):
+        for k in range(n):
+            for j in range(2):
+                x0 = 0.25 + j * 1.3
+                m += box((x0, y0 + k * 0.7, z0), (x0 + 1.15, y0 + k * 0.7 + 0.55, z0 + 0.42), planks((172, 138, 94), board=0.2, mud=0), BSP)
+                if i == 0:
+                    m += box((x0 + 0.1, y0 + k * 0.7, z0 + 0.42), (x0 + 1.05, y0 + k * 0.7 + 0.5, z0 + 0.8), planks((160, 128, 86), board=0.2, mud=0), BSP)
+    canvas = lambda P, N: np.tile([178.0, 162, 124], (len(P), 1)) * (0.88 + 0.16 * hash01(np.floor(P[:, 0] * 6), np.floor(P[:, 1] * 6)))[:, None]
+    m += box((0.15, 0.2, z0 + 0.8), (W - 0.15, 2.5, z0 + 0.86), canvas, BSP)                  # over the first lot
+    m += box((0.15, 0.2, z0 + 0.1), (0.21, 2.5, z0 + 0.86), canvas, BSP)
+    m += box((W - 0.21, 0.2, z0 + 0.1), (W - 0.15, 2.5, z0 + 0.86), canvas, BSP)
+    m += ellipsoid((W / 2, 4.6, z0 + 0.1), (1.3, 0.45, 0.18), canvas, zmin=z0)                  # thrown back
+    for y in (0.6, 1.4, 2.2):
+        m += beam((0.1, y, z0 + 0.1), (0.1, y, z0 + 0.88), 0.02, (150, 130, 90))
+        m += beam((0.1, y, z0 + 0.88), (W - 0.1, y, z0 + 0.88), 0.02, (150, 130, 90))
+    return m
+
+
+def locomotive():
+    """The engine: an American 4-4-0, red wheels and cab, a brass dome and a
+    diamond stack, built upright along y, her pilot at +y."""
+    L, W = 9.5, 2.6
+    cx = W / 2
+    m = Cloud()
+    m += box((cx - 0.45, 0.4, 0.75), (cx + 0.45, L - 0.7, 1.1), solid(SOOT), BSP)
+    boiler = lambda P, N: np.tile(np.array(IRON, float), (len(P), 1)) * (0.92 + 0.12 * hash01(np.floor(P[:, 1] * 3)))[:, None]
+    m += frustum((cx, 2.4, 2.15), (cx, 7.9, 2.15), 0.72, 0.72, boiler)
+    for y in (3.4, 4.9, 6.4, 7.8):
+        m += frustum((cx, y, 2.15), (cx, y + 0.07, 2.15), 0.745, 0.745, BRASS, caps=False)
+    m += frustum((cx, 7.9, 2.15), (cx, 8.9, 2.15), 0.78, 0.78, SOOT)
+    m += box((cx - 0.6, 7.9, 1.2), (cx + 0.6, 8.9, 1.6), solid(SOOT), BSP)            # the saddle
+    m += frustum((cx, 8.4, 2.85), (cx, 8.4, 3.5), 0.17, 0.22, SOOT)                   # the diamond stack
+    m += frustum((cx, 8.4, 3.5), (cx, 8.4, 3.95), 0.22, 0.62, SOOT)
+    m += frustum((cx, 8.4, 3.95), (cx, 8.4, 4.3), 0.62, 0.3, SOOT)
+    m += box((cx - 0.3, 8.75, 2.95), (cx + 0.3, 9.25, 3.5), solid(SOOT), 0.03)         # the oil headlamp
+    m += box((cx - 0.32, 8.73, 3.5), (cx + 0.32, 9.27, 3.56), solid(BRASS), 0.03)
+    m += ellipsoid((cx, 9.27, 3.22), (0.2, 0.03, 0.2), (230, 214, 150))
+    m += frustum((cx, 5.6, 2.8), (cx, 5.6, 3.3), 0.34, 0.3, BRASS)                      # steam dome
+    m += ellipsoid((cx, 5.6, 3.3), (0.3, 0.3, 0.12), BRASS)
+    m += frustum((cx, 4.2, 2.8), (cx, 4.2, 3.15), 0.28, 0.25, boiler)                   # sand dome
+    m += ellipsoid((cx, 4.2, 3.15), (0.25, 0.25, 0.1), boiler)
+    m += frustum((cx, 6.9, 2.85), (cx, 6.9, 3.1), 0.14, 0.2, BRASS)                     # bell
+    for x0, x1 in ((-0.12, 0.35), (W - 0.35, W + 0.12)):                                 # running boards
+        m += box((x0, 2.4, 1.55), (x1, 8.0, 1.62), planks((100, 76, 54), mud=0), 0.03)
+    # the cab: red-brown boards, dark windows, a black roof
+    cab = decorate(planks((126, 58, 38), board=0.12, vertical=True, mud=0), W, 2.4,
+                   [dict(face="+x", u=(0.5, 1.4), z=(2.4, 3.1), kind="dark"), dict(face="+y", u=(0.3, 0.8), z=(2.4, 3.1), kind="dark")])
+    m += box((-0.05, 0.1, 1.3), (W + 0.05, 2.4, 3.5), cab, BSP)
+    m += box((-0.25, 0.0, 3.5), (W + 0.25, 2.6, 3.62), solid(SOOT), BSP)
+    # the drivers, coupled by their side rods; a four-wheel truck under the front
+    for x in (0.05, W - 0.05):
+        for y in (1.6, 3.5):
+            m += wheel((x, y, 0.82), 0.82, LOCO_RED, axis="x", spokes=14)
+            m += box((x - 0.04, y - 0.12, 0.7), (x + 0.04, y + 0.12, 0.94), solid((176, 172, 160)), 0.02)   # counterweight crank
+        m += beam((x + (0.08 if x > 1 else -0.08), 1.6, 0.62), (x + (0.08 if x > 1 else -0.08), 3.5, 0.62), 0.05, (176, 172, 160))
+        for y in (6.6, 7.6):
+            m += wheel((x + (-0.25 if x > 1 else 0.25), y, 0.42), 0.42, LOCO_RED, axis="x", spokes=10)
+        m += frustum((x, 6.5, 1.15), (x, 7.7, 1.15), 0.28, 0.28, SOOT)                  # cylinders
+        m += beam((x + (0.1 if x > 1 else -0.1), 6.5, 1.15), (x + (0.1 if x > 1 else -0.1), 3.5, 0.95), 0.045, (176, 172, 160))
+    # the pilot: the cowcatcher's bars, fanning down to the rail
+    for i in range(7):
+        x = 0.25 + i * (W - 0.5) / 6
+        m += beam((x, L - 0.75, 1.05), (cx + (x - cx) * 0.55, L, 0.12), 0.035, LOCO_RED)
+    m += box((0.1, L - 0.85, 0.95), (W - 0.1, L - 0.7, 1.15), solid(LOCO_RED), 0.03)
+    return m
+
+
+def loco_wreck():
+    """The engine on her side where she went off the torn-up rails: rolled over to
+    the west, her wheels in the air towards the fight, a furrow of dirt along her
+    boiler. She stops anything, and no one sees over her."""
+    n = len(WINDOWS)
+    m = locomotive()
+    del WINDOWS[n:], GLAZED[n:]   # (her cab windows are only paint: no shutters to them)
+    m.transform(rot_y(-math.pi / 2))            # her top goes over to the west
+    m.translate((4.3, 0.0, 0.05))
+    dirt = lambda P, N: np.tile([160.0, 120, 82], (len(P), 1)) * (0.85 + 0.25 * hash01(np.floor(P[:, 1] * 4), np.floor(P[:, 0] * 4)))[:, None]
+    for y, r in ((2.6, 0.9), (4.6, 1.0), (6.6, 0.9)):
+        m += ellipsoid((0.1, y, 0.0), (0.5, r * 1.3, 0.25), dirt, zmin=0.0)
+    return _no_ground(m)
+
+
+def tender():
+    """The tender, dragged off the rails by the engine going over: leaning, one
+    truck in the dirt, coal spilled."""
+    W, D = 2.6, 5.0
+    m = _trucks(W, D, ends=(1.1, None), r=0.42)
+    m += box((0, 0, 1.15), (W, D, 2.6), solid(tuple(np.array(IRON) * 0.8)), BSP)
+    m += box((W, 0.6, 1.75), (W + 0.02, D - 0.6, 1.85), solid(BRASS), 0.02)
+    for x0, x1 in ((-0.03, 0.0), (W, W + 0.03)):
+        m += box((x0, 0, 2.5), (x1, D, 2.6), solid(BRASS), 0.02)
+    coal = lambda P, N: np.tile([30.0, 30, 34], (len(P), 1)) * (0.7 + 0.6 * hash01(np.floor(P[:, 0] * 12), np.floor(P[:, 1] * 12), np.floor(P[:, 2] * 12)))[:, None]
+    m += ellipsoid((W / 2, 3.4, 2.6), (1.1, 1.4, 0.45), coal, zmin=2.6)
+    m.transform(rot_y(-0.14), pivot=(0, 0, 0))   # leaning over after the engine
+    m.translate((0.45, 0.0, -0.12))
+    return _no_ground(m)
+
+
+def coal_heap():
+    """Coal spilled off the tender when she went over."""
+    coal = lambda P, N: np.tile([32.0, 32, 36], (len(P), 1)) * (0.7 + 0.6 * hash01(np.floor(P[:, 0] * 12), np.floor(P[:, 1] * 12), np.floor(P[:, 2] * 12)))[:, None]
+    m = ellipsoid((0.75, 0.6, 0.0), (0.7, 0.55, 0.28), coal, zmin=0.0)
+    m += ellipsoid((1.1, 0.9, 0.0), (0.4, 0.35, 0.15), coal, zmin=0.0)
+    return m
+
+
+def wheelset():
+    """A pair of wheels on their axle, torn off a truck and lying in the dirt."""
+    m = Cloud()
+    for y in (0.15, 1.6):
+        w = _iron_wheel((0, 0, 0), 0.42, axis="y")
+        w.transform(rot_x(0.35))
+        w.translate((0.55, y, 0.42))
+        m += w
+    m += beam((0.55, 0.15, 0.42), (0.55, 1.6, 0.42), 0.06, STEEL)
+    return _no_ground(m)
+
+
+def rail_bent():
+    """Two lengths of rail the revolution levered up and twisted, a few ties still
+    spiked to them."""
+    m = Cloud()
+    rail = (138, 132, 124)
+    for x, bend in ((0.3, 0.5), (1.0, -0.4)):
+        pts = [(x + bend * math.sin(t * math.pi) ** 2, t * 3.8, 0.08 + 0.5 * math.sin(t * math.pi * 0.8)) for t in np.linspace(0, 1, 9)]
+        for a, b in zip(pts, pts[1:]):
+            m += beam(a, b, 0.06, rail)
+    for y, a in ((0.4, 0.3), (1.5, -0.2), (2.9, 0.5)):
+        t = box((-0.6, -0.11, 0), (0.6, 0.11, 0.15), planks((80, 60, 46), board=0.3, mud=0), 0.03)
+        t.transform(rot_z(a))
+        t.translate((0.75, y, 0.0))
+        m += t
+    return m
+
+
+def tie():
+    """A loose railroad tie."""
+    t = box((-0.6, -0.11, 0), (0.6, 0.11, 0.15), planks((84, 62, 46), board=0.3, mud=0), 0.03)
+    t.transform(rot_z(0.4))
+    t.translate((0.6, 0.4, 0))
+    return t
+
+
+def ties(along_x=True):
+    """Ties from the torn-up track, stacked crib-fashion into a breastwork: the
+    rudest of defences, but heavy timber."""
+    m = Cloud()
+    L = 2.0 * T
+    for row in range(5):
+        for i in range(3):
+            a = 0.12 + i * 0.25
+            lo, hi = ((0.0 + row % 2 * 0.06, a, row * 0.15), (L - 0.06 + row % 2 * 0.06, a + 0.2, row * 0.15 + 0.15))
+            if not along_x:
+                lo, hi = ((a, lo[0], lo[2]), (a + 0.2, hi[0], hi[2]))
+            m += box(lo, hi, planks((84 - row * 3, 62 - row * 2, 46), board=0.4, mud=0, seed=row + i), 0.03)
+    return m
+
+
+def rifle_crate(open_=False):
+    """A case of rifles, rope handles at the ends; open, the lid off and the rifles
+    showing in their racks."""
+    pine = planks((182, 148, 102), board=0.14, mud=0)
+    m = box((0, 0, 0), (1.25, 0.5, 0.36 if open_ else 0.4), pine, 0.03, skip=("+z",) if open_ else ())
+    if open_:
+        for i in range(5):
+            y = 0.08 + i * 0.085
+            m += beam((0.1, y, 0.3), (1.15, y, 0.3), 0.025, (86, 60, 40))     # stocks
+            m += beam((0.5, y, 0.31), (1.15, y, 0.31), 0.012, (64, 64, 66))    # barrels
+        lid = box((0, 0, 0), (1.25, 0.5, 0.04), pine, 0.03)
+        lid.transform(rot_x(-1.2))
+        lid.translate((0.0, 0.48, 0.02))
+        m += lid
+    else:
+        m += box((0.1, 0.0, 0.18), (1.15, 0.01, 0.24), solid((60, 50, 40)), 0.02)   # the stencil band
+    for x in (-0.03, 1.25):
+        m += beam((x, 0.15, 0.25), (x, 0.35, 0.25), 0.02, (190, 170, 120))
+    return m
+
+
+def rifle_crates():
+    """Cases waiting by a door to be carried off: four, two and two, one across the
+    top."""
+    m = Cloud()
+    for x, y, z, a in ((0, 0, 0, 0), (0, 0.52, 0, 0), (0, 0, 0.4, 0), (0, 0.52, 0.4, 0)):
+        m += rifle_crate().translate((x, y, z))
+    top = rifle_crate()
+    top.transform(rot_z(0.15))
+    top.translate((0.05, 0.25, 0.8))
+    m += top
+    return m
+
+
+def ammo_box():
+    """A small heavy box of cartridges, painted army green."""
+    m = box((0, 0, 0), (0.55, 0.38, 0.3), planks((92, 100, 70), board=0.12, mud=0), 0.03)
+    m += box((0.2, 0.15, 0.3), (0.35, 0.23, 0.33), solid((50, 50, 46)), 0.02)
+    return m
+
+
+TELEGRAPH_SPAN = 7 * T   # poles seven tiles apart: each carries its own half of the wire either side
+
+
+def telegraph(cut=None):
+    """A telegraph pole beside the line, its wire running on to the next. The
+    revolution cut it before they stopped the train: `cut` is the side (-1 north, +1
+    south) where the wire's down, hanging from the arm."""
+    m = Cloud()
+    wood = (110, 88, 66)
+    m += frustum((0.15, 0.15, 0), (0.15, 0.15, 6.0), 0.1, 0.08, wood)
+    m += box((-0.55, 0.1, 5.6), (0.85, 0.2, 5.7), solid(wood), 0.02)
+    half = TELEGRAPH_SPAN / 2
+    for x in (-0.45, 0.75):
+        m += frustum((x, 0.15, 5.7), (x, 0.15, 5.82), 0.04, 0.03, (120, 170, 150))
+        for side in (-1, 1):
+            if side == cut:
+                pts = [(x, 0.15, 5.78), (x + 0.1, 0.15 + side * 0.4, 4.2), (x + 0.3, 0.15 + side * 0.6, 1.8), (x + 0.6, 0.15 + side * 0.4, 0.02)]
+            else:
+                pts = [(x, 0.15 + side * half * t, 5.78 - 0.35 * (1 - (1 - t) ** 2)) for t in np.linspace(0, 1, 7)]
+            for a, b in zip(pts, pts[1:]):
+                m += beam(a, b, 0.012, (40, 40, 42))
+    return m
+
+
+def telegraph_down():
+    """A telegraph pole cut down across the dirt, its arm snapped, a hank of the
+    wire left lying by it."""
+    wood = (110, 88, 66)
+    m = frustum((0.5, 0.1, 0.12), (0.5, 4.8, 0.1), 0.1, 0.08, wood)
+    arm = box((-0.7, -0.05, 0), (0.7, 0.05, 0.1), solid(wood), 0.02)
+    arm.transform(rot_z(0.5))
+    arm.translate((0.45, 4.4, 0.18))
+    m += arm
+    for i in range(14):   # the wire, in loose coils
+        a0, a1 = i * 0.9, (i + 1) * 0.9
+        c = (0.2 + 0.05 * i, 2.0)
+        m += beam((c[0] + 0.35 * math.cos(a0), c[1] + 0.3 * math.sin(a0), 0.02),
+                  (c[0] + 0.35 * math.cos(a1), c[1] + 0.3 * math.sin(a1), 0.02), 0.012, (40, 40, 42))
+    return m
+
+
+def rock(seed=0, s=1.0):
+    """A boulder out in the scrub: stone to hide behind."""
+    rng = np.random.default_rng(131 + seed)
+    stone = lambda P, N: np.tile([156.0, 132, 106], (len(P), 1)) * (0.78 + 0.3 * hash01(np.floor(P[:, 0] * 6), np.floor(P[:, 2] * 6), seed))[:, None]
+    m = Cloud()
+    for i in range(4):
+        c = (0.6 * s + rng.uniform(-0.25, 0.25) * s, 0.5 * s + rng.uniform(-0.15, 0.15) * s, 0.0)
+        r = (rng.uniform(0.35, 0.55) * s, rng.uniform(0.3, 0.45) * s, rng.uniform(0.35, 0.7) * s)
+        m += ellipsoid(c, r, stone, zmin=0.0)
+    return m
+
+
+def mule(x, y, col):
+    """A mule in harness, facing -x."""
+    m = Cloud()
+    dark = tuple(c * 0.7 for c in col)
+    m += ellipsoid((x, y, 1.05), (0.62, 0.22, 0.27), col)
+    m += beam((x - 0.48, y, 1.15), (x - 0.82, y, 1.5), 0.14, col)
+    m += ellipsoid((x - 0.98, y, 1.42), (0.24, 0.1, 0.12), col)
+    m += ellipsoid((x - 1.16, y, 1.36), (0.08, 0.085, 0.085), dark)
+    for s in (-1, 1):
+        m += beam((x - 0.86, y + s * 0.05, 1.55), (x - 0.78, y + s * 0.1, 1.86), 0.035, col)   # the ears
+        for dx in (-0.45, 0.45):
+            m += beam((x + dx, y + s * 0.12, 0.95), (x + dx, y + s * 0.12, 0.0), 0.05, dark)
+    m += beam((x + 0.6, y, 1.15), (x + 0.75, y, 0.62), 0.03, dark)                        # tail
+    m += ellipsoid((x - 0.52, y, 1.22), (0.09, 0.2, 0.26), (46, 34, 26))                  # collar
+    m += beam((x - 0.5, y, 1.0), (x + 0.4, y, 1.0), 0.025, (46, 34, 26))                   # traces
+    return m
+
+
+def carreta():
+    """The revolution's freight wagon, high-sided, two mules in harness facing out
+    of the fight (-x), the first cases of rifles already aboard."""
+    m = Cloud()
+    L, Wd, x0 = 3.4, 1.6, 2.5
+    wood = planks((120, 92, 64), board=0.18, mud=0.2)
+    m += box((x0, 0.15, 0.7), (x0 + L, Wd - 0.15, 0.85), wood, BSP)
+    for y0, y1 in ((0.15, 0.22), (Wd - 0.22, Wd - 0.15)):
+        m += box((x0, y0, 0.85), (x0 + L, y1, 1.45), wood, BSP)
+    for x in (x0, x0 + L - 0.07):
+        m += box((x, 0.22, 0.85), (x + 0.07, Wd - 0.22, 1.45), wood, BSP)
+    for i in range(3):
+        m += rifle_crate().translate((x0 + 0.3 + i * 0.05, 0.3 + (i % 2) * 0.5, 0.85 + (i // 2) * 0.4))
+    m += wheel((x0 + 0.7, 0.08, 0.5), 0.5)
+    m += wheel((x0 + 0.7, Wd - 0.08, 0.5), 0.5)
+    m += wheel((x0 + L - 0.65, 0.08, 0.62), 0.62)
+    m += wheel((x0 + L - 0.65, Wd - 0.08, 0.62), 0.62)
+    m += beam((x0 + 0.1, Wd / 2, 0.55), (x0 - 1.0, Wd / 2, 0.85), 0.05, (110, 82, 56))    # the tongue
+    m += mule(1.3, Wd / 2 - 0.38, (118, 92, 70))
+    m += mule(1.38, Wd / 2 + 0.38, (96, 84, 76))
+    m.translate((0.3, 0, 0))
+    return m
+
+
+def wagon_over():
+    """A wagon turned over in the ambush, on its side, its underside and wheels to
+    the east: a big piece of cover. Its load is spilled about it: a crate, sacks."""
+    m = wagon()
+    m.transform(rot_x(math.pi / 2))   # her top goes over to the north (-y), wheels to the camera
+    m.translate((0.0, 1.55, 0.0))
+    m += box((0.6, 1.6, 0.0), (1.4, 2.4, 0.75), crate_fn((160, 120, 80)), 0.03)
+    m += sacks(1.9, 1.7, n=3)
+    return _no_ground(m)
+
+
+def sacks(x0=0.0, y0=0.0, n=5):
+    """Sacks of beans and flour heaped up: soft, but they stop a round."""
+    rng = np.random.default_rng(71 + n)
+    burlap = lambda c: (lambda P, N: np.tile(np.array(c, float), (len(P), 1)) * (0.9 + 0.14 * hash01(np.floor(P[:, 0] * 30), np.floor(P[:, 2] * 30)))[:, None])
+    m = Cloud()
+    for i in range(n):
+        row = 1 if i >= 3 else 0
+        x = x0 + 0.42 + (i % 3) * 0.5 + row * 0.25
+        y = y0 + 0.38 + rng.uniform(-0.04, 0.06)
+        col = (170, 138, 94) if rng.random() < 0.6 else (206, 196, 172)
+        m += box((x - 0.25, y - 0.2, 0.02 + row * 0.24), (x + 0.25, y + 0.2, 0.22 + row * 0.24), burlap(col), 0.02)
+        m += ellipsoid((x, y, 0.2 + row * 0.24), (0.24, 0.19, 0.06), burlap(col))
+        m += ellipsoid((x + 0.26, y, 0.12 + row * 0.24), (0.05, 0.06, 0.05), burlap(tuple(c * 0.85 for c in col)))   # the tied neck
+    return m
+
+
+def handcar():
+    """The section gang's handcar, knocked off the line and over on its side, the
+    pump handle sticking out."""
+    m = Cloud()
+    wood = planks((120, 92, 64), board=0.16, mud=0)
+    m += box((0, 0, 0.5), (1.6, 2.2, 0.62), wood, 0.03)
+    for y in (0.4, 1.8):
+        for x in (0.15, 1.45):
+            m += _iron_wheel((x, y, 0.3), 0.3)
+    m += box((0.7, 0.95, 0.62), (0.9, 1.25, 1.3), solid(SOOT), 0.03)
+    m += beam((0.8, 0.2, 1.35), (0.8, 2.0, 1.35), 0.04, SOOT)
+    m.transform(rot_y(-(math.pi / 2 - 0.15)))   # over on her side, the deck to the west
+    m.translate((1.4, 0.0, 0.0))
+    return _no_ground(m)
+
+
+# Long things baked in pieces along their length, each its own sprite sorted at its
+# own middle, so a man beside one end of a boxcar is drawn in front of it, not
+# behind (one sprite sorts at the middle of the whole car). Name -> (axis, pieces);
+# the maps place "<name>_<i>", one after another.
+CHUNKED = {"boxcar_a": (1, 3), "boxcar_b": (1, 3), "boxcar_burnt": (1, 3), "flatcar": (1, 2),
+           "loco_wreck": (1, 3), "tender": (1, 2), "carreta": (0, 2)}
+
+
 BUILDINGS = {
     # name: (builder, footprint (tiles), collision type, fade, colliders (tiles, relative))
     "saloon": (saloon, (7, 6), "wall", True, None),
@@ -1640,4 +2101,55 @@ BUILDINGS = {
     "washline": (lambda: washline(4.5, ("sheet", "shirt", "longjohns", "towel"), 3), (3.6, 0.24), "none", False, None),
     "washline_b": (lambda: washline(4.5, ("skirt", "sheet", "shirt"), 11), (3.6, 0.24), "none", False, None),
     "washline_alley": (lambda: washline(2.4, ("sheet", "longjohns"), 17), (1.92, 0.24), "none", False, None),
+    # the train
+    "boxcar_a": (lambda: boxcar((134, 58, 40), 3), (2.4, 6), "wall", True, None),
+    "boxcar_b": (lambda: boxcar((150, 108, 62), 7), (2.4, 6), "wall", True, None),
+    "boxcar_burnt": (boxcar_burnt, (2.4, 6), "cover", False, None),
+    "flatcar": (flatcar, (2.4, 4.5), "cover", False, None),
+    "loco_wreck": (loco_wreck, (3.5, 7.5), "wall", True, None),
+    "tender": (tender, (2.4, 4.0), "wall", True, None),
+    "coal": (coal_heap, (1.2, 1.0), "none", False, None),
+    "wheelset": (wheelset, (1.0, 1.4), "cover", False, None),
+    "rail_bent": (rail_bent, (1.2, 3.0), "none", False, None),
+    "tie": (tie, (1.0, 0.7), "none", False, None),
+    "ties_x": (lambda: ties(True), (2.0, 0.65), "cover", False, None),
+    "ties_y": (lambda: ties(False), (0.65, 2.0), "cover", False, None),
+    "rifle_crate": (rifle_crate, (1.0, 0.4), "cover", False, None),
+    "rifle_crate_open": (lambda: rifle_crate(True), (1.0, 0.4), "cover", False, [[0, 0, 1.0, 0.4]]),
+    "rifle_crates": (rifle_crates, (1.0, 0.85), "cover", False, None),
+    "ammo_box": (ammo_box, (0.45, 0.3), "cover", False, None),
+    "telegraph": (telegraph, (0.3, 0.3), "post", False, None),
+    "telegraph_cut_n": (lambda: telegraph(-1), (0.3, 0.3), "post", False, None),
+    "telegraph_cut_s": (lambda: telegraph(1), (0.3, 0.3), "post", False, None),
+    "telegraph_down": (telegraph_down, (1.0, 4.0), "none", False, None),
+    "rock": (lambda: rock(0), (1.0, 0.8), "cover", False, None),
+    "rock_b": (lambda: rock(1, 0.7), (0.7, 0.6), "cover", False, None),
+    "rock_c": (lambda: rock(2, 1.6), (1.6, 1.3), "cover", False, None),
+    "wagon_over": (wagon_over, (2.6, 2.0), "cover", False, [[0.1, 0.0, 2.5, 1.2]]),
+    "sacks": (sacks, (1.2, 0.6), "cover", False, None),
+    "handcar": (handcar, (1.2, 1.8), "cover", False, None),
+    "carreta": (carreta, (5.0, 1.3), "cover", False, None),
 }
+
+
+def _chunk_entries():
+    """Each piece of a CHUNKED model is a building of its own: its slice of the
+    footprint and the colliders, the parent's sprite cut along the same lines."""
+    for name, (axis, n) in CHUNKED.items():
+        fn, fp, collide, fade, colliders = BUILDINGS[name]
+        step = fp[axis] / n
+        for i in range(n):
+            lo, hi = i * step, (i + 1) * step
+            cfp = list(fp)
+            cfp[axis] = step
+            cols = []
+            for r in colliders or [[0, 0, fp[0], fp[1]]]:
+                a, b = max(r[axis], lo), min(r[axis + 2], hi)
+                if b > a:
+                    rr = list(r)
+                    rr[axis], rr[axis + 2] = a - lo, b - lo
+                    cols.append(rr)
+            BUILDINGS[f"{name}_{i}"] = (None, tuple(cfp), collide, fade, cols)
+
+
+_chunk_entries()

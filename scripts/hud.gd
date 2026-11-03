@@ -446,7 +446,7 @@ func level_hit(pos: Vector2) -> int:
 func _draw_levels() -> void:
 	draw_rect(Rect2(0, 0, 640, 360), Color(0.03, 0.02, 0.02, 0.86))
 	_text(Vector2(0, 62), "WHERE TO, STRANGER?", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
-	_text(Vector2(0, 84), "Pick a town. A shuffled one deals its gang out afresh, the same for the same count.", 8,
+	_text(Vector2(0, 84), "Pick where to ride.", 8,
 		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	var mouse := get_local_mouse_position()
 	var over := level_hit(mouse)

@@ -615833,6 +615833,959 @@
     ]
    ],
    "doors": []
+  },
+  "boxcar_a_0": {
+   "file": "res://assets/sprites/world/boxcar_a_0.png",
+   "anchor": [
+    100,
+    167
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [],
+   "paint": "wood",
+   "chunk": [
+    "boxcar_a",
+    0
+   ]
+  },
+  "boxcar_a_1": {
+   "file": "res://assets/sprites/world/boxcar_a_1.png",
+   "anchor": [
+    100,
+    165
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [
+    [
+     -0.4,
+     1.0
+    ],
+    [
+     2.8,
+     1.0
+    ]
+   ],
+   "paint": "wood",
+   "chunk": [
+    "boxcar_a",
+    1
+   ]
+  },
+  "boxcar_a_2": {
+   "file": "res://assets/sprites/world/boxcar_a_2.png",
+   "anchor": [
+    105,
+    165
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [],
+   "paint": "wood",
+   "chunk": [
+    "boxcar_a",
+    2
+   ]
+  },
+  "boxcar_b_0": {
+   "file": "res://assets/sprites/world/boxcar_b_0.png",
+   "anchor": [
+    100,
+    167
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [],
+   "paint": "wood",
+   "chunk": [
+    "boxcar_b",
+    0
+   ]
+  },
+  "boxcar_b_1": {
+   "file": "res://assets/sprites/world/boxcar_b_1.png",
+   "anchor": [
+    100,
+    165
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [
+    [
+     -0.4,
+     1.0
+    ],
+    [
+     2.8,
+     1.0
+    ]
+   ],
+   "paint": "wood",
+   "chunk": [
+    "boxcar_b",
+    1
+   ]
+  },
+  "boxcar_b_2": {
+   "file": "res://assets/sprites/world/boxcar_b_2.png",
+   "anchor": [
+    105,
+    165
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [],
+   "paint": "wood",
+   "chunk": [
+    "boxcar_b",
+    2
+   ]
+  },
+  "boxcar_burnt_0": {
+   "file": "res://assets/sprites/world/boxcar_burnt_0.png",
+   "anchor": [
+    96,
+    158
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [],
+   "chunk": [
+    "boxcar_burnt",
+    0
+   ]
+  },
+  "boxcar_burnt_1": {
+   "file": "res://assets/sprites/world/boxcar_burnt_1.png",
+   "anchor": [
+    96,
+    126
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [],
+   "chunk": [
+    "boxcar_burnt",
+    1
+   ]
+  },
+  "boxcar_burnt_2": {
+   "file": "res://assets/sprites/world/boxcar_burnt_2.png",
+   "anchor": [
+    98,
+    149
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [],
+   "chunk": [
+    "boxcar_burnt",
+    2
+   ]
+  },
+  "flatcar_0": {
+   "file": "res://assets/sprites/world/flatcar_0.png",
+   "anchor": [
+    98,
+    89
+   ],
+   "footprint": [
+    2.4,
+    2.25
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.25
+    ]
+   ],
+   "doors": [],
+   "chunk": [
+    "flatcar",
+    0
+   ]
+  },
+  "flatcar_1": {
+   "file": "res://assets/sprites/world/flatcar_1.png",
+   "anchor": [
+    109,
+    71
+   ],
+   "footprint": [
+    2.4,
+    2.25
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.25
+    ]
+   ],
+   "doors": [],
+   "chunk": [
+    "flatcar",
+    1
+   ]
+  },
+  "loco_wreck_0": {
+   "file": "res://assets/sprites/world/loco_wreck_0.png",
+   "anchor": [
+    75,
+    125
+   ],
+   "footprint": [
+    3.5,
+    2.5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     3.5,
+     2.5
+    ]
+   ],
+   "doors": [],
+   "paint": "wood",
+   "chunk": [
+    "loco_wreck",
+    0
+   ]
+  },
+  "loco_wreck_1": {
+   "file": "res://assets/sprites/world/loco_wreck_1.png",
+   "anchor": [
+    71,
+    79
+   ],
+   "footprint": [
+    3.5,
+    2.5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     3.5,
+     2.5
+    ]
+   ],
+   "doors": [],
+   "paint": "wood",
+   "chunk": [
+    "loco_wreck",
+    1
+   ]
+  },
+  "loco_wreck_2": {
+   "file": "res://assets/sprites/world/loco_wreck_2.png",
+   "anchor": [
+    96,
+    81
+   ],
+   "footprint": [
+    3.5,
+    2.5
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     3.5,
+     2.5
+    ]
+   ],
+   "doors": [],
+   "paint": "wood",
+   "chunk": [
+    "loco_wreck",
+    2
+   ]
+  },
+  "tender_0": {
+   "file": "res://assets/sprites/world/tender_0.png",
+   "anchor": [
+    94,
+    116
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [],
+   "paint": "wood",
+   "chunk": [
+    "tender",
+    0
+   ]
+  },
+  "tender_1": {
+   "file": "res://assets/sprites/world/tender_1.png",
+   "anchor": [
+    95,
+    118
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0.0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [],
+   "paint": "wood",
+   "chunk": [
+    "tender",
+    1
+   ]
+  },
+  "coal": {
+   "file": "res://assets/sprites/world/coal.png",
+   "anchor": [
+    35,
+    2
+   ],
+   "footprint": [
+    1.2,
+    1.0
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.2,
+     1.0
+    ]
+   ],
+   "doors": []
+  },
+  "wheelset": {
+   "file": "res://assets/sprites/world/wheelset.png",
+   "anchor": [
+    64,
+    36
+   ],
+   "footprint": [
+    1.0,
+    1.4
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.0,
+     1.4
+    ]
+   ],
+   "doors": []
+  },
+  "rail_bent": {
+   "file": "res://assets/sprites/world/rail_bent.png",
+   "anchor": [
+    143,
+    8
+   ],
+   "footprint": [
+    1.2,
+    3.0
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.2,
+     3.0
+    ]
+   ],
+   "doors": []
+  },
+  "tie": {
+   "file": "res://assets/sprites/world/tie.png",
+   "anchor": [
+    17,
+    11
+   ],
+   "footprint": [
+    1.0,
+    0.7
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.0,
+     0.7
+    ]
+   ],
+   "doors": []
+  },
+  "ties_x": {
+   "file": "res://assets/sprites/world/ties_x.png",
+   "anchor": [
+    38,
+    40
+   ],
+   "footprint": [
+    2.0,
+    0.65
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     2.0,
+     0.65
+    ]
+   ],
+   "doors": []
+  },
+  "ties_y": {
+   "file": "res://assets/sprites/world/ties_y.png",
+   "anchor": [
+    98,
+    40
+   ],
+   "footprint": [
+    0.65,
+    2.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.65,
+     2.0
+    ]
+   ],
+   "doors": []
+  },
+  "rifle_crate": {
+   "file": "res://assets/sprites/world/rifle_crate.png",
+   "anchor": [
+    26,
+    25
+   ],
+   "footprint": [
+    1.0,
+    0.4
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.0,
+     0.4
+    ]
+   ],
+   "doors": []
+  },
+  "rifle_crate_open": {
+   "file": "res://assets/sprites/world/rifle_crate_open.png",
+   "anchor": [
+    46,
+    23
+   ],
+   "footprint": [
+    1.0,
+    0.4
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.0,
+     0.4
+    ]
+   ],
+   "doors": []
+  },
+  "rifle_crates": {
+   "file": "res://assets/sprites/world/rifle_crates.png",
+   "anchor": [
+    46,
+    57
+   ],
+   "footprint": [
+    1.0,
+    0.85
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.0,
+     0.85
+    ]
+   ],
+   "doors": []
+  },
+  "ammo_box": {
+   "file": "res://assets/sprites/world/ammo_box.png",
+   "anchor": [
+    21,
+    21
+   ],
+   "footprint": [
+    0.45,
+    0.3
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.45,
+     0.3
+    ]
+   ],
+   "doors": []
+  },
+  "telegraph": {
+   "file": "res://assets/sprites/world/telegraph.png",
+   "anchor": [
+    198,
+    353
+   ],
+   "footprint": [
+    0.3,
+    0.3
+   ],
+   "collide": "post",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.3,
+     0.3
+    ]
+   ],
+   "doors": []
+  },
+  "telegraph_cut_n": {
+   "file": "res://assets/sprites/world/telegraph_cut_n.png",
+   "anchor": [
+    198,
+    287
+   ],
+   "footprint": [
+    0.3,
+    0.3
+   ],
+   "collide": "post",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.3,
+     0.3
+    ]
+   ],
+   "doors": []
+  },
+  "telegraph_cut_s": {
+   "file": "res://assets/sprites/world/telegraph_cut_s.png",
+   "anchor": [
+    42,
+    353
+   ],
+   "footprint": [
+    0.3,
+    0.3
+   ],
+   "collide": "post",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.3,
+     0.3
+    ]
+   ],
+   "doors": []
+  },
+  "telegraph_down": {
+   "file": "res://assets/sprites/world/telegraph_down.png",
+   "anchor": [
+    175,
+    6
+   ],
+   "footprint": [
+    1.0,
+    4.0
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.0,
+     4.0
+    ]
+   ],
+   "doors": []
+  },
+  "rock": {
+   "file": "res://assets/sprites/world/rock.png",
+   "anchor": [
+    36,
+    12
+   ],
+   "footprint": [
+    1.0,
+    0.8
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.0,
+     0.8
+    ]
+   ],
+   "doors": []
+  },
+  "rock_b": {
+   "file": "res://assets/sprites/world/rock_b.png",
+   "anchor": [
+    29,
+    16
+   ],
+   "footprint": [
+    0.7,
+    0.6
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.7,
+     0.6
+    ]
+   ],
+   "doors": []
+  },
+  "carreta_0": {
+   "file": "res://assets/sprites/world/carreta_0.png",
+   "anchor": [
+    31,
+    68
+   ],
+   "footprint": [
+    2.5,
+    1.3
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.0,
+     0,
+     2.5,
+     1.3
+    ]
+   ],
+   "doors": [],
+   "chunk": [
+    "carreta",
+    0
+   ]
+  },
+  "carreta_1": {
+   "file": "res://assets/sprites/world/carreta_1.png",
+   "anchor": [
+    60,
+    72
+   ],
+   "footprint": [
+    2.5,
+    1.3
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.0,
+     0,
+     2.5,
+     1.3
+    ]
+   ],
+   "doors": [],
+   "chunk": [
+    "carreta",
+    1
+   ]
+  },
+  "rock_c": {
+   "file": "res://assets/sprites/world/rock_c.png",
+   "anchor": [
+    54,
+    21
+   ],
+   "footprint": [
+    1.6,
+    1.3
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.6,
+     1.3
+    ]
+   ],
+   "doors": []
+  },
+  "wagon_over": {
+   "file": "res://assets/sprites/world/wagon_over.png",
+   "anchor": [
+    76,
+    55
+   ],
+   "footprint": [
+    2.6,
+    2.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.1,
+     0.0,
+     2.5,
+     1.2
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/wagon_over_1.png",
+     "anchor": [
+      76,
+      55
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/wagon_over_2.png",
+     "anchor": [
+      97,
+      -1
+     ]
+    }
+   ]
+  },
+  "sacks": {
+   "file": "res://assets/sprites/world/sacks.png",
+   "anchor": [
+    24,
+    16
+   ],
+   "footprint": [
+    1.2,
+    0.6
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.2,
+     0.6
+    ]
+   ],
+   "doors": []
+  },
+  "handcar": {
+   "file": "res://assets/sprites/world/handcar.png",
+   "anchor": [
+    78,
+    66
+   ],
+   "footprint": [
+    1.2,
+    1.8
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.2,
+     1.8
+    ]
+   ],
+   "doors": []
   }
  },
  "tumbleweed": {
@@ -617103,6 +618056,13 @@
  },
  "ground_cruz_verde": {
   "file": "res://assets/sprites/ground_cruz_verde.png",
+  "origin": [
+   -1280,
+   -128
+  ]
+ },
+ "ground_train": {
+  "file": "res://assets/sprites/ground_train.png",
   "origin": [
    -1280,
    -128

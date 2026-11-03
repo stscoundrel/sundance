@@ -16,7 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import chars  # noqa: E402
 import world  # noqa: E402
-from render3d import render, noise2, PIX  # noqa: E402
+from render3d import render, noise2, PIX, PX, PY  # noqa: E402
 
 UI_PIX = 2  # the HUD art is drawn at 2x its 640x360 layout
 
@@ -96,8 +96,8 @@ def gen_world(meta):
     if not only or "objects" not in meta:
         meta["objects"] = {}
     for name, (fn, fp, collide, fade, colliders) in world.BUILDINGS.items():
-        if only and name not in only:
-            continue
+        if fn is None or (only and name not in only):
+            continue   # (a piece of a chunked model: baked with the whole)
         print("  object", name)
         world.DOORS.clear()
         world.WINDOWS.clear()
@@ -106,6 +106,9 @@ def gen_world(meta):
         world.SIGNS.clear()
         world.WASHING.clear()
         model = fn()
+        if name in world.CHUNKED:
+            _bake_chunks(meta, name, model)
+            continue
         img, anchor = render(model, edges=True)
         path = save(img, f"sprites/world/{name}.png")
         meta["objects"][name] = {"file": path, "anchor": list(anchor), "footprint": list(fp),
@@ -165,6 +168,46 @@ def gen_world(meta):
         frames.append(img)
     path = save(np.concatenate(frames, 1), "sprites/world/tumbleweed.png")
     meta["tumbleweed"] = {"file": path, "cell": [24 * PIX, 24 * PIX], "anchor": [12 * PIX, 18 * PIX], "frames": 4}
+
+
+def _bake_chunks(meta, name, model):
+    """Render a long model once and cut the sprite into its pieces along the axis
+    (world.CHUNKED): each pixel goes to the piece holding the point it shows; the
+    outline to the piece it rings, the shadow to where it falls on the ground."""
+    axis, n = world.CHUNKED[name]
+    img, anchor, coord = render(model, edges=True, want_coord=axis)
+    step = world.BUILDINGS[name][1][axis] / n * world.T   # metres
+    lab = np.full(coord.shape, -1, int)
+    has = ~np.isnan(coord)
+    lab[has] = np.clip((coord[has] // step).astype(int), 0, n - 1)
+    seen = img[..., 3] > 0
+    for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+        nb = np.roll(np.roll(lab, dy, 0), dx, 1)
+        take = seen & (lab < 0) & (nb >= 0)
+        lab[take] = nb[take]
+    ys, xs = np.nonzero(seen & (lab < 0))
+    d = (xs + 0.5 - anchor[0]) / (PX * PIX)   # X - Y on the ground
+    s_ = (ys + 0.5 - anchor[1]) / (PY * PIX)  # X + Y
+    g = (s_ + d) / 2 if axis == 0 else (s_ - d) / 2
+    lab[ys, xs] = np.clip((g // step).astype(int), 0, n - 1)
+    doors = _doorsteps(world.DOORS)
+    for i in range(n):
+        ys, xs = np.nonzero(lab == i)
+        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        piece = np.zeros((y1 - y0, x1 - x0, 4), np.uint8)
+        piece[ys - y0, xs - x0] = img[ys, xs]
+        o = i * step   # the piece's corner, along the axis, as a pixel of the whole
+        ox, oy = (o * PX * PIX, o * PY * PIX) if axis == 0 else (-o * PX * PIX, o * PY * PIX)
+        cname = f"{name}_{i}"
+        _, fp, collide, fade, colliders = world.BUILDINGS[cname]
+        lo, hi = i * step / world.T, (i + 1) * step / world.T
+        cdoors = [[p[0] - lo, p[1]] if axis == 0 else [p[0], round(p[1] - lo, 2)] for p in doors if lo <= p[axis] < hi]
+        meta["objects"][cname] = {"file": save(piece, f"sprites/world/{cname}.png"),
+                                  "anchor": [int(round(anchor[0] + ox - x0)), int(round(anchor[1] + oy - y0))],
+                                  "footprint": list(fp), "collide": collide, "fade": fade,
+                                  "colliders": colliders, "doors": cdoors, "chunk": [name, i]}
+        if collide == "wall":
+            meta["objects"][cname]["paint"] = "wood"
 
 
 HEN_COLORS = [(236, 230, 218), (150, 86, 44), (52, 46, 46)]   # white, red-brown, black
@@ -349,6 +392,34 @@ def gen_ground(meta, level, key="ground"):
             puddle = dd < 0.3 - (n_small - 0.5) * 0.4
             img[puddle] = np.array([104, 104, 94], np.float32) * (0.9 + 0.15 * n_small[puddle])[:, None]
             img[puddle & (fine > 0.93)] = (150, 150, 136)
+
+        # the railroad: ballast, ties and two rails; where it's been torn up ("gaps"),
+        # the rails gone, the ties scattered, the ballast kicked about
+        gravel = np.array([[70, 64, 60], [82, 76, 70], [96, 88, 80]], np.float32)   # dark, cindery: it doesn't read as sand
+        for r in level.get("rails", []):
+            c = r["x"]
+            along = (gy > r["y0"]) & (gy < r["y1"])
+            gap = np.zeros_like(along)
+            for a, b in r.get("gaps", []):
+                gap |= (gy > a) & (gy < b)
+            edge = np.abs(gx - c) - (1.6 + (n_small - 0.5) * 0.3)
+            bed = along & (edge < 0) & ~(gap & (n_mid > 0.5))
+            shoulder = along & (edge >= 0) & (edge < 0.3) & ~gap   # the bank's foot, darkened with cinders
+            img[shoulder] = img[shoulder] * 0.7 + gravel[1] * 0.3 * (1 - edge[shoulder] / 0.3)[:, None] \
+                + img[shoulder] * 0.3 * (edge[shoulder] / 0.3)[:, None]
+            img[bed] = gravel[np.clip((0.5 * n_small + 0.5 * fine) * 3, 0, 2.99).astype(int)[bed]]
+            ti = np.floor(gy * 1.9).astype(np.int64)
+            h1 = _hash(ti, np.zeros_like(ti), 17)
+            h2 = _hash(ti, np.ones_like(ti), 23)
+            cc = np.where(gap, c + (h2 - 0.5) * 1.2, c)
+            tie = along & (np.abs(gx - cc) < 1.05) & ((gy * 1.9 - ti) < 0.32) & (~gap | (h1 > 0.5))
+            img[tie] = np.array([104, 78, 56], np.float32) * (0.8 + 0.35 * n_small[tie])[:, None]
+            off = np.abs(np.abs(gx - c) - 0.575)
+            rail = along & ~gap
+            img[rail & (off < 0.05)] = (150, 146, 140)
+            img[rail & (off < 0.018)] = (196, 192, 184)                  # the worn top, catching the sun
+            east = (gx - c - np.sign(gx - c) * 0.575) > 0
+            img[rail & (off >= 0.05) & (off < 0.085) & east] *= 0.6      # each rail's shadow, to the east
 
         img[(fine > 0.992) & ~road] *= 0.7               # pebbles
         peb2 = fine < 0.006
@@ -1015,10 +1086,15 @@ def main():
     for key, fn in steps.items():
         if not only or key in only:
             fn(meta)
+    # SUNDANCE_GROUNDS=train,cruz_verde bakes only those maps' grounds (by file name).
+    grounds = [g for g in os.environ.get("SUNDANCE_GROUNDS", "").split(",") if g]
     if not only or "ground" in only:
-        print("  ground")
-        gen_ground(meta, level)
+        if not grounds or "town" in grounds:
+            print("  ground")
+            gen_ground(meta, level)
         for name in sorted(os.listdir(os.path.join(ROOT, "data"))):   # and every other map with a ground of its own
+            if grounds and name[:-5] not in grounds:
+                continue
             if name.endswith(".json") and name != "town.json":
                 with open(os.path.join(ROOT, "data", name)) as f:
                     other = json.load(f)

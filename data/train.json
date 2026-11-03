@@ -1,0 +1,1153 @@
+{
+ "name": "Paso Esperanza",
+ "size": 64,
+ "ground": "ground_train",
+ "streets": [
+  [
+   0.0,
+   19.5,
+   24.0,
+   22.5
+  ],
+  [
+   39.0,
+   35.4,
+   64.0,
+   38.4
+  ]
+ ],
+ "rails": [
+  {
+   "x": 30.0,
+   "y0": 0.0,
+   "y1": 64.0,
+   "gaps": [
+    [
+     38.4,
+     43.6
+    ]
+   ]
+  }
+ ],
+ "mud": [],
+ "objects": [
+  {
+   "type": "flatcar_0",
+   "x": 28.8,
+   "y": 1.0
+  },
+  {
+   "type": "flatcar_1",
+   "x": 28.8,
+   "y": 3.25
+  },
+  {
+   "type": "boxcar_a_0",
+   "x": 28.8,
+   "y": 6.1
+  },
+  {
+   "type": "boxcar_a_1",
+   "x": 28.8,
+   "y": 8.1
+  },
+  {
+   "type": "boxcar_a_2",
+   "x": 28.8,
+   "y": 10.1
+  },
+  {
+   "type": "boxcar_burnt_0",
+   "x": 28.8,
+   "y": 12.7
+  },
+  {
+   "type": "boxcar_burnt_1",
+   "x": 28.8,
+   "y": 14.7
+  },
+  {
+   "type": "boxcar_burnt_2",
+   "x": 28.8,
+   "y": 16.7
+  },
+  {
+   "type": "boxcar_b_0",
+   "x": 28.8,
+   "y": 19.3
+  },
+  {
+   "type": "boxcar_b_1",
+   "x": 28.8,
+   "y": 21.3
+  },
+  {
+   "type": "boxcar_b_2",
+   "x": 28.8,
+   "y": 23.3
+  },
+  {
+   "type": "tender_0",
+   "x": 28.8,
+   "y": 25.9
+  },
+  {
+   "type": "tender_1",
+   "x": 28.8,
+   "y": 27.9
+  },
+  {
+   "type": "loco_wreck_0",
+   "x": 26.4,
+   "y": 30.5
+  },
+  {
+   "type": "loco_wreck_1",
+   "x": 26.4,
+   "y": 33.0
+  },
+  {
+   "type": "loco_wreck_2",
+   "x": 26.4,
+   "y": 35.5
+  },
+  {
+   "type": "ties_x",
+   "x": 30.6,
+   "y": 40.3
+  },
+  {
+   "type": "sandbags_x",
+   "x": 32.8,
+   "y": 40.3
+  },
+  {
+   "type": "ties_x",
+   "x": 35.0,
+   "y": 40.3
+  },
+  {
+   "type": "sandbags_y",
+   "x": 37.6,
+   "y": 38.0
+  },
+  {
+   "type": "ties_y",
+   "x": 37.6,
+   "y": 35.8
+  },
+  {
+   "type": "sandbags_y",
+   "x": 37.6,
+   "y": 33.6
+  },
+  {
+   "type": "rifle_crates",
+   "x": 37.6,
+   "y": 32.6
+  },
+  {
+   "type": "ammo_box",
+   "x": 33.2,
+   "y": 36.2
+  },
+  {
+   "type": "ammo_box",
+   "x": 34.0,
+   "y": 36.6
+  },
+  {
+   "type": "crate",
+   "x": 31.0,
+   "y": 33.6
+  },
+  {
+   "type": "rifle_crate",
+   "x": 32.0,
+   "y": 30.6
+  },
+  {
+   "type": "ties_x",
+   "x": 28.4,
+   "y": 40.3
+  },
+  {
+   "type": "sandbags_x",
+   "x": 26.2,
+   "y": 40.3
+  },
+  {
+   "type": "ties_x",
+   "x": 24.0,
+   "y": 40.3
+  },
+  {
+   "type": "sandbags_y",
+   "x": 22.8,
+   "y": 38.0
+  },
+  {
+   "type": "crate",
+   "x": 22.7,
+   "y": 36.8
+  },
+  {
+   "type": "crate_stack",
+   "x": 32.6,
+   "y": 26.2
+  },
+  {
+   "type": "sandbags_x",
+   "x": 34.4,
+   "y": 26.4
+  },
+  {
+   "type": "barrel",
+   "x": 36.7,
+   "y": 26.6
+  },
+  {
+   "type": "rifle_crates",
+   "x": 26.4,
+   "y": 1.8
+  },
+  {
+   "type": "rifle_crate",
+   "x": 26.0,
+   "y": 3.4
+  },
+  {
+   "type": "rifle_crates",
+   "x": 26.2,
+   "y": 7.8
+  },
+  {
+   "type": "rifle_crate_open",
+   "x": 25.0,
+   "y": 10.4
+  },
+  {
+   "type": "rifle_crate",
+   "x": 26.1,
+   "y": 11.2
+  },
+  {
+   "type": "rifle_crates",
+   "x": 26.3,
+   "y": 21.0
+  },
+  {
+   "type": "rifle_crate",
+   "x": 25.2,
+   "y": 23.4,
+   "worn": 1
+  },
+  {
+   "type": "ammo_box",
+   "x": 26.8,
+   "y": 23.0
+  },
+  {
+   "type": "rifle_crate_open",
+   "x": 20.6,
+   "y": 16.4
+  },
+  {
+   "type": "rifle_crate",
+   "x": 14.0,
+   "y": 20.2
+  },
+  {
+   "type": "rifle_crates",
+   "x": 22.0,
+   "y": 26.4
+  },
+  {
+   "type": "rifle_crates",
+   "x": 20.6,
+   "y": 28.2
+  },
+  {
+   "type": "rifle_crates",
+   "x": 22.6,
+   "y": 28.6
+  },
+  {
+   "type": "rifle_crate",
+   "x": 21.0,
+   "y": 30.2
+  },
+  {
+   "type": "rifle_crate_open",
+   "x": 19.4,
+   "y": 26.6
+  },
+  {
+   "type": "ammo_box",
+   "x": 23.4,
+   "y": 27.4
+  },
+  {
+   "type": "rifle_crates",
+   "x": 21.4,
+   "y": 32.0
+  },
+  {
+   "type": "ammo_box",
+   "x": 20.0,
+   "y": 31.4
+  },
+  {
+   "type": "carreta_0",
+   "x": 1.0,
+   "y": 26.6
+  },
+  {
+   "type": "carreta_1",
+   "x": 3.5,
+   "y": 26.6
+  },
+  {
+   "type": "carreta_0",
+   "x": 1.0,
+   "y": 13.0
+  },
+  {
+   "type": "carreta_1",
+   "x": 3.5,
+   "y": 13.0
+  },
+  {
+   "type": "carreta_0",
+   "x": 9.0,
+   "y": 1.0
+  },
+  {
+   "type": "carreta_1",
+   "x": 11.5,
+   "y": 1.0
+  },
+  {
+   "type": "rail_bent",
+   "x": 31.2,
+   "y": 41.3
+  },
+  {
+   "type": "rail_bent",
+   "x": 27.2,
+   "y": 44.2
+  },
+  {
+   "type": "tie",
+   "x": 25.6,
+   "y": 46.0
+  },
+  {
+   "type": "tie",
+   "x": 32.2,
+   "y": 44.6
+  },
+  {
+   "type": "tie",
+   "x": 23.8,
+   "y": 43.0
+  },
+  {
+   "type": "tie",
+   "x": 33.6,
+   "y": 42.6
+  },
+  {
+   "type": "coal",
+   "x": 31.6,
+   "y": 27.2
+  },
+  {
+   "type": "wheelset",
+   "x": 34.8,
+   "y": 22.8
+  },
+  {
+   "type": "crate",
+   "x": 32.6,
+   "y": 14.0,
+   "worn": 2
+  },
+  {
+   "type": "crate",
+   "x": 33.2,
+   "y": 15.0,
+   "worn": 1
+  },
+  {
+   "type": "barrel",
+   "x": 33.8,
+   "y": 13.6,
+   "worn": 1
+  },
+  {
+   "type": "telegraph_down",
+   "x": 23.9,
+   "y": 33.0
+  },
+  {
+   "type": "wagon_over",
+   "x": 34.6,
+   "y": 19.8
+  },
+  {
+   "type": "upturned_s",
+   "x": 35.2,
+   "y": 7.0
+  },
+  {
+   "type": "upturned_e",
+   "x": 34.4,
+   "y": 10.2,
+   "worn": 1
+  },
+  {
+   "type": "sacks",
+   "x": 33.4,
+   "y": 4.0
+  },
+  {
+   "type": "sacks",
+   "x": 36.2,
+   "y": 23.6
+  },
+  {
+   "type": "barrel",
+   "x": 36.4,
+   "y": 12.4
+  },
+  {
+   "type": "crate",
+   "x": 36.8,
+   "y": 15.6,
+   "worn": 1
+  },
+  {
+   "type": "crate_stack",
+   "x": 35.4,
+   "y": 2.6
+  },
+  {
+   "type": "crate",
+   "x": 26.0,
+   "y": 42.4,
+   "worn": 1
+  },
+  {
+   "type": "crate",
+   "x": 29.0,
+   "y": 46.8,
+   "worn": 2
+  },
+  {
+   "type": "rifle_crate",
+   "x": 22.8,
+   "y": 44.8
+  },
+  {
+   "type": "barrel",
+   "x": 31.8,
+   "y": 46.6,
+   "worn": 1
+  },
+  {
+   "type": "sacks",
+   "x": 34.6,
+   "y": 44.0
+  },
+  {
+   "type": "handcar",
+   "x": 32.6,
+   "y": 48.6
+  },
+  {
+   "type": "crate_stack",
+   "x": 35.8,
+   "y": 47.0
+  },
+  {
+   "type": "telegraph",
+   "x": 24.8,
+   "y": 3.0
+  },
+  {
+   "type": "telegraph",
+   "x": 24.8,
+   "y": 10.0
+  },
+  {
+   "type": "telegraph",
+   "x": 24.8,
+   "y": 17.0
+  },
+  {
+   "type": "telegraph",
+   "x": 24.8,
+   "y": 24.0
+  },
+  {
+   "type": "telegraph_cut_s",
+   "x": 24.8,
+   "y": 31.0
+  },
+  {
+   "type": "telegraph_cut_n",
+   "x": 24.8,
+   "y": 45.0
+  },
+  {
+   "type": "telegraph",
+   "x": 24.8,
+   "y": 52.0
+  },
+  {
+   "type": "telegraph",
+   "x": 24.8,
+   "y": 59.0
+  },
+  {
+   "type": "rock",
+   "x": 46.0,
+   "y": 22.0
+  },
+  {
+   "type": "rock_b",
+   "x": 47.2,
+   "y": 23.4
+  },
+  {
+   "type": "rock",
+   "x": 52.0,
+   "y": 34.0
+  },
+  {
+   "type": "rock_b",
+   "x": 44.4,
+   "y": 30.6
+  },
+  {
+   "type": "rock",
+   "x": 42.6,
+   "y": 47.0
+  },
+  {
+   "type": "rock_b",
+   "x": 50.0,
+   "y": 44.0
+  },
+  {
+   "type": "rock",
+   "x": 36.0,
+   "y": 53.0
+  },
+  {
+   "type": "rock_b",
+   "x": 26.0,
+   "y": 55.0
+  },
+  {
+   "type": "rock",
+   "x": 56.4,
+   "y": 50.4
+  },
+  {
+   "type": "rock",
+   "x": 58.0,
+   "y": 26.0
+  },
+  {
+   "type": "rock_b",
+   "x": 48.0,
+   "y": 12.0
+  },
+  {
+   "type": "rock",
+   "x": 44.0,
+   "y": 59.0
+  },
+  {
+   "type": "rock",
+   "x": 17.0,
+   "y": 48.0
+  },
+  {
+   "type": "rock_b",
+   "x": 54.0,
+   "y": 8.0
+  },
+  {
+   "type": "rock_c",
+   "x": 52.0,
+   "y": 20.0
+  },
+  {
+   "type": "rock_c",
+   "x": 47.0,
+   "y": 28.0
+  },
+  {
+   "type": "rock_c",
+   "x": 20.0,
+   "y": 50.0
+  },
+  {
+   "type": "rock_c",
+   "x": 40.4,
+   "y": 24.6
+  },
+  {
+   "type": "rock_b",
+   "x": 38.6,
+   "y": 29.0
+  },
+  {
+   "type": "cactus",
+   "x": 50.0,
+   "y": 27.0
+  },
+  {
+   "type": "cactus",
+   "x": 61.6,
+   "y": 33.6
+  },
+  {
+   "type": "cactus",
+   "x": 40.0,
+   "y": 57.0
+  },
+  {
+   "type": "cactus",
+   "x": 31.0,
+   "y": 59.0
+  },
+  {
+   "type": "cactus",
+   "x": 56.0,
+   "y": 16.0
+  },
+  {
+   "type": "cactus",
+   "x": 12.0,
+   "y": 40.0
+  },
+  {
+   "type": "cactus",
+   "x": 6.0,
+   "y": 52.0
+  },
+  {
+   "type": "cactus",
+   "x": 18.0,
+   "y": 6.0
+  },
+  {
+   "type": "agave",
+   "x": 44.4,
+   "y": 41.6
+  },
+  {
+   "type": "agave",
+   "x": 47.0,
+   "y": 51.0
+  },
+  {
+   "type": "agave",
+   "x": 55.0,
+   "y": 42.0
+  },
+  {
+   "type": "agave",
+   "x": 39.0,
+   "y": 45.0
+  },
+  {
+   "type": "agave",
+   "x": 60.0,
+   "y": 20.0
+  },
+  {
+   "type": "agave",
+   "x": 52.0,
+   "y": 58.0
+  },
+  {
+   "type": "agave",
+   "x": 34.0,
+   "y": 49.0
+  },
+  {
+   "type": "agave",
+   "x": 41.0,
+   "y": 18.0
+  },
+  {
+   "type": "agave",
+   "x": 20.0,
+   "y": 36.0
+  },
+  {
+   "type": "agave",
+   "x": 10.0,
+   "y": 30.0
+  },
+  {
+   "type": "agave",
+   "x": 15.0,
+   "y": 10.0
+  },
+  {
+   "type": "agave",
+   "x": 6.0,
+   "y": 40.0
+  },
+  {
+   "type": "sandbags_y",
+   "x": 41.2,
+   "y": 32.6
+  },
+  {
+   "type": "rock_c",
+   "x": 43.0,
+   "y": 39.2
+  },
+  {
+   "type": "crate",
+   "x": 45.0,
+   "y": 34.0,
+   "worn": 1
+  },
+  {
+   "type": "sandbags_x",
+   "x": 47.0,
+   "y": 39.0
+  },
+  {
+   "type": "rock",
+   "x": 49.0,
+   "y": 33.2
+  },
+  {
+   "type": "rifle_crates",
+   "x": 51.0,
+   "y": 39.6
+  },
+  {
+   "type": "sandbags_y",
+   "x": 54.4,
+   "y": 33.0
+  },
+  {
+   "type": "rock_c",
+   "x": 56.0,
+   "y": 39.4
+  },
+  {
+   "type": "wagon_over",
+   "x": 58.0,
+   "y": 32.4
+  },
+  {
+   "type": "crate_stack",
+   "x": 60.6,
+   "y": 40.6
+  },
+  {
+   "type": "sacks",
+   "x": 45.4,
+   "y": 40.8
+  },
+  {
+   "type": "sandbags_x",
+   "x": 37.6,
+   "y": 45.0
+  },
+  {
+   "type": "rock_c",
+   "x": 40.6,
+   "y": 50.0
+  },
+  {
+   "type": "sandbags_x",
+   "x": 33.0,
+   "y": 53.2
+  },
+  {
+   "type": "crate_stack",
+   "x": 38.4,
+   "y": 58.4
+  },
+  {
+   "type": "rock_b",
+   "x": 35.0,
+   "y": 60.4
+  },
+  {
+   "type": "wagon_over",
+   "x": 42.0,
+   "y": 55.0
+  },
+  {
+   "type": "sandbags_y",
+   "x": 45.0,
+   "y": 44.6
+  }
+ ],
+ "player": {
+  "x": 34.6,
+  "y": 35.6
+ },
+ "enemies": [],
+ "civilians": [],
+ "dead": [
+  {
+   "template": "shirt",
+   "x": 25.6,
+   "y": 29.4,
+   "facing": 200,
+   "death": "death_back",
+   "palette": {
+    "shirt": [
+     92,
+     104,
+     132
+    ],
+    "trousers": [
+     70,
+     80,
+     110
+    ],
+    "hat": [
+     60,
+     66,
+     84
+    ],
+    "band": [
+     40,
+     40,
+     44
+    ],
+    "boots": [
+     50,
+     38,
+     30
+    ],
+    "skin": [
+     196,
+     150,
+     112
+    ],
+    "hair": [
+     90,
+     70,
+     50
+    ]
+   }
+  },
+  {
+   "template": "shirt",
+   "x": 22.4,
+   "y": 34.6,
+   "facing": 120,
+   "death": "death_slump",
+   "palette": {
+    "shirt": [
+     150,
+     140,
+     120
+    ],
+    "trousers": [
+     70,
+     80,
+     110
+    ],
+    "hat": [
+     90,
+     84,
+     70
+    ],
+    "band": [
+     40,
+     40,
+     44
+    ],
+    "boots": [
+     50,
+     38,
+     30
+    ],
+    "skin": [
+     176,
+     126,
+     92
+    ],
+    "hair": [
+     40,
+     30,
+     24
+    ]
+   }
+  },
+  {
+   "template": "duster_bowler",
+   "x": 32.0,
+   "y": 17.8,
+   "facing": 0,
+   "death": "death_knees",
+   "palette": {
+    "coat": [
+     96,
+     84,
+     66
+    ],
+    "shirt": [
+     190,
+     180,
+     160
+    ],
+    "trousers": [
+     64,
+     60,
+     58
+    ],
+    "hat": [
+     44,
+     40,
+     38
+    ],
+    "boots": [
+     40,
+     32,
+     26
+    ],
+    "skin": [
+     200,
+     150,
+     110
+    ],
+    "hair": [
+     70,
+     50,
+     34
+    ]
+   }
+  },
+  {
+   "template": "duster_bowler",
+   "x": 37.7,
+   "y": 21.4,
+   "facing": 330,
+   "death": "death_back",
+   "palette": {
+    "coat": [
+     70,
+     66,
+     60
+    ],
+    "shirt": [
+     170,
+     160,
+     140
+    ],
+    "trousers": [
+     90,
+     76,
+     60
+    ],
+    "hat": [
+     60,
+     50,
+     40
+    ],
+    "boots": [
+     40,
+     32,
+     26
+    ],
+    "skin": [
+     190,
+     140,
+     100
+    ],
+    "hair": [
+     120,
+     90,
+     60
+    ]
+   }
+  },
+  {
+   "template": "vest",
+   "x": 31.8,
+   "y": 11.4,
+   "facing": 30,
+   "death": "death_spin",
+   "palette": {
+    "vest": [
+     60,
+     56,
+     50
+    ],
+    "shirt": [
+     200,
+     196,
+     180
+    ],
+    "trousers": [
+     70,
+     74,
+     96
+    ],
+    "hat": [
+     100,
+     84,
+     60
+    ],
+    "band": [
+     40,
+     34,
+     30
+    ],
+    "boots": [
+     50,
+     36,
+     28
+    ],
+    "skin": [
+     186,
+     130,
+     92
+    ],
+    "hair": [
+     40,
+     30,
+     24
+    ]
+   }
+  },
+  {
+   "template": "vest",
+   "x": 27.0,
+   "y": 15.8,
+   "facing": 160,
+   "death": "death_slump",
+   "palette": {
+    "vest": [
+     110,
+     60,
+     44
+    ],
+    "shirt": [
+     180,
+     170,
+     150
+    ],
+    "trousers": [
+     86,
+     70,
+     56
+    ],
+    "hat": [
+     70,
+     60,
+     50
+    ],
+    "band": [
+     150,
+     120,
+     70
+    ],
+    "boots": [
+     50,
+     36,
+     28
+    ],
+    "skin": [
+     206,
+     156,
+     120
+    ],
+    "hair": [
+     150,
+     110,
+     60
+    ]
+   }
+  }
+ ],
+ "pickups": [
+  {
+   "kind": "dynamite",
+   "x": 33.6,
+   "y": 34.6
+  },
+  {
+   "kind": "dynamite",
+   "x": 35.8,
+   "y": 32.4
+  },
+  {
+   "kind": "dynamite",
+   "x": 24.2,
+   "y": 38.6
+  }
+ ],
+ "smoke": [
+  {
+   "x": 31.4,
+   "y": 14.6,
+   "dark": true
+  },
+  {
+   "x": 31.4,
+   "y": 17.2,
+   "dark": true
+  },
+  {
+   "x": 30.2,
+   "y": 33.6,
+   "dark": false
+  }
+ ],
+ "mg": [
+  36.3,
+  39.3
+ ],
+ "holdouts": [],
+ "entries": [
+  {
+   "name": "east road",
+   "x": 63.3,
+   "y": 36.9
+  },
+  {
+   "name": "north-east",
+   "x": 63.3,
+   "y": 22.0
+  },
+  {
+   "name": "south-east",
+   "x": 63.3,
+   "y": 46.0
+  },
+  {
+   "name": "south",
+   "x": 44.0,
+   "y": 63.3
+  },
+  {
+   "name": "line south",
+   "x": 31.5,
+   "y": 63.3
+  }
+ ],
+ "center": {
+  "x": 34.0,
+  "y": 35.0
+ },
+ "posse": false
+}

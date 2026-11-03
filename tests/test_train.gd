@@ -1,0 +1,113 @@
+extends SceneTree
+## Paso Esperanza, the stopped train (so far the place only, nobody there):
+##   map     - the train is there, its long things in pieces that fade as one
+##             (each boxcar, the tender, the engine), the boxcars' doors open on both
+##             sides; the dead lie where they fell (scenery: nothing hits them);
+##             three sticks of dynamite in the breastwork, smoke going up.
+##   ways    - from the breastwork the stranger can get under the engine's nose to
+##             the west pocket, up to the post by the tender, round to the
+##             revolution's side of the line, out to each of the wagons, to the far
+##             end of the train and down the east road.
+##   quiet   - with nobody there it isn't won (or lost): it just goes on.
+##   sticks  - he picks a stick up, but only one at a time.
+##   godot --headless --path . --fixed-fps 60 -s tests/test_train.gd
+
+var game: Node
+var frame := 0
+var failures := 0
+var step := ""
+var t := 0.0
+
+
+func _initialize() -> void:
+	Engine.set_meta("fixed_seed", true)
+	Engine.set_meta("level", "train")
+	seed(5)
+	game = load("res://scenes/main.tscn").instantiate()
+	root.add_child(game)
+
+
+func check(cond: bool, msg: String) -> void:
+	if not cond:
+		failures += 1
+		print("FAIL: [%s] %s" % [step, msg])
+
+
+func _reaches(a: Vector2, b: Vector2) -> bool:
+	var path: PackedVector2Array = game.find_path(Iso.to_screen(a), Iso.to_screen(b))
+	return path.size() > 0 and path[path.size() - 1].distance_to(Iso.to_screen(b)) < 20.0
+
+
+func _map() -> void:
+	step = "map"
+	check(game.enemies.is_empty() and game.civilians.is_empty(), "somebody's there: %d, %d" % [game.enemies.size(), game.civilians.size()])
+	var groups := {}
+	for b in game.buildings:
+		groups[b["group"]] = groups.get(b["group"], 0) + 1
+	var sizes := groups.values()
+	sizes.sort()
+	check(sizes.count(3) == 3 and sizes.count(2) == 1, "the fading pieces: %s" % [sizes])   # two boxcars and the engine; the tender
+	for i in 3:
+		check((game.meta["objects"]["boxcar_a_%d" % i]["doors"] as Array).size() == (2 if i == 1 else 0),
+			"boxcar_a_%d doors: %s" % [i, game.meta["objects"]["boxcar_a_%d" % i]["doors"]])
+	var dead := 0
+	var smoke := 0
+	var sticks := 0
+	for n in game.world.get_children():
+		if n is Corpse:
+			dead += 1
+			check(not n.alive and n.collision_layer == 0 and n.hurtbox.collision_layer == 0, "a body that can be hit")
+		if n is Pickup and n.kind == "dynamite":
+			sticks += 1
+	for n in game.get_children():
+		if n is Smoulder:
+			smoke += 1
+	check(dead == 6, "%d dead" % dead)
+	check(sticks == 3, "%d sticks" % sticks)
+	check(smoke == 3, "%d smoke" % smoke)
+	check(game.director == null, "a director with nothing to direct")
+
+
+func _ways() -> void:
+	step = "ways"
+	var start := Vector2(game.level["player"]["x"], game.level["player"]["y"])
+	for to in [Vector2(20.0, 21.0), Vector2(7.0, 27.0), Vector2(7.0, 14.0), Vector2(14.0, 3.0), Vector2(30.0, 0.5),
+			Vector2(27.0, 9.0), Vector2(45.0, 50.0), Vector2(24.2, 38.6), Vector2(34.0, 25.4), Vector2(62.0, 36.9)]:
+		check(_reaches(start, to), "no way from the breastwork to %s" % to)
+
+
+func _process(delta: float) -> bool:
+	frame += 1
+	if frame == 3:
+		_map()
+		_ways()
+		game.begin()
+	if frame <= 3:
+		return false
+	t += delta
+	if t < 20.0:
+		return false
+	step = "quiet"
+	check(game.state == "play", "it ended by itself: %s" % game.state)
+	if game.player.sticks == 0 and t < 30.0:
+		step = "sticks"
+		for n in game.world.get_children():
+			if n is Pickup and n.kind == "dynamite":
+				game.player.global_position = n.global_position
+				break
+		return false
+	if t < 31.0:
+		return false
+	step = "sticks"
+	check(game.player.sticks == 1, "%d sticks on him" % game.player.sticks)
+	var left := 0
+	for n in game.world.get_children():
+		if n is Pickup and n.kind == "dynamite":
+			left += 1
+			game.player.global_position = n.global_position   # (walk over another: he can't carry it)
+	if t < 32.0:
+		return false
+	check(game.player.sticks == 1 and left == 2, "%d on him, %d left lying" % [game.player.sticks, left])
+	print("train test: %s" % ("OK" if failures == 0 else "%d FAILURES" % failures))
+	quit(failures)
+	return true
