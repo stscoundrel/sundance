@@ -42,12 +42,13 @@ const DRAG_SMEAR := 9.0     # px between smears
 const CROUCH_WALK := 22.0
 # The last stand: once a level, the shot that would have killed him puts him down in
 # the dirt instead, propped on an elbow with a revolver (his Colt, or one from his
-# boot), unable to move. A bandage gets him up; otherwise he shoots till he bleeds
-# out or they finish him, and if the last of them falls first, he's won.
+# boot), unable to move but for dragging himself round on the elbow. A bandage gets
+# him up, and so does dropping three of them from the dirt; otherwise he shoots till
+# he bleeds out or they finish him, and if the last of them falls first, he's won.
 const STAND_BLEED := 25.0     # s before he bleeds out
 const STAND_BANDAGE_T := 5.0  # s to bind it lying there, gun down
-const STAND_ARC := 1.05       # rad either side of the way he fell: as far as he can turn the gun
-const STAND_TURN := 1.6       # rad/s he can swing it round
+const STAND_TURN := 2.5       # rad/s he can swing round: a man behind him takes over a second to face
+const STAND_RISE := 3         # men dropped from the dirt, and he's up on nerve alone
 const STAND_SLOW := 1.5       # one-handed, flat on his back: everything takes this much longer
 const STAND_GUN_H := 6.0      # px: the gun's height off the dirt
 const BOOT_GUNS := ["colt", "schofield", "navy"]
@@ -85,6 +86,7 @@ var medic: Civilian            # the barber-surgeon binding him up, while he kee
 var stand_used := false        # (once a level)
 var down_t := 0.0              # bleeding out
 var lie_facing := Vector2.RIGHT   # the way his boots point, lying there
+var dirt_drops := 0            # men he's dropped this last stand
 var held_before := ""          # the gun he had in hand when he fell
 var boot: Weapon = null        # the revolver from his boot, if he had no Colt
 var _bot_down_t := 0.0
@@ -634,6 +636,7 @@ func _go_down(from_dir: Vector2, shooter: Actor) -> void:
 	weapon.abort()
 	weapon.fanning = false
 	held_before = current
+	dirt_drops = 0
 	if "colt" in owned:   # (his revolver, or whatever pistol he's taken up in its place)
 		switch_to("colt")
 		switch_t = 0.0
@@ -677,7 +680,7 @@ func _down_tick(delta: float) -> void:
 		return
 	if (_death.ends_with("gasp_rise") or _death.ends_with("gasp_fire")) and not dying():
 		_pose_stand("gasp_aim")
-	# the gun swung round, slowly, as far as he can turn lying there
+	# the gun swung round, slowly, and him with it on his elbow
 	var want := facing
 	if game._args.has("bot"):
 		var near := _bot_target()
@@ -690,13 +693,7 @@ func _down_tick(delta: float) -> void:
 		aim_dist = global_position.distance_to(target)
 		if aim_dist > 3.0:
 			want = (target - global_position).normalized()
-	var off := clampf(lie_facing.angle_to(want), -STAND_ARC, STAND_ARC)
-	var now := lie_facing.angle_to(facing)
-	var d8 := Iso.dir8(facing)
-	facing = lie_facing.rotated(move_toward(now, off, STAND_TURN * delta))
-	if Iso.dir8(facing) != d8:
-		lie_dir = -1
-		_lay_hurtbox()
+	swing_to(want, delta)
 	bloom = max(0.0, bloom - delta * 2.0)
 	if not playing or _death.ends_with("gasp_rise"):
 		return
@@ -716,6 +713,33 @@ func _down_tick(delta: float) -> void:
 		weapon.trigger()
 
 
+## Round towards where he wants the gun, as fast as a man can drag himself on one
+## elbow: his boots follow, and so does the length of him a bullet can find.
+func swing_to(want: Vector2, delta: float) -> void:
+	var d8 := Iso.dir8(facing)
+	var turn := clampf(facing.angle_to(want), -STAND_TURN * delta, STAND_TURN * delta)
+	facing = facing.rotated(turn)
+	lie_facing = facing
+	if Iso.dir8(facing) != d8:
+		lie_dir = -1
+		_lay_hurtbox()
+
+
+## Another of them dropped from the dirt: the third and he's getting up, still
+## bleeding, on nothing but nerve (his bandage kept for later).
+func dropped_one() -> void:
+	dirt_drops += 1
+	if dirt_drops == STAND_RISE:
+		_rise.call_deferred()   # (after the rest of this moment: if it was the last of them, it's a win)
+
+
+func _rise() -> void:
+	if not down or not alive or game.state != "play":
+		return
+	_get_up(false, true)
+	game.on_player_rise()
+
+
 ## The barber-surgeon's done with him: whole again, the bleeding and the limp
 ## stopped, and up out of the dirt if that's where he was (his own bandage kept).
 func patched_up() -> void:
@@ -730,15 +754,16 @@ func patched_up() -> void:
 	game.stats["patched up"] = game.stats.get("patched up", 0) + 1
 
 
-## Bound up: back on his feet, one bar of him left and a limp, the gun he had.
-func _get_up(own := true) -> void:
+## Bound up: back on his feet, one bar of him left and a limp, the gun he had (still
+## bleeding if it was nerve that got him up, not a bandage).
+func _get_up(own := true, nerve := false) -> void:
 	down = false
 	propped = false
 	bandage_t = -1.0
 	if own:
 		bandages -= 1
 	hp = 1
-	bleeding = false
+	bleeding = nerve
 	limp_t = 6.0
 	weapon.slow = 1.0
 	boot = null
@@ -748,7 +773,8 @@ func _get_up(own := true) -> void:
 	_layers.erase("full")
 	legs_spr.visible = true
 	_stand_hurtbox()
-	game.hud.toast("Back on your feet")
+	if not nerve:
+		game.hud.toast("Back on your feet")
 	game.stats["got up"] = game.stats.get("got up", 0) + 1
 
 

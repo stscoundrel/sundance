@@ -1323,8 +1323,8 @@ func _run_for_help(delta: float) -> void:
 			enter_combat(game.seen_pos, false, false)
 
 
-func say_line(key: String, stock: Array) -> void:
-	_say(_line(key, stock))
+func say_line(key: String, stock: Array, dice: RandomNumberGenerator = null) -> void:
+	_say(_line(key, stock, dice))
 
 
 func _combat(delta: float) -> void:
@@ -2411,10 +2411,10 @@ func _draw_sidearm() -> void:
 
 
 ## A shouted line: his type's own if it has them, else the stock ones.
-func _line(key: String, stock: Array) -> String:
+func _line(key: String, stock: Array, dice: RandomNumberGenerator = null) -> String:
 	var own: Dictionary = tdata.get("shouts", {})
 	var lines: Array = own.get(key, stock)
-	return lines.pick_random()
+	return lines[dice.randi() % lines.size()] if dice else lines.pick_random()
 
 
 static func _v2(a: Array) -> Vector2:

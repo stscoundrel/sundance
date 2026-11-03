@@ -108,6 +108,7 @@ const BANDAGE_DROP := 0.2     # chance a dead man leaves a bandage he hadn't use
 const STICK_DROP := 0.5       # and the dynamite he hadn't thrown
 var loot_rng := RandomNumberGenerator.new()
 var litter_rng := RandomNumberGenerator.new()   # (how last night's bottles lie)
+var rise_rng := RandomNumberGenerator.new()     # (what they say when he gets up out of the dirt)
 var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
 # Blood trails: every drop a wounded man leaves. The gang can follow the stranger's.
 const TRAIL_FRESH := 45.0   # s a drop stays a lead worth following
@@ -203,6 +204,7 @@ func _ready() -> void:
 		Wounds.rng.randomize()
 		Civilian.rng.randomize()
 		litter_rng.randomize()
+		rise_rng.randomize()
 		Hanging.rng.randomize()
 		Captive.rng.randomize()
 	else:
@@ -219,6 +221,7 @@ func _ready() -> void:
 		Wounds.rng.seed = 41
 		Civilian.rng.seed = 43
 		litter_rng.seed = 47
+		rise_rng.seed = 61
 		Hanging.rng.seed = 53
 		Captive.rng.seed = 59
 	_parse_args()
@@ -1812,6 +1815,7 @@ func _on_enemy_died(e: Actor) -> void:
 		stats["his kills"] = stats.get("his kills", 0) + 1
 		if player.down:   # from the dirt: and a man coming to finish him, or an officer, is a blow to them
 			stats["kills while down"] = stats.get("kills while down", 0) + 1
+			player.dropped_one()
 			if e is Enemy and (e.finishing or e.rank >= 2):
 				for o in enemies:
 					if o.alive and o.global_position.distance_to(e.global_position) < 200.0:
@@ -1862,7 +1866,7 @@ func _tally() -> String:
 	var n: int = stats.get("his kills", 0)
 	var line := "%d of the gang by your hand" % n if n > 0 else "not one of the gang by your hand"
 	if stats.get("kills while down", 0) > 0:
-		line += " (%d from the dirt)" % stats["kills while down"]
+		line += " (%d from the dirt%s)" % [stats["kills while down"], ", and up again" if stats.has("rose from the dirt") else ""]
 	return line + "   -   " + (hanging.line() if hanging else "") + (captive.line() if captive else "") \
 		+ _innocents_line() + _padre_line()
 
@@ -1915,7 +1919,7 @@ func on_player_down(shooter: Actor) -> void:
 	Engine.time_scale = 0.5
 	down_slow = 0.6
 	heart_t = 0.8
-	hud.toast("Down! Shoot from the dirt, or B to bandage")
+	hud.toast("Down! Drop three from the dirt, or B to bandage")
 	var caller: Enemy = null
 	for e in enemies:
 		if e.alive and e.revealed and line_of_sight(e.global_position, player.global_position, false) and \
@@ -1924,6 +1928,24 @@ func on_player_down(shooter: Actor) -> void:
 	if caller:
 		caller.say_line("down", ["¡Ya cayó!", "He's down!", "¡Lo tenemos!", "Finish him!"])
 	call_finishers()
+
+
+## Up out of the dirt with three of them lying round him: anyone who sees it loses
+## his nerve a little, and the nearest says what they're all thinking.
+func on_player_rise() -> void:
+	stats["rose from the dirt"] = 1
+	hud.toast("Up from the dirt")
+	add_shake(3.0)
+	sfx("sting", null, -4.0, 0.0, rise_rng)
+	var caller: Enemy = null
+	for e in enemies:
+		e.finishing = false
+		if e.alive and line_of_sight(e.global_position, player.global_position, false):
+			e.shaken = minf(1.0, e.shaken + 0.5)
+			if caller == null or e.global_position.distance_to(player.global_position) < caller.global_position.distance_to(player.global_position):
+				caller = e
+	if caller:
+		caller.say_line("rise", ["¡No se muere!", "He's getting up!", "¡Es el diablo!", "Madre de Dios..."], rise_rng)
 
 
 ## The bold ones who can see him lying there walk up to finish it (no more than a

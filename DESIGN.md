@@ -251,21 +251,28 @@ tearing cloth can be heard close by.
 kill him puts him down instead (not the heart of a blast, nor a scattergun at arm's
 length): the moment slows, a sting, and the colour starts going out of it. He lies
 propped on an elbow, boots towards whoever dropped him, in the same poses as the
-gang's last gasp, with one bar left. He can't move; he can swing the gun about 60
-degrees either way, slowly. It's his Colt if he rode in with one; if not, a revolver
+gang's last gasp, with one bar left. He can't move, but he can drag himself round
+on his elbow to face any way, boots and all (2.5 rad/s: a man behind him takes over
+a second to face; flanked still costs him). It's his Colt if he rode in with one; if not, a revolver
 comes out of his boot (a Colt, a Schofield or a Navy, loaded). Everything takes half as long again
 one-handed in the dirt (no fanning), and lying flat he's a small target: his hurtbox
 lies along him, and he counts as crouched, so low cover stops everything. A heartbeat
 slows and the screen greys as he bleeds; "BLEEDING OUT" drains in 25 s. The only way
 up is a bandage (B, 5 s lying flat with the gun down; fire breaks it off): up he gets
-with one bar, a limp and the gun he had. With none, he shoots till he bleeds out or
+with one bar, a limp and the gun he had. Or nerve: drop three of them from the dirt
+(killed or downed, his rounds or a keg he set off; counted by three notches by the
+bleed bar) and he gets up the same, but still bleeding, his bandage kept for later.
+Anyone who sees him rise is shaken (+0.5), those walking up to finish him stop, and
+the nearest says so ("¡No se muere!"); it has its own dice (`rise_rng`). If the third
+was the last of the gang, it's simply the win. With none, he shoots till he bleeds out or
 they finish him; and if the last of them falls first, it's a win ("FROM THE DIRT").
 The gang calls it ("¡Ya cayó!"), and the bold ones in sight walk up to finish him
 (`"finish"` per type: El Jefe, El General and the gunslinger always, the hillbilly,
 coronel and pistolero often; no more than two at once, rechecked every 3 s): no
 running, no cover, then a round into him from close. That's when a man lying there
 with a pistol is most use: dropping one of them, or an officer, from the dirt shakes
-the men round him.
+the men round him, and they're the likeliest three to get him up. The end card
+says "(3 from the dirt, and up again)".
 
 **Blood trails**. Any wounded man bleeds till he's bandaged: a drop in the dirt
 every few steps, and now and then where he stands. A bandit who comes across

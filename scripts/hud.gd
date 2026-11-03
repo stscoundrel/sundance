@@ -195,6 +195,12 @@ func _draw_status(p: Player) -> void:
 		_text(Vector2(54, 338), "BLEEDING OUT", 8, Color(1, 0.35, 0.25, pulse))
 		draw_rect(Rect2(116, 332, 40, 5), Color(0.1, 0.06, 0.05, 0.85))
 		draw_rect(Rect2(117, 333, 38 * left, 3), Color(0.75, 0.12, 0.08))
+		# and a notch for each man dropped from the dirt: three and he's up
+		for i in Player.STAND_RISE:
+			var r := Rect2(162 + i * 8, 332, 5, 5)
+			draw_rect(r, Color(0.1, 0.06, 0.05, 0.85))
+			if i < p.dirt_drops:
+				draw_rect(r.grow(-1), Color(0.92, 0.9, 0.84))
 	elif p.crouched:
 		_text(Vector2(54, 338), "CROUCHED", 8, INK)
 	var n: int = game.alive_enemies()
