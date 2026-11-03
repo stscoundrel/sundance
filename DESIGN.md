@@ -251,7 +251,12 @@ on the revolution's side looking up the west of the train at the cargo, for thos
 who get past the train after it; and a post of crates and sandbags by the tender
 looks north up the cars' east side. Three sticks of dynamite lie about it (the
 map's `"pickups"`: one on him at a time, as ever), one in the west pocket. The
-telegraph runs down the west side, cut either side of the pole they felled. The
+telegraph runs down the west side, cut either side of the pole they felled. Once the
+gun's done, there's somewhere to fall back to: the corner where the tender meets the
+engine's cab on the train's far side, bags to its north and west (the way the
+flankers come), the cars at his back and the engine on his flank; from the gun it's
+along the back of the front, under the engine's nose and up her far flank, the
+engine between him and the army all the way. The
 train's dead lie where they fell (the map's `"dead"`, `scripts/corpse.gd`: a body
 template and palette, drawn from the last frame of a death, a pool under it;
 scenery, nothing to hit, haul or bury): the engineer and his fireman by the cab,
@@ -315,7 +320,9 @@ but heavy, 120 a piece, so forty rifle rounds; at first they were 30, and a comp
 had them gone in seconds). The front's timbers are cleared out of its way, and
 nothing of the ambush's is left in close to the south of it (a breastwork of
 sandbags six tiles out took the gun's rounds meant for the men coming up from
-there). The army's spots are all in front of it now (they used to include the
+there; the big boulder on the east road, seven tiles out, hid a wedge of the road
+from it, and is further down the road now; the crates out there it just shoots
+through). The army's spots are all in front of it now (they used to include the
 tender's, behind it, and from there they shot him in the back). The stranger gets on it with E
 from his place behind it ("[E] the Colt-Browning", and how many in the belt), and
 off again with E or a step any way; on it he can't move, and the gun goes where

@@ -55,6 +55,10 @@ DEFENCES = [
     ("crate", 22.7, 36.8),
     # the post by the tender
     ("crate_stack", 32.6, 26.2), ("sandbags_x", 34.4, 26.4), ("barrel", 36.7, 26.6),
+    # and somewhere to fall back to once the gun's done: the corner where the tender
+    # meets the engine, on the train's far side, the cars at his back and the engine
+    # on his flank; bags to the north and the west, the way the flankers come
+    ("sandbags_x", 25.4, 27.0), ("sandbags_y", 24.6, 27.8), ("crate", 27.8, 27.0), ("rifle_crate", 26.2, 28.4),
 ]
 MG_SPOT = [36.3, 39.3]   # the Colt-Browning, its tripod in the nest's corner; the stranger behind it
 
@@ -163,14 +167,20 @@ SCRUB = [
 # ambush positions along it (sandbags where they lay waiting for the train), rocks,
 # and what the fight scattered: the army will come down it from cover to cover.
 EAST_ROAD = [
-    ("sandbags_y", 41.2, 32.6), ("rock_c", 43.0, 39.2), ("crate", 45.0, 34.0), ("sandbags_x", 47.0, 39.0),
+    ("sandbags_y", 41.2, 32.6), ("crate", 45.0, 34.0), ("sandbags_x", 47.0, 39.0),
     ("rock", 49.0, 33.2), ("rifle_crates", 51.0, 39.6), ("sandbags_y", 54.4, 33.0), ("rock_c", 56.0, 39.4),
     ("wagon_over", 58.0, 32.4), ("crate_stack", 60.6, 40.6), ("sacks", 45.4, 40.8),
+    ("rock_c", 52.6, 41.0),   # (the big boulder: out here it doesn't hide a wedge of the road from the gun)
+    # crates thrown about by the fight, the nearer ones good for nothing much against the gun
+    ("crate", 43.2, 38.8), ("crate", 44.4, 36.6), ("crate", 46.2, 42.2), ("crate", 50.2, 36.8),
+    ("crate_stack", 53.4, 36.4), ("crate", 57.4, 37.0), ("crate", 42.4, 33.8),
 ]
 # And from the south: more of the same, up to the front.
 SOUTH = [
     ("rock_c", 40.6, 50.0), ("sandbags_x", 33.0, 53.2), ("crate_stack", 38.4, 58.4),
     ("rock_b", 35.0, 60.4), ("wagon_over", 42.0, 55.0), ("sandbags_y", 45.0, 44.6),
+    ("crate", 41.4, 43.6), ("crate", 38.6, 47.4), ("crate", 34.6, 50.2), ("crate_stack", 44.0, 50.6),
+    ("crate", 37.0, 51.6), ("crate", 46.6, 47.0),
 ]
 
 # Shot up in the fight for the train: 1 holed, 2 wrecked.

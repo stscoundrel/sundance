@@ -73,7 +73,7 @@ func _ways() -> void:
 	step = "ways"
 	var start := Vector2(game.level["player"]["x"], game.level["player"]["y"])
 	for to in [Vector2(20.0, 21.0), Vector2(7.0, 27.0), Vector2(7.0, 14.0), Vector2(14.0, 3.0), Vector2(30.0, 0.5),
-			Vector2(27.0, 9.0), Vector2(45.0, 50.0), Vector2(24.2, 38.6), Vector2(34.0, 25.4), Vector2(62.0, 36.9)]:
+			Vector2(27.0, 9.0), Vector2(45.0, 50.0), Vector2(24.2, 38.6), Vector2(34.0, 25.4), Vector2(62.0, 36.9), Vector2(26.6, 29.4)]:
 		check(_reaches(start, to), "no way from the breastwork to %s" % to)
 
 
