@@ -241,6 +241,8 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		anim_gun = "grief"
 	elif digger:
 		anim_gun = "spade"
+	elif condemned:
+		anim_gun = "bound"       # hands tied behind his back
 	home = pos
 	if sister:   # her place is the chapel's own doorstep, on open ground
 		for d in g.doors:
@@ -351,6 +353,8 @@ func set_free(from: Vector2, thanks: String) -> void:
 	bound = false
 	still = false
 	snitch = false
+	anim_gun = ""   # (his hands his own again)
+	pose = ""
 	back_after = INF
 	threat = from
 	_say(thanks)

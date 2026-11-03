@@ -8,7 +8,7 @@
  },
  "levels": [
   {"id": "san_miguel", "name": "San Miguel", "map": "res://data/town.json", "note": "The town as it was drawn: 25 bandits, and a hanging at noon.",
-   "hanging": {"at": 300, "condemned": "peon", "hangman": "redscarf"}},
+   "hanging": {"at": 300, "condemned": "captive", "hangman": "hangman"}},
   {"id": "san_miguel_15", "hidden": true, "name": "San Miguel", "map": "res://data/town.json", "count": 15, "note": "A quieter week: 15 bandits, shuffled."},
   {"id": "san_miguel_25", "hidden": true, "name": "San Miguel", "map": "res://data/town.json", "count": 25, "note": "The whole gang, shuffled: 25 bandits."},
   {"id": "san_miguel_35", "hidden": true, "name": "San Miguel", "map": "res://data/town.json", "count": 35, "note": "Payday: 35 bandits, shuffled."},

@@ -35,6 +35,8 @@
     "sargento":        {"style": "shirt",  "hat": "sombrero", "bandolier": true, "sash": true, "mustache": true, "beard": true},
     "soldadera":       {"style": "dress",  "hat": "sombrero", "female": true, "sleeves": true, "bandolier": true, "shawl": false},
     "coronel":         {"style": "uniform", "hat": "kepi",    "epaulettes": true, "sabre": true, "mustache": true},
+    "hangman":         {"style": "shirt",  "hat": "hood",     "suspenders": true},
+    "captive":         {"style": "shirt",  "hat": "bare",     "bandolier": true, "mustache": true, "holsters": 0},
     "general":         {"style": "uniform", "hat": "cap",     "epaulettes": true, "sabre": true, "medals": true,
                         "sash": true, "cigar": true, "mustache": true}
   },
@@ -87,6 +89,15 @@
       "palettes": [
         {"vest": [82, 60, 46], "shirt": [206, 196, 172], "trousers": [104, 86, 66], "boots": [60, 42, 30],
          "hat": [92, 72, 54], "band": [164, 30, 26], "accent": [172, 30, 26], "skin": [184, 126, 90], "hair": [50, 36, 28]}
+      ]
+    },
+    "hangman": {
+      "finish": 0.6, "name": "Hangman", "gasp": 0.45, "template": "hangman", "loadout": ["colt"], "champion": 0,
+      "range": [40, 130], "nerve": [0.5, 0.9], "flank": 0.2,
+      "shouts": {"spot": ["¡Ahora!", "Drop him!"]},
+      "palettes": [
+        {"shirt": [64, 58, 54], "trousers": [44, 40, 38], "boots": [30, 24, 20],
+         "hat": [22, 20, 20], "band": [22, 20, 20], "skin": [184, 126, 90], "hair": [40, 30, 24]}
       ]
     },
     "cowboy": {
@@ -326,6 +337,9 @@
         "palettes": [
           {"shirt": [226, 220, 204], "trousers": [220, 214, 196], "boots": [110, 80, 54], "hat": [196, 168, 110], "band": [120, 50, 34], "skin": [168, 110, 76], "hair": [30, 24, 20]},
           {"shirt": [214, 206, 186], "trousers": [200, 190, 170], "boots": [100, 72, 48], "hat": [176, 150, 98], "band": [60, 70, 110], "skin": [160, 104, 72], "hair": [36, 28, 22]}]},
+      "captive": {"name": "The condemned man", "template": "captive", "role": "condemned", "snitch": 0,
+        "palettes": [
+          {"shirt": [196, 186, 160], "trousers": [118, 100, 78], "boots": [84, 60, 42], "skin": [170, 112, 78], "hair": [30, 24, 20]}]},
       "townswoman": {"name": "Townswoman", "template": "dress", "nerve": [0.1, 0.8],
         "shouts": {"flee": ["Oh, my Lord!", "¡Mis hijos!", "Help!"], "snitch": ["Over there! He's got a gun!"]},
         "palettes": [

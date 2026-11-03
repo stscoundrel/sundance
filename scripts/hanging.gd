@@ -59,11 +59,11 @@ func setup(g: Node, data: Dictionary) -> void:
 	var fp: Array = g.meta["objects"]["gallows"]["footprint"]
 	trap = Iso.to_screen(corner + Vector2(fp[0], fp[1]) * 0.5)
 	steps = Iso.to_screen(corner + STEPS)
-	hangman = g._add_enemy(data.get("hangman", "redscarf"), Iso.to_screen(corner + POST), PackedVector2Array(), 135.0,
+	hangman = g._add_enemy(data.get("hangman", "hangman"), Iso.to_screen(corner + POST), PackedVector2Array(), 135.0,
 		{"hangman": true})
 	man = Civilian.new()
 	g.world.add_child(man)
-	man.setup(g, data.get("condemned", "peon"), trap, 45.0, {"role": "condemned"})
+	man.setup(g, data.get("condemned", "captive"), trap, 45.0, {"role": "condemned"})
 	hangman.died.connect(_on_hangman_died)
 	man.died.connect(_on_man_died)
 	man.died.connect(g._on_civilian_died)
@@ -168,6 +168,7 @@ func _physics_process(delta: float) -> void:
 		"hanging":
 			kick_t -= delta
 			man.velocity = man.facing * 60.0   # (not going anywhere: his legs, kicking)
+			man.pose = "struggle"
 			if kick_t <= 0.0:
 				_hanged()
 		"hanged":
@@ -219,6 +220,8 @@ func _drop() -> void:
 func _hanged() -> void:
 	state = "hanged"
 	man.velocity = Vector2.ZERO
+	man.pose = "hang"   # his head fallen forward
+	man.update_anim(0.0)
 	man.still = true
 	game.stats["condemned"] = "hanged"
 	if rope:

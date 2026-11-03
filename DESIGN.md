@@ -67,10 +67,13 @@ picker is for trying it: 20 bandits, then 7 or 8 more every 90 s, from two
 roads at a time. `tests/test_waves.gd` runs a quick version in the test yard.
 
 **The hanging** (San Miguel: a level's `"hanging"`, run by `scripts/hanging.gd`).
-The gang has an innocent man up on the plaza's gallows (a peon, noosed, on the
-trap) and they drop him at noon: 300 s in, counted down under the bandit count
-("HANGING AT NOON 4:12"; a banner says so as he rides in). The hangman, a red scarf
-and one more of the gang (26), keeps to the foot of the gallows steps till it's
+The gang has an innocent man up on the plaza's gallows (`captive`: bareheaded,
+they've had his hat; crossed bandoliers, so he could be one of the revolution's or a
+friend of the stranger's; his hands tied behind his back; noosed, on the trap) and
+they drop him at noon: 300 s in, counted down under the bandit count
+("HANGING AT NOON 4:12"; a banner says so as he rides in). The hangman (his own
+type and body, `hangman`: a black hood over his head with holes for the eyes, a dark
+shirt, a Colt; one more of the gang, 26) keeps to the foot of the gallows steps till it's
 done: no running to the fight, no ducking from it (a fright that would send him to
 cover leaves him where he is), nobody sends him to rescue a man or scout. Nine
 seconds without a sight of the stranger and he's out of the fight again, back to
@@ -78,10 +81,10 @@ watching, warier (else the town would never go quiet: the mayor would keep his h
 down for good). The alarm doesn't hurry it; only the stranger in the hangman's own sights
 does, and then he goes for the lever ("¡Ahora!"): two seconds, and a shot in them
 stops it. With the hangman dead nobody drops him, not even at noon, and a banner
-says so ("The hangman's dead! Nobody left to drop him."): he looks like any other
-of the gang (a red scarf beside the bandido already guarding the steps), so the
-stranger might not know which man he'd shot. Once the trap
-goes (the bell, a hole in the platform, his legs kicking down through it) he has
+says so ("The hangman's dead! Nobody left to drop him."), in case the stranger
+didn't see which man fell (the bandido guarding the steps stands beside him). Once the trap
+goes (the bell, a hole in the platform, his legs kicking down through it, straining
+at the rope round his wrists) he has
 seven seconds: a round through the rope (5 px across, from anyone's gun: heights
 don't count, so a round lined up on the rope, or on the man before the drop, flies
 on over the platform's edge where any other stops) parts it and he's down. The stranger's rounds that find the man himself (on the
@@ -95,12 +98,15 @@ round that parts it is spent. Or the knife: hold E at the platform's edge (withi
 50 px of the trap) for a second and he's loose, before the drop or after. Loose, he
 runs down the steps for the nearest building and stays in it. He can be hit as he
 goes (or on the trap: a stray lined up on him), though nobody aims at him. Too late,
-and he hangs there, turning a little on the rope. The end card: "the condemned man:
+and he hangs there, his head fallen forward, turning a little on the rope. The end card: "the condemned man:
 saved", "hanged, you failed him" or "shot dead, you failed him" (alive on the trap
-with the gang all dead counts as saved). The hanged man is his standing frame
-lowered through the trap and clipped at the platform (the palette shader's
-`clip_y`; `Actor.lift` raises a body off its ground point), with no pose of its own
-yet. `tests/test_hanging.gd` plays the rope shot aimed where it's drawn (from the
+with the gang all dead counts as saved). The captive's "bound" pose set
+(in `tools/chars.py`: hands behind his back, rope at the wrists; "struggle" for
+the kicking, "hang" for after) is his upper body; his legs are the walk cycle for
+the kicking. He's lowered through the trap and clipped at the platform (the palette
+shader's `clip_y`; `Actor.lift` raises a body off its ground point). Cut loose, he
+has his hands back (the "unarmed" set). The bound set is meant to serve a prisoner
+tied to a post elsewhere too. `tests/test_hanging.gd` plays the rope shot aimed where it's drawn (from the
 west, north and south), the kicking out, the hangman spotting him early, the hangman
 stopped and the knife, a bandit's stray round, the stranger's round at the man (the
 rope, as far as he's concerned), and the hangman pinned under fire and calming
@@ -846,6 +852,7 @@ generator:
 | Poacher | buckskin, fringe, coonskin cap, beard (2) | Sharps 1874 | sniper: very long range, deadly, slow single-shot reload |
 | Old timer | old cavalry coat, slouch hat, white beard (Union / Confederate) | howdah pistol | 3 HP, slow, unshakeable, "Seen worse at Shiloh!" |
 | Gunslinger | black (or tan) vest, red scarf, flat hat, two holsters (2) | a pair of Colts | bold: walks in shooting, fast, scorns cover, "Draw, stranger!" |
+| Hangman | black hood with eye holes, dark shirt, suspenders | Colt | San Miguel's hanging only: keeps to the gallows steps till the man is dropped |
 | Hillbilly | bib overalls, straw slouch hat, beard (3) | sawn-off | 3 HP, closes in fast, fires on the move, "Git off my land!" |
 
 **Opportunists** (`opportunist`; saloon girls 0.85, with low nerve) shoot while

@@ -72,7 +72,10 @@ def template_guns():
         need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith",
                                   "mayor": "mayor", "carpenter": "carpentry", "sweeper": "broom",
                                   "henwife": "broom", "keeper": "keeper", "sister": "nun",
-                                  "barber": "barber", "visitor": "grief", "digger": "spade"}.get(t.get("role", ""), "unarmed"))
+                                  "barber": "barber", "visitor": "grief", "digger": "spade",
+                                  "condemned": "bound"}.get(t.get("role", ""), "unarmed"))
+        if t.get("role") == "condemned":
+            need(t["template"], "unarmed")   # (and cut loose, running for it)
     # a level's waves may hand their men other guns ("arms"): whoever might walk in
     # with them is baked holding them too
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -472,6 +475,28 @@ def _hat(look, z):
         with look.tag("hair"):
             out += ellipsoid((-0.01, 0, z - 0.06), (0.1, 0.095, 0.05), look.c("hair"))
         return out
+    if kind == "bare":
+        # no hat (they took it off him): a man's own hair, tousled and uncombed
+        def tousled(P, N):
+            c = np.tile(np.array(look.c("hair"), float), (len(P), 1))
+            c *= (0.8 + 0.35 * hash01(np.floor(P[:, 0] * 45), np.floor(P[:, 1] * 45), np.floor(P[:, 2] * 45)))[:, None]
+            return c
+        with look.tag("hair"):
+            out += ellipsoid((-0.012, 0, z - 0.05), (0.1, 0.094, 0.07), tousled, zmin=z - 0.075)
+            out += ellipsoid((-0.06, 0, z - 0.1), (0.06, 0.09, 0.07), tousled)   # down the back of his head
+        return out
+    if kind == "hood":
+        # the hangman's black hood: a sack over the whole head with holes cut for the
+        # eyes, peaked a little on top, its skirt falling over his shoulders
+        with look.tag("hat"):
+            hc = (0.01, 0, z - 0.07)
+            hood = ellipsoid(hc, (0.106, 0.097, 0.124), col)
+            rel = hood.P - np.array(hc)
+            eyes = (rel[:, 0] > 0.05) & (np.abs(np.abs(rel[:, 1]) - 0.035) < 0.022) & (np.abs(rel[:, 2] - 0.012) < 0.02)
+            out += Cloud(hood.P[~eyes], hood.N[~eyes], hood.C[~eyes], hood.S[~eyes])
+            out += frustum((0.0, 0, z + 0.02), (-0.01, 0, z + 0.1), 0.06, 0.012, col)
+            out += frustum((0.0, 0, z - 0.17), (-0.01, 0, z - 0.27), 0.1, 0.17, col, su=0.8, caps=False)
+        return out
     if kind == "none":
         # hair up in a bun, with a flower
         with look.tag("hair"):
@@ -856,6 +881,13 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     if up.get("hanky"):   # a white handkerchief pressed to her eyes
         h = np.array(up["hR"], float)
         m += box(tuple(h + [-0.02, -0.03, -0.04]), tuple(h + [0.03, 0.03, 0.03]), (232, 228, 220))
+    if up.get("bonds"):   # rope round his wrists, tied behind his back
+        hL, hR = np.array(up["hL"], float), np.array(up["hR"], float)
+        rope = (176, 156, 112)
+        for h in (hL, hR):
+            m += ellipsoid(h + [0.0, 0, 0.03], (0.035, 0.035, 0.022), rope)
+        m += beam(hL + [0, 0, 0.03], hR + [0, 0, 0.03], 0.016, rope)
+        m += beam((hL + hR) * 0.5 + [0, 0, 0.03], (hL + hR) * 0.5 + [-0.02, 0, -0.1], 0.01, rope)   # the loose end
     if up.get("tape"):   # the undertaker's tape measure, stretched between his hands
         m += beam(np.array(up["hL"], float), np.array(up["hR"], float), 0.009, (226, 204, 120))
 
@@ -1073,6 +1105,20 @@ def _key_poses(w):
         low = dict(eL=V(0.16, 0.25, 0.14), eR=V(0.16, -0.25, 0.14), lean=0.5, nod=0.35, gauze=True)
         k["tend_a"] = P(low, hL=V(0.4, 0.14, -0.12), hR=V(0.42, -0.08, -0.06))
         k["tend_b"] = P(low, hL=V(0.38, 0.1, -0.14), hR=V(0.44, 0.06, -0.14))
+        return k
+    if w == "bound":
+        # a prisoner: hands tied behind his back, whatever happens; straining at the
+        # rope as he kicks on the gallows, then hanging still, his head fallen forward
+        k = _key_poses("unarmed")
+        tied = dict(eL=V(-0.07, 0.24, 0.24), hL=V(-0.17, 0.05, 0.09), eR=V(-0.07, -0.24, 0.24),
+                    hR=V(-0.17, -0.05, 0.09), bonds=True, nod=0.12)
+        for name in list(k):
+            if isinstance(k[name], dict) and "eL" in k[name]:
+                k[name] = P(tied, lean=k[name].get("lean", 0.0), twist=k[name].get("twist", 0.0))
+        k["aim"] = k["low"] = tied
+        k["strain_a"] = P(tied, eL=V(-0.1, 0.27, 0.27), eR=V(-0.1, -0.27, 0.27), lean=-0.15, twist=0.2, nod=-0.2)
+        k["strain_b"] = P(tied, eL=V(-0.1, 0.27, 0.27), eR=V(-0.1, -0.27, 0.27), lean=-0.1, twist=-0.2, nod=-0.1)
+        k["hang"] = P(tied, nod=0.6, lean=0.08, twist=0.1)
         return k
     if w == "grief":
         # empty hands clasped before her, head bowed; now and then a handkerchief
@@ -1297,7 +1343,7 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
@@ -1319,6 +1365,10 @@ def upper_anims(w):
         add("pick", [k["pick_a"], k["pick_a"], lerp_pose(k["pick_a"], k["pick_b"], 0.5), k["pick_b"], k["pick_b"]],
             2.5, True)
         add("carry", [k["carry"]], 1, True)
+    elif w == "bound":
+        add("struggle", [k["strain_a"], lerp_pose(k["strain_a"], k["strain_b"], 0.5), k["strain_b"],
+                         lerp_pose(k["strain_a"], k["strain_b"], 0.5)], 7, True)
+        add("hang", [k["hang"]], 1, True)
     elif w == "grief":
         a_, b_ = k["mourn_a"], k["mourn_b"]
         add("mourn", [a_, a_, a_, a_, lerp_pose(a_, b_, 0.5), b_, b_, b_, lerp_pose(a_, b_, 0.5)], 1.5, True)
@@ -1426,7 +1476,7 @@ def upper_anims(w):
         kick = P(sky, hR=V(0.06, -0.2, 1.06), gun=G((0.02, -0.2, 1.02), (-0.15, 0.0, 1.0)))
         add("salute", [lerp_pose(k["aim"], sky, 0.5), sky, sky, kick, kick, sky, sky, lerp_pose(sky, k["aim"], 0.5)], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound"):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
                         lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         add("haul", [k["haul"]], 1, True)
