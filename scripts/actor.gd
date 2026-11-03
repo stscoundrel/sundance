@@ -47,6 +47,7 @@ var propped := false       # alive, but down in the dirt: drawn whole from _deat
 var lie_dir := -1          # which way his hurtbox is laid along him, lying there
 var stand_shape: Shape2D   # (and the one he had on his feet)
 var blasted := false       # being hit by dynamite (just for the length of the hit)
+var lift := Vector2.ZERO   # drawn this far off his ground point (up on the gallows)
 # Wounded, he bleeds till he's bandaged: a drop in the dirt every few steps (and
 # now and then where he stands), a trail anyone can follow.
 const DRIP_EVERY := 14.0   # px walked between drops
@@ -155,6 +156,11 @@ func set_character(template: String, palette: Dictionary) -> void:
 		s.texture = tex
 		s.scale = Vector2.ONE * game.tex_scale
 		s.material = mat
+
+
+## Draw nothing of him below world height `y` (1e9: all of him).
+func clip_below(y: float) -> void:
+	(legs_spr.material as ShaderMaterial).set_shader_parameter("clip_y", y)
 
 
 func anim(key: String) -> Dictionary:
@@ -275,7 +281,7 @@ func update_anim(delta: float) -> void:
 	if not alive or propped:
 		var r := _advance("full", "full/" + _death)
 		_show(upper_spr, r[0], r[1], dir)
-		upper_spr.position = Vector2.ZERO
+		upper_spr.position = lift
 		legs_spr.visible = false
 		_sync_ghost()
 		return
@@ -283,7 +289,8 @@ func update_anim(delta: float) -> void:
 	var l := _advance("legs", _legs_choice(moving))
 	_show(legs_spr, l[0], l[1], dir)
 	var hip: float = l[0]["hip"][l[1]]
-	upper_spr.position = Vector2(0, (float(cdata["h_ref"]) - hip) * PZ)
+	legs_spr.position = lift
+	upper_spr.position = lift + Vector2(0, (float(cdata["h_ref"]) - hip) * PZ)
 	var u := _advance("upper", _upper_key(_upper_choice()))
 	_show(upper_spr, u[0], u[1], dir)
 	_sync_ghost()

@@ -175,6 +175,9 @@ var wards := PackedVector2Array()   # where gunfire also concerns the cemetery f
 var pit: Dictionary = {}     # the open grave the digger's at
 var kneel := false
 var local := false           # minds only gunfire close by, and works through the rest
+var condemned := false       # the man on the gallows (see Hanging)
+var bound := false           # noosed and tied: going nowhere, whatever happens
+var still := false           # hanged: he's done moving
 
 
 func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {}) -> void:
@@ -186,10 +189,13 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	visitor = tdata.get("role", "") == "visitor"
 	digger = tdata.get("role", "") == "digger"
 	local = visitor or digger or tdata.get("local", false)
+	condemned = tdata.get("role", "") == "condemned"
 	if tdata.has("ward"):
 		wards.append(Iso.to_screen(Vector2(tdata["ward"][0], tdata["ward"][1])))
 	if sister or barber or local:
 		dice = rng
+	elif condemned:
+		dice = Hanging.rng
 	hp = 1
 	max_hp = 1
 	weapon = Weapon.new("unarmed", self)
@@ -260,6 +266,8 @@ func sees(pos: Vector2) -> bool:
 
 ## Gunfire: close, or in sight within earshot, and he's off.
 func hear(pos: Vector2, radius: float, _k: String, source: Node) -> void:
+	if bound:
+		return
 	if (sister or barber or local) and alive:
 		if _k in GUNFIRE and source != self:
 			_hear_near(pos)
@@ -306,7 +314,7 @@ func witness_murder(at: Vector2) -> void:
 
 ## Run for it, or (short of nerve, or caught close) cower first.
 func alarm(from: Vector2, scary: bool) -> void:
-	if not alive or st in [St.FLEE, St.GONE]:
+	if not alive or st in [St.FLEE, St.GONE] or bound:
 		return
 	if barber:
 		_duck_in()
@@ -335,6 +343,19 @@ func alarm(from: Vector2, scary: bool) -> void:
 		velocity = Vector2.ZERO
 		return
 	_flee()
+
+
+## Cut loose (or shot down off the rope): off he runs for the nearest building, and
+## stays in it. He's had enough of San Miguel's streets for one day.
+func set_free(from: Vector2, thanks: String) -> void:
+	bound = false
+	still = false
+	snitch = false
+	back_after = INF
+	threat = from
+	_say(thanks)
+	_flee()
+	shout = thanks   # (over whatever _flee had him cry)
 
 
 func _flee() -> void:
@@ -375,6 +396,10 @@ func _physics_process(delta: float) -> void:
 				_to_a_grave()
 		return
 	shout_t = max(0.0, shout_t - delta)
+	if bound:
+		if not still:
+			update_anim(delta)   # (Hanging moves him, if anything does)
+		return
 	if game.state != "play" and game.state != "lost":
 		velocity = Vector2.ZERO
 		update_anim(delta)

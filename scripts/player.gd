@@ -141,10 +141,7 @@ func _physics_process(delta: float) -> void:
 
 	var m := get_global_mouse_position()
 	aim_target = game.enemy_under(m)
-	var target := m + Vector2(0, gun_height())
-	if aim_target:
-		target = aim_target.aim_point()
-	var to := target - global_position
+	var to := aim_ground(m) - global_position
 	if to.length() > 3.0 and playing and not dragging:
 		facing = to.normalized()
 	aim_dist = to.length()
@@ -180,6 +177,12 @@ func _handle_actions() -> void:
 		if not Input.is_action_pressed("knife"):
 			drop_body()
 		return
+	if Input.is_action_pressed("knife") and knife_t < 0.0 and bandage_t < 0.0 \
+			and game.hanging and game.hanging.can_cut(global_position):
+		game.hanging.cutting(get_physics_process_delta_time())   # (the knife at the ropes, not at anyone)
+		return
+	elif game.hanging:
+		game.hanging.cut_t = 0.0
 	if Input.is_action_pressed("knife") and knife_t < 0.0 and bandage_t < 0.0:
 		grab_t += get_physics_process_delta_time()
 		if grab_t >= DRAG_GRAB:
@@ -296,6 +299,18 @@ func gun_at_feet() -> Dictionary:
 
 
 # ------------------------------------------------------------------ the dead
+
+## Where a shot at the cursor goes, on the ground plane rounds fly over: at a bandit
+## under it, his middle; at the man on the gallows (or the rope he hangs from), drawn
+## well up off the dirt, the trap they're over; else the dirt at gun height below it.
+func aim_ground(m: Vector2) -> Vector2:
+	var e: Enemy = game.enemy_under(m)
+	if e:
+		return e.aim_point()
+	if game.hanging and game.hanging.under(m):
+		return game.hanging.trap
+	return m + Vector2(0, gun_height())
+
 
 ## By the collar: the guns go away and he hauls the body along behind him.
 func take_body(b: Enemy) -> void:

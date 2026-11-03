@@ -29,6 +29,7 @@ var _wall := 0
 
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
+	Engine.set_meta("no_hanging", true)   # (the gallows stays empty: see test_hanging)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
 	for a in OS.get_cmdline_user_args():

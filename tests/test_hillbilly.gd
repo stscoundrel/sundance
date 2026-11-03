@@ -22,6 +22,7 @@ var r := {}
 
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
+	Engine.set_meta("no_hanging", true)   # (the gallows stays empty: see test_hanging)
 	Engine.set_meta("no_civilians", true)
 	seed(int(OS.get_environment("SEED")) if OS.get_environment("SEED") != "" else 4)
 	game = load("res://scenes/main.tscn").instantiate()

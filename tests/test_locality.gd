@@ -21,6 +21,7 @@ var wall_shots := 0  # bandit shots with a wall right in front of the muzzle
 
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
+	Engine.set_meta("no_hanging", true)   # (the gallows stays empty: see test_hanging)
 	seed(int(OS.get_environment("SEED")) if OS.get_environment("SEED") != "" else 3)
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)

@@ -24,6 +24,7 @@ var regrouped_at := -1.0
 
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
+	Engine.set_meta("no_hanging", true)   # (the gallows stays empty: see test_hanging)
 	Engine.set_meta("no_reserve", true)   # (the posse's own business: the saloon stays indoors)
 	seed(int(OS.get_environment("SEED")) if OS.get_environment("SEED") != "" else 2)
 	game = load("res://scenes/main.tscn").instantiate()

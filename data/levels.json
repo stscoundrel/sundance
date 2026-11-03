@@ -1,5 +1,5 @@
 {
- "_doc": "The levels the picker offers, in order. 'map' is a town file (tools/make_town.py writes San Miguel's). With 'count', the gang is shuffled: that many bandits on the map's guard posts, the count itself the seed (the same count, the same town), the gang's mix kept from the map's own. Without it, the map's hand-placed gang. 'hidden' ones are for the tests. 'budget': the points the stranger spends on the loadout screen (guns and kit; 12 if none, enough for everything). 'dynamite': the sticks he has when a test skips the loadout screen.",
+ "_doc": "The levels the picker offers, in order. 'map' is a town file (tools/make_town.py writes San Miguel's). With 'count', the gang is shuffled: that many bandits on the map's guard posts, the count itself the seed (the same count, the same town), the gang's mix kept from the map's own. Without it, the map's hand-placed gang. 'hidden' ones are for the tests. 'budget': the points the stranger spends on the loadout screen (guns and kit; 12 if none, enough for everything). 'dynamite': the sticks he has when a test skips the loadout screen. 'hanging': a man on the map's gallows, dropped 'at' seconds in unless the stranger stops it (see scripts/hanging.gd).",
  "arms": {
   "_doc": "Guns a wave can hand its men instead of their own ('arms' on a wave or one of its groups, by name; [] for their own): loadout options, as in enemies.json.",
   "rabble": [{"guns": ["navy"], "weight": 3, "range": [60, 170], "champion": 0.12},
@@ -7,7 +7,8 @@
              {"guns": ["pistola", "pistola"], "weight": 1, "range": [50, 150], "draw_sidearm": 1.0}]
  },
  "levels": [
-  {"id": "san_miguel", "name": "San Miguel", "map": "res://data/town.json", "note": "The town as it was drawn: 25 bandits."},
+  {"id": "san_miguel", "name": "San Miguel", "map": "res://data/town.json", "note": "The town as it was drawn: 25 bandits, and a hanging at noon.",
+   "hanging": {"at": 300, "condemned": "peon", "hangman": "redscarf"}},
   {"id": "san_miguel_15", "hidden": true, "name": "San Miguel", "map": "res://data/town.json", "count": 15, "note": "A quieter week: 15 bandits, shuffled."},
   {"id": "san_miguel_25", "hidden": true, "name": "San Miguel", "map": "res://data/town.json", "count": 25, "note": "The whole gang, shuffled: 25 bandits."},
   {"id": "san_miguel_35", "hidden": true, "name": "San Miguel", "map": "res://data/town.json", "count": 35, "note": "Payday: 35 bandits, shuffled."},

@@ -202,6 +202,8 @@ func _draw_status(p: Player) -> void:
 	_text(Vector2(0, 16), label, 12, INK, font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	if game.director:
 		_draw_waves(game.director)
+	if game.hanging:
+		_draw_hanging(game.hanging, p)
 	if banner_t > 0.0:
 		var a := clampf(banner_t, 0.0, 1.0)
 		draw_rect(Rect2(150, 24, 340, 18), Color(0.3, 0.05, 0.03, 0.7 * a))
@@ -308,6 +310,27 @@ func _draw_weapon(p: Player) -> void:
 		_text(Vector2(box.position.x, box.position.y - 4), st, 8, Color(1, 0.8, 0.4), null, HORIZONTAL_ALIGNMENT_RIGHT, box.size.x)
 	if w.kind == "colt" and w.fanning:
 		_text(Vector2(box.position.x + 66, box.position.y + 34), "FANNING", 8, Color(1, 0.5, 0.3))
+
+
+## The hour of the hanging under the bandit count, red while the hangman's at the
+## lever; then the man kicking on the rope. And, at the gallows, the knife's prompt.
+func _draw_hanging(h: Hanging, p: Player) -> void:
+	var y := 50.0 if banner_t > 0.0 else 30.0
+	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 120.0)
+	match h.state:
+		"waiting":
+			var t := maxf(0.0, h.seconds_left())
+			var c := Color(1, 0.8, 0.45) if t < 60.0 else Color(INK, 0.8)
+			_text(Vector2(0, y), "HANGING AT NOON  %d:%02d" % [int(t) / 60, int(t) % 60], 8, c, null,
+				HORIZONTAL_ALIGNMENT_CENTER, 640)
+		"lever":
+			_text(Vector2(0, y), "THE HANGMAN'S AT THE LEVER!", 8, Color(1, 0.35, 0.25, pulse), null,
+				HORIZONTAL_ALIGNMENT_CENTER, 640)
+		"hanging":
+			_text(Vector2(0, y), "HE'S HANGING  -  SHOOT THE ROPE", 8, Color(1, 0.35, 0.25, pulse), null,
+				HORIZONTAL_ALIGNMENT_CENTER, 640)
+	if game.state == "play" and h.can_cut(p.global_position):
+		_text(Vector2(0, 286), "[hold E]  cut him loose", 8, Color(0.95, 0.75, 0.35), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
 
 
 ## The gun at his feet he could swap for (F): its name and what's in it, there being

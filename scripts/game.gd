@@ -43,6 +43,7 @@ var quiet_after := 45.0             # seconds without gunfire or a fight before 
 var last_gunfire := -1e9
 var last_gunfire_at := Vector2.INF
 var director: Director = null   # a level's waves, if it has any
+var hanging: Hanging = null     # a man on the gallows to save, if the level has one
 # A gang with a coordinator (El General: "coordinator" in his type) fights to his
 # orders while he lives: the alarm sends men out and falls back on a holdout. Down
 # he goes, and it's over: no more orders, every man shaken, the faint-hearted run.
@@ -201,6 +202,7 @@ func _ready() -> void:
 		Wounds.rng.randomize()
 		Civilian.rng.randomize()
 		litter_rng.randomize()
+		Hanging.rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -215,6 +217,7 @@ func _ready() -> void:
 		Wounds.rng.seed = 41
 		Civilian.rng.seed = 43
 		litter_rng.seed = 47
+		Hanging.rng.seed = 53
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -910,6 +913,10 @@ func _spawn_actors() -> void:
 				else:
 					couples[k] = cv
 					cv.leads = true
+	if level_entry.has("hanging") and not Engine.has_meta("no_hanging"):
+		hanging = Hanging.new()
+		hanging.setup(self, level_entry["hanging"])
+		add_child(hanging)
 	player.died.connect(_on_player_died)
 	player.make_ghost(ghost_layer, Color(0.92, 0.95, 1.0, 0.6))
 	for en in enemies:
@@ -1838,7 +1845,7 @@ func _tally() -> String:
 	var line := "%d of the gang by your hand" % n if n > 0 else "not one of the gang by your hand"
 	if stats.get("kills while down", 0) > 0:
 		line += " (%d from the dirt)" % stats["kills while down"]
-	return line + "   -   " + _innocents_line() + _padre_line()
+	return line + "   -   " + (hanging.line() if hanging else "") + _innocents_line() + _padre_line()
 
 
 ## The sister took him in: nobody's saying more than that.
@@ -2938,7 +2945,8 @@ func _send_rescuers() -> void:
 		var best: Enemy = null
 		var best_d := Enemy.RESCUE_NEAR
 		for e in enemies:
-			if not e.alive or e.reaction != "" or e.runner_to != Vector2.INF or e.stick or not e.revealed:
+			if not e.alive or e.reaction != "" or e.runner_to != Vector2.INF or e.stick or not e.revealed \
+					or hanging and hanging.holds(e):
 				continue
 			var dist := e.global_position.distance_to(d.global_position)
 			if dist < best_d:

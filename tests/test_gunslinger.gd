@@ -24,6 +24,7 @@ var next_tick := 0.0
 
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
+	Engine.set_meta("no_hanging", true)   # (the gallows stays empty: see test_hanging)
 	seed(5)
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)

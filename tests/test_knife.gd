@@ -27,6 +27,7 @@ var used: Array[Enemy] = []
 
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
+	Engine.set_meta("no_hanging", true)   # (the gallows stays empty: see test_hanging)
 	Engine.set_meta("no_civilians", true)
 	Engine.set_meta("no_reserve", true)
 	seed(2)

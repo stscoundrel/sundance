@@ -131,6 +131,7 @@ var flank := 0.0
 var flank_dir := Vector2.RIGHT
 var sidestep_t := 0.0
 var revealed := true     # false while a concealed type passes as one of the townsfolk
+var hangman := false     # keeps to the gallows while there's a man on it (see Hanging)
 var in_posse := false    # one of the last few, riding the town together (see Posse)
 var posse_slot := 0
 var posse_repath := 0.0
@@ -303,6 +304,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	order_cd = randf_range(3.0, 6.0)
 	sticks = int(tdata["dynamite"])
 	bandages = int(tdata["bandages"])
+	hangman = tdata.get("hangman", false)
 	cone = VisionCone.new()
 	cone.enemy = self
 	g.cone_layer.add_child(cone)
@@ -990,7 +992,9 @@ func _physics_process(delta: float) -> void:
 					_log("reacts out of sight")   # (kept for the tests: should never happen)
 				start_reaction(pending)
 			pending = ""
-	if is_staggered():
+	if hangman and game.hanging and game.hanging.holds(self):
+		_at_gallows(delta)
+	elif is_staggered():
 		velocity = Vector2.ZERO   # reeling from the hit
 	elif reaction != "":
 		_do_reaction(delta)
@@ -1081,6 +1085,32 @@ func _guard(delta: float) -> void:
 		return
 	velocity = Vector2.ZERO
 	desired = home_facing.rotated(sin(t * 0.5) * 0.7)
+
+
+## The hangman's place is at the foot of the gallows steps till the man's dropped,
+## whatever the town gets up to: no running to the fight, no ducking from it. Only
+## the stranger in his own sights moves him, and then it's to the lever.
+func _at_gallows(delta: float) -> void:
+	reaction = ""
+	pending = ""
+	hiding = false
+	crouched = false
+	if not path.is_empty() and path[path.size() - 1].distance_to(home) > 6.0:
+		path = PackedVector2Array()   # (a fright had him off to cover: not while there's a man to hang)
+	if game.hanging.state == "lever":
+		velocity = Vector2.ZERO
+		desired = (game.hanging.trap - global_position).normalized()
+		pose = "point"
+		return
+	if sees_player and (st == St.COMBAT or suspicion >= 1.0):
+		game.hanging.spotted(self)
+		return
+	if st == St.COMBAT and lost_t > 9.0:
+		st = St.GUARD   # it's gone quiet round the gallows: back to watching, a bit warier
+		wary = true
+	_guard(delta)
+	if st == St.COMBAT and velocity == Vector2.ZERO:
+		desired = (last_known - global_position).normalized()   # (watching for him where it's coming from)
 
 
 func _patrol(delta: float) -> void:

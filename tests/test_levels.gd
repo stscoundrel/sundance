@@ -9,7 +9,7 @@ extends SceneTree
 ##              smaller reserve; the hand-drawn town keeps its seven and its five.
 ##   picker   - the title gives way to the picker, which offers San Miguel and Cruz
 ##              Verde (the rest are hidden, for the tests); picking another town
-##              reloads with it, at the guns, and the drawn town keeps its 25, its posse
+##              reloads with it, at the guns, and the drawn town keeps its 25 (and the hangman), its posse
 ##              of seven, its five; picking the town already loaded goes on to the guns.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
 
@@ -55,7 +55,7 @@ func _process(_delta: float) -> bool:
 	var g: Node = current_scene
 	check(g != game and g.level_entry["id"] == "san_miguel", "the drawn town didn't load")
 	check(g.state == "loadout", "a new town should open on the guns (%s)" % g.state)
-	check(g.enemies.size() == 25 and g.posse_size == Posse.SIZE and g.level["reserve"]["squad"].size() == 5,
+	check(g.enemies.size() == 26 and g.hanging != null and g.posse_size == Posse.SIZE and g.level["reserve"]["squad"].size() == 5,
 		"the drawn town: %d bandits, posse %d, reserve %d" % [g.enemies.size(), g.posse_size, g.level["reserve"]["squad"].size()])
 	step = "picker"
 	g._to_levels()

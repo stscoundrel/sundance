@@ -19,6 +19,8 @@ a gang of bandits. Built in Godot 4.
 Mode **Eliminate all enemies**. The player starts at the edge of town.
 Bandits patrol and guard. Pick them off quietly or start a shootout.
 Win when every bandit is dead, lose when the hero dies. Restart instantly.
+A level can add someone to save on top of that (San Miguel's hanging, below): he
+can die and the fight goes on, but the end card says the stranger failed him.
 
 ## Levels
 
@@ -63,6 +65,46 @@ town. The town isn't won till the last wave is in and down. The director
 (`scripts/director.gd`) runs it apart from the game. "San Miguel (waves)" in the
 picker is for trying it: 20 bandits, then 7 or 8 more every 90 s, from two
 roads at a time. `tests/test_waves.gd` runs a quick version in the test yard.
+
+**The hanging** (San Miguel: a level's `"hanging"`, run by `scripts/hanging.gd`).
+The gang has an innocent man up on the plaza's gallows (a peon, noosed, on the
+trap) and they drop him at noon: 300 s in, counted down under the bandit count
+("HANGING AT NOON 4:12"; a banner says so as he rides in). The hangman, a red scarf
+and one more of the gang (26), keeps to the foot of the gallows steps till it's
+done: no running to the fight, no ducking from it (a fright that would send him to
+cover leaves him where he is), nobody sends him to rescue a man or scout. Nine
+seconds without a sight of the stranger and he's out of the fight again, back to
+watching, warier (else the town would never go quiet: the mayor would keep his head
+down for good). The alarm doesn't hurry it; only the stranger in the hangman's own sights
+does, and then he goes for the lever ("¡Ahora!"): two seconds, and a shot in them
+stops it. With the hangman dead nobody drops him, not even at noon, and a banner
+says so ("The hangman's dead! Nobody left to drop him."): he looks like any other
+of the gang (a red scarf beside the bandido already guarding the steps), so the
+stranger might not know which man he'd shot. Once the trap
+goes (the bell, a hole in the platform, his legs kicking down through it) he has
+seven seconds: a round through the rope (5 px across, from anyone's gun: heights
+don't count, so a round lined up on the rope, or on the man before the drop, flies
+on over the platform's edge where any other stops) parts it and he's down. The stranger's rounds that find the man himself (on the
+trap, before the drop) count as the rope too, and he's loose: the stranger would
+never aim at him. A bandit's stray round is another matter. Both are
+drawn well up off the trap they stand over, so the cursor on either (or anywhere on
+the rope up to the beam) aims at the trap itself, the way it aims at a bandit's
+middle when it's on him (`Player.aim_ground`); without that, aiming at the drawn
+rope sent every round 13 to 27 px wide of it, into the platform. The
+round that parts it is spent. Or the knife: hold E at the platform's edge (within
+50 px of the trap) for a second and he's loose, before the drop or after. Loose, he
+runs down the steps for the nearest building and stays in it. He can be hit as he
+goes (or on the trap: a stray lined up on him), though nobody aims at him. Too late,
+and he hangs there, turning a little on the rope. The end card: "the condemned man:
+saved", "hanged, you failed him" or "shot dead, you failed him" (alive on the trap
+with the gang all dead counts as saved). The hanged man is his standing frame
+lowered through the trap and clipped at the platform (the palette shader's
+`clip_y`; `Actor.lift` raises a body off its ground point), with no pose of its own
+yet. `tests/test_hanging.gd` plays the rope shot aimed where it's drawn (from the
+west, north and south), the kicking out, the hangman spotting him early, the hangman
+stopped and the knife, a bandit's stray round, the stranger's round at the man (the
+rope, as far as he's concerned), and the hangman pinned under fire and calming
+down after; every other test on the default town sets `no_hanging`.
 
 **Cruz Verde** (the second level: the ending of *The Wild Bunch*, and Sollima's and
 Corbucci's revolutionary westerns). A garrison's walled town: thick crenellated adobe

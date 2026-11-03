@@ -42,6 +42,10 @@ func _physics_process(delta: float) -> void:
 			break
 		var col: CollisionObject2D = hit["collider"]
 		var hp: Vector2 = hit["position"]
+		if col.has_meta("rope"):
+			col.get_meta("rope").rope_shot(shooter)   # (and it's spent: not on into him as he runs)
+			queue_free()
+			return
 		if col.has_meta("fragile"):
 			game.hit_fragile(col.get_meta("fragile"), hp)
 			exclude.append(col.get_rid())   # it breaks; the round flies on
@@ -49,6 +53,10 @@ func _physics_process(delta: float) -> void:
 		if col is Area2D:
 			var a: Actor = col.get_meta("actor")
 			# bandits don't gun each other down (nor finish their own)
+			if a is Civilian and a.bound and shooter.is_player and a.alive:
+				game.hanging.rope_shot(shooter)   # (the stranger's round at the man on the gallows: he meant the rope)
+				queue_free()
+				return
 			if (a.alive or (a is Enemy and a.downed)) and not (a is Enemy and shooter is Enemy):
 				a.take_hit(damage, vel.normalized(), shooter)
 				queue_free()
@@ -56,7 +64,8 @@ func _physics_process(delta: float) -> void:
 			exclude.append(col.get_rid())
 			continue
 		if col.collision_layer & Iso.LAYER_COVER:
-			if hp.distance_to(shooter.global_position) < 26.0 or _standing_target_behind(hp):
+			if hp.distance_to(shooter.global_position) < 26.0 or _standing_target_behind(hp) \
+					or game.hanging and game.hanging.over_gallows(hp, vel):
 				exclude.append(col.get_rid())
 				continue
 			if col.has_meta("prop"):
