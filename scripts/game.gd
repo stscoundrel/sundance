@@ -201,6 +201,7 @@ func _ready() -> void:
 		Chicken.rng.randomize()
 		Smoulder.rng.randomize()
 		Cargo.rng.randomize()
+		Enemy.assault_rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
 		loot_rng.randomize()
@@ -234,6 +235,7 @@ func _ready() -> void:
 		Captive.rng.seed = 59
 		Smoulder.rng.seed = 67
 		Cargo.rng.seed = 71
+		Enemy.assault_rng.seed = 73
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -1706,6 +1708,17 @@ func lose_the_head(who: Enemy) -> void:
 	for e in enemies:
 		if e.alive and e != who:
 			e.lose_heart()
+
+
+## A deserter off the edge of the map: gone, not dead (nobody to bury, no gun dropped).
+func gone_off(e: Enemy) -> void:
+	enemies.erase(e)
+	e.set_physics_process(false)   # (out of the reckoning; freed at the frame's end)
+	e.visible = false
+	if e.ghost:
+		e.ghost.queue_free()
+	e.cone.queue_free()
+	e.queue_free()
 
 
 ## Their capitán down: every man on the field shaken, the faint-hearted off; the

@@ -267,6 +267,10 @@ func _walk_in(q: Array) -> void:
 		en.shaken = 0.7
 		en.nerve *= 0.7
 		game.stats["arrive headless"] = game.stats.get("arrive headless", 0) + 1
+	if game.level.has("assault"):   # an army: each man for a spot by the train, the stranger or no
+		en.assault_to(_assault_spot(en, at))
+		en.enter_combat(game.player.global_position, false, false)
+		return
 	var fight: bool = game.clock - game.last_gunfire < HEAR_FOR and game.last_gunfire_at.distance_to(at) < HEAR
 	if fight:
 		en.enter_combat(game.last_gunfire_at, false, false)   # the shooting: that's where they're wanted
@@ -276,6 +280,16 @@ func _walk_in(q: Array) -> void:
 
 
 ## A spot of his own about the middle of town: they spread out there and wait.
+## His spot by the train: one of the few nearest the road he came by (the flankers'
+## on its far side), so a company spreads along it.
+func _assault_spot(en: Enemy, from: Vector2) -> Vector2:
+	var a: Dictionary = game.level["assault"]
+	var spots: Array = a["flank"] if en.tdata.get("flanker", false) and a.has("flank") else a["train"]
+	var pts: Array = spots.map(func(s): return Iso.to_screen(Vector2(s[0], s[1])))
+	pts.sort_custom(func(p, q): return p.distance_to(from) < q.distance_to(from))
+	return pts[rng.randi_range(0, mini(2, pts.size() - 1))]
+
+
 func _post_near_center() -> Vector2:
 	var mid := _center()
 	for r in [0.0, 40.0, 80.0, 120.0, 160.0]:

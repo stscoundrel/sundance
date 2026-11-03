@@ -303,13 +303,10 @@ the stranger runs for the wagon), word of it two loads before: the quicker the a
 go, the sooner the army's on them. They come by the east road, the north-east, the
 south-east, the south and up the line, mostly levas and soldados (the map's
 `"wave_kinds"`), a teniente and the colours with some companies by name, and the
-capitán with the second-to-last. About 90 in all. For now they fight like any gang,
-hunting the stranger; their own way (making for the train, from cover to cover)
-comes next.
+capitán with the second-to-last. About 90 in all. They come for the train, not
+for the stranger (see "The federal army": the assault).
 
-Coming, as agreed: the army's own way of fighting (for the train, not the
-stranger; now and then one gets round to the carriers, kills one and turns back
-on the stranger); then the gun: one belt, firing through men, 180° to the south
+Coming, as agreed: the gun: one belt, firing through men, 180° to the south
 and east, its breastwork wearing away; and men carrying loose machine guns off
 the train, belts over their shoulders, worth more to the revolution than anything.
 
@@ -1149,6 +1146,27 @@ kepis and one bandolier over a white crossbelt (`"bandolier": "one"`,
   the second-to-last company. His death shakes every man on the field and sends
   the faint-hearted off; the companies still on the road haven't heard, and come
   on as before (unlike El General's, it leaves nobody leaderless).
+
+**The assault** (the map's `"assault"`: spots along the train's east side, up to
+the tender and the breastwork's front, and, for the flankers, on its far side among
+the carriers). Each man walking in is given one of the few spots nearest his road
+and goes for it, the stranger or no. He goes in bounds of 90 to 150 px: to cover a
+little further on (cover from the stranger, nearer the train than where he is), or,
+the less he knows about cover, to open ground (`"cover_use"`: a leva 0.25, too green
+to be careful; a soldado 0.85; an officer 0.9). Between bounds he's down a while
+(1.5 to 3 s; a leva hardly stops), shooting if he can see the stranger, longer if
+rounds are coming in. On the move he doesn't shoot, but a rural does. At his spot
+he fights it out from there. A cabo or teniente with three or more men about him who
+can see the stranger has them hold and aim ("¡Apunten!") and fire together a second
+later ("¡Fuego!"), every 15 to 20 s: a volley you can see coming. A leva who loses
+heart (his colours down, his capitán dead, or now and then at a comrade falling
+beside him: `"deserts"`) throws it in and runs for the nearest road, and is gone
+off the map, not dead. And a man round among the carriers (within 220 px of one, in
+sight, the stranger not close) gets one chance (`"hunt"`: a rural 0.35, a soldado or
+cabo 0.1, a leva 0.05) to turn his gun on them: he kills one and he's back to the
+stranger; he never tries again. Their own dice (`Enemy.assault_rng`), so no other
+level's fight moves. `tests/test_assault.gd` plays the bounds, the levas' cover
+against the regulars', a volley, a deserter and a hunter.
 
 Dead, they drop their guns like anyone: the stranger can take up a Remington.
 `tests/test_federales.gd` checks the bodies have their guns, the Remington, the

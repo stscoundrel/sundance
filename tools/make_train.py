@@ -200,6 +200,12 @@ CENTER = {"x": 34.0, "y": 35.0}
 # handful; and the rurales, few and dangerous. Their officers, the colours and the
 # capitán come by name in the level's waves.
 WAVE_KINDS = {"leva": 10, "soldado": 6, "cabo": 1.5, "rural": 2}
+# Where they make for (scripts/enemy.gd, the assault): along the train's east side,
+# up to the tender and the breastwork's front; the rurales round to its far side,
+# among the carriers.
+ASSAULT = {"train": [[32.0, 3.0], [32.0, 8.0], [32.2, 12.4], [32.4, 16.4], [32.0, 21.0], [31.8, 25.0],
+                     [32.4, 28.8], [29.6, 42.4], [34.0, 42.4]],
+           "flank": [[26.6, 4.8], [24.4, 14.6], [23.0, 22.6], [19.2, 33.6], [21.4, 37.2]]}
 PLAYER = {"x": 34.6, "y": 35.6}   # in the breastwork, behind the gun's corner
 
 
@@ -222,7 +228,8 @@ def main():
             o["worn"] = WORN[(o["x"], o["y"])]
     assert sum("worn" in o for o in objects) == len(WORN), "a worn spot with nothing at it"
     joined = {k for k, *_ in placed if k.rsplit("_", 1)[0] in CHUNKED}
-    layout.check(N, objects, DEAD + PICKUPS + ENTRIES + CARRIERS + piles()
+    spots = [{"kind": "assault", "x": x, "y": y} for x, y in ASSAULT["train"] + ASSAULT["flank"]]
+    layout.check(N, objects, DEAD + PICKUPS + ENTRIES + CARRIERS + piles() + spots
                  + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")],
                  joined=joined)
     layout.write("train.json", {
@@ -248,6 +255,7 @@ def main():
         "foes": "Federales",
         "foe_count": "FEDERALES",
         "wave_kinds": WAVE_KINDS,
+        "assault": ASSAULT,
     })
     print("Paso Esperanza: %d objects, %d dead, %d sticks of dynamite" % (len(objects), len(DEAD), len(PICKUPS)))
 

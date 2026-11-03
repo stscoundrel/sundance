@@ -241,6 +241,38 @@ const FINISH_NEAR := 34.0    # px: as close as a man walking up to finish the st
 const GASP_LINES := ["You first, gringo...", "¡Hasta el infierno!", "Not... alone...", "¡Muere, cabrón!",
 	"Come here... stranger..."]
 static var gasp_rng := RandomNumberGenerator.new()   # (his own dice: the rest of the fight stays as seeded)
+
+# An army's assault (Paso Esperanza's federales: the map's "assault"): each man comes
+# for a spot by the train, not for the stranger. He goes in bounds, cover to cover
+# (or to open ground, the less he knows about cover: "cover_use"), and between them
+# drops and holds a couple of seconds, shooting if he can see the stranger; pinned
+# down, he holds longer. At the train he fights it out from there. Some ("flanker":
+# the rurales) make for the train's far side, among the carriers. A cabo or teniente
+# now and then has the men about him hold their fire for a volley. A man who's
+# lost heart and is given to it ("deserts": the levas) throws it in and runs for the
+# road he came by, and is gone. And once, if he's round among the carriers with the
+# stranger nowhere near, he may ("hunt", a chance) turn his gun on one of them: one
+# kill, and he's back to the stranger. Their own dice.
+static var assault_rng := RandomNumberGenerator.new()
+const BOUND := Vector2(90.0, 150.0)      # px a bound
+const HOLD := Vector2(1.5, 3.2)          # s down between bounds
+const HOLD_GREEN := Vector2(0.7, 1.6)    # (a leva hardly stops)
+const AT_TRAIN := 30.0                   # px from his spot: he's there
+const VOLLEY_WAIT := 1.2                 # s from "¡Apunten!" to "¡Fuego!"
+const VOLLEY_NEAR := 200.0               # px: the men he can order
+const DESERT_ON_DEATH := 0.12            # chance a man given to it runs, seeing one of his own fall
+const HUNT_NEAR := 220.0                 # px: a carrier this near, in sight, the stranger not
+var objective := Vector2.INF             # his spot by the train, till he gets there
+var assault := false
+var bounding := false
+var bound_hold := 0.0
+var volley_at := -1.0
+var volley_cd := 0.0
+var deserting := false
+var desert_to := Vector2.INF
+var hunt_rolled := false
+var hunting: Civilian = null
+var bounds := Vector2i.ZERO              # (bounds made, and how many of them to cover: for the tests)
 var gasp := ""               # "", "rise", "aim", "sink"
 var gasp_t := 0.0
 var gasp_gun := ""
@@ -619,6 +651,9 @@ func scout(at: Vector2) -> void:
 func lose_heart() -> void:
 	shaken = 1.0
 	nerve *= 0.6
+	if assault and tdata.get("deserts", false):
+		desert()
+		return
 	if reaction in ["", "point", "flinch"] and randf() < 0.6 * (1.0 - nerve):
 		threat = game.seen_pos if game.seen_pos != Vector2.ZERO else global_position
 		start_reaction("flee")
@@ -759,6 +794,9 @@ func witness_death(at: Vector2, killer: Vector2) -> void:
 		_engage(killer)
 		return
 	shaken = min(1.0, shaken + 0.35 * (1.0 - nerve * 0.5))
+	if assault and tdata.get("deserts", false) and assault_rng.randf() < DESERT_ON_DEATH * (0.5 + shaken):
+		desert()
+		return
 	_engage(killer)
 	if reaction in ["flee", "cower"]:
 		return
@@ -1036,6 +1074,8 @@ func _physics_process(delta: float) -> void:
 			pending = ""
 	if hangman and game.hanging and game.hanging.holds(self):
 		_at_gallows(delta)
+	elif deserting:
+		_desert_run()
 	elif game.captive and game.captive.holds(self):
 		_at_pole(delta)
 	elif is_staggered():
@@ -1429,6 +1469,11 @@ func _combat(delta: float) -> void:
 		return
 	if suppress_t > 0.0 and ready_t <= 0.0:
 		_suppress(delta, spec)
+		return
+	if assault and _hunt_carrier(delta):
+		return
+	if objective != Vector2.INF:
+		_assault(delta, p, to, dist, spec)
 		return
 	breaking = {}
 	break_look -= delta
@@ -2066,6 +2111,13 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 	if not sees_player:
 		return
 
+	if volley_at > 0.0 and game.clock >= volley_at:
+		volley_at = -1.0
+		if weapon.can_fire() and abs(facing.angle_to(to)) < 0.3:
+			weapon.trigger()   # all together
+			since_shot = 0.0
+			shot_cd = randf_range(spec["cadence"].x, spec["cadence"].y) * CADENCE_MULT
+			return
 	if velocity.length() < 1.0:
 		aim_t += delta
 	# an opportunist the stranger isn't watching wastes no time lining up
@@ -2382,6 +2434,8 @@ func _call_for_cover() -> void:
 ## trouble (fleeing, cowering, reloading) orders covering fire on the stranger's
 ## likely position, then moves up himself while they shoot.
 func _leader_orders() -> void:
+	if assault and rank >= 1:
+		_order_volley()
 	if rank == 0 or order_cd > 0.0 or reaction != "" or suppress_t > 0.0:
 		return
 	if game.staleness() > game.FRESH:
@@ -2409,6 +2463,178 @@ func _leader_orders() -> void:
 		fight_pos = Vector2.INF   # (no view from here: he moves up anyway)
 		covered_t = 3.5
 	_log("orders covering fire, %d answer" % men.size())
+
+
+## On to the train: in bounds, cover to cover (if he knows to look for it), down a
+## while between them, shooting if he can see the stranger.
+func assault_to(spot: Vector2) -> void:
+	assault = true
+	objective = spot
+	bounding = false
+	bound_hold = 0.0
+
+
+func _assault(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary) -> void:
+	if global_position.distance_to(objective) < AT_TRAIN:
+		objective = Vector2.INF   # at the train: from here he fights it out
+		fight_pos = Vector2.INF
+		bounding = false
+		_log("at the train")
+		return
+	if bounding:
+		crouched = false
+		var fire_on: bool = bool(tdata["fires_on_move"]) and sees_player and dist < spec["keep"].y
+		if follow_path(run) or global_position.distance_to(fight_pos) < 8.0:
+			bounding = false
+			velocity = Vector2.ZERO
+		elif fire_on and weapon.can_fire() and shot_cd <= 0.0 and abs(facing.angle_to(to)) < 0.25:
+			weapon.trigger()   # (a rural shoots on the run)
+			shot_cd = randf_range(spec["cadence"].x, spec["cadence"].y) * CADENCE_MULT
+		shot_cd -= delta
+		if sees_player:
+			desired = to.normalized() if fire_on else desired
+		return
+	bound_hold -= delta
+	if pinned_t > 0.0:
+		bound_hold = maxf(bound_hold, 0.6)   # rounds coming in: he stays down
+	if sees_player:
+		fight_repick = 99.0   # (his place is the bound's end, not one of the fight's)
+		_fight(delta, p, to, dist, spec)
+	else:
+		velocity = Vector2.ZERO
+		crouched = at_cover
+	if bound_hold <= 0.0 and volley_at < 0.0:
+		_next_bound(p)
+
+
+func _next_bound(p: Player) -> void:
+	var to_obj := objective - global_position
+	var step := minf(to_obj.length(), assault_rng.randf_range(BOUND.x, BOUND.y))
+	var slot := global_position + to_obj.normalized() * step
+	var c := Vector2.INF
+	if assault_rng.randf() < float(tdata.get("cover_use", 1.0)):
+		c = game.find_fighting_cover(global_position, p.global_position, slot, Vector2(0.0, 5000.0), game.taken_positions(self))
+		if c != Vector2.INF and c.distance_to(objective) > global_position.distance_to(objective) - 20.0:
+			c = Vector2.INF   # (cover back the way he came is no use to him)
+	at_cover = c != Vector2.INF
+	bounds += Vector2i(1, 1 if at_cover else 0)
+	if at_cover:
+		fight_pos = c
+	elif step >= to_obj.length() - 1.0:
+		fight_pos = objective
+	else:
+		fight_pos = slot if game.is_free(slot) else game.free_point_near(slot, 30.0, assault_rng)
+	path_to(fight_pos)
+	bounding = true
+	settled = false
+	var h: Vector2 = HOLD_GREEN if tdata.get("deserts", false) else HOLD
+	bound_hold = assault_rng.randf_range(h.x, h.y)
+	if rank >= 2 and shout_t <= 0.0 and assault_rng.randf() < 0.3:
+		_say(_line("advance", ["¡Adelante!", "¡Al tren!"], assault_rng))
+
+
+## A cabo or teniente, now and then: the men about him who can see the stranger
+## hold, aim, and fire together on his word.
+func _order_volley() -> void:
+	volley_cd -= get_physics_process_delta_time()
+	if volley_cd > 0.0 or not sees_player or reaction != "":
+		return
+	var men: Array[Enemy] = []
+	for e in game.enemies:
+		if e.alive and e.assault and not e.deserting and e.sees_player and e.reaction == "" and e.volley_at < 0.0 \
+				and not e.weapon.is_reloading() and e.weapon.can_fire() \
+				and e.global_position.distance_to(global_position) < VOLLEY_NEAR:
+			men.append(e)
+	if men.size() < 3:
+		return
+	volley_cd = assault_rng.randf_range(14.0, 22.0)
+	_say(_line("volley", ["¡Apunten!"], assault_rng))
+	for e in men:
+		e.volley_at = game.clock + VOLLEY_WAIT
+		e.ready_t = VOLLEY_WAIT + 0.2   # (stood, aiming, waiting on the word)
+		e.bound_hold = maxf(e.bound_hold, VOLLEY_WAIT + 0.5)
+		e.bounding = false
+	game.stats["volleys"] = game.stats.get("volleys", 0) + 1
+	get_tree().create_timer(VOLLEY_WAIT, false).timeout.connect(func():
+		if alive:
+			_say("¡Fuego!"))
+
+
+## He's had enough: off back down the road he came, and gone.
+func desert() -> void:
+	if deserting:
+		return
+	deserting = true
+	objective = Vector2.INF
+	hunting = null
+	desert_to = Vector2.INF
+	for e in game.level.get("entries", []):   # the nearest road off the map
+		var at := Iso.to_screen(Vector2(e["x"], e["y"]))
+		if desert_to == Vector2.INF or at.distance_to(global_position) < desert_to.distance_to(global_position):
+			desert_to = at
+	if desert_to == Vector2.INF:
+		desert_to = game.point_away(global_position, threat, 400.0)
+	path_to(desert_to if game.is_free(desert_to) else game.free_point_near(desert_to, 40.0, assault_rng))
+	_say(_line("flee", FLEE_LINES, assault_rng))
+	game.stats["deserted"] = game.stats.get("deserted", 0) + 1
+	_log("deserts")
+
+
+func _desert_run() -> void:
+	crouched = false
+	var g := Iso.to_grid(global_position)
+	var edge := minf(minf(g.x, g.y), minf(game.size - g.x, game.size - g.y)) < 1.5
+	if follow_path(run) or edge or global_position.distance_to(desert_to) < 40.0:
+		game.gone_off(self)   # off the map
+
+
+## Round among the carriers with the stranger nowhere near: once, maybe, he turns his
+## gun on one of them. True while he's at it.
+func _hunt_carrier(delta: float) -> bool:
+	if hunting != null:
+		if not hunting.alive or not hunting.visible:
+			if not hunting.alive and hunting.killer == self:
+				game.stats["carriers hunted"] = game.stats.get("carriers hunted", 0) + 1
+				_log("killed a carrier")
+			hunting = null   # one, and he's back to the stranger
+			fight_pos = Vector2.INF
+			return false
+		var to := hunting.global_position - global_position
+		var reach: float = weapon.d["range"] * 0.6
+		if to.length() > reach or not game.line_of_sight(global_position, hunting.global_position, false):
+			if path.is_empty() or path_i >= path.size() or path[path.size() - 1].distance_to(hunting.global_position) > 30.0:
+				path_to(hunting.global_position)
+			follow_path(run)
+			return true
+		velocity = Vector2.ZERO
+		desired = to.normalized()
+		aiming = true
+		shot_cd -= delta
+		if shot_cd <= 0.0 and weapon.can_fire() and abs(facing.angle_to(to)) < 0.15:
+			weapon.trigger()
+			shot_cd = assault_rng.randf_range(0.9, 1.6)
+		return true
+	if hunt_rolled or game.cargo == null:
+		return false
+	if sees_player and global_position.distance_to(game.player.global_position) < HUNT_NEAR * 1.3:
+		return false
+	var c: Civilian = null
+	for cv in game.cargo.carriers:
+		if cv.alive and cv.visible and cv.global_position.distance_to(global_position) < HUNT_NEAR \
+				and (c == null or cv.global_position.distance_to(global_position) < c.global_position.distance_to(global_position)) \
+				and game.line_of_sight(global_position, cv.global_position, false):
+			c = cv
+	if c == null:
+		return false
+	hunt_rolled = true   # (the one chance he gets)
+	if assault_rng.randf() >= float(tdata.get("hunt", 0.0)):
+		return false
+	hunting = c
+	shot_cd = 0.6
+	_say(_line("hunt", ["¡Los cargadores!", "¡Mátenlos, que se llevan las armas!"], assault_rng))
+	game.stats["carrier hunts"] = game.stats.get("carrier hunts", 0) + 1
+	_log("goes for a carrier")
+	return true
 
 
 ## Running for it, he may still loose off a wild shot over his shoulder.
