@@ -295,11 +295,23 @@ here. With nobody shooting, the 40 loads take about two and a half minutes.
 none further off, a load dropped and a replacement, a wagon leaving, the run to
 the wagon, and the loss.
 
-Coming, as agreed: the federal army from the east and south, many and mostly weak,
-closing on the train rather than standing off to shoot (their leaders' deaths
-break them); then the gun: one belt, firing through men, 180° to the south and
-east, its breastwork wearing away; and men carrying loose machine guns off the
-train, belts over their shoulders, worth more to the revolution than anything.
+**The army** (see "The federal army" under Bandit types). The count names them
+("FEDERALES 9": the map's `"foe_count"`, and `"foes"` for the banners). A first
+company comes 25 s in, by the clock; after that each comes with the loading (a
+wave's `"loads"`: at 6, 12, 18, 24, 30 and 35 loads in, and a last push at 40, while
+the stranger runs for the wagon), word of it two loads before: the quicker the arms
+go, the sooner the army's on them. They come by the east road, the north-east, the
+south-east, the south and up the line, mostly levas and soldados (the map's
+`"wave_kinds"`), a teniente and the colours with some companies by name, and the
+capitán with the second-to-last. About 90 in all. For now they fight like any gang,
+hunting the stranger; their own way (making for the train, from cover to cover)
+comes next.
+
+Coming, as agreed: the army's own way of fighting (for the train, not the
+stranger; now and then one gets round to the carriers, kills one and turns back
+on the stranger); then the gun: one belt, firing through men, 180° to the south
+and east, its breastwork wearing away; and men carrying loose machine guns off
+the train, belts over their shoulders, worth more to the revolution than anything.
 
 ## Controls
 
@@ -526,6 +538,15 @@ rides under a poncho. The spaghetti westerns' own: in Corbucci's *The Great Sile
   roll), on its own dice (`Enemy.rollingblock_rng`, seed 41). One shot from the edge
   of pistol range, then likely the revolver (`draw_sidearm` 0.7). Never a man out
   of a door, nor (yet) one passing as townsfolk. `tests/test_rollingblock.gd`.
+
+### Remington Rolling Block, the full rifle — single shot, on the Sharps' rounds (for now)
+
+The federal army's rifle, as Mexico bought it: a long barrel in a fore-end banded
+nearly to the muzzle, the full stock, the block that rolls back under the thumb.
+One round at a time but quickly (open, out, in, shut in about 1.4 s), as far as the
+Springfield (680) and truer (spread 0.6), damage 3, through one man into the next.
+Soldados and cabos carry it; the stranger takes one up off the dead (slot 3,
+"REMINGTON ROLLING BLOCK"; 2 points on the loadout card, 12 rounds to ride in with).
 
 ### Winchester Model 1866 "Yellow Boy" carbine, .44 Henry rimfire — 13 rounds
 - Lever worked between shots (~0.45 s).
@@ -1095,6 +1116,44 @@ boss) is given a revolver option only.
 New pieces of costume for them in `tools/chars.py`: the serape, a "uniform" style (a
 buttoned tunic with a coloured collar, a short closed skirt), epaulettes, medals, the
 sabre, the kepi and the peaked cap; a dress can do without its shawl.
+
+### The federal army
+
+Paso Esperanza's enemy: the government's army come for the train, in blue and white,
+kepis and one bandolier over a white crossbelt (`"bandolier": "one"`,
+`"crossbelt"`), many of them and most of them poor soldiers.
+
+- **Leva** (`leva` body: a pressed peasant in his white cottons and an army kepi):
+  the most of them. One hit and he's down; a Springfield (or an escopeta, or a horse
+  pistol), slow to load and badly aimed; little nerve.
+- **Soldado** (`federal` body): a regular, steady, a Springfield or the new
+  Remington Rolling Block.
+- **Cabo** (`federal`, gold on the kepi): a Remington or a coach gun and a Navy;
+  rank 1, calls the covering fire.
+- **Rural** (`rural` body: the grey charro suit and the big grey sombrero of the
+  rurales): few, and dangerous: a Spencer and a Colt, bold, shoots on the move,
+  works round the flanks; the only ones with dynamite.
+- **Abanderado** (`federal`, a white kepi): the colours, the tricolour with the eagle
+  on its cactus, on a staff in the crook of his left arm, and a Navy he fires
+  one-handed (the `banner` pose set: the Navy's, the left hand on the staff but to
+  load, the flag drawn with the body). One to a company at most, by name in the
+  waves. Shot, the colours go down in the dirt (`flag_down`): every man within 300 px
+  sees it, the levas lose heart and the rest are shaken. The nearest regular
+  (soldado or cabo, `"flag": "raise"`, within 340 px) runs to them whatever's flying,
+  drops his long gun, takes the colours and a Navy, and they're up again; shot in
+  his turn, they stay down. (Raising them costs no more baking: the regulars and the
+  bearer share a body.)
+- **Teniente** (the coronel's body in federal blue, gold braid): rank 2, a Colt;
+  leads a company.
+- **Capitán** (the same body, white trousers): the commander (`"commander"`), with
+  the second-to-last company. His death shakes every man on the field and sends
+  the faint-hearted off; the companies still on the road haven't heard, and come
+  on as before (unlike El General's, it leaves nobody leaderless).
+
+Dead, they drop their guns like anyone: the stranger can take up a Remington.
+`tests/test_federales.gd` checks the bodies have their guns, the Remington, the
+waves coming with the loading (and their officer and colours), the colours going
+down, raised and going down for good, and the capitán's death.
 
 ## Townsfolk
 

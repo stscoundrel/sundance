@@ -204,7 +204,7 @@ func _draw_status(p: Player) -> void:
 	elif p.crouched:
 		_text(Vector2(54, 338), "CROUCHED", 8, INK)
 	var n: int = game.alive_enemies()
-	var label := "BANDITS  %d" % n
+	var label := "%s  %d" % [game.level.get("foe_count", "BANDITS"), n]   # (a map may name its own: FEDERALES)
 	_text(Vector2(0, 16), label, 12, INK, font, HORIZONTAL_ALIGNMENT_CENTER, 640)
 	if game.director:
 		_draw_waves(game.director)
@@ -500,7 +500,7 @@ const BLURB := {"colt": "six, quick to load, fanned", "schofield": "six, all out
 	"champion": "one barrel, reaches further",
 	"escopeta": "one barrel, a long reload", "rifle": "thirteen, a quick lever",
 	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load",
-	"rollingblock": "one hard shot, short, quick to load"}
+	"rollingblock": "one hard shot, short, quick to load", "remington": "one hard shot, far, quick to load"}
 const OPTION_Y := 118.0   # the first of a card's guns to pick from, and 12 px apart
 
 

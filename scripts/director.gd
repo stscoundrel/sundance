@@ -20,6 +20,11 @@ extends Node
 ## before it, that they're gathering outside the walls. A wave (or one of its
 ## groups) can hand its men other guns than their own ("arms": a set named in
 ## levels.json; [] for their own): the last of them, scraped together, are badly armed.
+##
+## Where the level has a cargo to get away (Paso Esperanza), a wave can come with the
+## loading instead of the clock ("loads": n, once that many are in the wagons): the
+## faster the arms go, the sooner the army's on them. Word of it comes a couple of
+## loads before.
 
 const WARN := 15.0          # s of warning: which roads they're coming down
 const EVERY := 0.45         # s between men walking in off the same road (a band, not a file)
@@ -28,6 +33,7 @@ const HEAR_FOR := 8.0       # s: is a fight going on (they go to it)
 const CROWD := 40           # alive at once, at most: the rest wait out on the road for room
 const READY := Vector2(1.5, 2.5)     # s: out of the door, the ones who were ready
 const ASLEEP := Vector2(12.0, 18.0)  # s: the ones who had to wake up first
+const WARN_LOADS := 2       # loads of warning, for a wave that comes with the loading
 const RALLY_AFTER := 20.0   # s after a wave's due that word comes of the next one rallying, after a lull
 
 var game: Node
@@ -80,9 +86,10 @@ func wave_clock() -> float:
 	return clock - roused if roused >= 0.0 else -1.0
 
 
-## Seconds to the next wave, or -1 when there are no more (or none's begun counting).
+## Seconds to the next wave, or -1 when there are no more (or none's begun counting,
+## or it comes with the loading, not the clock).
 func next_in() -> float:
-	if next >= waves.size() or wave_clock() < 0.0:
+	if next >= waves.size() or wave_clock() < 0.0 or not waves[next].has("at"):
 		return -1.0
 	return float(waves[next]["at"]) - wave_clock()
 
@@ -125,13 +132,13 @@ func _process(delta: float) -> void:
 			game.hud.banner("The enemy is rallying their troops outside the fort!")
 			game.sfx("sting", null, -14.0, 0.0)
 			game.stats["rallies"] = game.stats.get("rallies", 0) + 1
-		if warned < next and wc >= float(w["at"]) - WARN:
+		if warned < next and _due(w, wc, WARN, WARN_LOADS):
 			warned = next
 			var names: Array = w["groups"].map(func(gr): return gr["from"])
-			game.hud.banner("Men coming in by the %s!" % " and the ".join(names))
+			game.hud.banner("%s coming in by the %s!" % [game.level.get("foes", "Men"), " and the ".join(names)])
 			game.sfx("sting", null, -12.0, 0.0)
 			game.stats["waves warned"] = game.stats.get("waves warned", 0) + 1
-		if wc >= float(w["at"]):
+		if _due(w, wc):
 			_send(w)
 			next += 1
 	if not queue.is_empty() and game.alive_enemies() < CROWD:
@@ -139,6 +146,14 @@ func _process(delta: float) -> void:
 		if spawn_t <= 0.0:
 			spawn_t = EVERY / maxf(1.0, _roads_in_queue())
 			_walk_in(queue.pop_front())
+
+
+## Is this wave due (or, with some warning given, nearly)? By the clock, or by the
+## loads in the wagons.
+func _due(w: Dictionary, wc: float, early := 0.0, early_loads := 0) -> bool:
+	if w.has("loads"):
+		return game.cargo != null and game.cargo.loaded >= int(w["loads"]) - early_loads
+	return wc >= float(w["at"]) - early
 
 
 ## The first shot (or, for one who's done it all with the knife, everyone outside

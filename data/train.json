@@ -1418,5 +1418,13 @@
   "x": 34.0,
   "y": 35.0
  },
- "posse": false
+ "posse": false,
+ "foes": "Federales",
+ "foe_count": "FEDERALES",
+ "wave_kinds": {
+  "leva": 10,
+  "soldado": 6,
+  "cabo": 1.5,
+  "rural": 2
+ }
 }

@@ -50,6 +50,9 @@ var cargo: Cargo = null         # the arms to be carried off, if the level has t
 # orders while he lives: the alarm sends men out and falls back on a holdout. Down
 # he goes, and it's over: no more orders, every man shaken, the faint-hearted run.
 var leaderless := false
+var flags: Array[Dictionary] = []   # colours lying in the dirt: {at, rec}
+const FLAG_SEEN := 300.0    # px: men this near see the colours go down (or up again)
+const FLAG_RAISE := 340.0   # px: a regular this near runs to raise them
 var _quiet := 0.0
 var graves := PackedVector2Array()
 var to_mourn: Array[Dictionary] = []
@@ -240,7 +243,7 @@ func _ready() -> void:
 	tex_scale = float(meta.get("tex_scale", 1.0))
 	_build_world()
 	_spawn_actors()
-	if level_entry.has("waves") or level.has("sleepers"):
+	if (level_entry.has("waves") and not Engine.has_meta("no_waves")) or level.has("sleepers"):   # (tests of the cargo leave the army out)
 		director = Director.new()
 		director.setup(self, level_entry.get("waves", []), level_entry.get("waves_from", "") == "first_shot")
 		add_child(director)
@@ -1705,6 +1708,59 @@ func lose_the_head(who: Enemy) -> void:
 			e.lose_heart()
 
 
+## Their capitán down: every man on the field shaken, the faint-hearted off; the
+## companies still on the road haven't heard, and come on as before.
+func _commander_down(who: Enemy) -> void:
+	hud.banner("¡Mataron al capitán!  They've lost their commander!")
+	sfx("sting", null, -6.0, 0.0)
+	stats["commander down"] = stats.get("commander down", 0) + 1
+	for e in enemies:
+		if e.alive and e != who:
+			e.lose_heart()
+
+
+## The colours down in the dirt: a blow to every man who sees them go (the levas
+## lose heart; the rest are shaken). The first time, the nearest regular runs to
+## raise them again; the second, they stay down.
+func _flag_down(bearer: Enemy) -> void:
+	stats["colours down"] = stats.get("colours down", 0) + 1
+	var at := bearer.global_position - bearer.facing * 8.0
+	var fp: Array = meta["objects"]["flag_down"]["footprint"]
+	_place_object("flag_down", Iso.to_grid(at) - Vector2(fp[0], fp[1]) * 0.5)
+	flags.append({"at": at, "rec": placed[-1]})
+	hud.toast("Their colours are down")
+	for o in enemies:
+		if o.alive and o != bearer and o.global_position.distance_to(at) < FLAG_SEEN:
+			if o.kind == "leva":
+				o.lose_heart()
+			else:
+				o.shaken = minf(1.0, o.shaken + 0.5)
+	if bearer.has_meta("raised"):
+		return   # (raised once, and down again: they stay down)
+	var best: Enemy = null
+	for o in enemies:
+		if o.alive and o != bearer and o.tdata.get("flag", "") == "raise" and o.flag_at == Vector2.INF \
+				and not o.posted() and o.reaction != "flee" and o.global_position.distance_to(at) < FLAG_RAISE \
+				and (best == null or o.global_position.distance_to(at) < best.global_position.distance_to(at)):
+			best = o
+	if best:
+		best.raise_flag(at)
+
+
+## A man at the fallen colours: up they go, if they're still there.
+func take_up_flag(o: Enemy) -> void:
+	for f in flags:
+		if f["at"].distance_to(o.global_position) < 24.0:
+			flags.erase(f)
+			lift_object(f["rec"])
+			o.take_flag()
+			stats["colours raised"] = stats.get("colours raised", 0) + 1
+			for e in enemies:
+				if e.alive and e != o and e.global_position.distance_to(o.global_position) < FLAG_SEEN:
+					e.shaken = maxf(0.0, e.shaken - 0.3)
+			return
+
+
 ## A free plot on boot hill, a little apart from the other new graves.
 func grave_spot() -> Vector2:
 	var r: Array = level["boothills"][0]
@@ -1879,6 +1935,10 @@ func _on_enemy_died(e: Actor) -> void:
 	raise_alarm(5.0)
 	if e is Enemy and e.tdata.get("coordinator", false):
 		lose_the_head(e)
+	elif e is Enemy and e.tdata.get("commander", false):
+		_commander_down(e)
+	if e is Enemy and e.carries_flag():
+		_flag_down(e)
 	if e.has_meta("scout") and e.alarm_role == "scout":
 		raise_alarm(10.0)   # sent to look, and never came back
 		stats["scouts lost"] = stats.get("scouts lost", 0) + 1

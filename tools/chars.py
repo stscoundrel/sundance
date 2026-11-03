@@ -39,7 +39,7 @@ def template_guns():
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
     out = {"hero": ["colt", "coach", "rifle", "schofield", "navy", "pistola", "sawnoff", "champion", "escopeta", "spencer",
-                    "springfield", "rollingblock"]}
+                    "springfield", "rollingblock", "remington"]}
 
     def need(template, g, t=None):
         out.setdefault(template, [])
@@ -68,6 +68,9 @@ def template_guns():
             champion(t["template"], t.get("champion", 0), t["loadout"], t.get("rollingblock", 0))
         if t.get("concealed"):
             need(t["template"], "unarmed")
+        if t.get("flag"):   # the colours, carried (or taken up from the dirt) with a Navy in the other hand
+            need(t["template"], "banner")
+            need(t["template"], "navy")
     for t in _DATA["civilians"]["types"].values():
         need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith",
                                   "mayor": "mayor", "carpenter": "carpentry", "sweeper": "broom",
@@ -98,12 +101,12 @@ def template_guns():
     return out
 
 
-GUN_LEN = {"colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
+GUN_LEN = {"remington": 1.3, "colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
 # in the left hand (pose key "gun2").
-GUN_ART = {"colts": "colt", "smith": "rifle", "rifles": "rifle"}   # the gunsmith looks over a rifle; so do the carriers
+GUN_ART = {"colts": "colt", "smith": "rifle", "rifles": "rifle", "banner": "navy"}   # the gunsmith looks over a rifle; so do the carriers
 
 
 class Look:
@@ -196,8 +199,12 @@ def _torso_fn(look):
                 md = front & (np.abs(P[:, 1] - dy) < 0.012) & (np.abs(P[:, 2] - 0.36) < 0.02)
                 c[md] = BRASS if i != 1 else (180, 40, 36)
                 s_[md] = 0
+        if look.get("crossbelt"):   # the soldier's white crossbelt, shoulder to hip
+            m = np.abs(P[:, 2] - (0.26 - 0.95 * P[:, 1])) < 0.028
+            c[m] = (226, 222, 208)
+            s_[m] = 0
         if look.get("bandolier"):
-            for sgn in (1, -1):
+            for sgn in ((1,) if look.get("bandolier") == "one" else (1, -1)):
                 m = np.abs(P[:, 2] - (0.26 + sgn * 0.95 * P[:, 1])) < 0.035
                 c[m] = LEATHER
                 s_[m] = 0
@@ -351,6 +358,20 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
         out += beam(at(0.35, (0, -0.024)), at(0.58, (0, -0.024)), 0.028, WOOD)
         out += beam(at(0.22, (0, 0.04)), at(0.24, (0, 0.075)), 0.008, STEEL)            # tang sight
         out += beam(at(0.3, (0, 0.03)), at(0.33, (0, 0.06)), 0.01, STEEL)              # hammer
+    elif kind == "remington":
+        # the Remington Rolling Block as the army has it: a full stock, the case-hardened
+        # action with its big hammer and the block that rolls back under the thumb, a
+        # long barrel in a fore-end banded nearly to the muzzle
+        out += frustum(at(0.0, (0, -0.045)), at(0.24), 0.056, 0.03, WOOD)
+        out += box(tuple(at(0.23) - 0.034), tuple(at(0.31) + 0.034), (128, 120, 112))
+        roll = 0.9 * lever
+        out += beam(at(0.29, (0, 0.03)), at(0.29, (0, 0.03)) + (up * math.cos(roll) - a * math.sin(roll)) * 0.04,
+                    0.012, STEEL)
+        out += beam(at(0.31, (0, 0.012)), at(1.0, (0, 0.012)), 0.018, GUNMETAL)
+        out += beam(at(0.31, (0, -0.02)), at(0.86, (0, -0.02)), 0.026, WOOD)
+        for f in (0.52, 0.7, 0.85):   # the barrel bands
+            out += beam(at(f, (0, -0.005)), at(f + 0.02, (0, -0.005)), 0.03, STEEL)
+        out += beam(at(0.24, (0, 0.03)), at(0.27, (0, 0.07)), 0.012, STEEL)              # hammer
     elif kind == "rollingblock":
         # a Remington Rolling Block carbine cut down: the stock sawn to a pistol grip,
         # the case-hardened action with its big hammer and the breech block that rolls
@@ -703,6 +724,31 @@ def build_legs(look, lp):
 
 # ---------------------------------------------------------------- rig: upper layer
 
+def _colours():
+    """The federal army's colours: the tricolour, green at the staff, white with the
+    eagle on its cactus, red, on a staff carried in the crook of the left arm, the
+    cloth streaming back behind him."""
+    m = Cloud()
+    base, top = np.array([0.08, 0.27, -0.55]), np.array([0.12, 0.27, 1.5])
+    m += beam(base, top, 0.016, (120, 92, 60))
+    m += ellipsoid(top + [0, 0, 0.03], (0.025, 0.025, 0.03), BRASS)                   # the finial
+    cols = np.array([(46, 112, 66), (232, 228, 214), (188, 40, 36)], float)
+    u = np.linspace(0, 1, 70)
+    v = np.linspace(0, 1, 46)
+    U, Vv = np.meshgrid(u, v, indexing="ij")
+    W, Hh = 0.72, 0.46
+    P_ = np.stack([top[0] - U * W, top[1] + 0.05 * np.sin(U * 7.0 + Vv * 1.5) * U, top[2] - 0.04 - Vv * Hh - U * 0.08], -1)
+    C = cols[np.minimum((U * 3).astype(int), 2)]
+    eagle = (np.abs(U - 0.5) < 0.07) & (np.abs(Vv - 0.5) < 0.18)
+    C[eagle] = (120, 86, 52)
+    C[eagle & (Vv > 0.6)] = (70, 120, 70)   # the cactus under it
+    n = P_.size // 3
+    for side in (1.0, -1.0):   # both faces of the cloth, a hair apart
+        m += Cloud(P_.reshape(-1, 3) + [0, 0.003 * side, 0], np.tile([0.0, side, 0.0], (n, 1)), C.reshape(-1, 3),
+                   np.zeros(n, np.uint8))
+    return m
+
+
 def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     """Belt and up: torso, coat body and cape, arms, head, hat and gun, posed by `up`
     (hip-relative) and placed with the hip at height H. Returns (cloud, muzzle point);
@@ -906,6 +952,8 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
     if up.get("tape"):   # the undertaker's tape measure, stretched between his hands
         m += beam(np.array(up["hL"], float), np.array(up["hR"], float), 0.009, (226, 204, 120))
 
+    if weapon == "banner":
+        m += _colours()
     if up.get("rod"):   # a ramrod held in the right fist, its end down the barrel
         h, gd = np.array(up["hR"], float), up["gun"]["D"]
         m += beam(h + gd * 0.05, h - gd * 0.5, 0.007, (176, 178, 184))
@@ -964,6 +1012,15 @@ def _key_poses(w):
         k["eject_b"] = P(k["load"], hR=V(0.16, -0.08, 0.36))
         k["insert_a"] = P(k["insert_a"], lever=1.0)
         k["insert_b"] = P(k["insert_b"], lever=1.0)
+        return k
+    if w == "remington":
+        return _key_poses("sharps")   # a full-length single shot, held and loaded like the Sharps
+    if w == "banner":
+        # the colours: the staff in the crook of the left arm, the left hand on it while
+        # he shoots (one-handed, a Navy), off it only to load
+        k = _key_poses("colt")
+        for name in ("aim", "kick", "cock"):
+            k[name] = P(k[name], eL=V(0.0, 0.27, 0.24), hL=V(0.1, 0.25, 0.14))
         return k
     if w == "rollingblock":
         # worked like the Sharps, but the short gun sits forward, its sawn grip in the
@@ -1420,7 +1477,7 @@ def upper_anims(w):
     elif w == "tools":
         add("measure", [k["measure_a"], k["measure_b"]], 2, True)
         add("drag", [k["drag"]], 1, True)
-    elif w in ("sharps", "rollingblock"):
+    elif w in ("sharps", "rollingblock", "remington"):
         add("cock", [k["cock"], k["aim"]], 5)
         add("reload_open", _frames([k["aim"], k["load"]], 2), 6)
         add("reload_eject", [k["eject_a"], k["eject_b"]], 6, events={1: "brass"})
@@ -1471,7 +1528,7 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 3)
         add("reload_insert", [k["insert_a"], k["insert_b"], k["eject_b"], k["insert_b"]], 2.6, True)
         add("reload_close", _frames([k["load"], k["aim"]], 2), 4)
-    elif w == "navy":
+    elif w in ("navy", "banner"):
         # no brass to shake out: a spent cap picked off, then each chamber charged and rammed
         add("cock", [k["cock"], k["aim"]], 6)
         add("reload_open", _frames([k["aim"], k["load"]], 2), 5)

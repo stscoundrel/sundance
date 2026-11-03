@@ -196,6 +196,10 @@ STREETS = [[0.0, 19.5, 24.0, 22.5], [39.0, 35.4, 64.0, 38.4]]
 ENTRIES = [{"name": "east road", "x": 63.3, "y": 36.9}, {"name": "north-east", "x": 63.3, "y": 22.0}, {"name": "south-east", "x": 63.3, "y": 46.0},
            {"name": "south", "x": 44.0, "y": 63.3}, {"name": "line south", "x": 31.5, "y": 63.3}]
 CENTER = {"x": 34.0, "y": 35.0}
+# The federal army's companies: mostly levas, pressed men; the regulars; a cabo to a
+# handful; and the rurales, few and dangerous. Their officers, the colours and the
+# capitán come by name in the level's waves.
+WAVE_KINDS = {"leva": 10, "soldado": 6, "cabo": 1.5, "rural": 2}
 PLAYER = {"x": 34.6, "y": 35.6}   # in the breastwork, behind the gun's corner
 
 
@@ -241,6 +245,9 @@ def main():
         "entries": ENTRIES,
         "center": CENTER,
         "posse": False,
+        "foes": "Federales",
+        "foe_count": "FEDERALES",
+        "wave_kinds": WAVE_KINDS,
     })
     print("Paso Esperanza: %d objects, %d dead, %d sticks of dynamite" % (len(objects), len(DEAD), len(PICKUPS)))
 

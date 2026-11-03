@@ -2033,6 +2033,21 @@ def rifle_pile():
     return m
 
 
+def flag_down():
+    """The federal colours down in the dirt: the staff across the ground, the
+    tricolour crumpled beside it, the eagle showing in the white."""
+    m = Cloud()
+    m += beam((0.05, 0.15, 0.04), (1.7, 0.3, 0.04), 0.02, (120, 92, 60))
+    m += ellipsoid((1.72, 0.3, 0.05), (0.03, 0.03, 0.03), (205, 165, 70))
+    cols = ((46, 112, 66), (232, 228, 214), (188, 40, 36))
+    for i, col in enumerate(cols):
+        x0 = 1.15 - i * 0.3
+        m += quad((x0 - 0.3, 0.32, 0.02), (0.3, 0.0, 0.0), (0.04, 0.6, 0.0), solid(col), 0.02, normal=(0, 0, 1))
+        m += ellipsoid((x0 - 0.15, 0.6, 0.03), (0.13, 0.12, 0.04), col, zmin=0.0)   # a fold
+    m += ellipsoid((0.7, 0.58, 0.06), (0.06, 0.07, 0.03), (120, 86, 52))            # the eagle
+    return m
+
+
 # Long things baked in pieces along their length, each its own sprite sorted at its
 # own middle, so a man beside one end of a boxcar is drawn in front of it, not
 # behind (one sprite sorts at the middle of the whole car). Name -> (axis, pieces);
@@ -2150,6 +2165,7 @@ BUILDINGS = {
     "sacks": (sacks, (1.2, 0.6), "cover", False, None),
     "handcar": (handcar, (1.2, 1.8), "cover", False, None),
     "rifle_pile": (rifle_pile, (1.0, 0.7), "none", False, None),
+    "flag_down": (flag_down, (1.4, 0.8), "none", False, None),
     "carreta": (carreta, (5.0, 1.3), "cover", False, None),
 }
 

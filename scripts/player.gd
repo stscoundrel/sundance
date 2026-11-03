@@ -9,9 +9,9 @@ extends Actor
 
 const ORDER := ["colt", "coach", "rifle"]
 const SLOT := {"colt": "colt", "schofield": "colt", "navy": "colt", "pistola": "colt", "coach": "coach", "sawnoff": "coach", "champion": "coach", "escopeta": "coach",
-	"rifle": "rifle", "spencer": "rifle", "springfield": "rifle", "rollingblock": "rifle"}   # the guns he can take up, by slot
+	"rifle": "rifle", "spencer": "rifle", "springfield": "rifle", "rollingblock": "rifle", "remington": "rifle"}   # the guns he can take up, by slot
 const RESERVE := {"colt": 30, "schofield": 30, "navy": 24, "pistola": 12, "coach": 10, "sawnoff": 10, "champion": 10, "escopeta": 8,
-	"rifle": 26, "spencer": 21, "springfield": 12, "rollingblock": 10}   # what he rides in with, per gun (to his belt)
+	"rifle": 26, "spencer": 21, "springfield": 12, "rollingblock": 10, "remington": 12}   # what he rides in with, per gun (to his belt)
 const KIT := {"bandage": 1, "dynamite": 2}   # what kit costs on the loadout screen (one of each at most)
 const REACH := 13.0   # px: a gun at his feet
 # The knife (E). Up close behind a man who isn't on to him, a silent takedown; a

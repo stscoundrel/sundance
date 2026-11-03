@@ -28,6 +28,7 @@ const LEASH := 140.0   # px: the hangman fights no further than this from his ga
 const LEASH_LOST := 3.0   # s without a sight of the stranger, and he's back to it
 
 var kind := "pistolero"
+var flag_at := Vector2.INF   # the colours in the dirt, and him running to raise them
 var tdata: Dictionary     # his type, merged with defaults and placement overrides
 var stats: Dictionary     # {"keep": preferred range, "cadence": pause between shots}
 var loadout: Array = []   # guns he carries; the first in hand, the rest sidearms
@@ -311,6 +312,8 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	cone = VisionCone.new()
 	cone.enemy = self
 	g.cone_layer.add_child(cone)
+	if tdata.get("flag", "") == "bearer":
+		anim_gun = "banner"   # the colours in the crook of his arm, a Navy in his hand
 	if tdata["concealed"]:
 		# looks like any other townsman: gun out of sight, no tell-tale view cone
 		revealed = false
@@ -360,6 +363,42 @@ func in_his_sights() -> bool:
 	if d > 260.0 or not game.line_of_sight(p.global_position, global_position, false):
 		return false
 	return d < 70.0 or abs(p.facing.angle_to(to)) < 0.35
+
+
+## Carrying the colours?
+func carries_flag() -> bool:
+	return anim_gun == "banner"
+
+
+## The colours are down: he's the one to run and get them up again, whatever's
+## flying.
+func raise_flag(at: Vector2) -> void:
+	flag_at = at
+	path_to(at)
+	_say(_line("flag", ["¡La bandera!", "¡Levántenla!"]))
+
+
+func _to_flag() -> void:
+	crouched = false
+	if global_position.distance_to(flag_at) < 14.0:
+		flag_at = Vector2.INF
+		game.take_up_flag(self)
+		return
+	if path.is_empty() or path[path.size() - 1].distance_to(flag_at) > 20.0 or path_i >= path.size():
+		path_to(flag_at)   # (whatever else he was about, it's the colours now)
+	if follow_path(run):
+		velocity = (flag_at - global_position).normalized() * run   # the last step, onto them
+
+
+## The colours up in his left hand: his long gun dropped, a Navy in the right.
+func take_flag() -> void:
+	game.drop_gun(self)
+	weapon = Weapon.new("navy", self)
+	weapon.reserve = 999
+	anim_gun = "banner"
+	set_meta("raised", true)
+	_say(_line("raised", ["¡Arriba la bandera!", "¡Viva México!"]))
+	_log("takes up the colours")
 
 
 ## Drops the act: gun out, and from now on he's plainly one of them.
@@ -1033,6 +1072,9 @@ func _physics_process(delta: float) -> void:
 func _run_state(delta: float) -> void:
 	if runner_to != Vector2.INF:
 		_run_for_help(delta)
+		return
+	if flag_at != Vector2.INF:
+		_to_flag()
 		return
 	match st:
 		St.GUARD:

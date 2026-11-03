@@ -98,6 +98,16 @@ const DATA := {
 		"sfx": "sharps", "cycle": 0.35, "shake": 3.5, "smoke": 14, "smoke_push": 1.2, "ammo": "sharps",
 		"open": [0.25, "lever"], "eject": [0.25, "eject"], "insert": [0.4, "shell_in"], "close": [0.25, "lever"],
 		"status": {"cycle": "COCKING", "open": "BLOCK ROLLED BACK", "close": "BLOCK UP"}},
+	# The Remington Rolling Block as the federal army carries it: the full rifle, a
+	# long barrel and a full stock, one big round at a time. The block rolls back
+	# under the thumb and the next goes in as quick as anything single-shot, so a
+	# steady man keeps up a fire with it; it reaches as far as the Springfield and
+	# throws less wide. Same rounds as the Sharps, for now.
+	"remington": {"name": "REMINGTON ROLLING BLOCK", "points": 2, "action": "breech", "barrels": 1, "hammer": true,
+		"damage": 3, "pierce": 1, "speed": 950.0, "range": 680.0, "spread": 0.6, "pellets": 1, "noise": 540.0,
+		"sfx": "sharps", "cycle": 0.35, "shake": 4.0, "smoke": 16, "smoke_push": 1.3, "ammo": "sharps",
+		"open": [0.3, "lever"], "eject": [0.3, "eject"], "insert": [0.5, "shell_in"], "close": [0.3, "lever"],
+		"status": {"cycle": "COCKING", "open": "BLOCK ROLLED BACK", "close": "BLOCK UP"}},
 	# Escopeta: an old single-barrel percussion fowling piece, the peon's gun. Powder,
 	# wad, shot, wad, all rammed down from the front: one shot and he'll want his pistol.
 	"escopeta": {"name": "ESCOPETA", "points": 0, "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
