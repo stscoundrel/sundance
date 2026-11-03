@@ -41,7 +41,7 @@ func _reaches(a: Vector2, b: Vector2) -> bool:
 
 func _map() -> void:
 	step = "map"
-	check(game.enemies.is_empty() and game.civilians.size() == 6, "who's there: %d, %d" % [game.enemies.size(), game.civilians.size()])   # (the carriers and their comandante)
+	check(game.enemies.is_empty() and game.civilians.size() == 7, "who's there: %d, %d" % [game.enemies.size(), game.civilians.size()])   # (the carriers and their comandante)
 	var groups := {}
 	for b in game.buildings:
 		groups[b["group"]] = groups.get(b["group"], 0) + 1

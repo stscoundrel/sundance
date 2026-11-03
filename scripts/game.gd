@@ -46,6 +46,11 @@ var director: Director = null   # a level's waves, if it has any
 var hanging: Hanging = null     # a man on the gallows to save, if the level has one
 var captive: Captive = null     # a man tied to a pole, if the level has one
 var cargo: Cargo = null         # the arms to be carried off, if the level has them (it's won at the wagon)
+var mgun: MGun = null           # a machine gun for him, if the map has one
+# A big battle's smoke and chaos (the map's "haze": [range, spread]): the army's guns
+# reach so far and throw so wide of what they would (the stranger's don't: he's seen
+# it all before).
+var haze := Vector2.ONE
 # A gang with a coordinator (El General: "coordinator" in his type) fights to his
 # orders while he lives: the alarm sends men out and falls back on a holdout. Down
 # he goes, and it's over: no more orders, every man shaken, the faint-hearted run.
@@ -53,6 +58,9 @@ var leaderless := false
 var flags: Array[Dictionary] = []   # colours lying in the dirt: {at, rec}
 const FLAG_SEEN := 300.0    # px: men this near see the colours go down (or up again)
 const FLAG_RAISE := 340.0   # px: a regular this near runs to raise them
+const FLAG_BREAKS := 0.4    # chance a leva who sees them go down loses heart
+const GUN_FEAR_NEAR := 90.0 # px: men this near one the machine gun cuts down take fright
+const GUN_FEAR_SEEN := 300.0   # px from the stranger: near enough for him to see it, on screen or not
 var _quiet := 0.0
 var graves := PackedVector2Array()
 var to_mourn: Array[Dictionary] = []
@@ -97,9 +105,9 @@ var dyn_cd := 0.0
 # hit them, look shot up past half, and fall to a heap of boards (no longer cover,
 # nor in anyone's way). A damaged trough leaks. Toughness decides which rounds go
 # straight through (a Winchester through a crate, a Sharps through a barrel too).
-const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33, "wagon_over": 33, "crate_stack": 16,
+const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33, "wagon_over": 33, "nest_x": 120, "nest_y": 120, "crate_stack": 16,
 	"upturned_n": 7, "upturned_s": 7, "upturned_e": 7, "upturned_w": 7, "keg": 1, "dyn_crate": 1}
-const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3, "wagon_over": 3, "crate_stack": 2,
+const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3, "wagon_over": 3, "nest_x": 3, "nest_y": 3, "crate_stack": 2,
 	"upturned_n": 1, "upturned_s": 1, "upturned_e": 1, "upturned_w": 1, "keg": 9, "dyn_crate": 9}
 # Props that go up when hit (see Charge): anyone's round, or a blast close by.
 const EXPLOSIVE := ["keg", "dyn_crate"]
@@ -202,6 +210,7 @@ func _ready() -> void:
 		Smoulder.rng.randomize()
 		Cargo.rng.randomize()
 		Enemy.assault_rng.randomize()
+		MGun.rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
 		loot_rng.randomize()
@@ -236,12 +245,15 @@ func _ready() -> void:
 		Smoulder.rng.seed = 67
 		Cargo.rng.seed = 71
 		Enemy.assault_rng.seed = 73
+		MGun.rng.seed = 79
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
 	enemy_data = _load_json(ENEMIES_PATH)
 	_load_level()
 	size = int(level["size"])
+	if level.has("haze"):
+		haze = Vector2(level["haze"][0], level["haze"][1])
 	tex_scale = float(meta.get("tex_scale", 1.0))
 	_build_world()
 	_spawn_actors()
@@ -981,6 +993,10 @@ func _spawn_actors() -> void:
 		captive = Captive.new()
 		captive.setup(self, level_entry["captive"])
 		add_child(captive)
+	if level.has("mg"):
+		mgun = MGun.new()
+		mgun.setup(self, Vector2(level["mg"][0], level["mg"][1]))
+		world.add_child(mgun)
 	if level_entry.has("cargo") and level.has("cargo"):
 		cargo = Cargo.new()
 		add_child(cargo)
@@ -1710,6 +1726,20 @@ func lose_the_head(who: Enemy) -> void:
 			e.lose_heart()
 
 
+## The machine gun's cut a man down: the men by him who the stranger can see take
+## fright (only those: a rout starting somewhere off down the line where he can't
+## see it would be no use to anyone).
+func _gun_fright(at: Vector2) -> void:
+	var vp := get_viewport()
+	var view: Rect2 = vp.get_canvas_transform().affine_inverse() * vp.get_visible_rect()
+	for o in enemies:
+		if o.alive and o.assault and not o.deserting and o.flag_at == Vector2.INF \
+				and o.global_position.distance_to(at) < GUN_FEAR_NEAR \
+				and (view.has_point(o.global_position) or (o.global_position.distance_to(player.global_position) < GUN_FEAR_SEEN
+					and line_of_sight(player.global_position, o.global_position, false))):
+			o.gun_fright(at)   # (on his screen, or near enough him to see plainly)
+
+
 ## A deserter off the edge of the map: gone, not dead (nobody to bury, no gun dropped).
 func gone_off(e: Enemy) -> void:
 	enemies.erase(e)
@@ -1744,8 +1774,8 @@ func _flag_down(bearer: Enemy) -> void:
 	hud.toast("Their colours are down")
 	for o in enemies:
 		if o.alive and o != bearer and o.global_position.distance_to(at) < FLAG_SEEN:
-			if o.kind == "leva":
-				o.lose_heart()
+			if o.kind == "leva" and Enemy.assault_rng.randf() < FLAG_BREAKS:
+				o.lose_heart()   # (some of the levas: the rest stay, shaken)
 			else:
 				o.shaken = minf(1.0, o.shaken + 0.5)
 	if bearer.has_meta("raised"):
@@ -1952,6 +1982,8 @@ func _on_enemy_died(e: Actor) -> void:
 		_commander_down(e)
 	if e is Enemy and e.carries_flag():
 		_flag_down(e)
+	if e is Enemy and e.killer == player and player.gun:
+		_gun_fright(e.global_position)
 	if e.has_meta("scout") and e.alarm_role == "scout":
 		raise_alarm(10.0)   # sent to look, and never came back
 		stats["scouts lost"] = stats.get("scouts lost", 0) + 1
@@ -2132,10 +2164,11 @@ func add_shake(amount: float) -> void:
 
 
 func spawn_bullet(origin: Vector2, vel: Vector2, range_px: float, damage: int, shooter: Actor, height: float,
-		pellet: bool, pierce := 0) -> void:
+		pellet: bool, pierce := 0, own_cover := 26.0) -> void:
 	var b := Bullet.new()
 	b.setup(self, origin, vel, range_px, damage, shooter, height, pellet)
 	b.pierce = pierce
+	b.own_cover = own_cover
 	world.add_child(b)
 
 
@@ -2438,6 +2471,10 @@ func light_stick(by: Enemy) -> Dynamite:
 func stick_landed(d: Dynamite) -> void:
 	var at := d.global_position
 	var his: bool = d.by == player
+	if player.gun and not his and player.global_position.distance_to(at) < Dynamite.R + 20.0:
+		# bolted to the gun he'd never see it for the smoke: they shout it for him
+		hud.banner("¡Dinamita! Off the gun, compañero!")
+		sfx("sting", null, -4.0, 0.0)
 	for e in enemies:
 		if e.alive and e.global_position.distance_to(at) < Dynamite.R + 20.0:
 			if not his or e.rank >= RUNS_FROM or loot_rng.randf() < SPOT_STICK:

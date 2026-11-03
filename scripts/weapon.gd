@@ -574,7 +574,7 @@ func _shoot(mult: int, extra_spread := 0.0) -> void:
 	var origin := h.global_position + dir * 5.0
 	for i in n:
 		var a: float
-		var rng: float = d["range"]
+		var rng: float = d["range"] * h.range_mult()
 		if d["pellets"] == 1:
 			a = clamp(randfn(0.0, spread * 0.5), -spread * 1.5, spread * 1.5)
 		else:

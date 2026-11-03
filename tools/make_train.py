@@ -40,8 +40,14 @@ TRAIN = [
 # looking up the west of the train at the cargo (for any who slip past the train
 # after it); and a post by the tender looks north up the cars' east side.
 DEFENCES = [
-    ("ties_x", 30.6, 40.3), ("sandbags_x", 32.8, 40.3), ("ties_x", 35.0, 40.3),
-    ("sandbags_y", 37.6, 38.0), ("ties_y", 37.6, 35.8), ("sandbags_y", 37.6, 33.6), ("rifle_crates", 37.6, 32.6),
+    ("ties_x", 30.6, 40.3), ("sandbags_x", 32.8, 40.3),
+    # the gun's own nest, two layers of bags deep to the south and east, one to the
+    # west (open only to the north, the way in), tight round
+    # it: inside the reach its rounds go over low cover at, so it fires over these and
+    # into nothing else of ours across its arc
+    ("nest_x", 35.6, 39.9), ("nest_y", 37.0, 37.9), ("nest_x", 35.4, 40.5), ("nest_y", 37.6, 37.8),
+    ("nest_y", 35.0, 38.2),   # and one to the west, out of its arc: the rurales come round that way
+    ("ties_y", 37.6, 35.4), ("sandbags_y", 37.6, 33.2), ("rifle_crates", 37.6, 32.2),
     ("ammo_box", 33.2, 36.2), ("ammo_box", 34.0, 36.6), ("crate", 31.0, 33.6),
     ("rifle_crate", 32.0, 30.6),
     # the west pocket, across the torn-up line
@@ -50,7 +56,7 @@ DEFENCES = [
     # the post by the tender
     ("crate_stack", 32.6, 26.2), ("sandbags_x", 34.4, 26.4), ("barrel", 36.7, 26.6),
 ]
-MG_SPOT = [36.3, 39.3]   # where the Colt-Browning will stand
+MG_SPOT = [36.3, 39.3]   # the Colt-Browning, its tripod in the nest's corner; the stranger behind it
 
 # The cargo: cases piled by the west doors for the carriers, a few broken open in
 # the hurry, the carretas waiting along the west edge (mules facing out).
@@ -66,6 +72,8 @@ CARGO = [
     ("carreta", 1.0, 26.6), ("carreta", 1.0, 13.0), ("carreta", 9.0, 1.0),
     # loose rifles heaped where cases broke open, and the guards' own by their car
     ("rifle_pile", 18.4, 27.6), ("rifle_pile", 26.0, 17.6), ("rifle_pile", 20.6, 41.4),
+    # and the prize: machine guns off the train, the tripods left behind
+    ("mgun_pile", 23.2, 22.0),
 ]
 
 # What the carriers take, a load a trip (see scripts/cargo.gd): each pile (the
@@ -82,6 +90,7 @@ PILES = [
     ("rifles", ("rifle_pile", 18.4, 27.6), 6), ("rifles", ("rifle_pile", 26.0, 17.6), 5),
     ("rifles", ("rifle_pile", 20.6, 41.4), 4), ("rifles", ("rifle_crate_open", 25.0, 11.9), 3),
     ("rifles", ("rifle_crate_open", 19.4, 26.6), 3),
+    ("mg", ("mgun_pile", 23.2, 22.0), 3),
 ]
 DOORS = [("case", (28.4, 9.1), 8), ("case", (28.4, 22.3), 8)]   # the two boxcars
 # The wagons, in the order they load: the far one first, the last (by the wagon
@@ -95,6 +104,7 @@ CARRIERS = [
     {"kind": "cargador", "x": 23.8, "y": 20.4, "look": (28, 22)},
     {"kind": "cargador_armas", "x": 19.2, "y": 25.0, "look": (19, 28)},
     {"kind": "cargadora", "x": 17.2, "y": 28.4, "look": (18, 28)},
+    {"kind": "cargador_mg", "x": 21.6, "y": 21.2, "look": (23, 22)},
     {"kind": "comandante", "x": 23.4, "y": 25.2, "look": (21, 28)},
 ]
 for c in CARRIERS:
@@ -159,7 +169,7 @@ EAST_ROAD = [
 ]
 # And from the south: more of the same, up to the front.
 SOUTH = [
-    ("sandbags_x", 37.6, 45.0), ("rock_c", 40.6, 50.0), ("sandbags_x", 33.0, 53.2), ("crate_stack", 38.4, 58.4),
+    ("rock_c", 40.6, 50.0), ("sandbags_x", 33.0, 53.2), ("crate_stack", 38.4, 58.4),
     ("rock_b", 35.0, 60.4), ("wagon_over", 42.0, 55.0), ("sandbags_y", 45.0, 44.6),
 ]
 
@@ -200,11 +210,16 @@ CENTER = {"x": 34.0, "y": 35.0}
 # handful; and the rurales, few and dangerous. Their officers, the colours and the
 # capitán come by name in the level's waves.
 WAVE_KINDS = {"leva": 10, "soldado": 6, "cabo": 1.5, "rural": 2}
-# Where they make for (scripts/enemy.gd, the assault): along the train's east side,
-# up to the tender and the breastwork's front; the rurales round to its far side,
-# among the carriers.
-ASSAULT = {"train": [[32.0, 3.0], [32.0, 8.0], [32.2, 12.4], [32.4, 16.4], [32.0, 21.0], [31.8, 25.0],
-                     [32.4, 28.8], [29.6, 42.4], [34.0, 42.4]],
+# The battle's smoke and chaos: the army's guns carry seven tenths as far, and throw
+# four tenths wider (the stranger's, as ever).
+HAZE = [0.7, 1.4]
+# Where they make for (scripts/enemy.gd, the assault): the engine, all of them, close
+# in front of the breastwork, to its south and east, where the stranger and his gun
+# can see them come (spread along the cars they went north out of sight; by the
+# tender, behind him, they shot him in the back); the rurales round to the train's
+# far side, among the carriers.
+ASSAULT = {"train": [[40.4, 35.6], [40.6, 37.8], [41.4, 40.4], [39.2, 42.6], [36.8, 43.4], [34.2, 43.4],
+                     [31.6, 43.2], [29.6, 42.4]],
            "flank": [[26.6, 4.8], [24.4, 14.6], [23.0, 22.6], [19.2, 33.6], [21.4, 37.2]]}
 PLAYER = {"x": 34.6, "y": 35.6}   # in the breastwork, behind the gun's corner
 
@@ -227,7 +242,7 @@ def main():
         if (o["x"], o["y"]) in WORN:
             o["worn"] = WORN[(o["x"], o["y"])]
     assert sum("worn" in o for o in objects) == len(WORN), "a worn spot with nothing at it"
-    joined = {k for k, *_ in placed if k.rsplit("_", 1)[0] in CHUNKED}
+    joined = {k for k, *_ in placed if k.rsplit("_", 1)[0] in CHUNKED} | {"nest_x", "nest_y"}   # (the nest's layers butt up)
     spots = [{"kind": "assault", "x": x, "y": y} for x, y in ASSAULT["train"] + ASSAULT["flank"]]
     layout.check(N, objects, DEAD + PICKUPS + ENTRIES + CARRIERS + piles() + spots
                  + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")],
@@ -256,6 +271,7 @@ def main():
         "foe_count": "FEDERALES",
         "wave_kinds": WAVE_KINDS,
         "assault": ASSAULT,
+        "haze": HAZE,
     })
     print("Paso Esperanza: %d objects, %d dead, %d sticks of dynamite" % (len(objects), len(DEAD), len(PICKUPS)))
 

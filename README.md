@@ -13,7 +13,7 @@ godot --path .
 
 WASD move · mouse aim · LMB fire · RMB fan the Colt / fire both barrels · C or Ctrl crouch ·
 R reload (fire stops a partial reload) · 1/2/3 or wheel to switch guns · E knife (hold to drag
-a body; at the gallows or the pole, hold to cut the man loose) · B bandage · G throw dynamite · F swap for the gun at your feet · Enter restart · Esc quit.
+a body; at the gallows or the pole, hold to cut the man loose; by the machine gun, get on or off it) · B bandage · G throw dynamite · F swap for the gun at your feet · Enter restart · Esc quit.
 
 On the loadout screen: 1/2/3 or a click go through a slot's guns (those you can afford), B and G
 buy a bandage and a stick of dynamite, Enter rides in. Each gun and piece of kit costs points out
@@ -86,6 +86,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_train.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_cargo.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_federales.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_assault.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_mgun.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_general.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arsenal.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_champion.gd

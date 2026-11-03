@@ -93,6 +93,7 @@ var _bot_down_t := 0.0
 var sticks := 0                # dynamite he carries
 var stick: Dynamite = null     # lit, in his hand
 var throw_t := 0.0             # the wind-up left
+var gun: MGun = null           # the machine gun he's on, if he is
 
 
 func setup(g: Node, pos: Vector2) -> void:
@@ -121,6 +122,10 @@ func _physics_process(delta: float) -> void:
 	exposed_t = maxf(0.0, exposed_t - delta)
 	if knife_t >= 0.0:
 		_lunge(delta)
+		update_anim(delta)
+		return
+	if gun:
+		_at_gun(delta, playing)
 		update_anim(delta)
 		return
 	var input := Vector2.ZERO
@@ -213,6 +218,9 @@ func _handle_actions() -> void:
 		crouched = not crouched
 	if Input.is_action_just_pressed("reload"):
 		weapon.start_reload()
+	if Input.is_action_just_pressed("knife") and game.mgun and game.mgun.can_man(global_position):
+		get_on(game.mgun)
+		return
 	if Input.is_action_just_pressed("knife"):
 		knife()
 	for i in 3:
@@ -226,6 +234,43 @@ func _handle_actions() -> void:
 		weapon.fanning = Input.is_action_pressed("alt")
 	elif Input.is_action_just_pressed("alt"):
 		weapon.alt_trigger()
+
+
+## On the machine gun: down behind it, his hands on the grips.
+func get_on(g: MGun) -> void:
+	gun = g
+	g.man(self)
+	velocity = Vector2.ZERO
+	crouched = true
+	anim_gun = "mgun"
+
+
+func get_off() -> void:
+	if gun:
+		gun.leave()
+	gun = null
+	anim_gun = ""
+	crouched = false
+
+
+## A frame on the gun: it goes where the cursor is, as far and as fast as it can
+## swing; the trigger held, it fires. E, or a step any way, and he's off it.
+func _at_gun(delta: float, playing: bool) -> void:
+	velocity = Vector2.ZERO
+	crouched = true
+	exposed_t = maxf(0.0, exposed_t - delta)
+	weapon.update(delta)
+	var firing := false
+	if playing and not game._args.has("bot"):
+		if Input.is_action_just_pressed("knife") or Input.get_vector("move_left", "move_right", "move_up", "move_down") != Vector2.ZERO:
+			get_off()
+			return
+		firing = Input.is_action_pressed("fire")
+	var want := aim_ground(get_global_mouse_position()) - gun.global_position
+	gun.drive(delta, want.normalized() if playing else Vector2.ZERO, firing)
+	facing = gun.aim
+	if firing and gun.belt > 0 and action != "fire":
+		play_action("fire")   # (the gun shaking in his hands)
 
 
 ## What a loadout costs: its guns' points and its kit's.
@@ -601,6 +646,7 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 
 
 func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
+	get_off()
 	if down:   # where he lies, the gun falling from his hand
 		how = weapon.kind + "/gasp_die"
 		from_dir = -lie_facing
@@ -625,6 +671,7 @@ func _goes_down(dmg: int, shooter: Actor) -> bool:
 
 
 func _go_down(from_dir: Vector2, shooter: Actor) -> void:
+	get_off()
 	stand_used = true
 	down = true
 	down_t = 0.0

@@ -1062,7 +1062,7 @@ FRAGILE = {
 # ---------------------------------------------------------------- broken props
 
 # Props that shooting wears down: each gets a damaged and a wrecked look.
-BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon", "crate_stack", "wagon_over",
+BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon", "crate_stack", "wagon_over", "nest_x", "nest_y",
              "upturned_n", "upturned_s", "upturned_e", "upturned_w", "keg", "dyn_crate")
 RAW_WOOD = np.array([214, 178, 128], float)   # fresh splinters
 
@@ -2048,6 +2048,62 @@ def flag_down():
     return m
 
 
+def _m1895(m, base, a, tilt=0.0):
+    """The Colt-Browning's gun, from the spade grip at `base` along angle `a`: square
+    receiver, heavy barrel, the gas lever swung under the muzzle, the belt out of the
+    feed on its left."""
+    d = np.array([math.cos(a) * math.cos(tilt), math.sin(a) * math.cos(tilt), math.sin(tilt)])
+    side = np.array([-math.sin(a), math.cos(a), 0.0])
+    b = np.array(base, float)
+    m += beam(b - side * 0.06, b + side * 0.06, 0.02, (60, 58, 56))                      # the spade grip
+    m += beam(b, b + d * 0.1, 0.02, (60, 58, 56))
+    for k in np.linspace(0.1, 0.42, 6):
+        m += box(tuple(b + d * k - 0.075), tuple(b + d * k + 0.075), (66, 66, 70), 0.02)    # receiver
+    m += beam(b + d * 0.42, b + d * 1.15, 0.04, (82, 84, 92))                             # barrel
+    m += beam(b + d * 0.95 - [0, 0, 0.06], b + d * 0.7 - [0, 0, 0.14], 0.02, (60, 58, 56))  # gas lever
+    for i in range(7):   # the belt hanging out of the feed
+        p_ = b + d * 0.25 + side * (0.1 + i * 0.03) - [0, 0, 0.04 * i]
+        m += box(tuple(p_ - 0.02), tuple(p_ + 0.02), (205, 165, 70), 0.01)
+
+
+def mgun(a):
+    """The gun on its low tripod, turned to screen angle `a` (radians, about the
+    tripod head at the origin): the stranger works it crouched behind."""
+    m = Cloud()
+    head = np.array([0.0, 0.0, 0.62])
+    for la in (a + math.pi, a + math.pi * 0.35, a - math.pi * 0.35):   # two legs forward, the trail back
+        m += beam(head, head + np.array([math.cos(la) * 0.55, math.sin(la) * 0.55, -0.62]), 0.025, (78, 70, 60))
+    m += ellipsoid(tuple(head), (0.06, 0.06, 0.05), (60, 58, 56))
+    back = head + np.array([math.cos(a), math.sin(a), 0.0]) * -0.38 + [0, 0, 0.06]
+    _m1895(m, back, a, 0.03)
+    return m
+
+
+def mgun_pile():
+    """Machine guns off the train, the tripods left behind, laid on a tarp with
+    their belts for the carriers."""
+    m = Cloud()
+    m += quad((0, 0, 0.01), (1.4, 0, 0), (0, 0.9, 0), solid((150, 136, 104)), 0.03, normal=(0, 0, 1))
+    _m1895(m, (0.15, 0.25, 0.08), 0.1)
+    _m1895(m, (0.2, 0.6, 0.08), -0.05)
+    return m
+
+
+def nest(along_x=True):
+    """The gun's own sandbags, heaped tight round it, low enough to fire over: they
+    wear away as the army closes in."""
+    m = Cloud()
+    L = 1.6 * T
+    for row in range(3):
+        n = 4 - (row == 2)
+        for i in range(n):
+            a = (i + 0.5 + 0.5 * (row % 2)) * (L / 4.2)
+            c = (a, 0.36, 0.13 + row * 0.2) if along_x else (0.36, a, 0.13 + row * 0.2)
+            r = (0.27, 0.2, 0.11) if along_x else (0.2, 0.27, 0.11)
+            m += ellipsoid(c, r, solid((166 - row * 6, 146 - row * 6, 102)))
+    return m
+
+
 # Long things baked in pieces along their length, each its own sprite sorted at its
 # own middle, so a man beside one end of a boxcar is drawn in front of it, not
 # behind (one sprite sorts at the middle of the whole car). Name -> (axis, pieces);
@@ -2166,6 +2222,9 @@ BUILDINGS = {
     "handcar": (handcar, (1.2, 1.8), "cover", False, None),
     "rifle_pile": (rifle_pile, (1.0, 0.7), "none", False, None),
     "flag_down": (flag_down, (1.4, 0.8), "none", False, None),
+    "mgun_pile": (mgun_pile, (1.2, 0.8), "none", False, None),
+    "nest_x": (lambda: nest(True), (1.6, 0.6), "cover", False, None),
+    "nest_y": (lambda: nest(False), (0.6, 1.6), "cover", False, None),
     "carreta": (carreta, (5.0, 1.3), "cover", False, None),
 }
 

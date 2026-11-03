@@ -373,6 +373,12 @@ func _stand_hurtbox() -> void:
 
 
 ## Spread multiplier applied to the weapon's base spread.
+## How far his rounds carry, as a share of the gun's own reach (the smoke of a big
+## battle shortens it for the army; the stranger sees through it).
+func range_mult() -> float:
+	return 1.0
+
+
 func accuracy_mult() -> float:
 	return 1.0
 

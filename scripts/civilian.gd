@@ -113,6 +113,7 @@ const CARRY_BACK := 4.0    # s without one, and he's back out to it
 const CARRY_WALK := 34.0   # px/s with a load (a case is heavy; an armful of rifles a little less so)
 const CARRY_JOG := 44.0    # px/s back for the next
 const LIFT_T := 1.4        # s bent to the pile for a load
+const CARRY_SET := {"mg": "mgcarry"}   # (the pose set each load is carried in, where it isn't the load's own name)
 const STOW_T := 1.0        # s heaving it into the wagon
 const VISIT_T := Vector2(10.0, 18.0)   # s at each grave
 const VISIT_NEAR := 320.0  # px from where she started: the graves she goes round
@@ -270,7 +271,7 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		anim_gun = "bound"       # hands tied behind his back
 	elif carrier:
 		carries = tdata.get("load", "case")
-		anim_gun = carries       # a case across his chest, or an armful of rifles
+		anim_gun = CARRY_SET.get(carries, carries)   # a case across his chest, an armful of rifles, a machine gun on his shoulder
 		walk = CARRY_WALK * float(tdata["speed"])
 	elif leader:
 		anim_gun = "mayor"       # waving them on
@@ -885,6 +886,10 @@ func _next_trip() -> void:
 		path_i = 0
 		return
 	src = cg.source_for(self)
+	if src.is_empty() and tdata.has("then") and carries != tdata["then"]:
+		carries = tdata["then"]   # the machine guns all gone: on to the cases
+		anim_gun = CARRY_SET.get(carries, carries)
+		src = cg.source_for(self)
 	if src.is_empty():
 		wait = 2.0   # nothing of his to carry: he waits on it
 		return
@@ -928,8 +933,8 @@ func _carry(delta: float) -> void:
 			pose = "pick"
 			work_t -= delta
 			if work_t <= 0.0:
-				load_kind = ""
 				cg.stow(self)
+				load_kind = ""
 				st = St.IDLE
 		St.BOARD:
 			if _follow(CARRY_JOG * float(tdata["speed"])):

@@ -39,7 +39,7 @@ def template_guns():
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
     out = {"hero": ["colt", "coach", "rifle", "schofield", "navy", "pistola", "sawnoff", "champion", "escopeta", "spencer",
-                    "springfield", "rollingblock", "remington"]}
+                    "springfield", "rollingblock", "remington", "mgun"]}
 
     def need(template, g, t=None):
         out.setdefault(template, [])
@@ -80,7 +80,9 @@ def template_guns():
         if t.get("role") == "condemned":
             need(t["template"], "unarmed")   # (and cut loose, running for it)
         if t.get("role") == "carrier":
-            need(t["template"], t.get("load", "case"))
+            for ld in (t.get("load", "case"), t.get("then")):
+                if ld:
+                    need(t["template"], CARRY_SET.get(ld, ld))
             need(t["template"], "unarmed")   # (a carrier's dropped his load, running for cover)
     # a level's waves may hand their men other guns ("arms"): whoever might walk in
     # with them is baked holding them too
@@ -101,7 +103,8 @@ def template_guns():
     return out
 
 
-GUN_LEN = {"remington": 1.3, "colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
+CARRY_SET = {"mg": "mgcarry"}   # a carrier's load, by the pose set he carries it in
+GUN_LEN = {"m1895": 1.0, "remington": 1.3, "colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
@@ -358,6 +361,17 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
         out += beam(at(0.35, (0, -0.024)), at(0.58, (0, -0.024)), 0.028, WOOD)
         out += beam(at(0.22, (0, 0.04)), at(0.24, (0, 0.075)), 0.008, STEEL)            # tang sight
         out += beam(at(0.3, (0, 0.03)), at(0.33, (0, 0.06)), 0.01, STEEL)              # hammer
+    elif kind == "m1895":
+        # the Colt-Browning M1895 off its tripod: the spade grip and the square receiver,
+        # the heavy air-cooled barrel, the gas lever swung up under the muzzle, and the
+        # canvas belt hanging out of the feed
+        out += beam(at(0.0, (0, 0.0)), at(0.08, (0, 0.0)), 0.025, STEEL)                  # the grip
+        out += box(tuple(at(0.08) - 0.06), tuple(at(0.34) + 0.06), (70, 70, 72))           # receiver
+        out += beam(at(0.34, (0, 0.02)), at(1.0, (0, 0.02)), 0.032, GUNMETAL)               # barrel
+        out += beam(at(0.82, (0, -0.03)), at(0.6, (0, -0.09)), 0.016, STEEL)                # the gas lever
+        for i in range(6):
+            out += box(tuple(at(0.2, (0.07 + i * 0.012, -0.05 - i * 0.03)) - 0.012),
+                       tuple(at(0.2, (0.07 + i * 0.012, -0.05 - i * 0.03)) + 0.012), BRASS)   # the belt
     elif kind == "remington":
         # the Remington Rolling Block as the army has it: a full stock, the case-hardened
         # action with its big hammer and the block that rolls back under the thumb, a
@@ -884,6 +898,12 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
             d = rot_z((i - 2) * 0.22) @ np.array([0.25, 1.0, 0.5 - 0.06 * i])
             d /= np.linalg.norm(d)
             m += weapon_model("rifle", c + [0.04 * (i - 2), 0.05 * (i - 2), 0.03 * i] - d * GUN_LEN["rifle"] * 0.45, d)
+    if up.get("mg"):   # a machine gun on his right shoulder, the muzzle forward, the belt over the left
+        m += weapon_model("m1895", np.array([-0.32, -0.2, 0.66]), np.array([1.0, 0.0, 0.12]))
+        for i in range(10):
+            t_ = i / 9
+            p_ = np.array([0.04 + 0.04 * math.sin(t_ * math.pi), 0.2 - 0.4 * t_, 0.52 - 0.5 * t_])
+            m += box(tuple(p_ - 0.02), tuple(p_ + 0.02), BRASS)
     if up.get("case") is not None:   # a case of rifles held in front of him, across his chest
         c = np.array(up["case"], float)
         pine = lambda P, N: np.where((np.abs(P[:, 2] - c[2]) < 0.025)[:, None], [[96, 74, 52]], [[182, 148, 102]])
@@ -1014,7 +1034,23 @@ def _key_poses(w):
         k["insert_b"] = P(k["insert_b"], lever=1.0)
         return k
     if w == "remington":
-        return _key_poses("sharps")   # a full-length single shot, held and loaded like the Sharps
+        return _key_poses("sharps")
+    if w == "mgun":
+        # the stranger at the Colt-Browning: down behind it, both hands back on the
+        # spade grip (the gun itself is the gun's own sprite)
+        k = _key_poses("unarmed")
+        k["aim"] = dict(eL=V(0.14, 0.22, 0.12), hL=V(0.34, 0.07, 0.06), eR=V(0.14, -0.22, 0.12),
+                        hR=V(0.34, -0.07, 0.06), lean=0.3, nod=0.15, gun=None)
+        k["kick"] = P(k["aim"], lean=0.22)
+        return k
+    if w == "mgcarry":
+        # a carrier with a machine gun: up on his right shoulder, a hand on it, the
+        # belt over the other
+        k = _key_poses("case")
+        k["carry"] = dict(eR=V(0.02, -0.3, 0.42), hR=V(0.1, -0.2, 0.6), eL=V(0.12, 0.22, 0.3),
+                          hL=V(0.3, -0.08, 0.56), mg=True, gun=None)
+        k["pick_b"] = P(k["carry"], lean=0.25)
+        return k   # a full-length single shot, held and loaded like the Sharps
     if w == "banner":
         # the colours: the staff in the crook of the left arm, the left hand on it while
         # he shoots (one-handed, a Navy), off it only to load
@@ -1432,7 +1468,7 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case", "mgun", "mgcarry"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
@@ -1450,7 +1486,9 @@ def upper_anims(w):
         add("orate", [a_, a_, lerp_pose(a_, c_, 0.5), c_, c_, lerp_pose(c_, b_, 0.5), b_, b_, lerp_pose(b_, a_, 0.5)],
             3, True)
         add("survey", [k["survey_a"], k["survey_a"], k["survey_b"], k["survey_b"]], 1.4, True)
-    elif w in ("smith", "rifles", "case"):
+    elif w == "mgun":
+        add("fire", [k["kick"], k["aim"]], 15, True)
+    elif w in ("smith", "rifles", "case", "mgcarry"):
         add("pick", [k["pick_a"], k["pick_a"], lerp_pose(k["pick_a"], k["pick_b"], 0.5), k["pick_b"], k["pick_b"]],
             2.5, True)
         add("carry", [k["carry"]], 1, True)
@@ -1565,7 +1603,7 @@ def upper_anims(w):
         kick = P(sky, hR=V(0.06, -0.2, 1.06), gun=G((0.02, -0.2, 1.02), (-0.15, 0.0, 1.0)))
         add("salute", [lerp_pose(k["aim"], sky, 0.5), sky, sky, kick, kick, sky, sky, lerp_pose(sky, k["aim"], 0.5)], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case", "mgun", "mgcarry"):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
                         lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         add("haul", [k["haul"]], 1, True)

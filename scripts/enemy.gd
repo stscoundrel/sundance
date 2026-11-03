@@ -260,8 +260,14 @@ const HOLD_GREEN := Vector2(0.7, 1.6)    # (a leva hardly stops)
 const AT_TRAIN := 30.0                   # px from his spot: he's there
 const VOLLEY_WAIT := 1.2                 # s from "¡Apunten!" to "¡Fuego!"
 const VOLLEY_NEAR := 200.0               # px: the men he can order
-const DESERT_ON_DEATH := 0.12            # chance a man given to it runs, seeing one of his own fall
+const DESERT_ON_DEATH := 0.04            # chance a man given to it runs, seeing one of his own fall
 const HUNT_NEAR := 220.0                 # px: a carrier this near, in sight, the stranger not
+const PUSH_CLOSE := 160.0                # px: further than this from the stranger, short of his spot, he pushes in
+const PUSH_BOUND := Vector2(150.0, 230.0)   # px a bound, pushing
+const PUSH_HOLD := Vector2(0.25, 0.7)    # s down between them, pushing
+const FLINCH := 0.15                     # chance a round past him still makes him duck, pushing (a leva twice it)
+const GUN_NERVE := 8.0                   # s after the gun's frightened him, before it can again
+var gun_nerve := -1.0                    # (the clock till then)
 var objective := Vector2.INF             # his spot by the train, till he gets there
 var assault := false
 var bounding := false
@@ -312,7 +318,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 			tdata[key] = ROLLINGBLOCK_STYLE[key]
 	var top: float = tdata.get("schofield", SCHOFIELD)
 	loadout = loadout.map(func(gun): return "schofield" if gun == "colt" and schofield_rng.randf() < top else gun)
-	stats = {"keep": _v2(tdata["range"]), "cadence": _v2(tdata["cadence"])}
+	stats = {"keep": _v2(tdata["range"]) * game.haze.x, "cadence": _v2(tdata["cadence"])}
 	hp = int(tdata["hp"])
 	max_hp = hp
 	weapon = Weapon.new(loadout[0], self)
@@ -406,6 +412,8 @@ func carries_flag() -> bool:
 ## flying.
 func raise_flag(at: Vector2) -> void:
 	flag_at = at
+	reaction = ""
+	pending = ""
 	path_to(at)
 	_say(_line("flag", ["¡La bandera!", "¡Levántenla!"]))
 
@@ -779,6 +787,16 @@ func _say(s: String) -> void:
 func near_miss(from: Vector2) -> void:
 	if not alive:
 		return
+	if pushing():
+		# far out under the gun: lying there is death, the only way is in
+		shaken = min(1.0, shaken + 0.05)
+		_engage(from)
+		if fear_cd <= 0.0:   # (a chance to flinch every few seconds, not every round)
+			if assault_rng.randf() < FLINCH * (2.0 if tdata.get("deserts", false) else 1.0):
+				queue_reaction(from, true)
+			else:
+				fear_cd = 3.0
+		return
 	shaken = min(1.0, shaken + 0.15 * (1.0 - bold * 0.6))
 	pinned_t = 2.5 * (1.0 - bold * 0.7)
 	_engage(from)
@@ -798,6 +816,8 @@ func witness_death(at: Vector2, killer: Vector2) -> void:
 		desert()
 		return
 	_engage(killer)
+	if pushing():
+		return   # (no stopping for the fallen, out there)
 	if reaction in ["flee", "cower"]:
 		return
 	fear_cd = 0.0
@@ -830,7 +850,7 @@ func fear() -> float:
 ## Roll how he reacts to gunfire and start it after a short, personal delay so a
 ## group never reacts in unison.
 func queue_reaction(from: Vector2, scary: bool, forced := false) -> void:
-	if not alive or pending != "" or (fear_cd > 0.0 and not forced):
+	if not alive or pending != "" or (fear_cd > 0.0 and not forced) or flag_at != Vector2.INF:
 		return
 	if not forced and not near_action(from):
 		return   # a fight he can't see, off down the street: he just heads for it
@@ -1076,6 +1096,8 @@ func _physics_process(delta: float) -> void:
 		_at_gallows(delta)
 	elif deserting:
 		_desert_run()
+	elif flag_at != Vector2.INF:
+		_to_flag()   # (the colours first, whatever's flying)
 	elif game.captive and game.captive.holds(self):
 		_at_pole(delta)
 	elif is_staggered():
@@ -2058,7 +2080,7 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 	# Not pinned down and silent for a while: stop whatever he's doing and shoot.
 	var must_fire: bool = sees_player and pinned_t <= 0.0 and since_shot > 1.6 and react <= 0.0 \
 		and not (opportunist > 0.0 and sights_t > 0.0) \
-		and dist < weapon.d["range"] * 0.85 and weapon.can_fire() \
+		and dist < reach() * 0.85 and weapon.can_fire() \
 		and not game.ally_in_line(self, global_position, p.global_position)
 	var ready := ready_t > 0.0
 	if ready:
@@ -2123,7 +2145,7 @@ func _fight(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary)
 	# an opportunist the stranger isn't watching wastes no time lining up
 	var quick := 0.55 if opportunist > 0.0 and sights_t <= 0.0 else 1.0
 	var aimed := aim_t >= 0.35 * reflex * quick or (fires_moving and dist < 70.0 + 70.0 * bold)
-	var in_range: bool = dist < weapon.d["range"] * 0.85
+	var in_range: bool = dist < reach() * 0.85
 	if react <= 0.0 and shot_cd <= 0.0 and in_range and aimed and abs(facing.angle_to(to)) < 0.2:
 		if game.ally_in_line(self, global_position, p.global_position):
 			blocked_steps += 1
@@ -2248,19 +2270,19 @@ func _waver(delta: float) -> bool:
 func _pick_fight_pos(target: Vector2, keep: Vector2) -> void:
 	fight_repick = randf_range(6.0, 10.0)
 	# never further off than his own gun reaches (a derringer doesn't carry far)
-	var reach: float = weapon.d["range"] * 0.8
-	var slot := target + flank_dir * minf(lerpf((keep.x + keep.y) * 0.5, keep.x, bold), reach)
+	var carry: float = reach() * 0.8
+	var slot := target + flank_dir * minf(lerpf((keep.x + keep.y) * 0.5, keep.x, bold), carry)
 	var c: Vector2 = game.find_fighting_cover(global_position, target, slot, keep, game.taken_positions(self))
-	if c != Vector2.INF and c.distance_to(target) > reach:
+	if c != Vector2.INF and c.distance_to(target) > carry:
 		c = Vector2.INF
 	if c != Vector2.INF and (randf() < bold * 0.6 or (bold > 0.0 and c.distance_to(target) > keep.y)):
 		c = Vector2.INF   # scorns cover, or won't hang back for it: he'll shoot it out in the open
 	if settled and fight_pos != Vector2.INF and c != Vector2.INF and c.distance_to(fight_pos) < 24.0 and randf() < 0.6:
 		# same spot again: work round the flank instead of sitting tight
 		flank_dir = flank_dir.rotated([-0.6, 0.6].pick_random())
-		slot = target + flank_dir * minf((keep.x + keep.y) * 0.5, reach)
+		slot = target + flank_dir * minf((keep.x + keep.y) * 0.5, carry)
 		c = game.find_fighting_cover(global_position, target, slot, keep, game.taken_positions(self))
-		if c != Vector2.INF and c.distance_to(target) > reach:
+		if c != Vector2.INF and c.distance_to(target) > carry:
 			c = Vector2.INF
 	settled = false
 	at_cover = c != Vector2.INF
@@ -2358,7 +2380,7 @@ func suppress(at: Vector2, seconds: float) -> bool:
 		return false
 	if game.staleness() > game.FRESH:
 		return false   # nobody has seen him for a while: no reason to blaze away
-	if global_position.distance_to(at) > weapon.d["range"] * 0.8 or not game.line_of_sight(global_position, at, false):
+	if global_position.distance_to(at) > reach() * 0.8 or not game.line_of_sight(global_position, at, false):
 		return false
 	single_shot = false
 	breaking = {}   # (whoever wants it shot at, it's not his own crate-breaking now)
@@ -2377,7 +2399,7 @@ func _return_fire(pos: Vector2) -> void:
 			or weapon.is_reloading() or weapon.needs_reload() or game.clock < return_ok_at:
 		return
 	var at: Vector2 = game.corner_near(global_position, pos)
-	if at == Vector2.INF or global_position.distance_to(at) > weapon.d["range"] * 0.8:
+	if at == Vector2.INF or global_position.distance_to(at) > reach() * 0.8:
 		return
 	single_shot = false
 	breaking = {}
@@ -2474,6 +2496,37 @@ func assault_to(spot: Vector2) -> void:
 	bound_hold = 0.0
 
 
+## The machine gun's just cut down a man beside him, and the stranger can see it: he
+## throws himself into the nearest cover, or gives ground (a leva may turn and run
+## back a way). A few seconds and he's up and coming on again, and for a while after
+## that the gun doesn't frighten him: they come on in rushes, and go to ground in
+## clumps where it finds them.
+func gun_fright(at: Vector2) -> void:
+	if game.clock < gun_nerve or reaction in ["flee", "hide", "backoff", "dash"]:
+		return
+	threat = game.player.global_position
+	pending = ""
+	var close := global_position.distance_to(at) < 45.0
+	var x := assault_rng.randf()
+	var r := ""
+	if tdata.get("deserts", false):
+		r = "flee" if x < (0.6 if close else 0.4) else "hide"
+	else:
+		r = "backoff" if x < (0.4 if close else 0.2) else "hide"
+	start_reaction(r)
+	reaction_t = minf(reaction_t, assault_rng.randf_range(2.5, 4.0))
+	bounding = false
+	gun_nerve = game.clock + reaction_t + GUN_NERVE
+	game.stats["gun frights"] = game.stats.get("gun frights", 0) + 1
+
+
+## Still out in the open, short of the train, with a way to go to the stranger: he
+## knows lying out there under a machine gun is death, and the only way is in.
+func pushing() -> bool:
+	return assault and objective != Vector2.INF and not deserting \
+		and global_position.distance_to(game.player.global_position) > PUSH_CLOSE
+
+
 func _assault(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionary) -> void:
 	if global_position.distance_to(objective) < AT_TRAIN:
 		objective = Vector2.INF   # at the train: from here he fights it out
@@ -2495,8 +2548,10 @@ func _assault(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionar
 			desired = to.normalized() if fire_on else desired
 		return
 	bound_hold -= delta
-	if pinned_t > 0.0:
-		bound_hold = maxf(bound_hold, 0.6)   # rounds coming in: he stays down
+	if pushing():
+		pinned_t = 0.0   # (no lying there pinned, out here)
+	elif pinned_t > 0.0:
+		bound_hold = maxf(bound_hold, 0.6)   # rounds coming in, close in: he stays down
 	if sees_player:
 		fight_repick = 99.0   # (his place is the bound's end, not one of the fight's)
 		_fight(delta, p, to, dist, spec)
@@ -2509,7 +2564,9 @@ func _assault(delta: float, p: Player, to: Vector2, dist: float, spec: Dictionar
 
 func _next_bound(p: Player) -> void:
 	var to_obj := objective - global_position
-	var step := minf(to_obj.length(), assault_rng.randf_range(BOUND.x, BOUND.y))
+	var far := pushing()
+	var b: Vector2 = PUSH_BOUND if far else BOUND
+	var step := minf(to_obj.length(), assault_rng.randf_range(b.x, b.y))
 	var slot := global_position + to_obj.normalized() * step
 	var c := Vector2.INF
 	if assault_rng.randf() < float(tdata.get("cover_use", 1.0)):
@@ -2527,7 +2584,7 @@ func _next_bound(p: Player) -> void:
 	path_to(fight_pos)
 	bounding = true
 	settled = false
-	var h: Vector2 = HOLD_GREEN if tdata.get("deserts", false) else HOLD
+	var h: Vector2 = PUSH_HOLD if far else (HOLD_GREEN if tdata.get("deserts", false) else HOLD)
 	bound_hold = assault_rng.randf_range(h.x, h.y)
 	if rank >= 2 and shout_t <= 0.0 and assault_rng.randf() < 0.3:
 		_say(_line("advance", ["¡Adelante!", "¡Al tren!"], assault_rng))
@@ -2600,8 +2657,8 @@ func _hunt_carrier(delta: float) -> bool:
 			fight_pos = Vector2.INF
 			return false
 		var to := hunting.global_position - global_position
-		var reach: float = weapon.d["range"] * 0.6
-		if to.length() > reach or not game.line_of_sight(global_position, hunting.global_position, false):
+		var carry: float = reach() * 0.6
+		if to.length() > carry or not game.line_of_sight(global_position, hunting.global_position, false):
 			if path.is_empty() or path_i >= path.size() or path[path.size() - 1].distance_to(hunting.global_position) > 30.0:
 				path_to(hunting.global_position)
 			follow_path(run)
@@ -2696,8 +2753,18 @@ func _log(what: String) -> void:
 		print("%.1fs  %s #%d: %s" % [(Time.get_ticks_msec() - game.start_time) / 1000.0, kind, game.enemies.find(self), what])
 
 
+## How far his gun carries for him: its reach, less in a battle's smoke (the map's
+## "haze": a big fight, black powder everywhere, and he has to get closer).
+func reach() -> float:
+	return weapon.d["range"] * game.haze.x
+
+
+func range_mult() -> float:
+	return game.haze.x
+
+
 func accuracy_mult() -> float:
-	var m: float = (AIM_SPREAD_SHOTGUN if weapon.is_shotgun() else AIM_SPREAD) * float(tdata["aim"])
+	var m: float = (AIM_SPREAD_SHOTGUN if weapon.is_shotgun() else AIM_SPREAD) * float(tdata["aim"]) * game.haze.y
 	if panic:
 		return m * 5.0   # wild, over the shoulder
 	if suppress_t > 0.0:

@@ -160,6 +160,8 @@ def gen_world(meta):
                 o["at"] = [pg[0] / world.T, pg[1] / world.T]
                 o["kind"] = pg[3]
     meta["shutter_paint"] = world.SHUTTER_PAINT
+    if not only or "mgun" in only:
+        gen_mgun(meta)
     if only:
         return
     frames = []
@@ -450,6 +452,17 @@ def gen_ground(meta, level, key="ground"):
     path = save(out, f"sprites/{key}.png")
     meta[key] = {"file": path, "origin": [-ox, -oy]}
     meta["tex_scale"] = 1.0 / K
+
+
+def gen_mgun(meta):
+    """The Colt-Browning on its tripod, turned each of 16 ways (screen angles, 0 = right)."""
+    meta["mgun"] = []
+    for i in range(16):
+        sa = i / 16 * 2 * math.pi
+        sx, sy = math.cos(sa), math.sin(sa)          # a screen direction, back to the grid
+        gx, gy = sx / 16 + sy / 8, sy / 8 - sx / 16
+        img, anchor = render(world.mgun(math.atan2(gy, gx)), edges=True)
+        meta["mgun"].append({"file": save(img, f"sprites/world/mgun_{i}.png"), "anchor": list(anchor)})
 
 
 def gen_fx(meta):
@@ -804,6 +817,10 @@ def gen_sfx(meta):
     # newer guns get their own random streams, so the others stay exactly as they were
     drng, srng, hrng = (np.random.default_rng(s) for s in (77, 78, 79))
     # Three takes of each gun so repeated shots don't sound identical.
+    mrng = np.random.default_rng(1895)   # (the machine gun's own: the rest come out as they were)
+    for i in range(3):
+        write("mg" + ("" if i == 0 else "_%d" % (i + 1)),   # the Colt-Browning: a short hard crack, quick to die
+              gunshot(mrng, 0.0016, 3900, 0.02, 300, 0.06, 72, 3.2, 0.55, mrng.uniform(0.95, 1.05)), meta, 0.95, 1.5)
     for i in range(3):
         sfx = "" if i == 0 else "_%d" % (i + 1)
         j = rng.uniform(0.92, 1.08)

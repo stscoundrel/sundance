@@ -14,6 +14,7 @@ var damage := 1
 var shooter: Actor
 var h := 20.0
 var pellet := false
+var own_cover := 26.0   # px: low cover this near the shooter, it goes over (he's behind it)
 var pierce := 0
 var travelled := 0.0
 var exclude: Array[RID] = []
@@ -67,7 +68,7 @@ func _physics_process(delta: float) -> void:
 			exclude.append(col.get_rid())
 			continue
 		if col.collision_layer & Iso.LAYER_COVER:
-			if hp.distance_to(shooter.global_position) < 26.0 or _standing_target_behind(hp) \
+			if hp.distance_to(shooter.global_position) < own_cover or _standing_target_behind(hp) \
 					or game.hanging and game.hanging.over_gallows(hp, vel):
 				exclude.append(col.get_rid())
 				continue

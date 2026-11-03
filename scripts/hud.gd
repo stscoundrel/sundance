@@ -214,6 +214,7 @@ func _draw_status(p: Player) -> void:
 		_draw_captive(game.captive, p)
 	if game.cargo:
 		_draw_cargo(game.cargo)
+	_draw_man(p)
 	if banner_t > 0.0:
 		var a := clampf(banner_t, 0.0, 1.0)
 		draw_rect(Rect2(150, 24, 340, 18), Color(0.3, 0.05, 0.03, 0.7 * a))
@@ -289,6 +290,9 @@ func _draw_weapon(p: Player) -> void:
 	if toast_t > 0.0:
 		_text(Vector2(0, 286), toast_text, 8, Color(0.95, 0.75, 0.35, clampf(toast_t, 0.0, 1.0)), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
 	_draw_take(p)
+	if p.gun:
+		_draw_mgun(p.gun)
+		return
 	var w := p.weapon
 	var box := Rect2(510, 304, 124, 50)
 	draw_rect(box, PANEL)
@@ -392,6 +396,28 @@ func _draw_cut(r: Node, man: Civilian, p: Player) -> void:
 	_text(at + Vector2(-6, 3), "E", 8, Color(0.95, 0.75, 0.35, a), null, HORIZONTAL_ALIGNMENT_CENTER, 12)
 	if close:
 		_text(Vector2(0, 286), "[hold E]  cut him loose", 8, Color(0.95, 0.75, 0.35), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
+
+
+## On the machine gun: its name, and the belt as a strip of brass running out.
+func _draw_mgun(g: MGun) -> void:
+	var box := Rect2(510, 304, 124, 50)
+	draw_rect(box, PANEL)
+	draw_rect(box, Color(0.5, 0.36, 0.2), false, 1.0)
+	_text(Vector2(516, 316), "COLT-BROWNING M1895", 8, INK)
+	var left := float(g.belt) / MGun.BELT
+	draw_rect(Rect2(516, 326, 112, 8), Color(0.12, 0.1, 0.08))
+	draw_rect(Rect2(516, 326, 112 * left, 8), BRASS if g.belt > 0 else Color(0.3, 0.2, 0.15))
+	_text(Vector2(516, 348), "%d IN THE BELT" % g.belt if g.belt > 0 else "THE BELT'S SPENT", 8,
+		INK if g.belt > 25 else Color(1, 0.4, 0.3))
+
+
+## E by the machine gun: get on it.
+func _draw_man(p: Player) -> void:
+	var g: MGun = game.mgun
+	if g == null or p.gun or game.state != "play" or not g.can_man(p.global_position):
+		return
+	_text(Vector2(0, 286), "[E]  the Colt-Browning (%d in the belt)" % g.belt, 8, Color(0.95, 0.75, 0.35), null,
+		HORIZONTAL_ALIGNMENT_RIGHT, 634)
 
 
 ## The gun at his feet he could swap for (F): its name and what's in it, there being

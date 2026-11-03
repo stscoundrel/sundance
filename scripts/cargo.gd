@@ -16,6 +16,7 @@ const BOARD := 34.0       # px from the last wagon's tail: close enough to climb
 const LEAVE_T := 8.0      # s for a wagon to drive off the map
 const SPARE_AFTER := 8.0  # s after a carrier falls before his replacement comes up
 const CLAIM_COST := 140.0 # px: a pile someone's already going to counts as this much further
+const WORTH := {"mg": 3}  # loads a load counts for: a machine gun's worth three of anything else
 
 var game: Node
 var goal := 40
@@ -117,12 +118,13 @@ func take(s: Dictionary) -> bool:
 
 
 ## A load into the wagon. A full one drives off; with every load in, it's done.
-func stow(_c: Civilian) -> void:
+func stow(c: Civilian) -> void:
 	if done:
 		return   # (one more on top: it's all in already)
 	var w := wagon()
-	w["n"] += 1
-	loaded += 1
+	var worth: int = WORTH.get(c.load_kind, 1)
+	w["n"] += worth
+	loaded = mini(goal, loaded + worth)
 	game.stats["loads"] = loaded
 	if loaded >= goal:
 		_all_in()
@@ -134,7 +136,7 @@ func stow(_c: Civilian) -> void:
 ## Shot down with a load in his arms: it falls where he does.
 func drop(at: Vector2, kind: String) -> void:
 	var g: Vector2 = Iso.to_grid(at)
-	var type := "rifle_crate" if kind == "case" else "rifle_pile"
+	var type: String = {"case": "rifle_crate", "rifles": "rifle_pile", "mg": "mgun_pile"}[kind]
 	var fp: Vector2 = Vector2(game.meta["objects"][type]["footprint"][0], game.meta["objects"][type]["footprint"][1])
 	game._place_object(type, g - fp * 0.5)
 	sources.append({"kind": kind, "at": at + Vector2(0, 6), "count": 1, "claims": 0, "rec": game.placed[-1]})

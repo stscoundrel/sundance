@@ -1,6 +1,6 @@
 extends SceneTree
 ## Paso Esperanza's cargo (scripts/cargo.gd, the carriers in civilian.gd):
-##   setup    - five carriers and their comandante; 40 loads to go, two replacements
+##   setup    - six carriers and their comandante; 40 loads to go, two replacements
 ##              waiting; three wagons, each with its team and its wagon; more in the
 ##              piles of each kind than the level asks for.
 ##   trips    - they carry, and the count goes up; the comandante shot, it goes on
@@ -55,7 +55,7 @@ func _setup() -> void:
 	step = "setup"
 	var c: Cargo = game.cargo
 	check(c != null, "no cargo")
-	check(c.carriers.size() == 5 and c.leader != null, "%d carriers, leader %s" % [c.carriers.size(), c.leader])
+	check(c.carriers.size() == 6 and c.leader != null, "%d carriers, leader %s" % [c.carriers.size(), c.leader])
 	check(c.goal == 40 and c.spare == 2, "goal %d, spare %d" % [c.goal, c.spare])
 	check(c.wagons.size() == 3, "%d wagons" % c.wagons.size())
 	for w in c.wagons:
@@ -64,7 +64,7 @@ func _setup() -> void:
 	for w in c.wagons:
 		caps += w["cap"]
 	check(caps == 40, "the wagons hold %d" % caps)
-	var have := {"case": 0, "rifles": 0}
+	var have := {"case": 0, "rifles": 0, "mg": 0}
 	for s in c.sources:
 		have[s["kind"]] += s["count"]
 	check(have["case"] >= 40 and have["rifles"] >= 16, "in the piles: %s" % [have])
@@ -143,7 +143,7 @@ func _process(delta: float) -> bool:
 						break
 				return false
 			if t - mark > 10.0:
-				check(c.carriers_alive() == 5 and c.spare == 1 and c.carriers.size() == 6,
+				check(c.carriers_alive() == 6 and c.spare == 1 and c.carriers.size() == 7,
 					"replaced? %d alive, %d spare, %d in all" % [c.carriers_alive(), c.spare, c.carriers.size()])
 				phase = "wagons"
 		"wagons":
@@ -189,7 +189,7 @@ func _lost() -> bool:
 			cv.die(Vector2.RIGHT, null)
 			killed += 1
 	if game.state != "play":
-		check(game.state == "lost" and killed == 7, "it ended %s after %d dead" % [game.state, killed])
+		check(game.state == "lost" and killed == 8, "it ended %s after %d dead" % [game.state, killed])
 		return _finish()
 	if t > 60.0:
 		check(false, "still %s with %d carriers dead" % [game.state, killed])

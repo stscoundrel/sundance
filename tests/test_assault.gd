@@ -2,11 +2,17 @@ extends SceneTree
 ## The federal army's way of fighting at Paso Esperanza (enemy.gd, the assault):
 ##   bounds   - a soldado sent for the train goes in bounds, down a while between
 ##              them, and gets to his spot; on the way he isn't chasing the stranger.
+##   push     - far out, rounds cracking past him all the while, he doesn't lie there
+##              pinned: he keeps coming; close in, a round past him pins him.
 ##   cover    - the levas, green as they are, take cover on far fewer of their bounds
 ##              than the regulars.
 ##   volley   - a cabo with men about him who can see the stranger has them hold and
 ##              fire together.
 ##   desert   - a leva who's lost heart runs for the road and is gone (not dead).
+##   smoke    - the army's guns carry less far and throw wider here; his don't.
+##   fright   - the machine gun cuts a man down: the men by him the stranger can see
+##              go to ground or give ground (not one far off down the line), and a
+##              while after, it doesn't frighten them again.
 ##   hunt     - a man round among the carriers, the stranger far off, may turn on one
 ##              of them: he kills one, then he's done with them.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_assault.gd
@@ -26,6 +32,7 @@ var cabo: Enemy
 var leva: Enemy
 var deserter_sent := false
 var hunter: Enemy
+var pusher: Enemy
 var _logged := ""
 
 
@@ -84,12 +91,31 @@ func _process(delta: float) -> bool:
 				check(walker.global_position.distance_to(Iso.to_screen(Vector2(32.0, 21.0))) < 60.0, "not by the train")
 				for e in game.enemies:
 					e.die(Vector2.RIGHT, null)
-				phase = "cover"
+				phase = "push"
 				mark = t
 			elif t - mark > 90.0:
 				check(false, "never got to the train (%.0f px of %.0f to go)" % [walker.global_position.distance_to(walker.objective), start_d])
 				phase = "cover"
 				mark = t
+		"push":
+			step = "push"
+			if pusher == null:
+				pusher = _spawn("soldado", Vector2(56.0, 30.0), Vector2(40.2, 33.0))
+				start_d = pusher.global_position.distance_to(pusher.objective)
+				return false
+			if t - mark < 8.0:
+				pusher.near_miss(game.player.global_position)   # (the gun on him, every frame)
+				check(pusher.pinned_t <= 0.0 or not pusher.pushing(), "pinned down, far out")
+				return false
+			var gone := start_d - pusher.global_position.distance_to(pusher.objective) if pusher.objective != Vector2.INF else start_d
+			check(gone > 120.0, "under fire, he came only %.0f px of %.0f" % [gone, start_d])
+			pusher.global_position = game.player.global_position + Vector2(60, 30)
+			pusher.near_miss(game.player.global_position)
+			check(not pusher.pushing() and pusher.pinned_t > 0.0, "close in, and not pinned")
+			for e in game.enemies:
+				e.die(Vector2.RIGHT, null)
+			phase = "cover"
+			mark = t
 		"cover":
 			step = "cover"
 			if levas.is_empty():
@@ -141,15 +167,51 @@ func _process(delta: float) -> bool:
 				return false
 			if not is_instance_valid(leva) or not game.enemies.has(leva):   # (freed once he's off the map)
 				check(game.stats.get("deserted", 0) >= 1, "gone, but not counted as a deserter")
-				phase = "hunt"
+				phase = "smoke"
 				mark = t
 			elif not leva.deserting:
 				leva.lose_heart()
 				check(leva.deserting, "lost heart and didn't run")
 			elif t - mark > 60.0:
 				check(false, "still running for the road (at %s)" % [Iso.to_grid(leva.global_position)])
-				phase = "hunt"
+				phase = "smoke"
 				mark = t
+		"smoke":
+			step = "smoke"
+			var s1 := _spawn("soldado", Vector2(50.0, 30.0))
+			check(is_equal_approx(s1.reach(), s1.weapon.d["range"] * 0.7), "his reach %.0f of %.0f" % [s1.reach(), s1.weapon.d["range"]])
+			var clear: float = s1.accuracy_mult() / game.haze.y
+			check(is_equal_approx(s1.accuracy_mult(), clear * 1.4), "his aim not spoilt by the smoke")
+			check(game.player.range_mult() == 1.0 and game.player.accuracy_mult() < s1.accuracy_mult(), "the smoke on him too")
+			s1.die(Vector2.RIGHT, null)
+			phase = "fright"
+			mark = t
+		"fright":
+			step = "fright"
+			var p: Player = game.player
+			var g: MGun = game.mgun
+			p.global_position = g.seat
+			p.get_on(g)
+			p.set_physics_process(false)
+			var at := Iso.to_grid(g.seat) + Vector2(6.0, 2.0)
+			var victim := _spawn("leva", at, Vector2(40.6, 37.8))
+			var near1 := _spawn("soldado", at + Vector2(1.0, 0.6), Vector2(40.6, 37.8))
+			var near2 := _spawn("leva", at + Vector2(-0.6, 1.2), Vector2(40.6, 37.8))
+			var far1 := _spawn("soldado", at + Vector2(1.5, -22.0), Vector2(40.6, 37.8))   # (off down the line)
+			victim.die(Vector2.RIGHT, p)
+			for m in [near1, near2]:
+				check(m.reaction in ["hide", "backoff", "flee"] and m.gun_nerve > game.clock, "%s by the man cut down, unmoved (%s)" % [m.kind, m.reaction])
+			check(far1.reaction == "" and far1.gun_nerve < 0.0, "a man far off down the line frightened")
+			var again := _spawn("leva", at + Vector2(0.4, 0.4), Vector2(40.6, 37.8))
+			near1.reaction = ""
+			again.die(Vector2.RIGHT, p)
+			check(near1.reaction == "", "frightened again straight after")
+			for e in game.enemies:
+				e.die(Vector2.RIGHT, null)
+			p.set_physics_process(true)
+			p.get_off()
+			phase = "hunt"
+			mark = t
 		"hunt":
 			step = "hunt"
 			if hunter == null:

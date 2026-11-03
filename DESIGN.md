@@ -262,7 +262,7 @@ the dead, the sticks, the smoke, the ways round (to the west pocket, the tender 
 and down the east road too) and that the empty count doesn't end it.
 
 **The cargo** (a level's `"cargo"`: `loads` and `spare`; the map's `"cargo"`: the
-piles and the wagons; run by `scripts/cargo.gd`). Five of the revolution's carriers
+piles and the wagons; run by `scripts/cargo.gd`). Five of the revolution's carriers (and a sixth for the machine guns, below)
 (Civilian, `"role": "carrier"`, unarmed, in the revolucionarios' and soldaderas'
 clothes) take the train's arms to the wagons a load at a trip: three on cases
 (`"load": "case"`: a case held across the chest, a little slower), two on loose
@@ -303,12 +303,43 @@ the stranger runs for the wagon), word of it two loads before: the quicker the a
 go, the sooner the army's on them. They come by the east road, the north-east, the
 south-east, the south and up the line, mostly levas and soldados (the map's
 `"wave_kinds"`), a teniente and the colours with some companies by name, and the
-capitán with the second-to-last. About 90 in all. They come for the train, not
+capitán with the second-to-last. About 130 in all (the first try, 90, was too few to
+push), no more than 40 about at once: the rest come on down the road as there's room. They come for the train, not
 for the stranger (see "The federal army": the assault).
 
-Coming, as agreed: the gun: one belt, firing through men, 180° to the south
-and east, its breastwork wearing away; and men carrying loose machine guns off
-the train, belts over their shoulders, worth more to the revolution than anything.
+**The Colt-Browning** (the map's `"mg"`, `scripts/mgun.gd`). An M1895, the "potato
+digger", on a low tripod in the corner of the breastwork, facing the army's way: a
+nest of its own sandbags tight round it, two layers deep to the south and east and
+one to the west, open only to the north, the way in (`nest_x`, `nest_y`: breakable
+but heavy, 120 a piece, so forty rifle rounds; at first they were 30, and a company
+had them gone in seconds). The front's timbers are cleared out of its way, and
+nothing of the ambush's is left in close to the south of it (a breastwork of
+sandbags six tiles out took the gun's rounds meant for the men coming up from
+there). The army's spots are all in front of it now (they used to include the
+tender's, behind it, and from there they shot him in the back). The stranger gets on it with E
+from his place behind it ("[E] the Colt-Browning", and how many in the belt), and
+off again with E or a step any way; on it he can't move, and the gun goes where
+the cursor is as far as it can: half a circle each way of straight out (the map's
+south-east), swinging no faster than 1.8 rad/s. Fire held: seven or eight rounds a
+second from the one belt of 250 (a strip of brass in the gun panel, running out),
+damage 3, each through a man and on into the next two, 760 px. Its rounds go over
+low cover within 64 px of him (a man's go over 26), which takes in the whole nest
+and nothing else of ours: the breastwork was laid out round that, and checked by
+tracing its arc. Then it's silent ("The belt's spent"), and the federales can't
+use it either. He's off it if he goes down. A stick of dynamite landing in reach of
+him on the gun (a rural's, for the nest's the place he keeps killing from) brings a
+shout ("¡Dinamita! Off the gun, compañero!"): bolted to it, he'd never see it for
+the smoke, and it's that or the blast. Firing it makes the breastwork a place
+the army has seen him firing from, and a rural with a stick knows what to do with
+that. Its own dice (`MGun.rng`).
+
+The carriers also take three loose machine guns off the train (`mgun_pile` by the
+second boxcar, the tripods left behind): a sixth carrier (`cargador_mg`, `"load":
+"mg"`, `"then": "case"`), the gun up on his right shoulder and its belt over his
+left, takes them first, each worth three loads (`Cargo.WORTH`), and then goes on to
+the cases. Shot with one, he drops it for the next man. `tests/test_mgun.gd` plays
+the gun (getting on and off, the arc and the traverse, the rate, over the nest and
+through a file of men, the belt spent) and the machine guns carried off.
 
 ## Controls
 
@@ -1147,26 +1178,54 @@ kepis and one bandolier over a white crossbelt (`"bandolier": "one"`,
   the faint-hearted off; the companies still on the road haven't heard, and come
   on as before (unlike El General's, it leaves nobody leaderless).
 
-**The assault** (the map's `"assault"`: spots along the train's east side, up to
-the tender and the breastwork's front, and, for the flankers, on its far side among
-the carriers). Each man walking in is given one of the few spots nearest his road
+**The assault** (the map's `"assault"`: spots close round the engine, the tender
+and the breastwork, where the stranger and his gun can see them come; spread along
+the cars, the east road's companies went north out of his sight; and, for the
+flankers, spots on the train's far side among the carriers). Each man walking in is given one of the few spots nearest his road
 and goes for it, the stranger or no. He goes in bounds of 90 to 150 px: to cover a
 little further on (cover from the stranger, nearer the train than where he is), or,
 the less he knows about cover, to open ground (`"cover_use"`: a leva 0.25, too green
 to be careful; a soldado 0.85; an officer 0.9). Between bounds he's down a while
 (1.5 to 3 s; a leva hardly stops), shooting if he can see the stranger, longer if
 rounds are coming in. On the move he doesn't shoot, but a rural does. At his spot
-he fights it out from there. A cabo or teniente with three or more men about him who
+he fights it out from there.
+
+They know they'll never beat a machine gun from far off: lying out there under it
+is death, and the only way is in. So while a man is short of his spot and more than
+160 px from the stranger, he's **pushing**: a round past him doesn't pin him (it
+only shakes him a little, and gives him a chance to duck once every few seconds,
+0.15, a leva twice that), a comrade falling beside him doesn't stop him, his bounds
+are longer (150 to 230 px) and he's down only a moment between them (0.25 to 0.7 s).
+Inside 160 px he goes back to fighting from cover, pinned and ducking like anyone.
+(Before this they'd lie pinned at the edge of the stranger's sight for as long as
+the gun kept firing.)
+
+But they still fear the gun, where it's doing its work and the stranger can see
+it. When it cuts a man down, the men within 90 px of him who are on the stranger's
+screen (or within 300 px of him and in his sight) take fright, pushing or not: most
+throw themselves into the nearest cover, some give ground (a regular, 0.2, 0.4 if
+he was right by the man; a leva turns and runs back a way, 0.4, 0.6 close), and in
+2.5 to 4 s they're up and coming on again. For 8 s after that the gun doesn't
+frighten them (`GUN_NERVE`), so they don't lie there for good under it: they come
+on in rushes, and go to ground in clumps where it finds them. Men off down the line
+where he can't see don't hear of it: no rout starts out of his sight.
+
+**The smoke** (the map's `"haze"`: [0.7, 1.4]). It's a big battle, black powder and
+chaos everywhere: the army's guns carry seven tenths as far as they would (and they
+keep their distances in proportion), and throw four tenths wider, volleys and all.
+The stranger's don't: he's a hardened professional. So they have to get close
+before they're much danger. A cabo or teniente with three or more men about him who
 can see the stranger has them hold and aim ("¡Apunten!") and fire together a second
 later ("¡Fuego!"), every 15 to 20 s: a volley you can see coming. A leva who loses
-heart (his colours down, his capitán dead, or now and then at a comrade falling
-beside him: `"deserts"`) throws it in and runs for the nearest road, and is gone
+heart (his capitán dead; the colours down, four in ten of the levas who see it; or
+now and then at a comrade falling beside him, 0.04: `"deserts"`) throws it in and runs for the nearest road, and is gone
 off the map, not dead. And a man round among the carriers (within 220 px of one, in
 sight, the stranger not close) gets one chance (`"hunt"`: a rural 0.35, a soldado or
 cabo 0.1, a leva 0.05) to turn his gun on them: he kills one and he's back to the
 stranger; he never tries again. Their own dice (`Enemy.assault_rng`), so no other
-level's fight moves. `tests/test_assault.gd` plays the bounds, the levas' cover
-against the regulars', a volley, a deserter and a hunter.
+level's fight moves. `tests/test_assault.gd` plays the bounds, the push, the levas'
+cover against the regulars', a volley, a deserter, the smoke, the gun's fright and a
+hunter.
 
 Dead, they drop their guns like anyone: the stranger can take up a Remington.
 `tests/test_federales.gd` checks the bodies have their guns, the Remington, the
