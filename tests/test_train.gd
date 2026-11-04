@@ -66,7 +66,7 @@ func _map() -> void:
 	for n in game.get_children():
 		if n is Smoulder:
 			smoke += 1
-	check(dead == 6, "%d dead" % dead)
+	check(dead == 20, "%d dead" % dead)
 	check(sticks == 3, "%d sticks" % sticks)
 	check(smoke == 3, "%d smoke" % smoke)
 	check(game.director == null, "a director with nothing to direct")

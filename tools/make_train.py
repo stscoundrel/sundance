@@ -8,6 +8,7 @@ come from. The revolution's wagons wait on the west edge for the cargo.
 
 Usage: tools/.venv/bin/python tools/make_train.py
 """
+import json
 import os
 import sys
 
@@ -187,21 +188,49 @@ SOUTH = [
 WORN = {(32.6, 14.0): 2, (33.2, 15.0): 1, (33.8, 13.6): 1, (25.2, 23.4): 1, (36.8, 15.6): 1, (26.0, 42.4): 1,
         (29.0, 46.8): 2, (31.8, 46.6): 1, (45.0, 34.0): 1, (34.4, 10.2): 1}
 
-# The train's guards and crew, where the ambush left them (stripped of their guns:
-# the revolution had those first). Bodies only: nobody hauls or buries them.
+# The dead of the fight for the train, where they fell. Bodies only: nobody hauls or
+# buries them. The engineer and his fireman, thrown from the cab; the federal escort
+# (their guns gone: the revolution had those first), most of them along the cars
+# where they made their stand, a few run out east into the scrub, their teniente by
+# the burnt car he was got out of; and the revolution's own, cut down at their ambush
+# positions on the east road when the escort fired back. Each body wears its type's
+# colours from data/enemies.json (the n-th palette, wrapping round).
+_TYPES = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "enemies.json")))["types"]
+
+
+def _body(kind, x, y, facing, death, n=0):
+    t = _TYPES[kind]
+    return {"template": t["template"], "x": x, "y": y, "facing": facing, "death": death,
+            "palette": t["palettes"][n % len(t["palettes"])]}
+
+
 DEAD = [
     {"template": "shirt", "x": 25.6, "y": 29.4, "facing": 200, "death": "death_back",   # the engineer, thrown from the cab
      "palette": {"shirt": [92, 104, 132], "trousers": [70, 80, 110], "hat": [60, 66, 84], "band": [40, 40, 44], "boots": [50, 38, 30], "skin": [196, 150, 112], "hair": [90, 70, 50]}},
     {"template": "shirt", "x": 22.4, "y": 34.6, "facing": 120, "death": "death_slump",  # his fireman
      "palette": {"shirt": [150, 140, 120], "trousers": [70, 80, 110], "hat": [90, 84, 70], "band": [40, 40, 44], "boots": [50, 38, 30], "skin": [176, 126, 92], "hair": [40, 30, 24]}},
-    {"template": "duster_bowler", "x": 32.0, "y": 17.8, "facing": 0, "death": "death_knees",  # the guards, out of the burning car
-     "palette": {"coat": [96, 84, 66], "shirt": [190, 180, 160], "trousers": [64, 60, 58], "hat": [44, 40, 38], "boots": [40, 32, 26], "skin": [200, 150, 110], "hair": [70, 50, 34]}},
-    {"template": "duster_bowler", "x": 37.7, "y": 21.4, "facing": 330, "death": "death_back",
-     "palette": {"coat": [70, 66, 60], "shirt": [170, 160, 140], "trousers": [90, 76, 60], "hat": [60, 50, 40], "boots": [40, 32, 26], "skin": [190, 140, 100], "hair": [120, 90, 60]}},
-    {"template": "vest", "x": 31.8, "y": 11.4, "facing": 30, "death": "death_spin",
-     "palette": {"vest": [60, 56, 50], "shirt": [200, 196, 180], "trousers": [70, 74, 96], "hat": [100, 84, 60], "band": [40, 34, 30], "boots": [50, 36, 28], "skin": [186, 130, 92], "hair": [40, 30, 24]}},
-    {"template": "vest", "x": 27.0, "y": 15.8, "facing": 160, "death": "death_slump",
-     "palette": {"vest": [110, 60, 44], "shirt": [180, 170, 150], "trousers": [86, 70, 56], "hat": [70, 60, 50], "band": [150, 120, 70], "boots": [50, 36, 28], "skin": [206, 156, 120], "hair": [150, 110, 60]}},
+    # the escort, out of the burning car and along the cars' east side behind their wagon and tables
+    _body("soldado", 32.0, 17.8, 0, "death_knees"),
+    _body("leva", 37.7, 21.4, 330, "death_back"),
+    _body("soldado", 31.8, 11.4, 30, "death_spin", 1),
+    _body("teniente", 35.0, 14.2, 60, "death_back"),
+    _body("leva", 33.0, 8.4, 90, "death_slump", 1),
+    _body("leva", 36.6, 9.0, 10, "death_back", 2),
+    _body("soldado", 33.6, 21.6, 300, "death_slump"),
+    _body("leva", 33.0, 5.6, 200, "death_spin"),
+    _body("cabo", 36.4, 18.2, 20, "death_knees"),
+    # on the west side, where the revolution came over the cars at them
+    _body("leva", 27.0, 15.8, 160, "death_slump"),
+    _body("soldado", 26.8, 5.2, 180, "death_back", 1),
+    # run out east, and shot down in the open
+    _body("leva", 41.0, 11.6, 30, "death_back", 1),
+    _body("soldado", 43.2, 16.8, 350, "death_spin"),
+    _body("leva", 40.2, 20.4, 60, "death_slump", 2),
+    # the revolution's own, by their ambush sandbags and rocks
+    _body("revolucionario", 42.6, 31.0, 200, "death_back"),
+    _body("revolucionario", 48.4, 37.4, 160, "death_slump", 1),
+    _body("tirador", 54.0, 31.2, 230, "death_back"),
+    _body("revolucionario", 45.6, 23.6, 250, "death_spin", 2),
 ]
 
 # Sticks of dynamite from the cargo, inside the breastwork: one at a time on him.

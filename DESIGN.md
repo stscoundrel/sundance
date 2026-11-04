@@ -259,8 +259,12 @@ along the back of the front, under the engine's nose and up her far flank, the
 engine between him and the army all the way. The
 train's dead lie where they fell (the map's `"dead"`, `scripts/corpse.gd`: a body
 template and palette, drawn from the last frame of a death, a pool under it;
-scenery, nothing to hit, haul or bury): the engineer and his fireman by the cab,
-the guards round their car. Smoke from the burnt car and steam from the boiler go
+scenery, nothing to hit, haul or bury), twenty of them, so it reads as a battlefield:
+the engineer and his fireman by the cab; the federal escort (soldados, levas, a cabo,
+their teniente) along the cars where they made their stand and a few run out east
+into the scrub; and the revolution's own at their ambush positions on the east road.
+The soldiers wear their type's colours from `data/enemies.json` (`_body` in
+`tools/make_train.py`), so the dead and the army coming over them are one army. Smoke from the burnt car and steam from the boiler go
 up all level (`"smoke"`, `scripts/smoulder.gd`, its own dice). With no gang on the
 map, nothing ends it but the cargo (below). `tests/test_train.gd` checks the pieces,
 the dead, the sticks, the smoke, the ways round (to the west pocket, the tender post
