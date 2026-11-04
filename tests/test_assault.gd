@@ -218,7 +218,7 @@ func _process(delta: float) -> bool:
 				game.player.global_position = Iso.to_screen(Vector2(56.0, 56.0))   # (far off)
 				var near: Civilian = null
 				for c in game.cargo.carriers:
-					if c.alive and c.visible:
+					if c.alive and c.visible and c.load_kind != "" and Iso.to_grid(c.global_position).x < 18.0:   # (laden, out west on the way to the wagons, well off the boxcar doors: one going in at a door is out of sight, and he gives that one up)
 						near = c
 						break
 				if near == null:

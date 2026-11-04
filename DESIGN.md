@@ -316,7 +316,10 @@ company comes 25 s in, by the clock; after that each comes with the loading (a
 wave's `"loads"`: at 6, 12, 18, 24, 30 and 35 loads in, and a last push at 40, while
 the stranger runs for the wagon), word of it two loads before: the quicker the arms
 go, the sooner the army's on them. They come by the east road, the north-east, the
-south-east, the south and up the line, mostly levas and soldados (the map's
+east scrub (the east edge, south of the road), the south-east (the map's corner,
+straight at the gun on the diagonal, past a few low things far out), the south and up
+the line, most companies split three ways at once, so the same men come spread
+wider, mostly levas and soldados (the map's
 `"wave_kinds"`), a teniente and the colours with some companies by name, and the
 capitán with the second-to-last. About 130 in all (the first try, 90, was too few to
 push), no more than 40 about at once: the rest come on down the road as there's room. They come for the train, not

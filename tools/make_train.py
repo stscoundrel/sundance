@@ -176,12 +176,16 @@ EAST_ROAD = [
     ("crate", 43.2, 38.8), ("crate", 44.4, 36.6), ("crate", 46.2, 42.2), ("crate", 50.2, 36.8),
     ("crate_stack", 53.4, 36.4), ("crate", 57.4, 37.0), ("crate", 42.4, 33.8),
 ]
-# And from the south: more of the same, up to the front.
+# And from the south and the south-east corner: more of the same, up to the front.
 SOUTH = [
     ("rock_c", 40.6, 50.0), ("sandbags_x", 33.0, 53.2), ("crate_stack", 38.4, 58.4),
     ("rock_b", 35.0, 60.4), ("wagon_over", 42.0, 55.0), ("sandbags_y", 45.0, 44.6),
     ("crate", 41.4, 43.6), ("crate", 38.6, 47.4), ("crate", 34.6, 50.2), ("crate_stack", 44.0, 50.6),
     ("crate", 37.0, 51.6), ("crate", 46.6, 47.0),
+    # and in from the south-east corner on the diagonal, low stuff far out, so the
+    # gun sees them come all the way
+    ("rock_b", 58.6, 58.0), ("agave", 61.0, 56.0), ("crate", 55.4, 55.6), ("sacks", 52.4, 52.6),
+    ("crate_stack", 49.6, 54.8), ("rock_c", 54.0, 49.0), ("crate", 49.4, 49.6),
 ]
 
 # Shot up in the fight for the train: 1 holed, 2 wrecked.
@@ -242,7 +246,8 @@ SMOKE = [{"x": 31.4, "y": 14.6, "dark": True}, {"x": 31.4, "y": 17.2, "dark": Tr
 
 # The wagon trail the revolution came in on, from the west edge up to the cars.
 STREETS = [[0.0, 19.5, 24.0, 22.5], [39.0, 35.4, 64.0, 38.4]]
-ENTRIES = [{"name": "east road", "x": 63.3, "y": 36.9}, {"name": "north-east", "x": 63.3, "y": 22.0}, {"name": "south-east", "x": 63.3, "y": 46.0},
+ENTRIES = [{"name": "east road", "x": 63.3, "y": 36.9}, {"name": "north-east", "x": 63.3, "y": 22.0}, {"name": "east scrub", "x": 63.3, "y": 46.0},
+           {"name": "south-east", "x": 62.6, "y": 62.6},   # the corner, between the east road and the south: straight at the gun
            {"name": "south", "x": 44.0, "y": 63.3}, {"name": "line south", "x": 31.5, "y": 63.3}]
 CENTER = {"x": 34.0, "y": 35.0}
 # The federal army's companies: mostly levas, pressed men; the regulars; a cabo to a

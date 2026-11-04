@@ -3,7 +3,8 @@ extends SceneTree
 ##   map     - the train is there, its long things in pieces that fade as one
 ##             (each boxcar, the tender, the engine), the boxcars' doors open on both
 ##             sides; the dead lie where they fell (scenery: nothing hits them);
-##             three sticks of dynamite in the breastwork, smoke going up.
+##             three sticks of dynamite in the breastwork, smoke going up; the
+##             army's ways in (the south-east from the corner), each one used.
 ##   ways    - from the breastwork the stranger can get under the engine's nose to
 ##             the west pocket, up to the post by the tender, round to the
 ##             revolution's side of the line, out to each of the wagons, to the far
@@ -70,6 +71,18 @@ func _map() -> void:
 	check(sticks == 3, "%d sticks" % sticks)
 	check(smoke == 3, "%d smoke" % smoke)
 	check(game.director == null, "a director with nothing to direct")
+	# the army's ways in: every wave's road is one of the map's, and the south-east
+	# comes from the corner, between the east road and the south
+	var ways := {}
+	for e in game.level["entries"]:
+		ways[e["name"]] = Vector2(e["x"], e["y"])
+	check(ways.has("south-east") and ways["south-east"].x > 60.0 and ways["south-east"].y > 60.0, "no way in from the corner: %s" % [ways])
+	var used := {}
+	for w in game.level_entry["waves"]:
+		for gr in w["groups"]:
+			check(ways.has(gr["from"]), "a wave from \"%s\", which isn't on the map" % gr["from"])
+			used[gr["from"]] = true
+	check(used.size() == ways.size(), "ways in nobody comes by: %s of %s" % [used.keys(), ways.keys()])
 
 
 func _ways() -> void:
