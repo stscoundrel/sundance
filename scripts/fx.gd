@@ -5,12 +5,13 @@ extends Node2D
 ## particles are drawn as squares of one shared disc texture, so a whole cloud goes
 ## to the screen in a handful of draw calls rather than a circle at a time.
 
-enum K { DOT, SOFT, MARK }
+enum K { DOT, SOFT, MARK, CASE }
 
 const FIELDS := 10
 # Each particle: [pos, vel, life, max_life, size, color, grow, gravity, drift, kind]
 var parts: Array = []
 static var disc: Texture2D   # a white disc, soft at the very edge
+var keep: Brass   # where its cases go once they've come to rest (K.CASE)
 
 
 ## The shared disc (made once).
@@ -31,6 +32,13 @@ func add(p: Vector2, v: Vector2, life: float, size: float, color: Color, grow :=
 	parts.append([p, v, life, life, size, color, grow, gravity, drift, kind])
 
 
+## A spent case or shell thrown out of a gun: it falls to `floor` (px below the
+## burst's ground point, so they don't all come down on one line) and is handed to
+## `keep` to lie there.
+func case(p: Vector2, v: Vector2, life: float, color: Color, gravity: float, floor_y: float) -> void:
+	parts.append([p, v, life, life, 1.0, color, 0.0, gravity, Vector2.ZERO, K.CASE, floor_y])
+
+
 ## Billowing black-powder smoke: big, soft, slow, carried off by the wind.
 func smoke(p: Vector2, v: Vector2, life: float, size: float, color: Color, grow: float, drift: Vector2) -> void:
 	add(p, v, life, size, color, grow, 0.0, drift, K.SOFT)
@@ -47,13 +55,16 @@ func _process(delta: float) -> void:
 		var q: Array = parts[i]
 		q[2] -= delta
 		if q[2] <= 0.0:
+			if q[9] == K.CASE and keep:
+				keep.add(position + Vector2(q[0].x, minf(q[0].y, q[10])), q[5])   # (on the ground, to stay)
 			parts.remove_at(i)
 		else:
 			q[1] = q[1] * pow(0.12, delta) + Vector2(0, q[7] * delta)
 			q[0] += (q[1] + q[8]) * delta
 			q[4] += q[6] * delta
-			if q[7] > 0.0 and q[0].y > 0.0:
-				q[0].y = 0.0
+			var fl: float = q[10] if q.size() > FIELDS else 0.0
+			if q[7] > 0.0 and q[0].y > fl:
+				q[0].y = fl
 				q[1] = Vector2.ZERO
 		i -= 1
 	if parts.is_empty():
@@ -76,6 +87,8 @@ func _draw() -> void:
 				var top := p + Vector2(-s * 0.2, -s * 0.25)
 				draw_texture_rect(tex, Rect2(top - Vector2(s, s) * 0.75, Vector2(s, s) * 1.5), false,
 					Color(c.r * 1.05, c.g * 1.04, c.b * 1.02, c.a * 0.9))
+			K.CASE:   # no fading: it's going to lie there
+				draw_rect(Rect2(p - Vector2(s, s) * 0.5, Vector2(s, s)), c)
 			K.MARK:
 				c.a *= clamp(ratio * 4.0, 0.0, 1.0)
 				draw_rect(Rect2(p - Vector2(s, s * 0.6) * 0.5, Vector2(s, s * 0.6)), c)

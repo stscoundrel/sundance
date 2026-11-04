@@ -1532,7 +1532,14 @@ seconds. A body dragged away leaves it behind.
   round, and the slow Leone slump.
 - Animations are data in `tools/chars.py`: a few key poses interpolated into
   frames at 4-12 fps, with event frames (brass ejecting, shells) the game reacts
-  to. Frames are trimmed and packed into one atlas per character; metadata gives
+  to. What a gun throws out (a lever's case, a revolver's empties knocked out, a
+  Schofield's whole cylinder, a shotgun's shells) falls as a particle and, where it
+  comes to rest, stays for the rest of the fight: a pixel of brass, or red for a
+  shell, flat on the ground (`scripts/brass.gd`). Each one falls to its own spot a
+  few pixels nearer or further than his boots (`Brass.rng`, seeded for tests), so they
+  scatter rather than line up. The ground is cut into 256 px squares that each draw
+  their own, so a new case redraws only its square; past 2000 the oldest go
+  (`tests/test_brass.gd`). The machine gun throws out none. Frames are trimmed and packed into one atlas per character; metadata gives
   each frame's rectangle and offset, each legs frame's hip height and each aiming
   frame's muzzle point.
 

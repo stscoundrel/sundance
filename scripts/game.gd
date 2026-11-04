@@ -26,6 +26,7 @@ var size := 40
 
 var world: Node2D
 var decals: Decals
+var brass: Brass   # the spent cases, where they fell
 var rubble: Wounds.Rubble   # (what blasts knock out of the walls: not for sweeping)
 var cone_layer: Node2D
 var statics: Node2D
@@ -226,6 +227,7 @@ func _ready() -> void:
 		rise_rng.randomize()
 		Hanging.rng.randomize()
 		Captive.rng.randomize()
+		Brass.rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -242,6 +244,7 @@ func _ready() -> void:
 		litter_rng.seed = 47
 		rise_rng.seed = 61
 		Hanging.rng.seed = 53
+		Brass.rng.seed = 73
 		Captive.rng.seed = 59
 		Smoulder.rng.seed = 67
 		Cargo.rng.seed = 71
@@ -696,6 +699,9 @@ func _build_world() -> void:
 	rubble = Wounds.Rubble.new()
 	rubble.z_index = -14
 	add_child(rubble)
+	brass = Brass.new()
+	brass.z_index = -14
+	add_child(brass)
 	cone_layer = Node2D.new()
 	cone_layer.z_index = -10
 	add_child(cone_layer)
@@ -3532,28 +3538,29 @@ func spill_guns(c: Civilian) -> void:
 
 ## Animation events: brass flicking out of a Winchester or Colt, shells out of a
 ## shotgun's barrels; and (from the gun itself) a Schofield's whole cylinder, `n` of them,
-## thrown out together and dropping round his feet.
+## thrown out together and dropping round his feet. Where they land they stay (`brass`).
 func anim_event(a: Actor, ev: String, n := 1) -> void:
 	if ev == "brass" and a.weapon and a.weapon.action == "lever" and not a.weapon.ejecting:
 		return   # working the lever on an empty chamber: nothing to throw out
 	var puff := Puff.new()
 	puff.position = a.global_position + Vector2(0, 2)
+	puff.keep = brass
 	var at: Vector2 = a.muzzle_offset() - a.facing * 6.0
 	var side := a.facing.orthogonal()
 	if ev == "dump":   # out of the gun held up at his chest, straight down round his boots
 		var gun := Vector2(a.facing.x * 4.0, -a.gun_height() * 0.8)
 		for i in n:
-			puff.add(gun + Vector2(randf_range(-1.5, 1.5), randf_range(-1, 1)),
-				Vector2(randf_range(-18, 18), -randf_range(0, 15)), randf_range(2.2, 3.0), 1.0,
-				Color(0.9, 0.72, 0.3).darkened(randf_range(0.0, 0.25)), 0.0, 900.0)
+			puff.case(gun + Vector2(randf_range(-1.5, 1.5), randf_range(-1, 1)),
+				Vector2(randf_range(-18, 18), -randf_range(0, 15)), randf_range(2.2, 3.0),
+				Color(0.9, 0.72, 0.3).darkened(randf_range(0.0, 0.25)), 900.0, Brass.rng.randf_range(-3.0, 3.0))
 		world.add_child(puff)
 		return
 	if ev == "shells":   # a shell out of each barrel: two from a double gun, one from the Champion
 		n = a.weapon.barrels.size() if a.weapon and not a.weapon.barrels.is_empty() else 2
 	for i in n:
 		var c := Color(0.72, 0.16, 0.12) if ev == "shells" else Color(0.9, 0.72, 0.3)
-		puff.add(at, side * randf_range(15, 35) * (1 if randf() < 0.5 else -1) + Vector2(0, -randf_range(25, 45)),
-			randf_range(1.5, 2.5), 1.0, c, 0.0, 200.0)
+		puff.case(at, side * randf_range(15, 35) * (1 if randf() < 0.5 else -1) + Vector2(0, -randf_range(25, 45)),
+			randf_range(1.5, 2.5), c, 200.0, Brass.rng.randf_range(-6.0, 5.0))
 	world.add_child(puff)
 
 
