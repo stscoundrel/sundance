@@ -9,6 +9,9 @@ extends Node2D
 ## each through a man and on into the next. Then it's silent for good, and the
 ## federales can't use it either. Its rounds go over the nest round it (they clear
 ## low cover close by further than a man's do), so it fires into nothing of ours.
+## Every round throws its case out to the side and back, and they pile up on the
+## nest's open floor beside the tripod (the game's `brass`): a belt fired, and it's
+## gold with them.
 
 static var rng := RandomNumberGenerator.new()   # (the spread: its own dice)
 
@@ -102,12 +105,27 @@ func _fire() -> void:
 	var a := clampf(rng.randfn(0.0, deg_to_rad(SPREAD) * 0.5), -deg_to_rad(SPREAD) * 1.5, deg_to_rad(SPREAD) * 1.5)
 	game.spawn_bullet(origin, aim.rotated(a) * SPEED, RANGE, DAMAGE, gunner, Iso.GUN_H_CROUCH, false, PIERCE, OWN_COVER)
 	_flash(origin)
+	_eject()
 	game.sfx("mg", global_position, -2.0, 0.08)
 	game.make_noise(global_position, 700.0, "shot", gunner)
 	gunner.on_fired(1.2)
 	game.stats["mg rounds"] = game.stats.get("mg rounds", 0) + 1
 	if belt == 0:
 		game.hud.toast("The belt's spent")
+
+
+## A case out of the side of the receiver, onto the open sand of the nest's floor at
+## his elbow (not under the gun or him, nor into the bags, where they'd be lost).
+## (Its own dice are the brass's: the gun's own decide where its rounds go.)
+func _eject() -> void:
+	var puff := Puff.new()
+	puff.position = global_position + Vector2(0, 2)
+	puff.keep = game.brass
+	var out := (aim.rotated(-PI / 2.0) - aim * 0.3).normalized()
+	var r := Brass.rng
+	puff.case(aim * 4.0 + Vector2(0, -8), out * r.randf_range(50, 90) + Vector2(0, -r.randf_range(15, 30)),
+		r.randf_range(1.2, 1.8), Color(0.9, 0.72, 0.3).darkened(r.randf_range(0.0, 0.25)), 200.0, r.randf_range(-4.0, 4.0))
+	game.world.add_child(puff)
 
 
 ## The muzzle flash, and a wisp from the barrel.

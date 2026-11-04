@@ -1539,7 +1539,9 @@ seconds. A body dragged away leaves it behind.
   few pixels nearer or further than his boots (`Brass.rng`, seeded for tests), so they
   scatter rather than line up. The ground is cut into 256 px squares that each draw
   their own, so a new case redraws only its square; past 2000 the oldest go
-  (`tests/test_brass.gd`). The machine gun throws out none. Frames are trimmed and packed into one atlas per character; metadata gives
+  (`tests/test_brass.gd`). The machine gun throws a case out to the side with every
+  round, onto the open sand at the gunner's elbow, so a belt fired leaves a gold heap
+  in the nest (`MGun._eject`, on `Brass.rng`, not the gun's own dice). Frames are trimmed and packed into one atlas per character; metadata gives
   each frame's rectangle and offset, each legs frame's hip height and each aiming
   frame's muzzle point.
 

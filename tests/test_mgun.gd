@@ -8,7 +8,8 @@ extends SceneTree
 ##   fire     - held, seven or eight rounds a second; over its own nest (no harm to
 ##              it), into the men in front; a round through a man and into the next.
 ##   belt     - spent, it's silent; and off it, his own guns shoot as true as ever
-##              (a belt through the gun is no bloom on his hands').
+##              (a belt through the gun is no bloom on his hands'). A case for every
+##              round lies in the sand beside it.
 ##   carried  - the machine-gun carrier takes the guns off first, each worth three
 ##              loads, then goes on to the cases.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_mgun.gd
@@ -141,6 +142,13 @@ func _process(delta: float) -> bool:
 			mark = t
 		"carried":
 			step = "carried"
+			if t - mark > 3.0 and t - mark < 3.0 + delta * 1.5:
+				var by_gun := 0
+				for cell in game.brass.cells.values():
+					for cs in cell.cases:
+						if cs[0].distance_to(g.global_position) < 60.0:
+							by_gun += 1
+				check(by_gun == game.stats.get("mg rounds", 0), "%d cases by the gun, %d rounds fired" % [by_gun, game.stats.get("mg rounds", 0)])
 			if mg_man.carries == "case":
 				check(mg_man.anim_gun == "case", "on to the cases, carrying them like machine guns")
 				check(game.stats.get("loads", 0) >= 9, "three machine guns in, and only %d loads" % game.stats.get("loads", 0))
