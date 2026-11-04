@@ -339,7 +339,7 @@ off again with E or a step any way; on it he can't move, and the gun goes where
 the cursor is as far as it can: half a circle each way of straight out (the map's
 south-east), swinging no faster than 1.8 rad/s. Fire held: seven or eight rounds a
 second from the one belt of 250 (a strip of brass in the gun panel, running out),
-damage 3, each through a man and on into the next two, 760 px. Its rounds go over
+damage 3, each through a man and on into the next two, 760 px. Its spread is its own (1.4°, off the tripod): a belt through it puts none of the bloom that rapid fire from his own guns does on his hands, so off it his Winchester and Colt shoot as true as ever. Its rounds go over
 low cover within 64 px of him (a man's go over 26), which takes in the whole nest
 and nothing else of ours: the breastwork was laid out round that, and checked by
 tracing its arc. Then it's silent ("The belt's spent"), and the federales can't

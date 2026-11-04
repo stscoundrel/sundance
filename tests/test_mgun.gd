@@ -7,7 +7,8 @@ extends SceneTree
 ##              and east, whatever he wants.
 ##   fire     - held, seven or eight rounds a second; over its own nest (no harm to
 ##              it), into the men in front; a round through a man and into the next.
-##   belt     - spent, it's silent.
+##   belt     - spent, it's silent; and off it, his own guns shoot as true as ever
+##              (a belt through the gun is no bloom on his hands').
 ##   carried  - the machine-gun carrier takes the guns off first, each worth three
 ##              loads, then goes on to the cases.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_mgun.gd
@@ -130,6 +131,7 @@ func _process(delta: float) -> bool:
 			p.set_physics_process(true)
 			p.get_off()
 			check(p.gun == null and g.gunner == null and p.anim_gun == "", "still on it")
+			check(p.bloom < 0.1, "off it, his own guns throw wide (bloom %.1f after a belt)" % p.bloom)
 			for c in game.cargo.carriers:
 				if c.kind == "cargador_mg":
 					mg_man = c

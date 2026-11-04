@@ -631,7 +631,8 @@ func on_fired(shake: float) -> void:
 	if down:
 		_pose_stand("gasp_fire")
 	exposed_t = 1.0
-	bloom += 0.7 if weapon.kind != "rifle" else 0.4
+	if not gun:   # (the machine gun's on its tripod: it throws its own spread, not his hands')
+		bloom += 0.7 if weapon.kind != "rifle" else 0.4
 	game.add_shake(shake)
 
 
