@@ -3,12 +3,16 @@ extends SceneTree
 ## the fort; no townsfolk but him):
 ##   setup    - the pole by the well, the man tied to it, the guard (one of the five,
 ##              off his rounds) standing over him.
-##   quiet    - no shot, no countdown: the man's left be.
+##   quiet    - no shot, no countdown: the man's left be. A moment in, the stranger
+##              says the level's line ("Vamos a matar, compañeros").
 ##   executed - the first shot (anyone's), and the guard puts his gun to the man's
 ##              head and counts; he doesn't stir from the pole, and at ten he shoots
-##              him. The stranger's told to make the fort pay; the end card says he
-##              failed him. The guard stays by the pole after.
-##   general  - the guard shot dead mid-count: no execution. El General comes out and
+##              him. With the count nearly out the man starts his last words ("Hay
+##              que ganar muriendo, pistoleros"), and the shot cuts them off, the
+##              broken line left over him a moment. The stranger's told to make the
+##              fort pay; the end card says he failed him. The guard stays by the pole.
+##   general  - the guard shot dead mid-count, the man halfway into his last words:
+##              no execution, and he gets to the end of them. El General comes out and
 ##              goes straight to the pole, and counts it out himself.
 ##   cut      - El General counting, the stranger at the pole holds E: the man's
 ##              loose and runs for the chapel. The end card: saved.
@@ -97,6 +101,7 @@ func _process(delta: float) -> bool:
 		"quiet":
 			check(c().state == "tied" and c().man.alive, "something happened with nobody firing: %s" % c().state)
 			if t > 5.0:
+				check(game.said_line and game.player.shout == "Vamos a matar, compañeros", "no opening line: \"%s\"" % game.player.shout)
 				_next()
 		"executed":
 			var g: Enemy = c().guard
@@ -109,7 +114,13 @@ func _process(delta: float) -> bool:
 					return false
 				if c().state == "guard":
 					check(g.global_position.distance_to(c().spots[0]) < 10.0, "the guard left the man")
+					if c().count_t > Captive.LAST_FROM + 0.1:
+						check(c().man.shout_t <= 0.0, "his last words already, %.1f s left" % c().count_t)
+					elif c().count_t < Captive.LAST_FROM - 0.2:
+						check(c().man.shout != "" and Captive.LAST_WORDS.begins_with(c().man.shout), "not saying his last words: \"%s\"" % c().man.shout)
 				if not c().man.alive:
+					check(c().man.shout == "Hay que ganar murien—" and c().man.last_words and c().man.shout_t > 0.0,
+						"his last words not cut off: \"%s\"" % c().man.shout)
 					check(absf(t - mark - Captive.COUNT) < 0.5, "shot at %.1f s, not at ten" % (t - mark))
 					check("pay" in game.hud.banner_text, "no word to make them pay: %s" % game.hud.banner_text)
 					check("shot dead, you failed him" in game._tally(), "the end card: %s" % game._tally())
@@ -131,14 +142,16 @@ func _process(delta: float) -> bool:
 				_first_shot()
 				phase = 1
 				mark = t
-			elif phase == 1 and t - mark > 4.0:
+			elif phase == 1 and t - mark > Captive.COUNT - 1.0:
 				check(c().state == "guard", "the guard isn't counting: %s" % c().state)
+				check(c().man.shout != "" and c().man.shout != Captive.LAST_WORDS, "not halfway into his last words: \"%s\"" % c().man.shout)
 				c().guard.die(Vector2.RIGHT, game.player)
 				phase = 2
 				mark = t
 			elif phase == 2 and t - mark > 1.0:
 				check(c().state == "tied" and c().man.alive, "the count went on without him: %s" % c().state)
 				check("guard's down" in game.hud.banner_text, "no word the guard's down")
+				check(c().man.shout == Captive.LAST_WORDS and c().man.shout_t > 0.0, "didn't get to finish: \"%s\"" % c().man.shout)
 				_general()
 				phase = 3
 				mark = t

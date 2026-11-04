@@ -129,7 +129,12 @@ whoever fires it, and the guard puts his gun to the man's head and counts ten
 ("¡Alto o lo mato!" and the like, every couple of seconds; "THE GUARD: ¡ALTO O LO
 MATO! 7" under the wave countdown): he doesn't stir from the pole and doesn't turn
 his gun on anyone else while he counts. Dead or down in time, and the man lives
-("His guard's down! Cut him loose!"); at ten he shoots him. Then El General: the
+("His guard's down! Cut him loose!"); at ten he shoots him. With two seconds
+left the man starts his last words, a line from the song ("Hay que ganar muriendo,
+pistoleros"), coming out a few letters at a time, and the shot cuts them off where it
+finds him: "Hay que ganar murien—" stays over him a moment as he falls
+(`Civilian.last_words`, the one bubble the HUD keeps over a dead man). Drop the man
+counting mid-line and he gets to the end of it. Then El General: the
 moment he's out of his house, if the man's still tied, he goes straight to the
 pole, whatever's flying, and counts it out himself (he's desperate, half his men
 outside the walls). Kill the guard with the knife before any shot and there's no
@@ -299,7 +304,9 @@ him and they carry on just the same. His first call, five seconds in, is his own
 after ("¡Ándale, muchachos!" and the rest). The stranger has his say first, two and
 a half seconds in: "Pintamos de rojo sol y cielo", from the same song (a level's
 `"line"`, said in a speech bubble over his head: `Player.say`, the same bubble the
-bandits and townsfolk have; he's not a talker, and says nothing else yet).
+bandits and townsfolk have; he's not a talker, and says nothing else yet). At Cruz
+Verde his line, outside the west gate before the ambush, is the song's title: "Vamos a
+matar, compañeros".
 
 With every load in, the carriers climb onto the last wagon, the comandante calls
 "¡Vámonos, muchachos!", and an arrow marks the wagon for the stranger. He gets to

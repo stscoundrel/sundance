@@ -202,6 +202,7 @@ var kneel := false
 var local := false           # minds only gunfire close by, and works through the rest
 var condemned := false       # the man on the gallows (see Hanging)
 var bound := false           # noosed and tied: going nowhere, whatever happens
+var last_words := false      # shot in the middle of a line: what he got out stays over him a moment
 var still := false           # hanged: he's done moving
 var refuge := Vector2.INF    # where he runs once he's loose, if not just the nearest door
 
@@ -420,6 +421,7 @@ func _flee() -> void:
 func _physics_process(delta: float) -> void:
 	t += delta
 	if not alive:
+		shout_t = max(0.0, shout_t - delta)
 		if dying():
 			update_anim(delta)
 		return

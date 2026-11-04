@@ -17,6 +17,7 @@
              {"at": 180, "groups": [{"from": "west road", "count": 4}, {"from": "south trail", "count": 4}]},
              {"at": 270, "groups": [{"from": "north-east trail", "count": 4}, {"from": "east road", "count": 4}]}]},
   {"id": "cruz_verde", "name": "Cruz Verde", "map": "res://data/cruz_verde.json", "note": "A revolutionary fort, taken by surprise. They keep coming.", "waves_from": "first_shot", "dynamite": 1,
+   "line": {"who": "stranger", "at": 2.5, "text": "Vamos a matar, compañeros"},
    "captive": {"kind": "captive", "pole": [30.4, 29.85], "guard": [33.8, 18.0], "count": 10},
    "waves": [{"at": 60, "groups": [{"from": "north road", "count": 4}, {"from": "east road", "count": 2}]},
              {"at": 90, "groups": [{"from": "south road", "count": 8}]},

@@ -15,6 +15,9 @@ extends Node
 ## as the stranger has: dynamite going off about the fort doesn't touch him, only a
 ## stick landing right on him. Killed, and the stranger is told to make
 ## the fort pay for it; either way the fight goes on, and the end card says so.
+## With the count nearly out he starts a line from the song ("Hay que ganar muriendo,
+## pistoleros"), and the shot cuts it off where it finds him; drop the man counting
+## in time and he gets to the end of it.
 
 const COUNT := 10.0        # s the guard (or El General) gives the stranger
 const SAY_EVERY := 2.5     # s between threats
@@ -27,6 +30,9 @@ const GUARD_LINES := ["¡Alto o lo mato!", "One more step, gringo, and he's dead
 const GENERAL_LINES := ["¡Diez segundos, gringo!", "Show yourself, or your amigo dies!", "¡Ríndete o lo mato!",
 	"He pays for every one of my men!"]
 const THANKS := "¡Gracias, compadre!"
+const LAST_WORDS := "Hay que ganar muriendo, pistoleros"
+const LAST_FROM := 2.0     # s left on the count when he starts it
+const LAST_RATE := 10.0    # letters a second: the shot comes at "Hay que ganar murien"
 
 static var rng := RandomNumberGenerator.new()   # (for finding his guards their footing)
 
@@ -146,10 +152,16 @@ func _physics_process(delta: float) -> void:
 			var by := guard if state == "guard" else general
 			if not _up(by):
 				state = "tied"   # dead or down before he could: the man lives, for now
+				if count_t <= LAST_FROM:
+					man.shout = LAST_WORDS   # (and gets to finish it)
+					man.shout_t = 3.0
 				if by == guard:
 					game.hud.banner("His guard's down! Cut him loose!")
 				return
 			count_t -= delta
+			if count_t <= LAST_FROM:
+				man.shout = LAST_WORDS.left(ceili((LAST_FROM - maxf(count_t, 0.0)) * LAST_RATE))
+				man.shout_t = 1.0
 			say_t -= delta
 			if say_t <= 0.0:
 				say_t = SAY_EVERY
@@ -195,6 +207,10 @@ func _free() -> void:
 
 
 func _on_man_died(_a: Actor) -> void:
+	if man.shout_t > 0.0 and man.shout != "" and man.shout != LAST_WORDS and LAST_WORDS.begins_with(man.shout):
+		man.shout += "—"   # cut off
+		man.shout_t = 2.0
+		man.last_words = true
 	state = "dead"
 	game.stats["captive"] = "dead"
 	game.hud.banner("They've killed him! Make the whole fort pay for it.")
