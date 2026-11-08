@@ -261,7 +261,10 @@ gun's done, there's somewhere to fall back to: the corner where the tender meets
 engine's cab on the train's far side, bags to its north and west (the way the
 flankers come), the cars at his back and the engine on his flank; from the gun it's
 along the back of the front, under the engine's nose and up her far flank, the
-engine between him and the army all the way. The
+engine between him and the army all the way. Halfway there, along the engine's far
+flank by the cut telegraph pole, there's a smaller place to stop and shoot from: a
+run of bags facing west and sacks off its north end, for the men coming round the
+train either way, down the cars or round her nose. The
 train's dead lie where they fell (the map's `"dead"`, `scripts/corpse.gd`: a body
 template and palette, drawn from the last frame of a death, a pool under it;
 scenery, nothing to hit, haul or bury), twenty of them, so it reads as a battlefield:

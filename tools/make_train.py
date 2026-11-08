@@ -61,6 +61,11 @@ DEFENCES = [
     # meets the engine, on the train's far side, the cars at his back and the engine
     # on his flank; bags to the north and the west, the way the flankers come
     ("sandbags_x", 25.4, 27.0), ("sandbags_y", 24.6, 27.8), ("crate", 27.8, 27.0), ("rifle_crate", 26.2, 28.4),
+    # and on the way to it, halfway along the engine's far flank, somewhere smaller
+    # to stop and shoot from: bags to the west (by the cut pole) and sacks off their
+    # north end, for the men coming round the train either way (down the cars, or
+    # round her nose)
+    ("sandbags_y", 24.0, 31.0), ("sacks", 22.6, 30.2),
 ]
 MG_SPOT = [36.3, 39.3]   # the Colt-Browning, its tripod in the nest's corner; the stranger behind it
 
