@@ -2520,6 +2520,34 @@ func gun_fright(at: Vector2) -> void:
 	game.stats["gun frights"] = game.stats.get("gun frights", 0) + 1
 
 
+## The ground's just gone up under the army, charge after charge round the
+## breastwork: he thinks the train's going up next, wherever he is, and falls back
+## the way he came for a few seconds (a leva may keep going), then comes on again.
+func mine_rout(from: Vector2, dice: RandomNumberGenerator) -> void:
+	if deserting or reaction == "throw":
+		return   # (a lit stick in his hand: he's got that to see to)
+	threat = from
+	pending = ""
+	if assault and tdata.get("deserts", false) and dice.randf() < Minefield.ROUT_DESERTS:
+		desert()
+		return
+	reaction = "flee"
+	bearing_news = false
+	suppress_t = 0.0
+	hold_t = 0.0
+	hiding = false
+	crouched = false
+	bounding = false
+	reaction_t = dice.randf_range(Minefield.ROUT_T.x, Minefield.ROUT_T.y)
+	var away := global_position - from
+	away = away.normalized() if away.length() > 1.0 else Vector2.from_angle(dice.randf() * TAU)
+	var g := Iso.to_grid(global_position + away * Minefield.ROUT_RUN)
+	var to := Iso.to_screen(g.clamp(Vector2(1.5, 1.5), Vector2(game.size - 1.5, game.size - 1.5)))
+	path_to(to if game.is_free(to) else game.free_point_near(to, 60.0, dice))
+	gun_nerve = game.clock + reaction_t + GUN_NERVE
+	_log("routed")
+
+
 ## Still out in the open, short of the train, with a way to go to the stranger: he
 ## knows lying out there under a machine gun is death, and the only way is in.
 func pushing() -> bool:

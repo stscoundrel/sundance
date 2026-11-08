@@ -2079,6 +2079,23 @@ def mgun(a):
     return m
 
 
+def plunger(down=False):
+    """The blasting machine the revolution wired the ground round the breastwork to:
+    a squat box of varnished wood, brass terminals on its lid with the wires off
+    them, and the T-handle on its rack bar, up and ready or pushed home."""
+    m = box((0, 0, 0), (0.3, 0.22, 0.28), planks((132, 84, 46), board=0.07, mud=0), 0.02)
+    m += box((-0.01, -0.01, 0.27), (0.31, 0.23, 0.3), solid((92, 58, 34)), 0.02)       # the lid
+    for x in (0.05, 0.25):                                                               # the terminals
+        m += ellipsoid((x, 0.04, 0.32), (0.022, 0.022, 0.025), (210, 170, 80))
+        m += beam((x, 0.04, 0.31), (x, -0.12, 0.02), 0.008, (40, 34, 30))               # a wire off it
+    top = 0.36 if down else 0.66
+    m += beam((0.15, 0.11, 0.3), (0.15, 0.11, top), 0.016, (70, 68, 66))                 # the rack bar
+    m += beam((0.15, -0.07, top), (0.15, 0.29, top), 0.024, (104, 76, 48))               # the handle
+    for y in (-0.07, 0.29):
+        m += ellipsoid((0.15, y, top), (0.026, 0.026, 0.026), (80, 58, 38))
+    return m
+
+
 def mgun_pile():
     """Machine guns off the train, the tripods left behind, laid on a tarp with
     their belts for the carriers."""

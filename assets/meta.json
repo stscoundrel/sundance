@@ -719405,5 +719405,21 @@
     56
    ]
   }
+ ],
+ "plunger": [
+  {
+   "file": "res://assets/sprites/world/plunger_0.png",
+   "anchor": [
+    16,
+    37
+   ]
+  },
+  {
+   "file": "res://assets/sprites/world/plunger_1.png",
+   "anchor": [
+    16,
+    23
+   ]
+  }
  ]
 }

@@ -114,132 +114,158 @@
   {
    "type": "ties_x",
    "x": 30.6,
-   "y": 40.3
+   "y": 40.3,
+   "ours": true
   },
   {
    "type": "sandbags_x",
    "x": 32.8,
-   "y": 40.3
+   "y": 40.3,
+   "ours": true
   },
   {
    "type": "nest_x",
    "x": 35.6,
-   "y": 39.9
+   "y": 39.9,
+   "ours": true
   },
   {
    "type": "nest_y",
    "x": 37.0,
-   "y": 37.9
+   "y": 37.9,
+   "ours": true
   },
   {
    "type": "nest_x",
    "x": 35.4,
-   "y": 40.5
+   "y": 40.5,
+   "ours": true
   },
   {
    "type": "nest_y",
    "x": 37.6,
-   "y": 37.8
+   "y": 37.8,
+   "ours": true
   },
   {
    "type": "nest_y",
    "x": 35.0,
-   "y": 38.2
+   "y": 38.2,
+   "ours": true
   },
   {
    "type": "ties_y",
    "x": 37.6,
-   "y": 35.4
+   "y": 35.4,
+   "ours": true
   },
   {
    "type": "sandbags_y",
    "x": 37.6,
-   "y": 33.2
+   "y": 33.2,
+   "ours": true
   },
   {
    "type": "rifle_crates",
    "x": 37.6,
-   "y": 32.2
+   "y": 32.2,
+   "ours": true
   },
   {
    "type": "ammo_box",
    "x": 33.2,
-   "y": 36.2
+   "y": 36.2,
+   "ours": true
   },
   {
    "type": "ammo_box",
    "x": 34.0,
-   "y": 36.6
+   "y": 36.6,
+   "ours": true
   },
   {
    "type": "crate",
    "x": 31.0,
-   "y": 33.6
+   "y": 33.6,
+   "ours": true
   },
   {
    "type": "rifle_crate",
    "x": 32.0,
-   "y": 30.6
+   "y": 30.6,
+   "ours": true
   },
   {
    "type": "ties_x",
    "x": 28.4,
-   "y": 40.3
+   "y": 40.3,
+   "ours": true
   },
   {
    "type": "sandbags_x",
    "x": 26.2,
-   "y": 40.3
+   "y": 40.3,
+   "ours": true
   },
   {
    "type": "ties_x",
    "x": 24.0,
-   "y": 40.3
+   "y": 40.3,
+   "ours": true
   },
   {
    "type": "sandbags_y",
    "x": 22.8,
-   "y": 38.0
+   "y": 38.0,
+   "ours": true
   },
   {
    "type": "crate",
    "x": 22.7,
-   "y": 36.8
+   "y": 36.8,
+   "ours": true
   },
   {
    "type": "crate_stack",
    "x": 32.6,
-   "y": 26.2
+   "y": 26.2,
+   "ours": true
   },
   {
    "type": "sandbags_x",
    "x": 34.4,
-   "y": 26.4
+   "y": 26.4,
+   "ours": true
   },
   {
    "type": "barrel",
    "x": 36.7,
-   "y": 26.6
+   "y": 26.6,
+   "ours": true
   },
   {
    "type": "sandbags_x",
    "x": 25.4,
-   "y": 27.0
+   "y": 27.0,
+   "ours": true
   },
   {
    "type": "sandbags_y",
    "x": 24.6,
-   "y": 27.8
+   "y": 27.8,
+   "ours": true
   },
   {
    "type": "crate",
    "x": 27.8,
-   "y": 27.0
+   "y": 27.0,
+   "ours": true
   },
   {
    "type": "rifle_crate",
    "x": 26.2,
-   "y": 28.4
+   "y": 28.4,
+   "ours": true
   },
   {
    "type": "rifle_crates",
@@ -2323,6 +2349,76 @@
  "mg": [
   36.3,
   39.3
+ ],
+ "plunger": [
+  32.4,
+  37.4
+ ],
+ "mines": [
+  [
+   [
+    38.0,
+    46.4
+   ],
+   [
+    36.0,
+    45.2
+   ],
+   [
+    33.6,
+    44.6
+   ],
+   [
+    31.2,
+    44.6
+   ],
+   [
+    28.8,
+    44.4
+   ],
+   [
+    26.4,
+    44.6
+   ],
+   [
+    24.0,
+    44.2
+   ],
+   [
+    21.6,
+    42.2
+   ],
+   [
+    20.2,
+    39.0
+   ]
+  ],
+  [
+   [
+    41.0,
+    46.0
+   ],
+   [
+    43.0,
+    43.2
+   ],
+   [
+    42.6,
+    40.4
+   ],
+   [
+    42.2,
+    37.6
+   ],
+   [
+    42.6,
+    35.2
+   ],
+   [
+    41.6,
+    32.0
+   ]
+  ]
  ],
  "holdouts": [],
  "entries": [

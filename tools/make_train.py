@@ -9,6 +9,7 @@ come from. The revolution's wagons wait on the west edge for the cargo.
 Usage: tools/.venv/bin/python tools/make_train.py
 """
 import json
+import math
 import os
 import sys
 
@@ -62,6 +63,27 @@ DEFENCES = [
     ("sandbags_x", 25.4, 27.0), ("sandbags_y", 24.6, 27.8), ("crate", 27.8, 27.0), ("rifle_crate", 26.2, 28.4),
 ]
 MG_SPOT = [36.3, 39.3]   # the Colt-Browning, its tripod in the nest's corner; the stranger behind it
+
+# The mined ground: the revolution had time, and TNT, and dug charges in all round
+# the breastwork a few paces out, where the army will be thickest when it gets there
+# (the assault's spots are just inside them), wired back to a blasting machine
+# behind the bags. Two runs of wire from the gun's corner: one west along the front
+# and round the west pocket, one north up the flank. Pushed, it fires them down
+# each run one after the other. None reaches the gun or the plunger (MINE_CLEAR):
+# the stranger at either is safe from his own mines, and the gun stays whole.
+PLUNGER = [32.4, 37.4]   # a few steps back and west of the gun: a dash, once the belt's out
+MINES = [
+    [[38.0, 46.4], [36.0, 45.2], [33.6, 44.6], [31.2, 44.6], [28.8, 44.4], [26.4, 44.6], [24.0, 44.2],
+     [21.6, 42.2], [20.2, 39.0]],
+    [[41.0, 46.0], [43.0, 43.2], [42.6, 40.4], [42.2, 37.6], [42.6, 35.2], [41.6, 32.0]],
+]
+MINE_CLEAR = 92.0   # px: no charge nearer the gun or the plunger than this
+
+
+def screen_dist(a, b):
+    """Distance on the screen's ground plane (px), as the game measures a blast."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    return math.hypot((dx - dy) * 16, (dx + dy) * 8)
 
 # The cargo: cases piled by the west doors for the carriers, a few broken open in
 # the hurry, the carretas waiting along the west edge (mules facing out).
@@ -282,6 +304,14 @@ def main():
     for k, x, y in TRAIN + DEFENCES + CARGO + WRECKAGE + POLES + SCRUB + EAST_ROAD + SOUTH:
         placed += place(k, x, y)
     objects = [{"type": k, "x": round(x, 4), "y": round(y, 4)} for k, x, y in placed]
+    ours = {(round(x, 4), round(y, 4)) for k0, x0, y0 in DEFENCES for k, x, y in place(k0, x0, y0)}
+    for o in objects:   # the breastwork: the mines were laid to spare it
+        if (o["x"], o["y"]) in ours:
+            o["ours"] = True
+    for run in MINES:
+        for m in run:
+            for what, at in (("the gun", MG_SPOT), ("the plunger", PLUNGER)):
+                assert screen_dist(m, at) >= MINE_CLEAR, f"the charge at {m} reaches {what}"
     for o in objects:
         if (o["x"], o["y"]) in WORN:
             o["worn"] = WORN[(o["x"], o["y"])]
@@ -289,7 +319,9 @@ def main():
     joined = {k for k, *_ in placed if k.rsplit("_", 1)[0] in CHUNKED} | {"nest_x", "nest_y"}   # (the nest's layers butt up)
     spots = [{"kind": "assault", "x": x, "y": y} for x, y in ASSAULT["train"] + ASSAULT["flank"]]
     layout.check(N, objects, DEAD + PICKUPS + ENTRIES + CARRIERS + piles() + spots
-                 + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")],
+                 + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger"),
+                    {"kind": "plunger", "x": PLUNGER[0], "y": PLUNGER[1]}]
+                 + [{"kind": "mine", "x": x, "y": y} for run in MINES for x, y in run],
                  joined=joined)
     layout.write("train.json", {
         "name": "Paso Esperanza",
@@ -307,6 +339,8 @@ def main():
         "pickups": PICKUPS,
         "smoke": SMOKE,
         "mg": MG_SPOT,
+        "plunger": PLUNGER,
+        "mines": MINES,
         "holdouts": [],
         "entries": ENTRIES,
         "center": CENTER,
@@ -317,7 +351,8 @@ def main():
         "assault": ASSAULT,
         "haze": HAZE,
     })
-    print("Paso Esperanza: %d objects, %d dead, %d sticks of dynamite" % (len(objects), len(DEAD), len(PICKUPS)))
+    print("Paso Esperanza: %d objects, %d dead, %d sticks of dynamite, %d charges" %
+          (len(objects), len(DEAD), len(PICKUPS), sum(len(r) for r in MINES)))
 
 
 if __name__ == "__main__":

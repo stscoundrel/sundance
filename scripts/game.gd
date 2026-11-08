@@ -48,6 +48,7 @@ var hanging: Hanging = null     # a man on the gallows to save, if the level has
 var captive: Captive = null     # a man tied to a pole, if the level has one
 var cargo: Cargo = null         # the arms to be carried off, if the level has them (it's won at the wagon)
 var mgun: MGun = null           # a machine gun for him, if the map has one
+var minefield: Minefield = null # ground mined round his breastwork, and the plunger, if the map has them
 # A big battle's smoke and chaos (the map's "haze": [range, spread]): the army's guns
 # reach so far and throw so wide of what they would (the stranger's don't: he's seen
 # it all before).
@@ -213,6 +214,7 @@ func _ready() -> void:
 		Cargo.rng.randomize()
 		Enemy.assault_rng.randomize()
 		MGun.rng.randomize()
+		Minefield.rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
 		loot_rng.randomize()
@@ -250,6 +252,7 @@ func _ready() -> void:
 		Cargo.rng.seed = 71
 		Enemy.assault_rng.seed = 73
 		MGun.rng.seed = 79
+		Minefield.rng.seed = 83
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -729,6 +732,10 @@ func _build_world() -> void:
 				if prop["sprite"] == spr:
 					prop["hp"] = 0 if int(o["worn"]) >= 2 else int(PROP_HP[prop["kind"]] * 0.5)
 					_prop_state(prop, int(o["worn"]), true)
+		if o.get("ours", false):   # the breastwork: the mines round it were laid to spare it
+			for prop in props:
+				if prop["sprite"] == spr:
+					prop["ours"] = true
 		if o["type"] == "open_grave":
 			open_graves.append({"g": og, "sprite": spr, "at": Iso.to_screen(og + Vector2(1.1, 1.55)),
 				"dug": 0.0, "filled": 0.0, "in": false, "done": false, "digger": null})
@@ -1004,6 +1011,10 @@ func _spawn_actors() -> void:
 		mgun = MGun.new()
 		mgun.setup(self, Vector2(level["mg"][0], level["mg"][1]))
 		world.add_child(mgun)
+	if level.has("plunger"):
+		minefield = Minefield.new()
+		minefield.setup(self, level)
+		world.add_child(minefield)
 	if level_entry.has("cargo") and level.has("cargo"):
 		cargo = Cargo.new()
 		add_child(cargo)
@@ -2507,8 +2518,9 @@ func stick_landed(d: Dynamite) -> void:
 
 ## The bang. Everyone in reach not behind a wall is hurt (killed, near the middle),
 ## a crate or barrel between them and it taking some of it; cover nearby is blown
-## apart; and the whole town hears it.
-func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE) -> void:
+## apart (but a mine's spares the breastwork it was laid round); and the whole town
+## hears it.
+func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE, mine := false) -> void:
 	dyn_cd = DYN_CD
 	stats["blasts"] = stats.get("blasts", 0) + 1
 	var hurt: Array[Actor] = []
@@ -2537,7 +2549,7 @@ func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE) -> vo
 		elif a != player:
 			stats["blown up"] = stats.get("blown up", 0) + 1
 	for prop in props:
-		if prop["state"] >= 2:
+		if prop["state"] >= 2 or (mine and prop.get("ours", false)):
 			continue
 		var d := maxf(0.0, prop_centre(prop).distance_to(at) - 8.0)
 		if d < r and prop["kind"] in EXPLOSIVE:

@@ -224,6 +224,9 @@ func _handle_actions() -> void:
 	if Input.is_action_just_pressed("knife") and game.mgun and game.mgun.can_man(global_position):
 		get_on(game.mgun)
 		return
+	if Input.is_action_just_pressed("knife") and game.minefield and game.minefield.can_push(global_position):
+		game.minefield.push(self)
+		return
 	if Input.is_action_just_pressed("knife"):
 		knife()
 	for i in 3:

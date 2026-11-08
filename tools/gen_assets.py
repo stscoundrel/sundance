@@ -162,6 +162,11 @@ def gen_world(meta):
     meta["shutter_paint"] = world.SHUTTER_PAINT
     if not only or "mgun" in only:
         gen_mgun(meta)
+    if not only or "plunger" in only:   # the blasting machine at Paso Esperanza: up, and pushed home
+        meta["plunger"] = []
+        for i, down in enumerate((False, True)):
+            img, anchor = render(world.plunger(down), edges=True)
+            meta["plunger"].append({"file": save(img, f"sprites/world/plunger_{i}.png"), "anchor": list(anchor)})
     if only:
         return
     frames = []

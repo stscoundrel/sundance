@@ -368,6 +368,34 @@ the cases. Shot with one, he drops it for the next man. `tests/test_mgun.gd` pla
 the gun (getting on and off, the arc and the traverse, the rate, over the nest and
 through a file of men, the belt spent) and the machine guns carried off.
 
+**The mined ground** (the map's `"mines"` and `"plunger"`, `scripts/minefield.gd`).
+The revolution had time, and TNT: fifteen charges dug in a few paces out round the
+breastwork, along the front and round the west pocket and up the east flank, just
+outside the army's assault spots (where they're thickest once they're close), each a
+stick's worth (80 px, nobody lives within 32), on two runs of wire out from the gun's
+corner back to a blasting machine behind the bags. It's the last resort, for when
+the belt's out and he can't move under their fire: the plunger is a few steps back
+and west of the gun (about 56 px), a dash from it. E by it ("[E] the plunger") and
+the handle goes down, and three tenths of a second later the first charge on each
+run goes up, then the next along every 0.16 s, the whole lot in under two seconds.
+Each is `game.blast` (his kills, scorch, noise), but a mine's spares the breastwork
+it was laid round (the map marks those pieces `"ours"`); the army's cover out there
+it blows apart like any stick. None is within 92 px of the gun or the plunger
+(`make_train.py` asserts it), so the stranger working it and the gun come through
+untouched. They're dug in properly: they aren't props, so no stray round sets one
+off, and neither does a stick of the army's. Each shows as a faint patch of turned
+sand, the wire to it half buried in dashes, both gone when it goes up. Once: the
+handle stays down. With the last one gone, every man of the army on the map (not
+only those he can see: a blast like that, they think the whole train's going up)
+falls back the way he came, running, for 4.5 to 5.5 s (a `"flee"` with no news to
+bear), the nearest few shouting it ("¡El tren! ¡Va a volar!", "¡Minas!"); three
+levas in ten keep running and desert. Then they come on again; the gun's fright
+can't take them for a while after. Companies still on the road haven't seen it. Its
+own dice (`Minefield.rng`). `tests/test_mines.gd` checks the layout and the reach,
+the prompt, a stick on a charge, the ripple's order, the men on it killed, the
+stranger, gun and breastwork untouched, the army's cover not, the rout reaching men
+off his screen and their coming on again, and that it's spent.
+
 ## Controls
 
 | Input | Action |

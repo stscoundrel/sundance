@@ -232,6 +232,7 @@ func _draw_status(p: Player) -> void:
 	if game.cargo:
 		_draw_cargo(game.cargo)
 	_draw_man(p)
+	_draw_plunger(p)
 	if banner_t > 0.0:
 		var a := clampf(banner_t, 0.0, 1.0)
 		draw_rect(Rect2(150, 24, 340, 18), Color(0.3, 0.05, 0.03, 0.7 * a))
@@ -434,6 +435,15 @@ func _draw_man(p: Player) -> void:
 	if g == null or p.gun or game.state != "play" or not g.can_man(p.global_position):
 		return
 	_text(Vector2(0, 286), "[E]  the Colt-Browning (%d in the belt)" % g.belt, 8, Color(0.95, 0.75, 0.35), null,
+		HORIZONTAL_ALIGNMENT_RIGHT, 634)
+
+
+## E by the blasting machine: every charge round the breastwork, once.
+func _draw_plunger(p: Player) -> void:
+	var m: Minefield = game.minefield
+	if m == null or p.gun or game.state != "play" or not m.can_push(p.global_position):
+		return
+	_text(Vector2(0, 286), "[E]  the plunger (%d charges, all at once)" % m.charges(), 8, Color(0.95, 0.75, 0.35), null,
 		HORIZONTAL_ALIGNMENT_RIGHT, 634)
 
 
