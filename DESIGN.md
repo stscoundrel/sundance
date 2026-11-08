@@ -610,6 +610,14 @@ The revolution's guns are worse than his own; they earn a slot when his are dry.
   Closing the gate cocks it again.
 - Damage 2 · fast bullet · medium range.
 
+### Colt "Buntline", .45 Colt — 6 rounds (Silencio)
+- The Single Action with a twelve-inch barrel: a gun for a man who takes his time.
+  Tighter (spread 1.1 to the Colt's 2.2), further (480 to 380) and faster, but slow
+  to come back to the aim (0.5 s a cock) and never fanned.
+- The Colt's rounds, loaded the Colt's way, by the gate.
+- The bounty hunters' Buntline man carries it. The stranger can't ride in with it
+  (it's not on the loadout screen: `Player.TROPHIES`), only take it off the dead.
+
 ### Smith & Wesson Schofield, .45 — 6 rounds
 The Colt's rival, a top-break: an alternative for the sidearm slot, and in about a
 third of the gang's hands where they'd have a Colt (`Enemy.SCHOFIELD`, a type's
@@ -1375,6 +1383,48 @@ Dead, they drop their guns like anyone: the stranger can take up a Remington.
 `tests/test_federales.gd` checks the bodies have their guns, the Remington, the
 waves coming with the loading (and their officer and colours), the colours going
 down, raised and going down for good, and the capitán's death.
+
+### Silencio's two gangs
+
+The snowbound town's (see Silencio under Levels): two gangs, each type saying which
+it's on (`"gang"`), told apart at a glance. The bounty hunters are professionals up
+from the lowlands in store-bought winter gear, dark long overcoats, scarves, gloves,
+and good repeating rifles; few, and good. The outlaws are mountain people half-starved
+after a winter in the hills, in hides, furs and blanket coats, beards, and whatever
+old guns they could get; more of them, and worse. Plain English, cold and clipped
+from the hunters, rough from the outlaws, a few of whom are French-Canadian trappers
+with a word of French. No women in either. San Miguel's old timer fits either side.
+The winter bodies bring the hide coat (`"style": "hide"`: to the knee, nearly closed,
+`"fur_trim"`, `"bulk"`), the trade-blanket capote with stripes at the hem (`"capote"`),
+a fur collar, a scarf wound up over the face (`"scarf": "face"`), gloves, and the
+ear-flap, bear-fur and broad hats. Fur is coloured by the `poncho_a` slot, the
+capote's stripes by `poncho_b` and `poncho_c` (no winter coat wears a poncho).
+
+The hunters:
+- **Manhunter** (`manhunter` body: overcoat, slouch hat, scarf over the face): the
+  rank and file. A Winchester and a Colt, or a coach gun (often the pump); patient,
+  keeps his distance and his cover.
+- **Sharpshooter** (`sharpshooter`: bowler, overcoat): a Sharps or the Remington,
+  posted high and far along main street.
+- **The Buntline man** (`buntline`: black from hat to boots, a white shirt), after
+  Colonel Mortimer: the long Colt, deliberate and deadly, bold, and he walks up to
+  finish a man. One or two at most.
+- **The boss** (`hunter_boss`: top hat, a greatcoat with a fur collar): a Henry and a
+  Schofield. He runs them (`"coordinator"`): killing him leaves them leaderless.
+
+The outlaws:
+- **Trapper** (`trapper`: hide coat trimmed with fur, ear-flap cap, beard): the rank
+  and file. A Navy, a Spencer, a Springfield or a Champion; poor shots, little nerve,
+  and in a crowd a rabble. The French ones (`trappeur`) are the same men.
+- **Mountain man** (`mountainman`: bulkier, a buffalo robe, a bear-fur hat): the
+  heavy, three hits to put down, a sawn-off or a coach gun, up close and bold.
+- **Woodsman** (the poacher's `buckskin`): a Sharps, watching the pond and the cabins.
+- **The chief** (`outlaw_chief`: the pale capote, a broad hat, grey beard): a Spencer
+  and a Navy; keeps the strongbox, and his death breaks them.
+
+For now these are only their types and bodies: who stands where, each gang's own
+alarm and the two counts come next. `tests/test_buntline.gd` checks each says its
+side and is baked with all its guns, and the leaders.
 
 ## Townsfolk
 

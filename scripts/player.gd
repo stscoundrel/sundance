@@ -8,10 +8,11 @@ extends Actor
 ## Cartridges go in his belt whether he has the gun for them yet or not.
 
 const ORDER := ["colt", "coach", "rifle"]
-const SLOT := {"colt": "colt", "schofield": "colt", "navy": "colt", "pistola": "colt", "coach": "coach", "spencer82": "coach", "sawnoff": "coach", "champion": "coach", "escopeta": "coach",
+const SLOT := {"colt": "colt", "schofield": "colt", "buntline": "colt", "navy": "colt", "pistola": "colt", "coach": "coach", "spencer82": "coach", "sawnoff": "coach", "champion": "coach", "escopeta": "coach",
 	"rifle": "rifle", "henry": "rifle", "spencer": "rifle", "springfield": "rifle", "rollingblock": "rifle", "remington": "rifle"}   # the guns he can take up, by slot
-const RESERVE := {"colt": 30, "schofield": 30, "navy": 24, "pistola": 12, "coach": 10, "spencer82": 10, "sawnoff": 10, "champion": 10, "escopeta": 8,
+const RESERVE := {"colt": 30, "schofield": 30, "buntline": 30, "navy": 24, "pistola": 12, "coach": 10, "spencer82": 10, "sawnoff": 10, "champion": 10, "escopeta": 8,
 	"rifle": 26, "henry": 26, "spencer": 21, "springfield": 12, "rollingblock": 10, "remington": 12}   # what he rides in with, per gun (to his belt)
+const TROPHIES := ["buntline"]   # his only off the dead: not on the loadout screen
 const KIT := {"bandage": 1, "dynamite": 2}   # what kit costs on the loadout screen (one of each at most)
 const REACH := 13.0   # px: a gun at his feet
 # The knife (E). Up close behind a man who isn't on to him, a silent takedown; a
@@ -297,7 +298,7 @@ static func cost(guns: Array, kit: Array = []) -> int:
 
 ## The guns that go in each slot, in the order the loadout screen offers them.
 static func choices(slot: String) -> Array:
-	return SLOT.keys().filter(func(k): return SLOT[k] == slot)
+	return SLOT.keys().filter(func(k): return SLOT[k] == slot and not k in TROPHIES)
 
 
 ## The guns he rides in with (at least one, one a slot), each with its cartridges.

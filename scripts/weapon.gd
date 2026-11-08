@@ -29,6 +29,15 @@ const DATA := {
 		"range": 380.0, "spread": 2.2, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.32,
 		"shake": 2.0, "smoke": 9, "eject": [0.36, "eject"], "insert": [0.5, "shell_in"],
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
+	# Colt "Buntline": the Single Action with a twelve-inch barrel, a gun for a man who
+	# takes his time. It reaches further and throws tighter than the Colt, the long
+	# barrel giving the round its speed, but it comes up slow and cocks slow, and it
+	# can't be fanned. The same .45 rounds, loaded the same way, by the gate. The
+	# bounty hunters' Buntline man carries it; the stranger can take it off him.
+	"buntline": {"name": "COLT BUNTLINE", "points": 3, "action": "revolver", "damage": 2, "speed": 760.0,
+		"range": 480.0, "spread": 1.1, "pellets": 1, "noise": 390.0, "sfx": "colt", "cycle": 0.5,
+		"shake": 2.2, "smoke": 10, "ammo": "colt", "eject": [0.36, "eject"], "insert": [0.5, "shell_in"],
+		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
 	# Smith & Wesson Schofield: a top-break. Unlatched, the barrel swings down and the
 	# extractor throws out all six at once, spent and live alike (the live ones are
 	# lost in the dirt); then six go in quick, no turning the cylinder to each. No

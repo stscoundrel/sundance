@@ -38,7 +38,7 @@ def template_guns():
     """Which guns each body template must be baked holding (every gun its types carry).
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
-    out = {"hero": ["colt", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "pistola", "sawnoff", "champion", "escopeta", "spencer",
+    out = {"hero": ["colt", "buntline", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "pistola", "sawnoff", "champion", "escopeta", "spencer",
                     "springfield", "rollingblock", "remington", "mgun"]}
 
     def need(template, g, t=None):
@@ -110,7 +110,7 @@ def template_guns():
 
 
 CARRY_SET = {"mg": "mgcarry"}   # a carrier's load, by the pose set he carries it in
-GUN_LEN = {"m1895": 1.0, "remington": 1.3, "colt": 0.31, "schofield": 0.33, "coach": 0.97, "spencer82": 1.02, "rifle": 1.1, "henry": 1.12, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
+GUN_LEN = {"m1895": 1.0, "remington": 1.3, "colt": 0.31, "buntline": 0.52, "schofield": 0.33, "coach": 0.97, "spencer82": 1.02, "rifle": 1.1, "henry": 1.12, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
@@ -236,6 +236,40 @@ def _coat_fn(look, bottom):
     return f
 
 
+def _fur_fn(look, name="poncho_a"):
+    """Fur: shaggy, light and dark tufts (a coat's trim, a collar, a cap). It goes in
+    its own slot (poncho_a: no winter coat wears a poncho) so a palette colours it."""
+    base = np.array(look.c(name), float)
+
+    def f(P, N):
+        k = hash01(np.floor(P[:, 0] * 70), np.floor(P[:, 1] * 70), np.floor(P[:, 2] * 45))
+        c = np.tile(base, (len(P), 1)) * (0.7 + 0.45 * k)[:, None]
+        return c, np.full(len(P), SID[name], np.uint8)
+    return f
+
+
+def _hide_fn(look, bottom):
+    """A coat of hide, mottled and worn shiny, or (a capote) a trade blanket, pale,
+    with its broad stripes round the hem."""
+    base = np.array(look.c("coat"), float)
+    capote = look.get("style") == "capote"
+    stripes = np.array([look.c("poncho_b"), look.c("poncho_c")], float)
+
+    def f(P, N):
+        n = hash01(np.floor(P[:, 0] * 9), np.floor(P[:, 1] * 9), np.floor(P[:, 2] * 7))
+        c = np.tile(base, (len(P), 1)) * ((0.96 + 0.06 * n) if capote else (0.82 + 0.26 * n))[:, None]
+        s_ = np.full(len(P), SID["coat"], np.uint8)
+        if capote:
+            for i, (z0, z1) in enumerate(((0.1, 0.17), (0.22, 0.25))):
+                m = (P[:, 2] > bottom + z0) & (P[:, 2] < bottom + z1)
+                c[m] = stripes[i]
+                s_[m] = SID[("poncho_b", "poncho_c")[i]]
+        m = P[:, 2] < bottom + 0.08 + 0.04 * n
+        c[m] = c[m] * 0.75 + np.array((150, 150, 156)) * 0.25 if capote else c[m] * 0.8   # (snow-wet at the hem)
+        return c, s_
+    return f
+
+
 def _poncho_fn(look):
     order = ["poncho_a", "poncho_b", "poncho_a", "poncho_c", "poncho_b", "poncho_c"]
     cols = np.array([look.c(n) for n in order], float)
@@ -307,6 +341,15 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
         out += beam(at(0.4, (0, 0.016)), at(1.0, (0, 0.016)), 0.018, GUNMETAL)        # barrel
         out += beam(at(0.4, (0, -0.014)), at(0.78, (0, -0.014)), 0.009, STEEL)        # ejector rod
         out += beam(at(0.12, (0, 0.03)), at(0.2, (0, 0.06)), 0.01, STEEL)             # hammer spur
+    elif kind == "buntline":
+        # the Colt with a twelve-inch barrel: walnut grip, the frame and cylinder as the
+        # Colt's, and the barrel running on and on, the ejector rod under half of it
+        out += beam(at(0.0, (0, -0.06)), at(0.12, (0, 0.0)), 0.026, (110, 72, 44))      # walnut grip
+        out += frustum(at(0.1), at(0.25), 0.042, 0.042, GUNMETAL)                       # frame + cylinder
+        out += beam(at(0.25, (0, 0.016)), at(1.0, (0, 0.016)), 0.017, GUNMETAL)         # barrel
+        out += beam(at(0.25, (0, -0.012)), at(0.5, (0, -0.012)), 0.009, STEEL)         # ejector rod
+        out += beam(at(0.97, (0, 0.03)), at(0.99, (0, 0.034)), 0.006, STEEL)           # front sight
+        out += beam(at(0.07, (0, 0.03)), at(0.12, (0, 0.06)), 0.01, STEEL)             # hammer spur
     elif kind == "schofield":
         # Smith & Wesson Schofield: blued, walnut grips with the hump at the top of the
         # backstrap, and a top-break: unlatched, barrel and cylinder swing down on the
@@ -624,8 +667,36 @@ def _hat(look, z):
         with look.tag("band"):
             out += frustum((-0.11, 0, z + 0.04), (-0.17, 0.02, z - 0.24), 0.035, 0.028, tail)
         return out
+    if kind == "earflap":
+        # a trapper's cap: a fur crown, the flaps down over his ears against the cold,
+        # a band of fur turned up round the front
+        def furc(P, N):
+            k = hash01(np.floor(P[:, 0] * 60), np.floor(P[:, 1] * 60), np.floor(P[:, 2] * 60))
+            return np.tile(np.array(col, float), (len(P), 1)) * (0.78 + 0.34 * k)[:, None]
+        with look.tag("hat"):
+            out += ellipsoid((-0.005, 0, z - 0.01), (0.112, 0.106, 0.1), furc, zmin=z - 0.05)
+            for side in (-1, 1):
+                out += ellipsoid((-0.01, side * 0.098, z - 0.1), (0.055, 0.03, 0.075), furc)
+        with look.tag("band"):
+            out += frustum((0, 0, z - 0.06), (0, 0, z - 0.0), 0.12, 0.118, band, su=1.03, caps=False)
+        return out
+    if kind == "bear":
+        # a big shaggy hat of bear fur, tufts sticking out of it
+        def shag(P, N):
+            k = hash01(np.floor(P[:, 0] * 40), np.floor(P[:, 1] * 40), np.floor(P[:, 2] * 30))
+            return np.tile(np.array(col, float), (len(P), 1)) * (0.68 + 0.45 * k)[:, None]
+        rng = np.random.default_rng(29)
+        with look.tag("hat"):
+            out += ellipsoid((-0.005, 0, z + 0.03), (0.14, 0.135, 0.13), shag, zmin=z - 0.06)
+            for i in range(14):
+                a = i / 14 * 2 * math.pi
+                c0 = np.array([math.cos(a) * 0.12, math.sin(a) * 0.12, z - 0.03 + rng.uniform(0, 0.12)])
+                out += ellipsoid(c0, (0.04, 0.04, 0.035), shag)
+        return out
     with look.tag("hat"):
-        if kind == "flat":
+        if kind == "broad":
+            out += disc((0.01, 0, z), 0.3, col, curl=0.05, front_curl=0.5, underside=under)
+        elif kind == "flat":
             out += disc((0.01, 0, z), 0.36, col, curl=0.035, front_curl=0.6, underside=under)
         elif kind == "sombrero":
             out += disc((0, 0, z), 0.5, col, curl=0.14, front_curl=0.55, underside=under)
@@ -641,6 +712,8 @@ def _hat(look, z):
     with look.tag("hat"):
         if kind == "flat":
             out += frustum((0, 0, z + 0.04), (0, 0, z + 0.14), 0.115, 0.1, col)
+        elif kind == "broad":
+            out += frustum((0, 0, z + 0.035), (0.01, 0, z + 0.13), 0.118, 0.1, col)
         elif kind == "sombrero":
             out += frustum((0, 0, z + 0.05), (0, 0, z + 0.26), 0.125, 0.06, col)
         elif kind == "slouch":
@@ -744,6 +817,17 @@ def build_legs(look, lp):
             m += frustum((0, 0, H + 0.02), (-0.02 - lp["sway"] * 0.5, 0, bottom), 0.2, 0.24,
                          _coat_fn(look, -5.0), su=0.75, gap=(0.0, 0.4), caps=False)
             m += _fringe(look, H, bottom, 0.24, 0.75)
+    if style in ("hide", "capote"):   # a winter coat to the knee, nearly closed, fur round the hem
+        bulk = look.get("bulk", 1.0)
+        bottom = 0.1 if crouch else H - 0.44
+        with look.tag("coat"):
+            m += frustum((0, 0, H + 0.02), (-0.03 - lp["sway"] * 0.7, 0, bottom), 0.21 * bulk,
+                         (0.32 if crouch else 0.27) * bulk, _hide_fn(look, bottom), su=0.95 if crouch else 0.78,
+                         gap=(0.0, 0.25), caps=False)
+        if look.get("fur_trim"):
+            m += frustum((-0.03 - lp["sway"] * 0.7, 0, bottom + 0.07), (-0.03 - lp["sway"] * 0.7, 0, bottom - 0.01),
+                         (0.3 if crouch else 0.255) * bulk, (0.335 if crouch else 0.285) * bulk, _fur_fn(look),
+                         su=0.95 if crouch else 0.78, gap=(0.0, 0.25), caps=False)
     if style == "uniform":   # the tunic's skirt, short and closed
         with look.tag("coat"):
             m += frustum((0, 0, H + 0.04), (-0.01, 0, H - (0.12 if crouch else 0.2)), 0.17, 0.2,
@@ -830,6 +914,13 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
                 m += frustum((0, 0, 0.58), (0, 0, 0.36), 0.12, 0.27, coat, su=0.82, caps=False)
             m += frustum((0, 0, 0.5), (0, 0, 0.6), 0.1, 0.085, coat, caps=False)
         sleeve = forearm = "coat"
+    elif style in ("hide", "capote"):
+        bulk = look.get("bulk", 1.0)
+        with look.tag("coat"):
+            hide = _hide_fn(look, -5.0)
+            m += frustum((0, 0, 0.54), (0, 0, 0.0), 0.21 * bulk, 0.22 * bulk, hide, su=0.72, gap=(0.0, 0.25), caps=False)
+            m += frustum((0, 0, 0.6), (0, 0, 0.4), 0.12, 0.25 * bulk, hide, su=0.8, caps=False)   # the shoulders, under the weight of it
+        sleeve = forearm = "coat"
     elif style == "poncho":
         m += frustum((0, 0, 0.6), (0, 0, 0.12), 0.09, 0.42, _poncho_fn(look), su=0.92, caps=False)
         sleeve = forearm = "poncho_a"
@@ -851,7 +942,9 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
             m += ellipsoid((0.1 + 0.03 * f, 0.13 - 0.02 * f, 0.18 - 0.3 * f), (0.013, 0.013, 0.013), (70, 46, 30))
         m += beam((0.135, 0.11, -0.13), (0.135, 0.11, -0.2), 0.009, (70, 46, 30))
         m += beam((0.135, 0.085, -0.155), (0.135, 0.135, -0.155), 0.009, (70, 46, 30))
-    if look.get("scarf"):
+    if look.get("furcollar"):   # a deep collar of fur turned up round his neck
+        m += frustum((0, 0, 0.5), (0, 0, 0.66), 0.17 * look.get("bulk", 1.0), 0.12, _fur_fn(look), su=0.85, caps=False)
+    if look.get("scarf") and look.get("scarf") != "face":
         with look.tag("accent"):
             m += frustum((0, 0, 0.5), (0, 0, 0.6), 0.1, 0.075, look.c("accent"))
             m += frustum((0.06, -0.02, 0.5), (0.1, -0.03, 0.36), 0.05, 0.025, look.c("accent"))
@@ -869,6 +962,16 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
             head += ellipsoid(hc + [0.065, 0, -0.1], (0.065, 0.085, 0.085), look.c("hair"))
             head += ellipsoid(hc + [0.1, 0, -0.19], (0.05, 0.075, 0.08), look.c("hair"))
             head += ellipsoid(hc + [0.13, 0, -0.27], (0.035, 0.05, 0.06), look.c("hair"))
+    if look.get("scarf") == "face":
+        # a scarf wound round his neck and up over his mouth and nose against the cold,
+        # the end hanging down his back
+        with look.tag("accent"):
+            knit = lambda P, N: np.tile(np.array(look.c("accent"), float), (len(P), 1)) * \
+                (0.85 + 0.2 * (np.floor(P[:, 2] * 60) % 2))[:, None]
+            head += frustum((0, 0, 0.47), (0, 0, 0.64), 0.135, 0.1, knit, su=0.9)
+            head += frustum(hc + [0.012, 0, -0.13], hc + [0.012, 0, -0.008], 0.093, 0.093, knit, su=1.24, caps=False)
+            head += frustum((0.1, 0.06, 0.52), (0.13, 0.08, 0.3), 0.045, 0.035, knit)    # one end down his chest
+            head += frustum((-0.07, -0.05, 0.62), (-0.13, -0.07, 0.38), 0.04, 0.03, knit)   # the other down his back
     if look.get("spectacles"):
         for side in (-1, 1):
             head += ellipsoid(hc + [0.088, side * 0.036, 0.012], (0.008, 0.02, 0.016), (210, 220, 226))
@@ -893,8 +996,11 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
                 m += frustum(s + (e - s) * 0.5, s + (e - s) * 0.64, 0.062, 0.058, look.c("band"))
         with look.tag(forearm):
             m += frustum(e, h, 0.05, 0.042, look.c(forearm))
-        with look.tag("skin"):
-            m += ellipsoid(h, (0.045, 0.04, 0.045), look.c("skin"))
+        if look.get("furcollar") or look.get("fur_trim"):   # fur at the cuffs as well
+            m += frustum(e + (h - e) * 0.72, e + (h - e) * 0.92, 0.058, 0.056, _fur_fn(look), caps=False)
+        hand = "boots" if look.get("gloves") else "skin"   # (gloves of the same leather as his boots)
+        with look.tag(hand):
+            m += ellipsoid(h, (0.045, 0.04, 0.045), look.c(hand))
     with look.tag(sleeve):
         m += ellipsoid((0, 0.17, 0.46), (0.08, 0.07, 0.07), look.c(sleeve))
         m += ellipsoid((0, -0.17, 0.46), (0.08, 0.07, 0.07), look.c(sleeve))
@@ -1339,7 +1445,7 @@ def _key_poses(w):
         k = _key_poses("coach")
         k["cock"] = P(k["aim"], eR=V(-0.06, -0.29, 0.24), hR=V(0.08, -0.16, 0.2))
         return k
-    if w in ("navy", "pistola"):
+    if w in ("navy", "pistola", "buntline"):
         return _key_poses("colt")   # held and loaded like any Colt
     if w in ("derringer", "schofield"):   # held like a Colt; broken open to load
         k = _key_poses("colt")
@@ -1623,6 +1729,13 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 3)
         add("reload_insert", [k["insert_a"], k["insert_b"], k["eject_b"], k["insert_b"]], 2.6, True)
         add("reload_close", _frames([k["load"], k["aim"]], 2), 4)
+    elif w == "buntline":
+        # the Colt's, slower to come back to the aim, and no fanning
+        add("cock", [k["cock"], k["cock"], k["aim"]], 6)
+        add("reload_open", _frames([k["aim"], k["load"]], 2), 6)
+        add("reload_eject", [k["eject_a"], k["eject_b"]], 8, events={1: "brass"})
+        add("reload_insert", [k["insert_a"], k["insert_b"]], 5.5, True)
+        add("reload_close", _frames([k["load"], k["aim"]], 2), 7)
     elif w in ("navy", "banner"):
         # no brass to shake out: a spent cap picked off, then each chamber charged and rammed
         add("cock", [k["cock"], k["aim"]], 6)
@@ -1778,7 +1891,7 @@ DEATH_FPS = {"death_back": 9, "death_knees": 6, "death_spin": 8, "death_slump": 
 
 # A downed man with a pistol to hand may prop himself up on an elbow, feet towards
 # the stranger, and get a round or two off before he sinks back. One-handed guns only.
-PISTOLS = ("colt", "colts", "schofield", "navy", "derringer", "howdah", "pistola")
+PISTOLS = ("colt", "colts", "buntline", "schofield", "navy", "derringer", "howdah", "pistola")
 LYING = {"H": 0.13, "sway": 0.0, "crouch": True,
          "legs": [((0, 0.1, 0.13), (0.42, 0.13, 0.12), (0.82, 0.15, 0.08)),
                   ((0, -0.1, 0.13), (0.38, -0.12, 0.2), (0.76, -0.17, 0.08))]}   # one knee half up

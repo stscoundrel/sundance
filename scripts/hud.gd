@@ -566,7 +566,8 @@ const RIDE := Rect2(250, 286, 140, 26)
 const KIT_BOX := {"bandage": Rect2(75, 286, 150, 26), "dynamite": Rect2(415, 286, 150, 26)}
 const KIT_NAME := {"bandage": "A BANDAGE  [B]", "dynamite": "A STICK OF DYNAMITE  [G]"}
 const SLOT_NAME := {"colt": "SIDEARM", "coach": "SHOTGUN", "rifle": "RIFLE"}
-const BLURB := {"colt": "six, quick to load, fanned", "schofield": "six, all out and in at once",
+const BLURB := {"colt": "six, quick to load, fanned", "buntline": "six, long reach, slow to come up",
+	"schofield": "six, all out and in at once",
 	"navy": "six, weak, slow to load",
 	"pistola": "one ball, then the ramrod", "coach": "two barrels, or both at once",
 	"spencer82": "six, a stiff slide",

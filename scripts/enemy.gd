@@ -220,7 +220,7 @@ const GASP_SPREAD := 2.0    # x his usual spread: on his back and bleeding
 const GASP_LOST := 3.0      # s the stranger can be out of sight before he gives it up
 const GASP_PERISH := 0.5    # chance the effort is the end of him
 const GASP_COST := 12.0     # s off his clock if it isn't
-const PISTOLS := ["colt", "colts", "schofield", "navy", "derringer", "howdah", "pistola"]
+const PISTOLS := ["colt", "colts", "schofield", "buntline", "navy", "derringer", "howdah", "pistola"]
 # Now and then a man's Colt is a Schofield instead (data "schofield": the chance,
 # for his type). Its own dice, so the fights the tests replay stay as they were.
 const SCHOFIELD := 0.3
@@ -2215,7 +2215,7 @@ func _rabble_roll(delta: float, p: Player) -> bool:
 
 
 func _rabble_line(key: String, stock: Array) -> String:
-	var lines: Array = tdata.get("shouts", {}).get(key, stock)
+	var lines: Array = tdata.get("shouts", {}).get(key, _tongue(stock))
 	return lines[rabble_rng.randi() % lines.size()]
 
 
@@ -2420,8 +2420,8 @@ func _return_fire(pos: Vector2) -> void:
 	return_ok_at = game.clock + suppress_t + return_rng.randf_range(RETURN_REST.x, RETURN_REST.y)
 	game.stats["return fire"] = game.stats.get("return fire", 0) + 1
 	if shout_t <= 0.0 and return_rng.randf() < 0.3:
-		var lines: Array = tdata.get("shouts", {}).get("return", ["There! The corner!", "¡Ahí, en la esquina!",
-			"Light him up!", "¡Fuego, fuego!"])
+		var lines: Array = tdata.get("shouts", {}).get("return", _tongue(["There! The corner!", "¡Ahí, en la esquina!",
+			"Light him up!", "¡Fuego, fuego!"]))
 		_say(lines[return_rng.randi() % lines.size()])
 	_log("returns fire at the corner")
 
@@ -2777,8 +2777,20 @@ func _draw_sidearm() -> void:
 ## A shouted line: his type's own if it has them, else the stock ones.
 func _line(key: String, stock: Array, dice: RandomNumberGenerator = null) -> String:
 	var own: Dictionary = tdata.get("shouts", {})
-	var lines: Array = own.get(key, stock)
+	var lines: Array = own.get(key, _tongue(stock))
 	return lines[dice.randi() % lines.size()] if dice else lines.pick_random()
+
+
+## The stock lines a man of this type can shout. Most of them say some of it in
+## Spanish; a type that has none ("tongue": "english": Silencio's hunters and
+## outlaws, up in the snow a long way from the border) leaves those lines out. His
+## type's own lines are his own, French and all.
+const SPANISH := ["¡", "¿", "gringo", "amigo", "compadre", "Giù"]
+func _tongue(stock: Array) -> Array:
+	if tdata.get("tongue", "") != "english":
+		return stock
+	var plain := stock.filter(func(l): return SPANISH.all(func(w): return not (l as String).contains(w)))
+	return plain if not plain.is_empty() else stock
 
 
 static func _v2(a: Array) -> Vector2:

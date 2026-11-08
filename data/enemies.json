@@ -41,6 +41,14 @@
                         "sash": true, "cigar": true, "mustache": true},
     "federal":         {"style": "uniform", "hat": "kepi",    "crossbelt": true, "bandolier": "one", "mustache": true},
     "leva":            {"style": "shirt",  "hat": "kepi",     "bandolier": "one", "holsters": 0},
+    "manhunter":       {"style": "duster", "hat": "slouch",   "scarf": "face", "gloves": true},
+    "sharpshooter":    {"style": "duster", "hat": "bowler",   "scarf": true, "gloves": true, "mustache": true},
+    "buntline":        {"style": "duster", "hat": "flat",     "mustache": true},
+    "hunter_boss":     {"style": "duster", "hat": "top",      "furcollar": true, "gloves": true, "mustache": true},
+    "trapper":         {"style": "hide",   "hat": "earflap",  "beard": true, "fur_trim": true},
+    "mountainman":     {"style": "hide",   "hat": "bear",     "beard": true, "fur_trim": true, "furcollar": true,
+                        "bulk": 1.22, "holsters": 0},
+    "outlaw_chief":    {"style": "capote", "hat": "broad",    "beard": true, "scarf": true},
     "rural":           {"style": "suit",   "hat": "sombrero", "bandolier": "one", "mustache": true}
   },
 
@@ -408,6 +416,146 @@
       "palettes": [
         {"coat": [40, 44, 52], "trousers": [40, 44, 52], "accent": [176, 46, 36], "boots": [24, 20, 18],
          "hat": [40, 44, 52], "band": [206, 166, 70], "skin": [180, 124, 88], "hair": [30, 24, 20]}
+      ]
+    },
+    "manhunter": {
+      "_doc": "Silencio's bounty hunters' rank and file: patient, keeps his distance, uses cover.",
+      "gang": "hunters", "tongue": "english", "name": "Manhunter", "gasp": 0.5, "finish": 0.5, "template": "manhunter", "dynamite": 1,
+      "loadout": ["rifle", "colt"], "pump": 0.6,
+      "loadouts": [{"guns": ["rifle", "colt"], "weight": 3, "draw_sidearm": 0.5},
+                   {"guns": ["coach", "colt"], "weight": 1, "range": [30, 100], "fires_on_move": true, "flank": 0.6, "draw_sidearm": 0.8}],
+      "hp": 2, "range": [130, 290], "cadence": [0.9, 1.5], "aim": 0.85, "reflex": [0.6, 1.3], "nerve": [0.5, 0.9],
+      "cover_call": 0.9, "flank": 0.35,
+      "shouts": {"spot": ["There he is.", "That's money walking.", "Nobody's paying for that one. Kill him anyway."],
+                 "reload": ["Cover me."], "scare": ["Easy..."], "flee": ["Not for this price."]},
+      "palettes": [
+        {"coat": [74, 68, 60], "shirt": [150, 140, 120], "trousers": [70, 66, 62], "boots": [44, 34, 28], "hat": [62, 54, 46],
+         "band": [36, 30, 26], "accent": [150, 42, 36], "skin": [200, 150, 118], "hair": [70, 50, 36]},
+        {"coat": [58, 60, 62], "shirt": [170, 162, 146], "trousers": [56, 54, 54], "boots": [36, 30, 26], "hat": [46, 44, 42],
+         "band": [70, 30, 28], "accent": [176, 168, 150], "skin": [186, 136, 104], "hair": [40, 32, 28]},
+        {"coat": [86, 72, 56], "shirt": [130, 120, 104], "trousers": [64, 58, 54], "boots": [50, 36, 26], "hat": [70, 58, 44],
+         "band": [40, 34, 28], "accent": [92, 100, 120], "skin": [206, 160, 126], "hair": [120, 92, 60]}
+      ]
+    },
+    "sharpshooter": {
+      "_doc": "Silencio's hunters' long guns, posted high and far along main street.",
+      "gang": "hunters", "tongue": "english", "name": "Sharpshooter", "gasp": 0.45, "template": "sharpshooter", "dynamite": 0, "rank": 1,
+      "loadout": ["sharps", "colt"],
+      "loadouts": [{"guns": ["sharps", "colt"], "weight": 3}, {"guns": ["remington", "colt"], "weight": 2}],
+      "hp": 2, "range": [220, 480], "cadence": [1.6, 2.6], "aim": 0.55, "speed": 0.95, "reflex": [0.8, 1.4],
+      "nerve": [0.5, 0.9], "cover_call": 1.0, "flank": 0.2, "draw_sidearm": 0.7,
+      "shouts": {"spot": ["Got him.", "Hold still.", "Dead or alive. Dead's lighter."], "reload": ["Steady..."],
+                 "scare": ["Close."], "flee": ["Too warm up here."]},
+      "palettes": [
+        {"coat": [48, 52, 60], "shirt": [170, 160, 140], "trousers": [64, 62, 66], "boots": [40, 32, 26], "hat": [34, 32, 32],
+         "band": [24, 22, 22], "accent": [150, 140, 112], "skin": [200, 150, 118], "hair": [120, 90, 60]},
+        {"coat": [62, 56, 50], "shirt": [180, 172, 156], "trousers": [52, 50, 52], "boots": [36, 28, 22], "hat": [52, 44, 38],
+         "band": [30, 26, 24], "accent": [120, 46, 40], "skin": [190, 140, 108], "hair": [60, 46, 36]}
+      ]
+    },
+    "buntline": {
+      "_doc": "The hunters' Buntline man: long black coat, the long-barrelled Colt; takes careful aim, walks up to finish a man.",
+      "gang": "hunters", "tongue": "english", "name": "The Buntline man", "gasp": 0.8, "finish": 1.0, "bold": 0.7, "template": "buntline",
+      "loadout": ["buntline"], "hp": 3, "rank": 1, "range": [90, 260], "cadence": [0.9, 1.4], "aim": 0.6,
+      "reflex": [0.5, 1.0], "nerve": [0.85, 1.0], "cover_call": 0.4, "flank": 0.4,
+      "shouts": {"spot": ["I'll take this one.", "Five hundred dollars. Or nothing at all.", "Take your time."],
+                 "reload": ["One moment."], "scare": ["Hm."], "flee": ["Another day."]},
+      "palettes": [
+        {"coat": [30, 28, 30], "shirt": [200, 196, 186], "trousers": [48, 46, 48], "boots": [30, 24, 20], "hat": [28, 26, 26],
+         "band": [60, 56, 50], "skin": [200, 150, 118], "hair": [60, 56, 52]}
+      ]
+    },
+    "hunter_boss": {
+      "_doc": "The bounty hunters' boss: runs them; his death leaves them leaderless.",
+      "gang": "hunters", "tongue": "english", "name": "The boss", "gasp": 0.7, "finish": 1.0, "boss": true, "coordinator": true,
+      "template": "hunter_boss", "loadout": ["henry", "schofield"], "hp": 4, "rank": 2, "range": [80, 260],
+      "cadence": [0.7, 1.2], "aim": 0.8, "nerve": [0.95, 0.95], "cover_call": 1.0, "flank": 0.3, "draw_sidearm": 0.7,
+      "shouts": {"spot": ["Well. A free one.", "Gentlemen: him first.", "Nobody's paying for this one, boys."],
+                 "reload": ["Keep him busy."], "flee": ["Cowards don't get paid!"]},
+      "palettes": [
+        {"coat": [44, 40, 48], "shirt": [180, 172, 160], "trousers": [56, 52, 58], "boots": [30, 24, 20], "hat": [22, 20, 22],
+         "band": [96, 30, 30], "skin": [200, 150, 118], "hair": [40, 34, 30], "poncho_a": [92, 70, 52]}
+      ]
+    },
+    "trapper": {
+      "_doc": "Silencio's outlaws' rank and file: mountain men gone hungry, old guns, poor shots, many of them.",
+      "gang": "outlaws", "tongue": "english", "name": "Trapper", "gasp": 0.45, "finish": 0.2, "rabble": 0.6, "template": "trapper", "dynamite": 1,
+      "loadout": ["navy"], "champion": 0.2,
+      "loadouts": [{"guns": ["navy"], "weight": 4},
+                   {"guns": ["spencer", "navy"], "weight": 2, "range": [110, 250], "draw_sidearm": 0.5},
+                   {"guns": ["springfield", "navy"], "weight": 2, "range": [140, 320], "cadence": [1.2, 2.0], "aim": 1.5, "draw_sidearm": 0.85},
+                   {"guns": ["champion"], "weight": 1, "range": [30, 110], "fires_on_move": true, "flank": 0.7}],
+      "hp": 1, "range": [60, 180], "cadence": [0.8, 1.5], "aim": 1.4, "reflex": [0.8, 1.8], "nerve": [0.1, 0.6],
+      "cover_call": 0.4, "flank": 0.5,
+      "shouts": {"spot": ["Stranger!", "Up there, boys!", "Ain't one of them, is he?"], "reload": ["Cover me, damn it!"],
+                 "scare": ["Lord!"], "flee": ["I'm goin' home!"]},
+      "palettes": [
+        {"coat": [128, 96, 64], "shirt": [120, 60, 50], "trousers": [86, 74, 60], "boots": [70, 52, 36], "hat": [118, 88, 58],
+         "band": [150, 122, 86], "skin": [190, 136, 100], "hair": [96, 66, 42], "poncho_a": [170, 144, 104]},
+        {"coat": [104, 82, 60], "shirt": [90, 96, 110], "trousers": [76, 70, 62], "boots": [60, 44, 32], "hat": [90, 70, 50],
+         "band": [120, 98, 70], "skin": [200, 148, 112], "hair": [60, 44, 32], "poncho_a": [140, 120, 96]},
+        {"coat": [140, 110, 76], "shirt": [150, 140, 120], "trousers": [92, 80, 64], "boots": [74, 56, 40], "hat": [80, 60, 44],
+         "band": [176, 160, 130], "skin": [184, 128, 94], "hair": [140, 100, 60], "poncho_a": [200, 184, 156]}
+      ]
+    },
+    "trappeur": {
+      "_doc": "A French-Canadian trapper among the outlaws: as the trapper, a word of French.",
+      "gang": "outlaws", "tongue": "english", "name": "Trapper", "gasp": 0.45, "finish": 0.2, "rabble": 0.6, "template": "trapper", "dynamite": 1,
+      "loadout": ["spencer", "navy"], "champion": 0.2,
+      "loadouts": [{"guns": ["spencer", "navy"], "weight": 2, "range": [110, 250], "draw_sidearm": 0.5},
+                   {"guns": ["navy"], "weight": 2}],
+      "hp": 1, "range": [60, 180], "cadence": [0.8, 1.5], "aim": 1.3, "reflex": [0.8, 1.8], "nerve": [0.15, 0.65],
+      "cover_call": 0.4, "flank": 0.5,
+      "shouts": {"spot": ["Là! L'étranger!", "Hé, les gars!", "Sacré..."], "reload": ["Attends, attends!"],
+                 "scare": ["Mon Dieu!"], "flee": ["Assez!"]},
+      "palettes": [
+        {"coat": [118, 88, 60], "shirt": [150, 46, 40], "trousers": [80, 70, 58], "boots": [66, 48, 34], "hat": [100, 76, 52],
+         "band": [140, 112, 80], "skin": [196, 142, 106], "hair": [50, 38, 30], "poncho_a": [160, 136, 100], "accent": [150, 46, 40]},
+        {"coat": [132, 104, 72], "shirt": [60, 80, 120], "trousers": [86, 76, 62], "boots": [70, 50, 36], "hat": [112, 84, 56],
+         "band": [160, 136, 100], "skin": [188, 132, 98], "hair": [110, 76, 46], "poncho_a": [180, 156, 120]}
+      ]
+    },
+    "mountainman": {
+      "_doc": "The outlaws' heavy: huge in a buffalo robe, tough, fights close.",
+      "gang": "outlaws", "tongue": "english", "name": "Mountain man", "gasp": 0.6, "finish": 0.6, "bold": 0.6, "rabble": 0.3, "template": "mountainman",
+      "dynamite": 1, "loadout": ["sawnoff"],
+      "loadouts": [{"guns": ["sawnoff"], "weight": 3}, {"guns": ["coach"], "weight": 2}],
+      "hp": 3, "range": [20, 80], "cadence": [0.5, 0.9], "aim": 1.2, "speed": 1.0, "reflex": [0.7, 1.4], "nerve": [0.6, 1.0],
+      "cover_call": 0.2, "flank": 0.85, "fires_on_move": true,
+      "shouts": {"spot": ["Come here, little man.", "Fresh meat!", "I see ya!"], "reload": ["Hold on..."],
+                 "scare": ["Hah!"], "flee": ["Too many of 'em!"]},
+      "palettes": [
+        {"coat": [84, 62, 46], "shirt": [100, 90, 80], "trousers": [70, 60, 50], "boots": [60, 44, 32], "hat": [64, 48, 38],
+         "band": [64, 48, 38], "skin": [186, 130, 96], "hair": [110, 78, 50], "poncho_a": [74, 56, 42]},
+        {"coat": [70, 54, 42], "shirt": [120, 60, 50], "trousers": [64, 56, 48], "boots": [56, 40, 30], "hat": [44, 36, 32],
+         "band": [44, 36, 32], "skin": [196, 140, 106], "hair": [60, 46, 36], "poncho_a": [96, 76, 56]}
+      ]
+    },
+    "woodsman": {
+      "_doc": "The outlaws' hunter of game: the poacher's buckskin, a long rifle, watching the pond and the cabins.",
+      "gang": "outlaws", "tongue": "english", "name": "Woodsman", "gasp": 0.45, "template": "buckskin", "dynamite": 1, "loadout": ["sharps"],
+      "hp": 2, "range": [220, 460], "cadence": [1.6, 2.6], "aim": 0.55, "speed": 0.95, "reflex": [0.8, 1.4],
+      "nerve": [0.4, 0.9], "cover_call": 0.3, "flank": 0.3,
+      "shouts": {"spot": ["Got me a big one.", "Hold still now...", "Ain't a deer, that."], "reload": ["Steady..."],
+                 "scare": ["Close one."], "flee": ["Ain't worth the hide!"]},
+      "palettes": [
+        {"coat": [170, 136, 94], "shirt": [120, 56, 44], "trousers": [96, 82, 64], "boots": [70, 50, 34], "hat": [104, 78, 52],
+         "band": [60, 46, 34], "skin": [196, 140, 104], "hair": [96, 66, 40]},
+        {"coat": [150, 120, 84], "shirt": [80, 90, 70], "trousers": [86, 74, 60], "boots": [64, 46, 32], "hat": [130, 100, 66],
+         "band": [70, 52, 38], "skin": [186, 132, 98], "hair": [70, 50, 34]}
+      ]
+    },
+    "outlaw_chief": {
+      "_doc": "The outlaws' chief: keeps the strongbox; his death breaks the outlaws.",
+      "gang": "outlaws", "tongue": "english", "name": "The chief", "gasp": 0.7, "finish": 1.0, "boss": true, "coordinator": true,
+      "template": "outlaw_chief", "loadout": ["spencer", "navy"], "hp": 4, "rank": 2, "range": [70, 220],
+      "cadence": [0.8, 1.3], "aim": 1.0, "nerve": [0.95, 0.95], "cover_call": 1.0, "flank": 0.3, "draw_sidearm": 0.7,
+      "shouts": {"spot": ["Nobody takes what's ours!", "Hunters sent you, did they?", "Up the hill with him!"],
+                 "reload": ["Hold them, boys!"], "flee": ["Run, then, and starve!"]},
+      "palettes": [
+        {"coat": [214, 206, 184], "shirt": [110, 90, 70], "trousers": [80, 70, 60], "boots": [60, 44, 32], "hat": [74, 60, 46],
+         "band": [40, 34, 28], "accent": [128, 100, 64], "skin": [190, 140, 106], "hair": [168, 162, 152],
+         "poncho_b": [156, 44, 38], "poncho_c": [42, 56, 100]}
       ]
     }
   }
