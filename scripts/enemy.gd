@@ -207,6 +207,8 @@ var rescuer: Enemy = null    # who's come for him
 var medic: Civilian = null   # the barber-surgeon, if he's come for him instead
 var rescuing: Enemy = null   # (as the rescuer) who he's come for
 var rescue_phase := ""       # "go", "drag", "treat"
+var fetching: Strongbox = null   # (Silencio's trappers) the strongbox he's taking home
+var fetch_phase := ""            # "go", "carry"
 var smear := Vector2.ZERO
 # The last gasp: downed, a pistol to hand and the stranger in sight, he may push
 # himself up on an arm and get a shot or three off, slowly, before he sinks back.
@@ -945,7 +947,7 @@ func start_reaction(r: String) -> void:
 			play_action("throw")
 			stick = game.light_stick(self)
 			_say(_line("dynamite", THROW_LINES))
-		"rescue":
+		"rescue", "fetch":
 			reaction_t = 30.0
 		"patch":
 			cover_pos = game.find_cover(global_position, threat)
@@ -1010,6 +1012,8 @@ func _do_reaction(delta: float) -> void:
 			_patch()
 		"rescue":
 			_rescue(delta)
+		"fetch":
+			_fetch()
 		"clear":
 			if follow_path(run * 1.2):
 				crouched = true
@@ -1031,6 +1035,8 @@ func _do_reaction(delta: float) -> void:
 				crouched = true
 				reaction_t = randf_range(2.0, 4.0)
 	if reaction_t <= 0.0:
+		if reaction == "fetch":
+			let_go_of_box()
 		reaction = ""
 		hiding = false
 		crouched = false
@@ -1405,7 +1411,7 @@ func unaware() -> bool:
 func can_fire_at(p: Actor) -> bool:
 	if not alive or not revealed or is_staggered() or weapon.is_reloading() or not weapon.can_fire():
 		return false
-	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear", "patch", "rescue"]:
+	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear", "patch", "rescue", "fetch"]:
 		return false
 	return absf(facing.angle_to(p.global_position - global_position)) < 1.1
 
@@ -2055,6 +2061,62 @@ func _rescue(delta: float) -> void:
 				_log("patches up a downed man")
 				_end_rescue()
 				reaction_t = 0.0
+
+
+# ------------------------------------------------------------------ the strongbox
+
+## The gold lying out where it shouldn't be: he goes to take it home.
+func fetch(b: Strongbox) -> void:
+	fetching = b
+	start_reaction("fetch")
+	fetch_phase = "go"
+	path_to(b.global_position)
+	if shout_t <= 0.0:
+		_say("There's the gold!")
+	_log("goes for the strongbox")
+
+
+## To it, up with it in both arms, and back to the hideout's door with it. The
+## stranger in sight, and it's dropped where he stands (see Strongbox).
+func _fetch() -> void:
+	var b := fetching
+	reaction_t = 30.0   # (it ends when it's done, not on a clock)
+	if b == null or b.away or (b.holder != null and b.holder != self) or sees_player or st == St.COMBAT:
+		reaction_t = 0.0
+		return
+	match fetch_phase:
+		"go":
+			var d := global_position.distance_to(b.global_position)
+			if follow_path(run) and d >= 12.0:
+				velocity = (b.global_position - global_position).normalized() * walk
+			if d < 12.0:
+				b.take(self)
+				anim_gun = "strongbox"
+				fetch_phase = "carry"
+				path_to(b.home)
+		"carry":
+			pose = "carry"
+			if follow_path(walk * 0.65):
+				b.put_down(b.home)   # (back where it was, in the doorway)
+				let_go_of_box()
+				reaction_t = 0.0
+				_log("takes the strongbox home")
+
+
+## Hands free again: the box set down (or dropped) wherever he is.
+func let_go_of_box() -> void:
+	var b := fetching
+	fetching = null
+	fetch_phase = ""
+	if anim_gun == "strongbox":
+		anim_gun = ""
+	if pose == "carry":
+		pose = ""
+	if b and is_instance_valid(b):
+		if b.holder == self:
+			b.put_down(global_position + facing * 8.0)
+		if b.fetcher == self:
+			b.fetcher = null
 
 
 func _end_rescue() -> void:

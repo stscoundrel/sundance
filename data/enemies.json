@@ -479,7 +479,7 @@
     },
     "trapper": {
       "_doc": "Silencio's outlaws' rank and file: mountain men gone hungry, old guns, poor shots, many of them.",
-      "gang": "outlaws", "tongue": "english", "name": "Trapper", "gasp": 0.45, "finish": 0.2, "rabble": 0.6, "template": "trapper", "dynamite": 1,
+      "gang": "outlaws", "tongue": "english", "name": "Trapper", "fetches": true, "gasp": 0.45, "finish": 0.2, "rabble": 0.6, "template": "trapper", "dynamite": 1,
       "loadout": ["navy"], "champion": 0.2,
       "loadouts": [{"guns": ["navy"], "weight": 4},
                    {"guns": ["spencer", "navy"], "weight": 2, "range": [110, 250], "draw_sidearm": 0.5},
@@ -500,7 +500,7 @@
     },
     "trappeur": {
       "_doc": "A French-Canadian trapper among the outlaws: as the trapper, a word of French.",
-      "gang": "outlaws", "tongue": "english", "name": "Trapper", "gasp": 0.45, "finish": 0.2, "rabble": 0.6, "template": "trapper", "dynamite": 1,
+      "gang": "outlaws", "tongue": "english", "name": "Trapper", "fetches": true, "gasp": 0.45, "finish": 0.2, "rabble": 0.6, "template": "trapper", "dynamite": 1,
       "loadout": ["spencer", "navy"], "champion": 0.2,
       "loadouts": [{"guns": ["spencer", "navy"], "weight": 2, "range": [110, 250], "draw_sidearm": 0.5},
                    {"guns": ["navy"], "weight": 2}],

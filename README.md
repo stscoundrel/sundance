@@ -13,7 +13,7 @@ godot --path .
 
 WASD move · mouse aim · LMB fire · RMB fan the Colt / fire both barrels · C or Ctrl crouch ·
 R reload (fire stops a partial reload) · 1/2/3 or wheel to switch guns · E knife (hold to drag
-a body; at the gallows or the pole, hold to cut the man loose; by the machine gun, get on or off it; by the plunger, fire the mines) · B bandage · G throw dynamite · F swap for the gun at your feet · Enter restart · Esc quit.
+a body; at the gallows or the pole, hold to cut the man loose; by the machine gun, get on or off it; by the plunger, fire the mines; by the strongbox, take it up or set it down) · B bandage · G throw dynamite · F swap for the gun at your feet · Enter restart · Esc quit.
 
 The window can be any size. A bigger one shows more of the town, up to about 640x360 world
 pixels on a 16:9 screen (wider on a 21:9 one); past that the pixels only get bigger. A
@@ -97,6 +97,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_assault.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_mgun.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_mines.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_silencio.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_strongbox.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_general.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arsenal.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_champion.gd

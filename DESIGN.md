@@ -437,6 +437,30 @@ death breaks only his own: the other gang's only glad of it. Everywhere else
 there's the one gang, unnamed, and nothing changes. No tumbleweed blows through
 the snow.
 
+**The strongbox** (the map's `"strongbox"` and `"horse"`, `scripts/strongbox.gd`). The
+outlaws' stolen gold sits in an iron-bound strongbox in the open doorway of the
+livery that's their hideout, the chief beside it; the stranger's horse is tied to a
+post at the foot of the south trail, where he starts. E by the box: a second bent
+to it, then it's in both arms, his gun put away. He carries it slower than he walks
+(0.65) and quicker than he drags a man (0.4); crouched, slower again (0.4) and
+quiet. E sets it down at his feet; reaching for a gun (or the knife, a bandage, a
+stick) lets it drop where he stands. Shot down into the dirt, it falls from his
+arms. Get it to the horse and he's away: "AWAY WITH THE GOLD", the level won, and
+the end card says the gold's his (or, if they missed it and it's lying out, lost
+in the snow). Killing them all still wins it the other way.
+
+The outlaws miss it the first time one of them looks at the empty doorway (within
+200 px, facing it, a clear line): "The gold! It's gone!" Their alarm goes up past
+sending men out (the hunters only get uneasy, as ever), and the six nearest who
+aren't in a fight (nor the chief) are sent to look, half round the hideout and half
+towards where the stranger was last seen, on the box's own dice. A trapper (a type
+that `"fetches"`) who sees it lying out, within 170 px, goes to it, takes it up
+(the `strongbox` carrying set) and carries it home to the doorway, slowly, unless
+he sees the stranger or a fight starts: then he drops it where he is. Who they
+blame for it, and the hunters, are for later (the truce). `tests/test_strongbox.gd`
+plays the take, the pace, setting it down and dropping it, the outlaws missing it,
+a trapper carrying it home, and the ride off.
+
 The look: `tools/make_silencio.py` lays it out. The ground is baked white (the map's
 `"snow"`): main street and the cross streets trodden grey, slush where it's churned
 up, dead stalks through the drifts, and the pond's `"ice"` grey-blue, dusted, cracked,

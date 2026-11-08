@@ -84,7 +84,7 @@ PROPS = [
 # south trail, where the stranger comes up out of them.
 PINES = [
     # the south trail
-    (28.4, 61.6), (36.4, 59.0), (28.8, 58.0), (36.4, 56.8), (26.0, 61.6), (38.4, 61.6), (35.0, 61.6),
+    (28.4, 61.6), (36.4, 59.0), (28.8, 58.0), (36.4, 56.8), (26.0, 61.6), (38.4, 61.6),
     (40.0, 58.4), (24.4, 59.2), (29.2, 54.0),
     # the south edge
     (2.0, 60.0), (6.0, 61.4), (11.0, 60.6), (16.0, 61.6), (20.0, 59.4), (43.0, 61.6), (48.0, 60.0),
@@ -135,7 +135,7 @@ HUNTERS = [
 # The outlaws, sixteen, at the west end: the chief at the hideout's door with his
 # heavies, trappers about the cabins and the streets, a woodsman over the pond.
 OUTLAWS = [
-    {"kind": "outlaw_chief", "x": 17.6, "y": 29.6, "facing": E},
+    {"kind": "outlaw_chief", "x": 18.6, "y": 29.9, "facing": E},                   # by the gold
     {"kind": "mountainman", "x": 19.6, "y": 30.8, "facing": E},
     {"kind": "mountainman", "x": 13.0, "y": 29.8, "facing": E},                    # at the feed barn
     {"kind": "woodsman", "x": 19.0, "y": 9.0, "facing": W},                        # over the pond
@@ -160,12 +160,18 @@ ENTRIES = [{"name": "valley road", "x": 63.3, "y": 31.5}, {"name": "pass road", 
            {"name": "south trail", "x": 32.5, "y": 63.3}]
 CENTER = {"x": 32.0, "y": 31.5}   # (main street, before the store: nobody's ground)
 PLAYER = {"x": 32.5, "y": 62.4}   # down the south trail, where he left his horse
+# The outlaws' gold: a strongbox in the livery's open doorway, their hideout (the
+# corner of its footprint, tiles). And his horse, tied to a post beside the trail
+# (the object's corner; HORSE_AT, its middle, is where he's away with the gold).
+STRONGBOX = [17.0, 29.15]
+HORSE = ("horse", 34.0, 61.6)
+HORSE_AT = [35.15, 62.1]
 
 BUILDING_KINDS = {k for k, *_ in BUILDINGS_AT}
 
 
 def main():
-    objects = [{"type": k, "x": x, "y": y} for k, x, y in BUILDINGS_AT + PROPS + PINES]
+    objects = [{"type": k, "x": x, "y": y} for k, x, y in BUILDINGS_AT + PROPS + PINES + [HORSE]]
     solid = layout.check(N, objects, ENEMIES + ENTRIES + HOLDOUTS + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")])
     posts = layout.make_posts(N, STREETS, solid, ENEMIES, PLAYER, BUILDING_KINDS)
     layout.write("silencio.json", {
@@ -189,6 +195,8 @@ def main():
         "entries": ENTRIES,
         "center": CENTER,
         "posse": False,
+        "strongbox": STRONGBOX,
+        "horse": HORSE_AT,
     })
     print("Silencio: %d buildings, %d props, %d pines, %d hunters, %d outlaws, %d guard posts" % (
         len(BUILDINGS_AT), len(PROPS), len(PINES), len(HUNTERS), len(OUTLAWS), len(posts)))

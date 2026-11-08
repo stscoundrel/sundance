@@ -41,6 +41,10 @@ const DRAG_GRAB := 0.35     # s of holding E before he takes hold (a tap is the 
 const DRAG_SPEED := 0.4
 const DRAG_SMEAR := 9.0     # px between smears
 const CROUCH_WALK := 22.0
+# Silencio's strongbox (see Strongbox): in both arms, heavy. Slower than he walks,
+# quicker than he drags a man; crouched, slower again and quiet.
+const BOX_SPEED := 0.65
+const BOX_CROUCH := 0.4
 # The last stand: once a level, the shot that would have killed him puts him down in
 # the dirt instead, propped on an elbow with a revolver (his Colt, or one from his
 # boot), unable to move but for dragging himself round on the elbow. A bandage gets
@@ -77,6 +81,8 @@ var knife_quiet := false
 var knife_t := -1.0            # time into the lunge; < 0 when not lunging
 var knife_cd := 0.0
 var dragging: Enemy = null
+var box: Strongbox = null      # the outlaws' gold in his arms
+var lift_t := -1.0             # time bent to it, taking it up; < 0 when not
 var grab_t := 0.0
 var smear_at := Vector2.ZERO
 var exposed_t := 0.0           # he's just fired: up over his cover, flash and smoke
@@ -138,6 +144,15 @@ func _physics_process(delta: float) -> void:
 	velocity = input * (CROUCH_WALK if crouched else WALK) * limp_factor()
 	if dragging:
 		velocity = input * WALK * DRAG_SPEED * limp_factor()
+	if box:
+		velocity = input * WALK * (BOX_CROUCH if crouched else BOX_SPEED) * limp_factor()
+		if input != Vector2.ZERO:
+			facing = input.normalized()   # (both arms full: he looks where he's going)
+	if lift_t >= 0.0:
+		velocity = Vector2.ZERO
+		lift_t += delta
+		if lift_t >= Strongbox.LIFT_T:
+			_lifted()
 	if bandage_t >= 0.0:
 		_bandage(delta, input)
 	if stick:
@@ -153,7 +168,7 @@ func _physics_process(delta: float) -> void:
 	var m := get_global_mouse_position()
 	aim_target = game.enemy_under(m)
 	var to := aim_ground(m) - global_position
-	if to.length() > 3.0 and playing and not dragging:
+	if to.length() > 3.0 and playing and not dragging and box == null and lift_t < 0.0:
 		facing = to.normalized()
 	aim_dist = to.length()
 
@@ -180,6 +195,16 @@ func _physics_process(delta: float) -> void:
 
 
 func _handle_actions() -> void:
+	if lift_t >= 0.0:
+		return   # (bent to the strongbox)
+	if box:
+		if Input.is_action_just_pressed("crouch"):
+			crouched = not crouched
+		for a in ["knife", "fire", "alt", "bandage", "throw", "weapon_1", "weapon_2", "weapon_3"]:
+			if Input.is_action_just_pressed(a):
+				set_box_down()   # (E to set it down; to shoot, or anything else, he lets it fall)
+				return
+		return
 	if dragging:
 		for a in ["fire", "alt", "crouch", "bandage", "weapon_1", "weapon_2", "weapon_3"]:
 			if Input.is_action_just_pressed(a):
@@ -222,6 +247,9 @@ func _handle_actions() -> void:
 		crouched = not crouched
 	if Input.is_action_just_pressed("reload"):
 		weapon.start_reload()
+	if Input.is_action_just_pressed("knife") and game.strongbox and game.strongbox.can_take(global_position):
+		_lift()
+		return
 	if Input.is_action_just_pressed("knife") and game.mgun and game.mgun.can_man(global_position):
 		get_on(game.mgun)
 		return
@@ -371,6 +399,39 @@ func aim_ground(m: Vector2) -> Vector2:
 	if game.hanging and game.hanging.under(m):
 		return game.hanging.trap
 	return m + Vector2(0, gun_height())
+
+
+## Bent to the strongbox, the gun put away: up with it in a second.
+func _lift() -> void:
+	weapon.abort()
+	weapon.fanning = false
+	lift_t = 0.0
+	anim_gun = "strongbox"
+	pose = "pick"
+	game.sfx("step", null, -10.0, 0.1)
+
+
+func _lifted() -> void:
+	lift_t = -1.0
+	var b: Strongbox = game.strongbox
+	if b == null or not b.can_take(global_position):
+		anim_gun = ""
+		pose = ""
+		return   # (somebody else got it first)
+	box = b
+	b.take(self)
+	pose = "carry"
+	game.stats["took the gold"] = game.stats.get("took the gold", 0) + 1
+
+
+## Set it down in front of him (or let it drop, to have his hands free).
+func set_box_down() -> void:
+	var b := box
+	box = null
+	anim_gun = ""
+	pose = ""
+	if b and b.holder == self:
+		b.put_down(global_position + facing * 8.0)
 
 
 ## By the collar: the guns go away and he hauls the body along behind him.

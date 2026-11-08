@@ -39,7 +39,7 @@ def template_guns():
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
     out = {"hero": ["colt", "buntline", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "pistola", "sawnoff", "champion", "escopeta", "spencer",
-                    "springfield", "rollingblock", "remington", "mgun"]}
+                    "springfield", "rollingblock", "remington", "mgun", "strongbox"]}
 
     def need(template, g, t=None):
         out.setdefault(template, [])
@@ -74,6 +74,8 @@ def template_guns():
             champion(t["template"], t.get("champion", 0), t["loadout"], t.get("rollingblock", 0))
         if t.get("concealed"):
             need(t["template"], "unarmed")
+        if t.get("fetches"):   # (Silencio's trappers carry the strongbox home)
+            need(t["template"], "strongbox")
         if t.get("flag"):   # the colours, carried (or taken up from the dirt) with a Navy in the other hand
             need(t["template"], "banner")
             need(t["template"], "navy")
@@ -1041,6 +1043,11 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
             t_ = i / 9
             p_ = np.array([0.04 + 0.04 * math.sin(t_ * math.pi), 0.2 - 0.4 * t_, 0.52 - 0.5 * t_])
             m += box(tuple(p_ - 0.02), tuple(p_ + 0.02), BRASS)
+    if up.get("chest") is not None:   # the outlaws' strongbox, in both arms against his belly
+        c = np.array(up["chest"], float)
+        oak = lambda P, N: np.where((np.abs(P[:, 1] - c[1]) % 0.16 < 0.025)[:, None], [[58, 58, 62]], [[84, 60, 42]])
+        m += box(tuple(c - [0.15, 0.24, 0.13]), tuple(c + [0.15, 0.24, 0.13]), oak)
+        m += box(tuple(c + [0.15, -0.04, -0.04]), tuple(c + [0.165, 0.04, 0.06]), BRASS)   # the padlock
     if up.get("case") is not None:   # a case of rifles held in front of him, across his chest
         c = np.array(up["case"], float)
         pine = lambda P, N: np.where((np.abs(P[:, 2] - c[2]) < 0.025)[:, None], [[96, 74, 52]], [[182, 148, 102]])
@@ -1340,6 +1347,14 @@ def _key_poses(w):
         k["pick_b"] = P(k["carry"], lean=0.25, eL=V(0.16, 0.26, 0.14), hL=V(0.36, 0.26, 0.02),
                         eR=V(0.16, -0.26, 0.14), hR=V(0.36, -0.26, 0.02), case=(0.38, 0.0, 0.1))
         return k
+    if w == "strongbox":
+        # the strongbox: bent to it, up with it, and away, held low in both arms (heavy)
+        k = _key_poses("case")
+        k["carry"] = P(k["carry"], chest=(0.3, 0.0, 0.16), lean=-0.1, hL=V(0.3, 0.24, 0.08), hR=V(0.3, -0.24, 0.08))
+        k["pick_b"] = P(k["pick_b"], chest=(0.38, 0.0, 0.0))
+        for name in ("carry", "pick_b"):
+            del k[name]["case"]   # (the chest in his arms, not a case of rifles)
+        return k
     if w == "nun":
         # the sister: hands folded before her; at the chapel door beckoning them in;
         # hauling the padre by the shoulders; and blessing the dead as he would have
@@ -1631,7 +1646,7 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case", "mgun", "mgcarry"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case", "strongbox", "mgun", "mgcarry"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
@@ -1651,7 +1666,7 @@ def upper_anims(w):
         add("survey", [k["survey_a"], k["survey_a"], k["survey_b"], k["survey_b"]], 1.4, True)
     elif w == "mgun":
         add("fire", [k["kick"], k["aim"]], 15, True)
-    elif w in ("smith", "rifles", "case", "mgcarry"):
+    elif w in ("smith", "rifles", "case", "strongbox", "mgcarry"):
         add("pick", [k["pick_a"], k["pick_a"], lerp_pose(k["pick_a"], k["pick_b"], 0.5), k["pick_b"], k["pick_b"]],
             2.5, True)
         add("carry", [k["carry"]], 1, True)
@@ -1788,7 +1803,7 @@ def upper_anims(w):
         kick = P(sky, hR=V(0.06, -0.2, 1.06), gun=G((0.02, -0.2, 1.02), (-0.15, 0.0, 1.0)))
         add("salute", [lerp_pose(k["aim"], sky, 0.5), sky, sky, kick, kick, sky, sky, lerp_pose(sky, k["aim"], 0.5)], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case", "mgun", "mgcarry"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case", "strongbox", "mgun", "mgcarry"):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
                         lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         add("haul", [k["haul"]], 1, True)

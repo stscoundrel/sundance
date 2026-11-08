@@ -58,6 +58,7 @@ var captive: Captive = null     # a man tied to a pole, if the level has one
 var cargo: Cargo = null         # the arms to be carried off, if the level has them (it's won at the wagon)
 var mgun: MGun = null           # a machine gun for him, if the map has one
 var minefield: Minefield = null # ground mined round his breastwork, and the plunger, if the map has them
+var strongbox: Strongbox = null # the outlaws' gold to ride off with, if the map has it (Silencio)
 # A big battle's smoke and chaos (the map's "haze": [range, spread]): the army's guns
 # reach so far and throw so wide of what they would (the stranger's don't: he's seen
 # it all before).
@@ -227,6 +228,7 @@ func _ready() -> void:
 		Enemy.assault_rng.randomize()
 		MGun.rng.randomize()
 		Minefield.rng.randomize()
+		Strongbox.rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
 		loot_rng.randomize()
@@ -269,6 +271,7 @@ func _ready() -> void:
 		Enemy.assault_rng.seed = 73
 		MGun.rng.seed = 79
 		Minefield.rng.seed = 83
+		Strongbox.rng.seed = 101
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -1039,6 +1042,10 @@ func _spawn_actors() -> void:
 		minefield = Minefield.new()
 		minefield.setup(self, level)
 		world.add_child(minefield)
+	if level.has("strongbox"):
+		strongbox = Strongbox.new()
+		world.add_child(strongbox)
+		strongbox.setup(self, Vector2(level["strongbox"][0], level["strongbox"][1]), Vector2(level["horse"][0], level["horse"][1]))
 	if level_entry.has("cargo") and level.has("cargo"):
 		cargo = Cargo.new()
 		add_child(cargo)
@@ -2169,7 +2176,7 @@ func _tally() -> String:
 	if stats.get("kills while down", 0) > 0:
 		line += " (%d from the dirt%s)" % [stats["kills while down"], ", and up again" if stats.has("rose from the dirt") else ""]
 	return line + "   -   " + (hanging.line() if hanging else "") + (captive.line() if captive else "") \
-		+ (cargo.line() if cargo else "") \
+		+ (cargo.line() if cargo else "") + (strongbox.line() if strongbox else "") \
 		+ _innocents_line() + _padre_line()
 
 

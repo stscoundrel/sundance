@@ -2272,6 +2272,48 @@ def stump(seed=0):
     return m
 
 
+def strongbox():
+    """The outlaws' gold: a strongbox of dark oak bound in iron, a brass padlock on
+    the hasp. Heavy: a man carries it in both arms."""
+    oak = planks((84, 60, 42), board=0.12, vertical=True, seed=91, mud=0)
+    m = box((0.1, 0.1, 0.0), (0.72, 0.46, 0.38), oak, 0.02)
+    m += ellipsoid((0.41, 0.28, 0.38), (0.31, 0.18, 0.07), oak, zmin=0.38)            # the lid, rounded
+    for x in (0.16, 0.41, 0.66):                                                        # iron bands round it
+        m += box((x - 0.025, 0.09, 0.0), (x + 0.025, 0.47, 0.4), solid((58, 58, 62)), 0.01)
+        m += box((x - 0.025, 0.12, 0.4), (x + 0.025, 0.44, 0.45), solid((58, 58, 62)), 0.01)
+    m += box((0.36, 0.465, 0.22), (0.46, 0.49, 0.34), solid((196, 156, 64)), 0.01)     # the padlock
+    return m
+
+
+def horse():
+    """The stranger's horse, tied to a post at the foot of the trail, facing -x: a
+    dark bay, saddled, a blanket under the saddle and the bags behind it, waiting."""
+    m = Cloud()
+    col, dark = (92, 58, 38), (50, 34, 26)
+    x, y = 1.9, 0.62
+    m += ellipsoid((x, y, 1.12), (0.8, 0.3, 0.34), col)                                  # barrel
+    m += ellipsoid((x + 0.55, y, 1.15), (0.3, 0.28, 0.3), col)                            # quarters
+    m += beam((x - 0.55, y, 1.25), (x - 0.92, y, 1.66), 0.2, col)                        # neck
+    m += beam((x - 0.98, y, 1.76), (x - 1.32, y, 1.45), 0.11, col)                        # head, hung low
+    m += ellipsoid((x - 1.34, y, 1.43), (0.1, 0.1, 0.1), dark)                            # muzzle
+    m += beam((x - 0.5, y, 1.5), (x - 0.92, y, 1.88), 0.07, dark)                         # mane
+    for s in (-1, 1):
+        m += beam((x - 0.95, y + s * 0.06, 1.84), (x - 0.92, y + s * 0.09, 2.0), 0.03, col)   # ears
+        for dx in (-0.52, 0.55):
+            m += beam((x + dx, y + s * 0.15, 0.95), (x + dx, y + s * 0.15, 0.22), 0.08, col)
+            m += beam((x + dx, y + s * 0.15, 0.22), (x + dx, y + s * 0.15, 0.0), 0.065, dark)
+    m += beam((x + 0.82, y, 1.3), (x + 0.98, y, 0.62), 0.07, dark)                        # tail
+    m += box((x - 0.4, y - 0.33, 1.38), (x + 0.2, y + 0.33, 1.45), solid((120, 40, 34)), 0.02)   # blanket
+    m += ellipsoid((x - 0.1, y, 1.5), (0.3, 0.26, 0.09), (70, 46, 30))                    # saddle
+    m += beam((x - 0.36, y, 1.5), (x - 0.36, y, 1.66), 0.035, (70, 46, 30))               # horn
+    for s in (-1, 1):
+        m += box((x + 0.25, y + s * 0.33 - 0.07, 1.1), (x + 0.52, y + s * 0.33 + 0.07, 1.4), solid((84, 56, 36)), 0.02)   # bags
+    post = (0.12, y, 0.0)
+    m += beam(post, (0.12, y, 1.2), 0.06, (110, 82, 58))                                 # the post he's tied to
+    m += beam((0.12, y, 1.05), (x - 1.3, y, 1.46), 0.012, (40, 30, 24))                 # the reins
+    return m
+
+
 # Long things baked in pieces along their length, each its own sprite sorted at its
 # own middle, so a man beside one end of a boxcar is drawn in front of it, not
 # behind (one sprite sorts at the middle of the whole car). Name -> (axis, pieces);
@@ -2404,6 +2446,8 @@ BUILDINGS = {
     "reeds": (lambda: reeds(0), (0.75, 0.75), "none", False, None),
     "reeds_b": (lambda: reeds(1), (0.75, 0.75), "none", False, None),
     "stump": (lambda: stump(0), (0.6, 0.6), "cover", False, None),
+    "strongbox": (strongbox, (0.65, 0.45), "none", False, None),
+    "horse": (horse, (2.3, 1.0), "cover", False, [[0.0, 0.3, 2.3, 0.75]]),
 }
 
 # What Silencio wears snowed over (see `snowed`): the town's buildings, and the props
@@ -2413,7 +2457,7 @@ SNOWY = {k: {} for k in ("saloon", "store", "sheriff", "bank", "church", "stable
                          "trough", "coffin", "hitch", "cross", "crate_stack", "sacks", "rock", "rock_b", "rock_c",
                          "wagon_over", "woodpile", "boat_over", "stump", "table", "chair", "headstone", "headstone_b",
                          "upturned_n", "upturned_s", "upturned_e", "upturned_w")}
-SNOWY.update({"woodpile": {"cap": 0.7}, "boat_over": {"cap": 0.3}, "pine": {"patchy": 0.45, "drift": 0.2}, "pine_b": {"patchy": 0.4, "drift": 0.2}})
+SNOWY.update({"strongbox": {"cap": 0.42, "drift": 0.05}, "woodpile": {"cap": 0.7}, "boat_over": {"cap": 0.3}, "pine": {"patchy": 0.45, "drift": 0.2}, "pine_b": {"patchy": 0.4, "drift": 0.2}})
 
 
 def _chunk_entries():
