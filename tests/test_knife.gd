@@ -1,9 +1,12 @@
 extends SceneTree
 ## The knife. One bandit at a time in the open (the rest held still), the hero
 ## placed by hand:
-##   silent   - crouched right behind a guard: a quiet takedown; a bandit round the
-##              corner hears nothing.
+##   silent   - crouched right behind a guard: a quiet takedown; a bandit a hundred
+##              paces off with his back to it hears nothing and stays at his post,
+##              and the gang's alarm doesn't stir.
 ##   seen     - the same in front of another bandit: he sees it.
+##   reach    - from further off, at the edge of a lunge, behind a guard who still
+##              doesn't know he's there: a quiet takedown all the same, nobody stirs.
 ##   ready    - a rush at a man with a loaded gun facing him: shot point-blank, and
 ##              left reeling.
 ##   reloading- a rush at a man mid-reload: the knife goes in.
@@ -12,7 +15,7 @@ extends SceneTree
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_knife.gd
 
 const SPOT := Vector2(26.0, 31.4)   # open main street
-const SCENES := ["silent", "seen", "ready", "reloading", "jefe", "far"]
+const SCENES := ["silent", "seen", "reach", "ready", "reloading", "jefe", "far"]
 
 var game: Node
 var frame := 0
@@ -23,6 +26,7 @@ var victim: Enemy
 var other: Enemy
 var hp0 := 0
 var used: Array[Enemy] = []
+var alarm0 := 0.0
 
 
 func _initialize() -> void:
@@ -75,15 +79,23 @@ func _next() -> void:
 	var at := Iso.to_screen(SPOT + Vector2(scene_i * 6.0, 0))   # a fresh bit of street each time
 	var east := Vector2.RIGHT
 	match SCENES[scene_i]:
-		"silent", "seen":
+		"silent", "seen", "reach":
 			victim = _take("pistolero")
 			_stand(victim, at, east, false)
 			p.crouched = true
-			p.global_position = at - east * 16.0   # right behind him
+			p.global_position = at - east * (45.0 if SCENES[scene_i] == "reach" else 16.0)   # right behind him (or a lunge off)
 			if SCENES[scene_i] == "seen":
 				other = _take("cowboy")
 				_stand(other, at + east * 70.0, -east, false)   # looking straight at it
 				other.process_mode = Node.PROCESS_MODE_INHERIT
+			else:
+				other = _take("rifleman")
+				_stand(other, at + east * 100.0, east, false)   # near, but his back to it
+				other.home = other.global_position   # (his post: he stays there, not off back to his own)
+				other.home_facing = east
+				other.patrol = PackedVector2Array()
+				other.process_mode = Node.PROCESS_MODE_INHERIT
+				alarm0 = game.alarm
 		"ready":
 			victim = _take("cowboy")
 			_stand(victim, at, -east, true)
@@ -126,17 +138,20 @@ func _process(delta: float) -> bool:
 			check(p.knife_cand == null, "a knife target %.0f px away" % p.global_position.distance_to(victim.global_position))
 		else:
 			check(p.knife_cand == victim, "the knife doesn't see the %s" % victim.kind)
-			check(p.knife_silent == (name in ["silent", "seen"]), "takedown/rush mixed up (quiet %s)" % p.knife_silent)
+			check(p.knife_silent == (name in ["silent", "seen", "reach"]), "takedown/rush mixed up (quiet %s)" % p.knife_silent)
 			check(p.knife(), "the knife didn't go")
 			if name == "ready":
 				victim.process_mode = Node.PROCESS_MODE_INHERIT   # his gun has to go off
 	if t < 1.5:
 		return false
 	match SCENES[scene_i]:
-		"silent":
+		"silent", "reach":
 			check(not victim.alive and victim._death == "death_slump", "the guard should be let down quietly (%s)" % victim._death)
-			check(game.stats.get("takedowns", 0) == 1, "no takedown counted")
+			check(game.stats.get("takedowns", 0) == (1 if SCENES[scene_i] == "silent" else 3), "%d takedowns counted" % game.stats.get("takedowns", 0))
 			check(p.hp == hp0, "a takedown cost him blood")
+			check(other.st == Enemy.St.GUARD and other.reaction == "" and other.pending == "",
+				"the bandit with his back to it heard it (%s, %s)" % [Enemy.St.keys()[other.st], other.reaction])
+			check(game.alarm <= alarm0, "the alarm went up %.1f for a quiet killing" % (game.alarm - alarm0))
 		"seen":
 			check(not victim.alive, "the takedown failed")
 			check(other.st == Enemy.St.COMBAT or other.reaction != "" or other.pending != "",

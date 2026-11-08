@@ -15,12 +15,12 @@ const RESERVE := {"colt": 30, "schofield": 30, "buntline": 30, "navy": 24, "pist
 const TROPHIES := ["buntline"]   # his only off the dead: not on the loadout screen
 const KIT := {"bandage": 1, "dynamite": 2}   # what kit costs on the loadout screen (one of each at most)
 const REACH := 13.0   # px: a gun at his feet
-# The knife (E). Up close behind a man who isn't on to him, a silent takedown; a
-# few paces off from one who is, a rush: he lunges, and it's decided as he gets
-# there: if the man can shoot (gun loaded and ready, facing him, not reeling or
-# reloading) he does, point-blank, and the stranger is left stunned in front of
-# him; if not, the knife goes in, loudly.
-const KNIFE_SILENT := 22.0   # px: in reach for a takedown from behind
+# The knife (E). At a man who isn't on to him, anywhere in reach, a silent
+# takedown: the last few steps quick and quiet, a hand over his mouth. At one who
+# is, a rush: he lunges, and it's decided as he gets there: if the man can shoot
+# (gun loaded and ready, facing him, not reeling or reloading) he does,
+# point-blank, and the stranger is left stunned in front of him; if not, the knife
+# goes in, loudly. One who turns and sees him coming mid-lunge gets the rush.
 const KNIFE_RUSH := 58.0     # px: a lunge away
 const LUNGE := 150.0         # px/s
 const LUNGE_MAX := 0.5       # s: if he hasn't reached him by then, he's missed
@@ -583,7 +583,7 @@ func _find_knife_target() -> void:
 			best_d = d
 			knife_cand = e
 	if knife_cand:
-		knife_silent = (knife_cand.downed or knife_cand.unaware()) and global_position.distance_to(knife_cand.global_position) <= KNIFE_SILENT
+		knife_silent = knife_cand.downed or knife_cand.unaware()
 
 
 ## E: go for him.
@@ -619,13 +619,16 @@ func _strike(e: Enemy) -> void:
 	play_action("stab")
 	if e.downed:
 		# a wounded man in the dirt: quickly, quietly
+		e.silent_death = true
 		e.finish(self)
 		game.make_noise(global_position, 40.0, "struggle", self)
 		_knife_done(KNIFE_CD)
 		return
 	if knife_quiet and e.unaware():
 		# a hand over his mouth, the blade, and he's let down quietly
+		e.silent_death = true
 		e.die(dir, self, "death_slump")
+		e.killed_with = "knife"
 		game.sfx("hit", global_position, -14.0)
 		game.make_noise(global_position, 40.0, "struggle", self)
 		game.stats["takedowns"] = game.stats.get("takedowns", 0) + 1
@@ -641,6 +644,7 @@ func _strike(e: Enemy) -> void:
 	game.make_noise(global_position, 160.0, "struggle", self)   # he yells as it goes in
 	if e.hp <= RUSH_DMG:
 		e.die(dir, self, "death_knees")
+		e.killed_with = "knife"
 	else:
 		e.take_hit(RUSH_DMG, dir, self)   # a hard man: he takes it and reels
 		e.stagger_t = 0.8

@@ -233,6 +233,7 @@ func _ready() -> void:
 		Minefield.rng.randomize()
 		Strongbox.rng.randomize()
 		Snowfall.rng.randomize()
+		Enemy.feud_rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
 		loot_rng.randomize()
@@ -277,6 +278,7 @@ func _ready() -> void:
 		Minefield.rng.seed = 83
 		Strongbox.rng.seed = 101
 		Snowfall.rng.seed = 103
+		Enemy.feud_rng.seed = 107
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -1323,7 +1325,8 @@ var holdout: Dictionary:
 
 
 static func _gang_state() -> Dictionary:
-	return {"alarm": 0.0, "stage": 0, "send_cd": 0.0, "fallen": 0, "holdout": {}, "leaderless": false}
+	return {"alarm": 0.0, "stage": 0, "send_cd": 0.0, "fallen": 0, "holdout": {}, "leaderless": false,
+		"seen": false, "his_guns": {}, "dug_in": false, "push_cd": 0.0}
 
 
 ## The gang a man's in ("" if the level has the one).
@@ -1340,6 +1343,133 @@ func gang_near(at: Vector2) -> String:
 			best_d = e.global_position.distance_to(at)
 			best = e.gang
 	return best
+
+
+# ------------------------------------------------------------------ the truce
+
+# Silencio's two gangs keep a truce till the thaw. Break it and they're at war: each
+# shoots the other's men on sight and pushes for the middle of town (see
+# Enemy._feuding), till a gang that's lost a third of its men falls back to its
+# holdout and digs in. The stranger's still everyone's enemy.
+#
+# What breaks it: the outlaws missing their gold (it can only be the hunters), or a
+# gang finding one of its own dead with a reason to think the others did it: he's
+# lying on their ground (the map's "turf"), or he was shot with a gun only they
+# carry and the gang hasn't seen the stranger with one, or nobody else is in town
+# to have done it (they haven't seen the stranger at all). Seen, and with nothing
+# pointing elsewhere, it's the stranger they blame. Trigger happy: once is enough.
+var war := false
+const DIG_IN := 0.33        # of a gang down: it falls back to its holdout and holds it
+const PUSH_EVERY := 12.0    # s between a gang sending men up to the middle
+const PUSH_MEN := 3
+
+
+## Would these two shoot each other? Only at war, and of different gangs.
+func at_war(a: Actor, b: Actor) -> bool:
+	return war and a is Enemy and b is Enemy and a.gang != b.gang and a.gang != "" and b.gang != ""
+
+
+func other_gang(g: String) -> String:
+	for o in level.get("gangs", []):
+		if o != g:
+			return o
+	return ""
+
+
+## Guns only this gang carries (what its men took the field with), not the other.
+func gang_guns(g: String) -> Array:
+	var mine := {}
+	var theirs := {}
+	for e in enemies:
+		for k in e.loadout:
+			if e.gang == g:
+				mine[k] = true
+			elif e.gang != "":
+				theirs[k] = true
+	return mine.keys().filter(func(k): return not theirs.has(k))
+
+
+func on_turf(at: Vector2, g: String) -> bool:
+	var r: Array = level.get("turf", {}).get(g, [])
+	if r.is_empty():
+		return false
+	var gp := Iso.to_grid(at)
+	return gp.x >= r[0] and gp.y >= r[1] and gp.x <= r[2] and gp.y <= r[3]
+
+
+## A man of this gang has the stranger in sight: they know there's someone else in
+## town now, and what he's carrying.
+func gang_sees_him(g: String) -> void:
+	var gs: Dictionary = gangs[g]
+	gs["seen"] = true
+	if player and player.weapon:
+		gs["his_guns"][player.weapon.kind] = true
+
+
+## One of their own found dead: whose doing was it?
+func weigh_death(finder: Enemy, dead: Enemy) -> void:
+	if war or not level.has("turf") or dead.gang == "" or finder.gang != dead.gang:
+		return
+	var g := dead.gang
+	var them := other_gang(g)
+	var gs: Dictionary = gangs[g]
+	var why := ""
+	if on_turf(dead.global_position, them):
+		why = "the %s find their man dead on the %s' ground!  They blame the %s!" % [g, them, them]
+	elif dead.killed_with in gang_guns(them) and not gs["his_guns"].has(dead.killed_with):
+		why = "Shot with %s gun!  The %s blame the %s for murder!" % [
+			"a hunter's" if them == "hunters" else "an outlaw's", g, them]
+	elif not gs["seen"]:
+		why = "Nobody else in town to do it!  The %s blame the %s for murder!" % [g, them]
+	if why != "":
+		stats["blamed"] = why
+		start_war(why[0].to_upper() + why.substr(1))
+
+
+func start_war(why: String) -> void:
+	if war:
+		return
+	war = true
+	stats["war"] = 1
+	hud.banner(why)
+	hud.toast("The truce is broken: the street war is on!")
+	sfx("sting", null, -6.0, 0.0)
+	for g in gangs:
+		gangs[g]["push_cd"] = 2.0
+
+
+## The war, every half second: a gang that's lost too many digs in; one that hasn't
+## sends a few men up towards the middle of town.
+func _war_tick(delta: float) -> void:
+	for g in level.get("gangs", []):
+		var gs: Dictionary = gangs[g]
+		var men: Array = enemies.filter(func(e): return e.gang == g)
+		var up: Array = men.filter(func(e): return e.alive and not e.downed and e.st != Enemy.St.COMBAT)
+		if not gs["dug_in"] and gs["fallen"] >= maxi(3, ceili(men.size() * DIG_IN)):
+			gs["dug_in"] = true
+			var holdouts: Array = level.get("holdouts", []).filter(func(h): return h.get("gang", "") == g)
+			if gs["holdout"].is_empty() and not holdouts.is_empty():
+				var h: Dictionary = holdouts[0]
+				gs["holdout"] = {"name": h["name"], "at": Iso.to_screen(Vector2(h["x"], h["y"])), "taken": []}
+			if not gs["holdout"].is_empty():
+				hud.banner("The %s fall back to the %s and dig in!" % [g, gs["holdout"]["name"]])
+				for e in up:
+					if e.alarm_role != "fortified":
+						e.fortify(_holdout_spot(e, gs["holdout"]), Iso.to_screen(Vector2(level["center"]["x"], level["center"]["y"])))
+			continue
+		if gs["dug_in"]:
+			continue
+		gs["push_cd"] -= delta
+		if gs["push_cd"] > 0.0:
+			continue
+		gs["push_cd"] = PUSH_EVERY
+		var at: Array = level.get("lines", {}).get(g, [level["center"]["x"], level["center"]["y"]])   # (where it goes up to)
+		var line := Iso.to_screen(Vector2(at[0], at[1]))
+		var free: Array = up.filter(func(e): return e.foe == null and e.reaction == "" and e.alarm_role == "" \
+			and not e.tdata.get("boss", false) and not e.kind in ["sharpshooter", "woodsman"])
+		free.sort_custom(func(a, b): return a.global_position.distance_to(line) < b.global_position.distance_to(line))
+		for e in free.slice(0, PUSH_MEN):
+			e.start_investigate(free_point_near(line, 50.0, Enemy.feud_rng), true)
 
 
 ## Living men of this gang.
@@ -1691,6 +1821,8 @@ func _physics_process(delta: float) -> void:
 	if alarm_cd <= 0.0:
 		alarm_cd = 0.5
 		_gang_alarm(0.5)
+		if war:
+			_war_tick(0.5)
 	if player.down:
 		finish_cd -= delta
 		if finish_cd <= 0.0:
@@ -2127,6 +2259,13 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 func _on_enemy_died(e: Actor) -> void:
 	var side := gang_of(e)
 	gangs[side]["fallen"] += 1
+	# a knife in the dark (Enemy.silent_death): nobody hears a thing, and only a man
+	# who has him in view at the time knows it's happened; the rest find out from
+	# the body
+	var silent: bool = e is Enemy and e.silent_death
+	var saw := func(o: Enemy) -> bool:
+		return o.global_position.distance_to(e.global_position) < 180.0 and \
+			(o.visibility_of(e.global_position, false, false) > 0.0 if silent else true)
 	if e.killer == player:
 		stats["his kills"] = stats.get("his kills", 0) + 1
 		if player.down:   # from the dirt: and a man coming to finish him, or an officer, is a blow to them
@@ -2136,7 +2275,8 @@ func _on_enemy_died(e: Actor) -> void:
 				for o in enemies:
 					if o.alive and o.global_position.distance_to(e.global_position) < 200.0:
 						o.shaken = minf(1.0, o.shaken + 0.4)
-	raise_alarm(5.0, e.global_position, side)
+	if not silent or enemies.any(func(o): return o.alive and o != e and saw.call(o)):
+		raise_alarm(5.0, e.global_position, side)
 	if e is Enemy and e.tdata.get("coordinator", false):
 		lose_the_head(e)
 	elif e is Enemy and e.tdata.get("commander", false):
@@ -2151,8 +2291,13 @@ func _on_enemy_died(e: Actor) -> void:
 	if e.killer == player and not spot_at(player.global_position).is_empty():
 		spot_at(player.global_position)["kills"] += 1
 	for o in enemies:
-		if o.alive and o.global_position.distance_to(e.global_position) < 180.0:
-			o.witness_death(e.global_position, player.global_position)
+		if o.alive and o != e and saw.call(o):
+			o.witness_death(e.global_position, e.killer.global_position if e.killer is Enemy else player.global_position, e)
+	if e is Enemy and level.has("turf") and not war:   # one of theirs saw him go down: whose doing?
+		for o in enemies:
+			if o.alive and o.gang == e.gang and saw.call(o) and line_of_sight(o.global_position, e.global_position, false):
+				weigh_death(o, e)
+				break
 	for c in civilians:
 		c.witness_death(e.global_position)
 	if _args.has("bot"):
@@ -2673,6 +2818,8 @@ func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE, mine 
 		a.blasted = true
 		a.take_hit(dmg, dir, by)
 		a.blasted = false
+		if a is Enemy:
+			a.killed_with = "dynamite"   # (not the gun in the thrower's other hand)
 		if a.alive:
 			a.stagger_t = maxf(a.stagger_t, 0.6)
 		elif a != player:

@@ -415,9 +415,9 @@ horse. Planned, with the user: 1 the place → 2 the two gangs
 (their own bodies and types, the hunters' Buntline; each on its own turf, their
 alarms their own) → 3 the strongbox and the way out → 4 footprints in the snow that
 the gang follows like blood, and falling snow that shortens everyone's sight, in
-squalls (built so far: phases 1-4) → 5 the
-truce, and the stranger breaking it (framing one side, a street war; how blame and
-the count work is to be settled first) → 6 townsfolk, dressing, a line, tuning.
+squalls → 5 the
+truce, and the stranger breaking it (framing one side, a street war) → 6 townsfolk,
+dressing, a line, tuning (built so far: phases 1-5).
 Twelve hunters hold the east end: the boss at the jail door, the Buntline man out
 in the street at the line, sharpshooters on the porches looking down main street,
 manhunters walking their streets, the old timer watching the valley road. Sixteen
@@ -457,8 +457,8 @@ aren't in a fight (nor the chief) are sent to look, half round the hideout and h
 towards where the stranger was last seen, on the box's own dice. A trapper (a type
 that `"fetches"`) who sees it lying out, within 170 px, goes to it, takes it up
 (the `strongbox` carrying set) and carries it home to the doorway, slowly, unless
-he sees the stranger or a fight starts: then he drops it where he is. Who they
-blame for it, and the hunters, are for later (the truce). `tests/test_strongbox.gd`
+he sees the stranger or a fight starts: then he drops it where he is. It can only be the hunters: missing it starts the street
+war (see the truce, below). `tests/test_strongbox.gd`
 plays the take, the pace, setting it down and dropping it, the outlaws missing it,
 a trapper carrying it home, and the ride off.
 
@@ -491,6 +491,34 @@ of the screen (the post shader's `fog`), the wind howls louder, and a toast says
 one's coming. It's what everyone sees by: `game.sight`, 0.85 of a man's sight in
 the steady snow and 0.55 in a squall's worst (every bandit's view range, so the
 cones shrink too).
+
+**The truce** (the map's `"turf"` and `"lines"`; `game.weigh_death`, `game.start_war`,
+`Enemy._feuding`). The two gangs keep a truce till the thaw; break it and it's war.
+What breaks it: the outlaws missing their gold (it can only be the hunters), or a
+gang finding one of its own dead, or seeing him go down, with a reason to think the
+others did it. He's lying on their ground (west of the west cross street is the
+outlaws', east of the east one the hunters': drag a body over to frame them); or he
+was shot with a gun only they carry, and not one the gang's seen the stranger with
+(each gang remembers what it's seen him holding: fight with a dead man's gun to
+frame his side); or nobody else is in town that they know of (they haven't seen the
+stranger at all). Seen, and nothing pointing elsewhere, it's the stranger they
+blame. Trigger happy: once is enough. A banner says who blames whom and why ("Shot
+with an outlaw's gun!  The hunters blame the outlaws for murder!", "The gold's
+gone!  The outlaws blame the hunters!"), and a toast that the truce is broken.
+
+At war, a man not busy with the stranger shoots the nearest of the other gang he can
+see (to his gun's range, on its cadence and the war's own dice; further off, he
+closes in), and their rounds hurt each other now; hit by one of them, he answers
+that man, not the stranger, and one who sees a comrade shot down by them goes for
+the killer, not out looking for the stranger over it. Every 12 s each gang sends three men up to its edge of
+nobody's ground (the map's `"lines"`), and gunfire between the gangs draws others to
+it. A gang that's lost a third falls back to its holdout (the hideout, the jail) and
+digs in, shooting only at those who come near. The stranger is still everyone's
+enemy, and only his own kills count for him. If they finish each other off, the
+level's won (for now: reinforcements coming in when that happens are a later idea:
+the level should stay dangerous). `tests/test_war.gd` checks the truce holding, a
+knifed man blamed on the other gang, the porch pair shooting it out, a gang digging
+in, and each reason for blame on its own.
 
 **Footprints** (`scripts/footprints.gd`). Everyone walking the snow leaves boot
 prints, a stride (8 px) apart, left and right: the stranger, both gangs. Not on the
@@ -582,10 +610,16 @@ way, by eye.
 
 **The knife** (E). A small blade over a bandit's head shows who it would go for (the
 one under the cursor if he's in reach, else the nearest; never through a wall):
-- *Pale: a silent takedown.* Within ~22 px of a man who isn't on to him (no fight,
-  not looking at him): the stranger steps in, a hand over his mouth, and lets him
-  down quietly. The sound carries ~40 px; anyone who sees it reacts as to any
-  killing in front of him.
+- *Pale: a silent takedown.* Anywhere in reach (~58 px) of a man who isn't on to
+  him (no fight, not looking at him): the stranger closes the last few steps,
+  quick and quiet, a hand over his mouth, and lets him down quietly (if the man
+  turns and sees him coming, it's the rush). The sound carries ~40 px; anyone who sees it (in view at the time)
+  reacts as to any killing in front of him. Nobody else knows: a death by the knife
+  (and finishing a man already down) raises no alarm and sends nobody running at
+  the stranger the way a shot does (`Enemy.silent_death`); they find out from the
+  body. One who sees him drop but not the stranger takes it as finding him dead:
+  startled, searching, calling the others over to look, but with no idea where
+  the stranger is.
 - *Red: a rush.* Within ~58 px of a man who is aware: he lunges (fast, ~0.4 s). As
   he gets there it's decided by what the man is doing. A loaded gun, ready, in hand
   and facing him, not reeling, cowering or fleeing: he fires point-blank (a ready
@@ -593,8 +627,8 @@ one under the cursor if he's in reach, else the nearest; never through a wall):
   him. Otherwise (mid-reload, as with a bandido's Navy, empty, turned away, staggered)
   the knife goes in: a yell heard ~160 px off, and a cut of 3 (El Jefe, with 4 HP,
   takes it and reels). Then 0.7 s before the next (1.2 s after being shot).
-`tests/test_knife.gd` covers both, the witness, and the ready, reloading, tough
-and out-of-reach cases.
+`tests/test_knife.gd` covers both, a man nearby with his back turned who hears
+nothing, the witness, and the ready, reloading, tough and out-of-reach cases.
 
 **Moving the dead** (hold E by a body). Only the dead: a downed man is still alive
 and would call out, so the knife comes first. A tap of E is the knife; held a third

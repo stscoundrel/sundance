@@ -123,7 +123,10 @@ func _missed(by: Enemy) -> void:
 	missed = true
 	game.stats["gold missed"] = 1
 	by._say("The gold! It's gone!")
-	game.hud.banner("The gold's gone!  The outlaws turn out to look for it!")
+	if game.level.has("turf"):   # (who else would take it but the hunters?)
+		game.start_war("The gold's gone!  The outlaws blame the hunters!")
+	else:
+		game.hud.banner("The gold's gone!  The outlaws turn out to look for it!")
 	game.raise_alarm(game.SEND + 10.0, home, "outlaws")
 	var near: Array = game.enemies.filter(func(e): return e.alive and not e.downed and e.gang == "outlaws" \
 		and e.reaction == "" and e.st != Enemy.St.COMBAT and not e.tdata.get("boss", false))

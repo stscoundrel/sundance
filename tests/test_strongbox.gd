@@ -51,6 +51,7 @@ func _process(delta: float) -> bool:
 		game.begin()
 		box = game.strongbox
 		p = game.player
+		game.level.erase("turf")   # (no street war over the missing gold here: test_war's)
 		p.hp = 100000
 		for e in game.enemies:   # (stood still where they are, till they're wanted)
 			e.process_mode = Node.PROCESS_MODE_DISABLED

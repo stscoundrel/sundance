@@ -61,7 +61,7 @@ func _physics_process(delta: float) -> void:
 					return
 				exclude.append(col.get_rid())   # (and the man at the pole: it goes past him)
 				continue
-			if (a.alive or (a is Enemy and a.downed)) and not (a is Enemy and shooter is Enemy):
+			if (a.alive or (a is Enemy and a.downed)) and not (a is Enemy and shooter is Enemy and not game.at_war(a, shooter)):
 				a.take_hit(damage, vel.normalized(), shooter)
 				queue_free()
 				return

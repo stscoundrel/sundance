@@ -164,6 +164,11 @@ PLAYER = {"x": 32.5, "y": 62.4}   # down the south trail, where he left his hors
 # corner of its footprint, tiles). And his horse, tied to a post beside the trail
 # (the object's corner; HORSE_AT, its middle, is where he's away with the gold).
 STRONGBOX = [17.0, 29.15]
+# Whose ground is whose (tiles, x0 y0 x1 y1): a body found on the other gang's is
+# their doing (see game.weigh_death). Between the cross streets is nobody's.
+TURF = {"outlaws": [0, 0, 22, 64], "hunters": [42, 0, 64, 64]}
+# Where each gang pushes up to in a street war: its own edge of nobody's ground.
+LINES = {"outlaws": [25.0, 31.5], "hunters": [39.0, 31.5]}
 HORSE = ("horse", 34.0, 61.6)
 HORSE_AT = [35.15, 62.1]
 
@@ -195,6 +200,8 @@ def main():
         "entries": ENTRIES,
         "center": CENTER,
         "posse": False,
+        "turf": TURF,
+        "lines": LINES,
         "strongbox": STRONGBOX,
         "horse": HORSE_AT,
     })

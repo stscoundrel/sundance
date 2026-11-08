@@ -28,6 +28,12 @@ const LEASH := 140.0   # px: the hangman fights no further than this from his ga
 const LEASH_LOST := 3.0   # s without a sight of the stranger, and he's back to it
 
 var kind := "pistolero"
+var foe: Enemy = null    # the other gang's man he's shooting at, the truce broken (see _feuding)
+var feud_look := 0.0
+var feud_cd := 0.0
+var silent_death := false   # knifed unawares: no one hears it (game._on_enemy_died)
+var killed_with := ""    # the gun (or "knife", "dynamite") that did for him: who did it? (game.weigh_death)
+static var feud_rng := RandomNumberGenerator.new()   # (the street war: its own dice)
 var gang := ""   # whose side he's on, where a town has two (Silencio's "hunters", "outlaws"): his type's "gang"
 var flag_at := Vector2.INF   # the colours in the dirt, and him running to raise them
 var tdata: Dictionary     # his type, merged with defaults and placement overrides
@@ -504,6 +510,8 @@ func _perceive(delta: float) -> void:
 	sees_player = vis > 0.0
 	if sees_player:
 		game.report_sighting(p.global_position)
+		if gang != "":
+			game.gang_sees_him(gang)
 	if st == St.COMBAT:
 		if sees_player:
 			last_known = p.global_position
@@ -582,7 +590,11 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 					start_investigate(pos, true)
 		"enemy_shot":
 			if st != St.COMBAT and source is Enemy:
-				enter_combat(source.last_known, false, false)
+				if game.war and (source.gang != gang or source.foe != null):
+					if foe == null and revealed and reaction == "":
+						start_investigate(pos, true)   # (the street war: off to where it's going on)
+				else:
+					enter_combat(source.last_known, false, false)
 		"scream":   # a townsman crying murder at what the stranger's doing, there
 			if st != St.COMBAT and revealed:
 				wary = true
@@ -774,6 +786,7 @@ func _look_at_pools() -> void:
 
 
 func _found_corpse(e: Enemy) -> void:
+	game.weigh_death(self, e)   # (one of theirs? whose doing?)
 	if st == St.COMBAT:
 		return
 	wary = true
@@ -821,8 +834,23 @@ func near_miss(from: Vector2) -> void:
 
 ## A comrade dropped near him: if he saw it, it shakes him badly and he always
 ## reacts. Out of sight it only tells him where the fight is.
-func witness_death(at: Vector2, killer: Vector2) -> void:
+func witness_death(at: Vector2, killer: Vector2, dead: Enemy = null) -> void:
 	if not alive:
+		return
+	if dead and game.at_war(self, dead.killer) or (dead and dead.killer is Enemy and dead.killer.gang == gang):
+		# the street war: the other gang's doing (or his own side's, at one of them),
+		# nothing to do with the stranger; his man to shoot back at, if it's theirs
+		if dead.killer is Enemy and dead.killer.gang != gang and dead.killer.alive:
+			foe = dead.killer
+		shaken = min(1.0, shaken + 0.15 * (1.0 - nerve * 0.5))
+		return
+	if dead and dead.silent_death and visibility_of(game.player.global_position, game.player.low_profile()) <= 0.0:
+		# he saw a comrade drop without a sound, and not who did it: as good as
+		# finding him dead, no more (no knowing where the stranger is)
+		shaken = min(1.0, shaken + 0.25 * (1.0 - nerve * 0.5))
+		if not known_corpses.has(dead):
+			known_corpses.append(dead)
+			_found_corpse(dead)
 		return
 	if not game.line_of_sight(global_position, at, false):
 		_engage(killer)
@@ -1125,6 +1153,8 @@ func _physics_process(delta: float) -> void:
 	elif reaction != "":
 		_do_reaction(delta)
 		_panic_fire()
+	elif _feuding(delta):
+		pass
 	else:
 		_run_state(delta)
 		if st == St.COMBAT:
@@ -2064,6 +2094,66 @@ func _rescue(delta: float) -> void:
 				reaction_t = 0.0
 
 
+# ------------------------------------------------------------------ the street war
+
+## The truce broken (Silencio: see game.war): the nearest of the other gang he can
+## see is his to shoot, up to his range and in; further, he closes on him. Not while
+## he's fighting the stranger (that comes first), and dug in at his gang's holdout
+## only at those who come near it.
+func _feuding(delta: float) -> bool:
+	if not game.war or gang == "" or st == St.COMBAT:
+		foe = null
+		return false
+	feud_look -= delta
+	if feud_look <= 0.0 or foe == null or not foe.alive or foe.downed:
+		feud_look = 0.5
+		foe = _nearest_foe()
+	if foe == null:
+		return false
+	var to := foe.global_position - global_position
+	var d := to.length()
+	desired = to.normalized()
+	aiming = true
+	var keep: Vector2 = stats["keep"]
+	var clear: bool = game.line_of_sight(global_position, foe.global_position, false)
+	if d > keep.y or not clear:
+		if alarm_role == "fortified":
+			foe = null   # (dug in: he doesn't leave his place for it)
+			return false
+		repath_t -= delta
+		if repath_t <= 0.0:
+			path_to(foe.global_position)
+		follow_path(walk)
+		return true
+	velocity = Vector2.ZERO
+	facing = desired
+	feud_cd -= delta
+	if weapon.is_reloading():
+		return true
+	if weapon.needs_reload():
+		weapon.start_reload()
+		return true
+	if feud_cd <= 0.0 and weapon.can_fire():
+		weapon.trigger()
+		since_shot = 0.0
+		feud_cd = feud_rng.randf_range(stats["cadence"].x, stats["cadence"].y) * 1.3
+	return true
+
+
+func _nearest_foe() -> Enemy:
+	var reach := view_range() * (0.85 if alarm_role == "fortified" else 1.4)
+	var best: Enemy = null
+	var best_d := reach
+	for o in game.enemies:
+		if not o.alive or o.downed or o.gang == gang or o.gang == "" or not o.revealed:
+			continue
+		var d: float = global_position.distance_to(o.global_position)
+		if d < best_d and game.line_of_sight(global_position, o.global_position, false):
+			best = o
+			best_d = d
+	return best
+
+
 # ------------------------------------------------------------------ the strongbox
 
 ## The gold lying out where it shouldn't be: he goes to take it home.
@@ -2899,6 +2989,8 @@ func on_hurt_alert(shooter: Actor) -> void:
 
 
 func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
+	if shooter != null and is_instance_valid(shooter) and shooter.weapon != null:
+		killed_with = shooter.weapon.kind   # (if this is the one that does it)
 	if downed:
 		finish(shooter)   # in the dirt already: this one's for good
 		return
@@ -2914,6 +3006,12 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 	if alive and blasted:
 		shaken = min(1.0, shaken + 0.4)   # his own side's dynamite: no one to shoot back at
 		_maybe_patch(global_position + from_dir * -40.0)
+		return
+	if alive and shooter is Enemy:   # the other gang's round: he's got his man to shoot back at
+		foe = shooter
+		shaken = min(1.0, shaken + 0.3)
+		queue_reaction(shooter.global_position, true, true)
+		_maybe_patch(shooter.global_position)
 		return
 	if alive:
 		on_hurt_alert(shooter)
