@@ -1304,7 +1304,9 @@ he was right by the man; a leva turns and runs back a way, 0.4, 0.6 close), and 
 2.5 to 4 s they're up and coming on again. For 8 s after that the gun doesn't
 frighten them (`GUN_NERVE`), so they don't lie there for good under it: they come
 on in rushes, and go to ground in clumps where it finds them. Men off down the line
-where he can't see don't hear of it: no rout starts out of his sight.
+where he can't see don't hear of it: no rout starts out of his sight. "His sight" is
+the 1280x720 window's view round the middle of the screen, whatever the real window
+(see Tech), or within 300 px and in his line of sight.
 
 **The smoke** (the map's `"haze"`: [0.7, 1.4]). It's a big battle, black powder and
 chaos everywhere: the army's guns carry seven tenths as far as they would (and they
@@ -1617,6 +1619,23 @@ seconds. A body dragged away leaves it behind.
 ## Tech
 
 - Godot 4 (GDScript). The world is built in code from `data/town.json`.
+- The view: no stretch mode; the camera's zoom and the HUD's scale are worked out from
+  the window (`view_fit` in `game.gd`, again on every resize). The art is always a whole
+  number of screen pixels to a world pixel, at least 3 (a 1280x720 window shows 427x240
+  of the town, as it always has), and the least that keeps the view inside `VIEW_CAP`
+  (860x400 world pixels: 640x360 on a 16:9 screen, 853x360 on a 21:9 one). Past that,
+  a bigger screen gets bigger pixels and no more sight: a 4K screen sees what a 1080p
+  one does. A tiny window (under 720 tall) drops below 3 so it still shows something.
+  The HUD is laid out on a 640x360 page at the largest whole scale that fits. The
+  portrait and health keep to the bottom-left corner, the gun panel to the
+  bottom-right, the counts to the top middle. The menus and title sit in the middle,
+  and the eyes close-up is letterboxed. The film grain is a HUD pixel big. Headless
+  runs (the tests) set the window to 1280x720.
+- Nothing the bandits do depends on the window. The one rule that did is the machine
+  gun's rout: it takes the men "the stranger can see". That is now the 1280x720 view
+  round the middle of the screen, whatever the window, so a big monitor doesn't break
+  more of the line. The crosshair's spread ring is drawn at two-thirds of the spread
+  as it falls on the screen, at any size.
 - Gameplay runs on the screen-space ground plane. Bullets and sight lines are
   tested at foot level and drawn at gun height.
 - Pathfinding: `AStarGrid2D` on a half-tile grid.

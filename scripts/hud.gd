@@ -9,7 +9,10 @@ const SHELL := Color(0.72, 0.16, 0.12)
 const INK := Color(0.93, 0.86, 0.7)
 const PANEL := Color(0.08, 0.05, 0.04, 0.78)
 
+const PAGE := Vector2(640, 360)   # the page it was laid out on; a bigger screen's spare room goes round it
+
 var game: Node
+var page := PAGE   # the screen in HUD pixels (game.fit_view): the page, or more
 var font: Font
 var small: Font
 var title_alpha := 1.0
@@ -144,7 +147,7 @@ func _draw_enemy_marks() -> void:
 		if not (e.alive or down or cut_off) or (e is Civilian and e.gone()):
 			continue
 		var head: Vector2 = to_local * (e.get_global_transform_with_canvas() * Vector2(0, -16 if down else -40))
-		if head.x < -50 or head.x > 690 or head.y < -20 or head.y > 380:
+		if head.x < -50 or head.x > page.x + 50 or head.y < -20 or head.y > page.y + 20:
 			continue
 		var y := head.y
 		if e.shout_t > 0.0:
@@ -178,6 +181,7 @@ func _draw_knife_mark(at: Vector2, quiet: bool) -> void:
 
 
 func _draw_status(p: Player) -> void:
+	draw_set_transform(Vector2(0, page.y - PAGE.y))   # (kept to the bottom-left corner)
 	draw_rect(Rect2(6, 310, 44, 44), PANEL)
 	draw_texture_rect(game.tex(game.meta["ui"]["portrait"]), Rect2(8, 312, 40, 40), false)
 	draw_rect(Rect2(6, 310, 44, 44), Color(0.5, 0.36, 0.2), false, 1.0)
@@ -220,9 +224,10 @@ func _draw_status(p: Player) -> void:
 				draw_rect(r.grow(-1), Color(0.92, 0.9, 0.84))
 	elif p.crouched:
 		_text(Vector2(54, 338), "CROUCHED", 8, INK)
+	draw_set_transform(Vector2.ZERO)
 	var n: int = game.alive_enemies()
 	var label := "%s  %d" % [game.level.get("foe_count", "BANDITS"), n]   # (a map may name its own: FEDERALES)
-	_text(Vector2(0, 16), label, 12, INK, font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	_text(Vector2(0, 16), label, 12, INK, font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	if game.director:
 		_draw_waves(game.director)
 	if game.hanging:
@@ -235,8 +240,8 @@ func _draw_status(p: Player) -> void:
 	_draw_plunger(p)
 	if banner_t > 0.0:
 		var a := clampf(banner_t, 0.0, 1.0)
-		draw_rect(Rect2(150, 24, 340, 18), Color(0.3, 0.05, 0.03, 0.7 * a))
-		_text(Vector2(0, 37), banner_text, 10, Color(1, 0.8, 0.45, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+		draw_rect(Rect2(page.x / 2 - 170, 24, 340, 18), Color(0.3, 0.05, 0.03, 0.7 * a))
+		_text(Vector2(0, 37), banner_text, 10, Color(1, 0.8, 0.45, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 ## The next wave's countdown under the bandit count, and, once word has come of
@@ -248,7 +253,7 @@ func _draw_waves(d: Director) -> void:
 		var warn := not d.warned_from().is_empty()
 		var c := Color(1, 0.8, 0.45) if warn else Color(INK, 0.8)
 		_text(Vector2(0, 50 if banner_t > 0.0 else 30), "MORE COMING  %d:%02d" % [int(t) / 60, int(t) % 60], 8, c,
-			null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+			null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	var roads: Array = d.warned_from()
 	for r in d.arriving_from():
 		if not r in roads:
@@ -263,9 +268,9 @@ func _draw_waves(d: Director) -> void:
 func _pointer(world_at: Vector2, name: String, col: Color, ink: Color, above := false) -> void:
 	var to_local := get_global_transform_with_canvas().affine_inverse()
 	var view := get_viewport().get_canvas_transform()
-	var mid := Vector2(320, 180)
+	var mid := page / 2
 	var at: Vector2 = to_local * (view * world_at)
-	var inset := Rect2(24, 66, 592, 236)   # (clear of the count, the banner and the countdown)
+	var inset := Rect2(24, 66, page.x - 48, page.y - 124)   # (clear of the count, the banner and the countdown)
 	var dir := (at - mid).normalized()
 	var tip := at
 	if not inset.has_point(at):   # off screen: on the edge, pointing out to it
@@ -288,28 +293,30 @@ func _draw_cargo(c: Cargo) -> void:
 	var y := (64.0 if banner_t > 0.0 else 44.0) if game.director else (50.0 if banner_t > 0.0 else 30.0)
 	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 180.0)
 	if c.done:
-		_text(Vector2(0, y), "ALL LOADED  -  GET TO THE WAGON", 8, Color(1, 0.8, 0.45, pulse), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+		_text(Vector2(0, y), "ALL LOADED  -  GET TO THE WAGON", 8, Color(1, 0.8, 0.45, pulse), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 		if game.state == "play":
 			_pointer(c.wagon_at(), "THE WAGON", Color(1, 0.55, 0.3, pulse), Color(1, 0.8, 0.45, pulse), true)
 		return
 	_text(Vector2(0, y), "LOADED  %d / %d     CARRIERS  %d" % [c.loaded, c.goal, c.carriers_alive()], 8, Color(INK, 0.85),
-		null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+		null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 func _draw_weapon(p: Player) -> void:
 	# his guns by key: the one in hand outlined, ones he hasn't got dark
 	for i in Player.ORDER.size():
 		var k: String = Player.ORDER[i]
-		var r := Rect2(592 + i * 14, 290, 11, 11)
+		var r := Rect2(Vector2(592 + i * 14, 290) + page - PAGE, Vector2(11, 11))
 		var have: bool = k in p.owned
 		draw_rect(r, PANEL if have else Color(0.08, 0.05, 0.04, 0.35))
 		draw_rect(r, BRASS if k == p.current else (Color(0.5, 0.36, 0.2) if have else Color(0.3, 0.24, 0.18, 0.5)), false, 1.0)
 		_text(r.position + Vector2(3, 9), str(i + 1), 8, INK if have else Color(INK, 0.3))
 	if toast_t > 0.0:
-		_text(Vector2(0, 286), toast_text, 8, Color(0.95, 0.75, 0.35, clampf(toast_t, 0.0, 1.0)), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
+		_text(Vector2(0, page.y - 74), toast_text, 8, Color(0.95, 0.75, 0.35, clampf(toast_t, 0.0, 1.0)), null, HORIZONTAL_ALIGNMENT_RIGHT, page.x - 6)
 	_draw_take(p)
+	draw_set_transform(page - PAGE)   # (kept to the bottom-right corner)
 	if p.gun:
 		_draw_mgun(p.gun)
+		draw_set_transform(Vector2.ZERO)
 		return
 	var w := p.weapon
 	var box := Rect2(510, 304, 124, 50)
@@ -362,6 +369,7 @@ func _draw_weapon(p: Player) -> void:
 		_text(Vector2(box.position.x, box.position.y - 4), st, 8, Color(1, 0.8, 0.4), null, HORIZONTAL_ALIGNMENT_RIGHT, box.size.x)
 	if w.kind == "colt" and w.fanning:
 		_text(Vector2(box.position.x + 66, box.position.y + 34), "FANNING", 8, Color(1, 0.5, 0.3))
+	draw_set_transform(Vector2.ZERO)
 
 
 ## The hour of the hanging under the bandit count, red while the hangman's at the
@@ -374,13 +382,13 @@ func _draw_hanging(h: Hanging, p: Player) -> void:
 			var t := maxf(0.0, h.seconds_left())
 			var c := Color(1, 0.8, 0.45) if t < 60.0 else Color(INK, 0.8)
 			_text(Vector2(0, y), "HANGING AT NOON  %d:%02d" % [int(t) / 60, int(t) % 60], 8, c, null,
-				HORIZONTAL_ALIGNMENT_CENTER, 640)
+				HORIZONTAL_ALIGNMENT_CENTER, page.x)
 		"lever":
 			_text(Vector2(0, y), "THE HANGMAN'S AT THE LEVER!", 8, Color(1, 0.35, 0.25, pulse), null,
-				HORIZONTAL_ALIGNMENT_CENTER, 640)
+				HORIZONTAL_ALIGNMENT_CENTER, page.x)
 		"hanging":
 			_text(Vector2(0, y), "HE'S HANGING  -  SHOOT THE ROPE", 8, Color(1, 0.35, 0.25, pulse), null,
-				HORIZONTAL_ALIGNMENT_CENTER, 640)
+				HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	_draw_cut(h, h.man, p)
 
 
@@ -392,7 +400,7 @@ func _draw_captive(c: Captive, p: Player) -> void:
 		var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 120.0)
 		var who := "THE GUARD" if c.state == "guard" else "EL GENERAL"
 		_text(Vector2(0, 64 if banner_t > 0.0 else 44), "%s: ¡ALTO O LO MATO!  %d" % [who, ceili(t)], 8,
-			Color(1, 0.35, 0.25, pulse), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+			Color(1, 0.35, 0.25, pulse), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	_draw_cut(c, c.man, p)
 
 
@@ -413,7 +421,7 @@ func _draw_cut(r: Node, man: Civilian, p: Player) -> void:
 	draw_rect(Rect2(at + Vector2(-6, -7), Vector2(12, 12)), Color(0.95, 0.75, 0.35, a), false, 1.0)
 	_text(at + Vector2(-6, 3), "E", 8, Color(0.95, 0.75, 0.35, a), null, HORIZONTAL_ALIGNMENT_CENTER, 12)
 	if close:
-		_text(Vector2(0, 286), "[hold E]  cut him loose", 8, Color(0.95, 0.75, 0.35), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
+		_text(Vector2(0, page.y - 74), "[hold E]  cut him loose", 8, Color(0.95, 0.75, 0.35), null, HORIZONTAL_ALIGNMENT_RIGHT, page.x - 6)
 
 
 ## On the machine gun: its name, and the belt as a strip of brass running out.
@@ -434,8 +442,8 @@ func _draw_man(p: Player) -> void:
 	var g: MGun = game.mgun
 	if g == null or p.gun or game.state != "play" or not g.can_man(p.global_position):
 		return
-	_text(Vector2(0, 286), "[E]  the Colt-Browning (%d in the belt)" % g.belt, 8, Color(0.95, 0.75, 0.35), null,
-		HORIZONTAL_ALIGNMENT_RIGHT, 634)
+	_text(Vector2(0, page.y - 74), "[E]  the Colt-Browning (%d in the belt)" % g.belt, 8, Color(0.95, 0.75, 0.35), null,
+		HORIZONTAL_ALIGNMENT_RIGHT, page.x - 6)
 
 
 ## E by the blasting machine: every charge round the breastwork, once.
@@ -443,8 +451,8 @@ func _draw_plunger(p: Player) -> void:
 	var m: Minefield = game.minefield
 	if m == null or p.gun or game.state != "play" or not m.can_push(p.global_position):
 		return
-	_text(Vector2(0, 286), "[E]  the plunger (%d charges, all at once)" % m.charges(), 8, Color(0.95, 0.75, 0.35), null,
-		HORIZONTAL_ALIGNMENT_RIGHT, 634)
+	_text(Vector2(0, page.y - 74), "[E]  the plunger (%d charges, all at once)" % m.charges(), 8, Color(0.95, 0.75, 0.35), null,
+		HORIZONTAL_ALIGNMENT_RIGHT, page.x - 6)
 
 
 ## The gun at his feet he could swap for (F): its name and what's in it, there being
@@ -460,7 +468,7 @@ func _draw_take(p: Player) -> void:
 	var line := "[F]  %s  (%s)" % [name, held]
 	if slot in p.owned:
 		line += "  for your %s" % p.weapons[slot].d["name"]
-	_text(Vector2(0, 286), line, 8, Color(0.95, 0.75, 0.35), null, HORIZONTAL_ALIGNMENT_RIGHT, 634)
+	_text(Vector2(0, page.y - 74), line, 8, Color(0.95, 0.75, 0.35), null, HORIZONTAL_ALIGNMENT_RIGHT, page.x - 6)
 
 
 func _draw_crosshair(p: Player) -> void:
@@ -468,7 +476,9 @@ func _draw_crosshair(p: Player) -> void:
 		return
 	var m := get_local_mouse_position().round()
 	var col := Color(1, 0.3, 0.2) if p.aim_target else Color(0.98, 0.94, 0.82)
-	var r: float = clamp(p.spread_radius(), 3.0, 60.0)
+	# the spread at the mouse, two-thirds of it as it falls on the screen (as it's
+	# always been drawn), the same at any window size
+	var r: float = clamp(p.spread_radius() * game.camera.zoom.x / game.hud_layer.scale.x * 2.0 / 3.0, 3.0, 60.0)
 	draw_arc(m, r, 0, TAU, 24, Color(col, 0.55), 1.0)
 	for d in [Vector2.RIGHT, Vector2.LEFT, Vector2.UP, Vector2.DOWN]:
 		draw_line(m + d * 2, m + d * 5, col, 1.0)
@@ -480,28 +490,36 @@ func _draw_crosshair(p: Player) -> void:
 
 func _draw_eyes() -> void:
 	var a: float = clamp(eyes_t * 6.0, 0.0, 1.0)
-	var bar: float = 116.0 * a
-	draw_rect(Rect2(0, 0, 640, bar), Color.BLACK)
-	draw_rect(Rect2(0, 360 - bar, 640, bar), Color.BLACK)
-	var slide := (1.0 - a) * 640.0
-	draw_texture_rect(game.tex(game.meta["ui"]["eyes"]), Rect2(slide, 116, 640, 128), false, Color(1, 1, 1, a))
+	var bar: float = (page.y / 2 - 64) * a
+	draw_rect(Rect2(0, 0, page.x, bar), Color.BLACK)
+	draw_rect(Rect2(0, page.y - bar, page.x, bar), Color.BLACK)
+	var slide := (1.0 - a) * page.x
+	var band := Rect2(floorf((page.x - PAGE.x) / 2) + slide, page.y / 2 - 64, PAGE.x, 128)   # (the strip as drawn, black either side)
+	draw_rect(Rect2(slide, band.position.y, page.x, band.size.y), Color(0, 0, 0, a))
+	draw_texture_rect(game.tex(game.meta["ui"]["eyes"]), band, false, Color(1, 1, 1, a))
 
 
 ## The town's verdict when the hero shoots one of its own.
 func _draw_innocent() -> void:
 	var a: float = clamp(game.innocent_t, 0.0, 1.0)
-	_text(Vector2(0, 52), "AN INNOCENT", 14, Color(0.9, 0.3, 0.22, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
-	_text(Vector2(0, 64), "the town will remember", 8, Color(INK, a * 0.9), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	_text(Vector2(0, 52), "AN INNOCENT", 14, Color(0.9, 0.3, 0.22, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	_text(Vector2(0, 64), "the town will remember", 8, Color(INK, a * 0.9), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 func _draw_message() -> void:
 	var a: float = clamp(msg_t * 1.5, 0.0, 1.0)
-	draw_rect(Rect2(0, 140, 640, 70), Color(0, 0, 0, 0.6 * a))
-	_text(Vector2(0, 180), message, 26, Color(0.95, 0.75, 0.35, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
-	_text(Vector2(0, 200), sub, 8, Color(INK, a), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	var y := floorf(page.y / 2)
+	draw_rect(Rect2(0, y - 40, page.x, 70), Color(0, 0, 0, 0.6 * a))
+	_text(Vector2(0, y), message, 26, Color(0.95, 0.75, 0.35, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	_text(Vector2(0, y + 20), sub, 8, Color(INK, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 # ------------------------------------------------------------------ levels
+
+## Where the menus' page sits: in the middle of the screen.
+func menu_at() -> Vector2:
+	return ((page - PAGE) / 2).floor()
+
 
 const ROW := Rect2(150, 104, 340, 30)
 
@@ -513,18 +531,19 @@ func _row(i: int) -> Rect2:
 ## Which level row is under the cursor on the picker, or -1.
 func level_hit(pos: Vector2) -> int:
 	for i in game.levels.size():
-		if _row(i).has_point(pos):
+		if _row(i).has_point(pos - menu_at()):
 			return i
 	return -1
 
 
 func _draw_levels() -> void:
-	draw_rect(Rect2(0, 0, 640, 360), Color(0.03, 0.02, 0.02, 0.86))
-	_text(Vector2(0, 62), "WHERE TO, STRANGER?", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	draw_rect(Rect2(Vector2.ZERO, page), Color(0.03, 0.02, 0.02, 0.86))
+	var over := level_hit(get_local_mouse_position())
+	draw_set_transform(menu_at())
+	_text(Vector2(0, 62), "WHERE TO, STRANGER?", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	_text(Vector2(0, 84), "Pick where to ride.", 8,
-		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
-	var mouse := get_local_mouse_position()
-	var over := level_hit(mouse)
+		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	var mouse := get_local_mouse_position() - menu_at()
 	for i in game.levels.size():
 		var l: Dictionary = game.levels[i]
 		var r := _row(i)
@@ -533,8 +552,9 @@ func _draw_levels() -> void:
 		draw_rect(r, BRASS if on else Color(0.3, 0.22, 0.15), false, 2.0 if i == game.level_pick else 1.0)
 		_text(r.position + Vector2(10, 13), "[%d]  %s" % [i + 1, l["name"]], 12, Color(0.95, 0.75, 0.35) if on else INK, font)
 		_text(r.position + Vector2(36, 25), l.get("note", ""), 8, Color(INK, 0.85 if on else 0.55))
-	_text(Vector2(0, 340), "up / down and Enter, a number, or a click", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	_text(Vector2(0, 340), "up / down and Enter, a number, or a click", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	draw_colored_polygon(PackedVector2Array([mouse, mouse + Vector2(0, 11), mouse + Vector2(3, 8), mouse + Vector2(7, 8)]), BRASS)
+	draw_set_transform(Vector2.ZERO)
 
 
 # ------------------------------------------------------------------ loadout
@@ -569,8 +589,10 @@ func _option(i: int, j: int) -> Rect2:
 
 
 ## What's under the cursor on the loadout screen: a gun's name, a slot's card
-## ("slot:colt"), a piece of kit ("kit:bandage"), "ride", or nothing.
+## ("slot:colt"), a piece of kit ("kit:bandage"), "ride", or nothing. `pos` is on the
+## screen; the cards are on the page.
 func loadout_hit(pos: Vector2) -> String:
+	pos -= menu_at()
 	for i in Player.ORDER.size():
 		var slot: String = Player.ORDER[i]
 		var options := Player.choices(slot)
@@ -586,14 +608,15 @@ func loadout_hit(pos: Vector2) -> String:
 
 
 func _draw_loadout(_p: Player) -> void:
-	draw_rect(Rect2(0, 0, 640, 360), Color(0.03, 0.02, 0.02, 0.86))
-	_text(Vector2(0, 52), "CHOOSE YOUR IRONS", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	draw_rect(Rect2(Vector2.ZERO, page), Color(0.03, 0.02, 0.02, 0.86))
+	draw_set_transform(menu_at())
+	_text(Vector2(0, 52), "CHOOSE YOUR IRONS", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	_text(Vector2(0, 72), "One gun a slot, or none, as far as your money goes. Any other you'll have to take off a dead man.", 8,
-		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
+		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	var left: int = game.budget() - game.spent()
 	_text(Vector2(0, 93), "%d OF %d POINTS LEFT" % [left, game.budget()], 10,
-		Color(0.95, 0.75, 0.35) if left > 0 else Color(INK, 0.6), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
-	var mouse := get_local_mouse_position()
+		Color(0.95, 0.75, 0.35) if left > 0 else Color(INK, 0.6), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	var mouse := get_local_mouse_position() - menu_at()
 	for i in Player.ORDER.size():
 		var slot: String = Player.ORDER[i]
 		var k: String = game.picked_for(slot)
@@ -638,23 +661,26 @@ func _draw_loadout(_p: Player) -> void:
 		Color(0.95, 0.75, 0.35) if ready else Color(INK, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, RIDE.size.x)
 	# the mouse is hidden in town; here it gets a small brass pointer
 	draw_colored_polygon(PackedVector2Array([mouse, mouse + Vector2(0, 11), mouse + Vector2(3, 8), mouse + Vector2(7, 8)]), BRASS)
+	draw_set_transform(Vector2.ZERO)
 
 
 func _draw_title() -> void:
 	var a := title_alpha
-	draw_rect(Rect2(0, 0, 640, 360), Color(0.03, 0.02, 0.02, a))
+	draw_rect(Rect2(Vector2.ZERO, page), Color(0.03, 0.02, 0.02, a))
+	draw_set_transform(Vector2(0, menu_at().y))
 	var t: Texture2D = game.tex(game.meta["ui"]["title"])
 	var sz := t.get_size()
 	sz *= game.tex_scale
-	draw_texture_rect(t, Rect2(Vector2(round(320 - sz.x / 2), 110), sz), false, Color(1, 1, 1, a))
+	draw_texture_rect(t, Rect2(Vector2(round(page.x / 2 - sz.x / 2), 110), sz), false, Color(1, 1, 1, a))
 	var town: String = game.level.get("name", "")
-	_text(Vector2(0, 100), "~ un western all'italiana ~", 10, Color(0.85, 0.7, 0.5, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
-	_text(Vector2(0, 196), "%s.  %d bandits.  One stranger." % [town, game.enemies.size() + (game.director.indoors() if game.director else 0)], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+	_text(Vector2(0, 100), "~ un western all'italiana ~", 10, Color(0.85, 0.7, 0.5, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	_text(Vector2(0, 196), "%s.  %d bandits.  One stranger." % [town, game.enemies.size() + (game.director.indoors() if game.director else 0)], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	var lines := [
 		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   E knife (hold: drag a body)   B bandage   1 2 3 guns",
 		"RMB: fan the Colt's hammer  /  fire both barrels of a double gun",
 		"Stay out of their sight. Crouch behind cover. Kill them all.",
 	]
 	for i in lines.size():
-		_text(Vector2(0, 250 + i * 14), lines[i], 8, Color(0.8, 0.74, 0.62, a), null, HORIZONTAL_ALIGNMENT_CENTER, 640)
-	_text(Vector2(0, 320), "click to ride in", 10, Color(0.95, 0.75, 0.35, a * (0.6 + 0.4 * sin(Time.get_ticks_msec() / 300.0))), font, HORIZONTAL_ALIGNMENT_CENTER, 640)
+		_text(Vector2(0, 250 + i * 14), lines[i], 8, Color(0.8, 0.74, 0.62, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	_text(Vector2(0, 320), "click to ride in", 10, Color(0.95, 0.75, 0.35, a * (0.6 + 0.4 * sin(Time.get_ticks_msec() / 300.0))), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	draw_set_transform(Vector2.ZERO)

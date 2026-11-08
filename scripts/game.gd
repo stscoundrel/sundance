@@ -17,7 +17,14 @@ const ENEMIES_PATH := "res://data/enemies.json"
 const POST_SHADER := preload("res://shaders/post.gdshader")
 const LOUD := ["colt", "coach", "rifle", "sharps", "howdah", "spencer", "musket", "bell", "boom"]
 const WIND := Vector2(7, -2)   # px/s drift for smoke and dust
-const VIEW_W := 1280.0 / 3.0   # world pixels across the screen: a close, detailed view
+# How much of the town the screen shows. The art is drawn in whole screen pixels to a
+# world pixel (never smeared between them), three at the least, the close, detailed
+# view a 1280x720 window has always had; a bigger window shows more of the town, out
+# to VIEW_CAP, and past that its pixels only grow (a monitor's size buys the stranger
+# no more sight than this). The HUD is laid out on a 640x360 page, scaled whole too.
+const VIEW_CAP := Vector2(860, 400)   # world pixels, the most anyone sees (wide for a 21:9 screen, 640x360 at 16:9)
+const VIEW_ZOOM := 3                  # screen pixels a world pixel, at the least (bar tiny windows)
+const HUD_PAGE := Vector2(640, 360)   # the HUD's own pixels, at the least
 
 var meta: Dictionary
 var enemy_data: Dictionary   # data/enemies.json: body templates, bandit types, palettes
@@ -32,6 +39,7 @@ var cone_layer: Node2D
 var statics: Node2D
 var ghost_layer: Node2D
 var camera: Camera2D
+var hud_layer: CanvasLayer
 var hud: Hud
 var post: ColorRect
 
@@ -272,6 +280,8 @@ func _ready() -> void:
 		director = Director.new()
 		director.setup(self, level_entry.get("waves", []), level_entry.get("waves_from", "") == "first_shot")
 		add_child(director)
+	if DisplayServer.get_name() == "headless":
+		get_tree().root.size = Vector2i(1280, 720)   # (no window to fit: a test plays in the one the game was made for)
 	_build_overlay()
 	start_time = Time.get_ticks_msec()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
@@ -792,7 +802,6 @@ func _build_world() -> void:
 		world.add_child(tw)
 
 	camera = Camera2D.new()
-	camera.zoom = Vector2.ONE * (get_viewport_rect().size.x / VIEW_W)
 	add_child(camera)
 	camera.make_current()
 	var origin := Vector2(meta["ground"]["origin"][0], meta["ground"]["origin"][1])
@@ -1044,13 +1053,38 @@ func _build_overlay() -> void:
 	post.material = mat
 	post_layer.add_child(post)
 
-	var hud_layer := CanvasLayer.new()
+	hud_layer = CanvasLayer.new()
 	hud_layer.layer = 10
-	hud_layer.scale = Vector2.ONE * (get_viewport_rect().size.x / 640.0)
 	add_child(hud_layer)
 	hud = Hud.new()
 	hud.game = self
 	hud_layer.add_child(hud)
+	fit_view()
+	if not get_viewport().size_changed.is_connected(fit_view):
+		get_viewport().size_changed.connect(fit_view)
+
+
+## The camera's zoom and the HUD's scale for a window `px` big: whole numbers both,
+## the zoom the least that keeps the view inside VIEW_CAP (but not under VIEW_ZOOM,
+## unless the window's too small to show anything at that), the HUD the most that
+## still fits its page.
+static func view_fit(px: Vector2) -> Vector2i:
+	var zoom := ceili(maxf(px.x / VIEW_CAP.x, px.y / VIEW_CAP.y))
+	zoom = maxi(zoom, clampi(floori(px.y / 240.0), 1, VIEW_ZOOM))
+	var page := maxi(1, floori(minf(px.x / HUD_PAGE.x, px.y / HUD_PAGE.y)))
+	return Vector2i(zoom, page)
+
+
+## The window's been opened or resized: zoom the camera and lay out the HUD to it.
+func fit_view() -> void:
+	if camera == null or hud == null:
+		return
+	var px := get_viewport_rect().size
+	var fit := view_fit(px)
+	camera.zoom = Vector2.ONE * fit.x
+	hud_layer.scale = Vector2.ONE * fit.y
+	hud.page = (px / fit.y).floor()
+	(post.material as ShaderMaterial).set_shader_parameter("grain", hud.page)
 
 
 # ------------------------------------------------------------------ frame
@@ -1764,10 +1798,12 @@ func lose_the_head(who: Enemy) -> void:
 
 ## The machine gun's cut a man down: the men by him who the stranger can see take
 ## fright (only those: a rout starting somewhere off down the line where he can't
-## see it would be no use to anyone).
+## see it would be no use to anyone). What he can see is the 1280x720 window's view
+## round the middle of the screen, whatever the window: a big monitor shows more of
+## the line, but doesn't break more of it.
 func _gun_fright(at: Vector2) -> void:
-	var vp := get_viewport()
-	var view: Rect2 = vp.get_canvas_transform().affine_inverse() * vp.get_visible_rect()
+	var seen := HUD_PAGE * 2.0 / VIEW_ZOOM
+	var view := Rect2(camera.get_screen_center_position() - seen / 2.0, seen)
 	for o in enemies:
 		if o.alive and o.assault and not o.deserting and o.flag_at == Vector2.INF \
 				and o.global_position.distance_to(at) < GUN_FEAR_NEAR \

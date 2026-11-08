@@ -15,6 +15,10 @@ WASD move · mouse aim · LMB fire · RMB fan the Colt / fire both barrels · C 
 R reload (fire stops a partial reload) · 1/2/3 or wheel to switch guns · E knife (hold to drag
 a body; at the gallows or the pole, hold to cut the man loose; by the machine gun, get on or off it; by the plunger, fire the mines) · B bandage · G throw dynamite · F swap for the gun at your feet · Enter restart · Esc quit.
 
+The window can be any size. A bigger one shows more of the town, up to about 640x360 world
+pixels on a 16:9 screen (wider on a 21:9 one); past that the pixels only get bigger. A
+1280x720 window shows what it always has.
+
 On the loadout screen: 1/2/3 or a click go through a slot's guns (those you can afford), B and G
 buy a bandage and a stick of dynamite, Enter rides in. Each gun and piece of kit costs points out
 of the level's budget.
@@ -112,10 +116,13 @@ godot --headless --path . --fixed-fps 60 -s tests/test_downed.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_lastgasp.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_alarm.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_dynamite.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_view.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_perf.gd
 godot --path . -s tests/profile.gd                        # where a big fight's frame goes (also --headless)
 ```
 
 Flags go after `--`: `--skip-title` (no title or loadout screen; rides in with Colt, coach gun and Winchester, or `--guns=navy,spencer`, one a slot), `--level=ID` (a level from `data/levels.json`, e.g. `san_miguel_35`), `--at=GX,GY` (start tile), `--bot` (autopilot that shoots
 and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--alert` (trigger the close-up), `--rattle` (near-miss every bandit once), `--freeze` (no title, bandits stand still), `--shot=PATH --shot-time=SECONDS` (save a
-screenshot and quit).
+screenshot and quit). The window opens maximized; a screenshot at a set size needs a small
+script that calls `DisplayServer.window_set_mode(WINDOW_MODE_WINDOWED)` and
+`window_set_size` before loading the scene (headless runs always play at 1280x720).
