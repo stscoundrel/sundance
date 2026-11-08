@@ -541,7 +541,7 @@ func _draw_levels() -> void:
 
 const CARD_W := 150.0
 const CARD := Vector2(75, 104)
-const CARD_H := 160.0
+const CARD_H := 179.0
 const RIDE := Rect2(250, 286, 140, 26)
 const KIT_BOX := {"bandage": Rect2(75, 286, 150, 26), "dynamite": Rect2(415, 286, 150, 26)}
 const KIT_NAME := {"bandage": "A BANDAGE  [B]", "dynamite": "A STICK OF DYNAMITE  [G]"}
@@ -552,9 +552,10 @@ const BLURB := {"colt": "six, quick to load, fanned", "schofield": "six, all out
 	"sawnoff": "two short barrels, murder up close",
 	"champion": "one barrel, reaches further",
 	"escopeta": "one barrel, a long reload", "rifle": "thirteen, a quick lever",
+	"henry": "fifteen, loaded at the muzzle",
 	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load",
 	"rollingblock": "one hard shot, short, quick to load", "remington": "one hard shot, far, quick to load"}
-const OPTION_Y := 118.0   # the first of a card's guns to pick from, and 12 px apart
+const OPTION_Y := 116.0   # the first of a card's guns to pick from, and 11 px apart
 
 
 func _card(i: int) -> Rect2:
@@ -563,7 +564,7 @@ func _card(i: int) -> Rect2:
 
 func _option(i: int, j: int) -> Rect2:
 	var r := _card(i)
-	return Rect2(r.position.x + 20, r.position.y + OPTION_Y + j * 12.0 - 9.0, CARD_W - 40, 12)
+	return Rect2(r.position.x + 20, r.position.y + OPTION_Y + j * 11.0 - 9.0, CARD_W - 40, 11)
 
 
 ## What's under the cursor on the loadout screen: a gun's name, a slot's card

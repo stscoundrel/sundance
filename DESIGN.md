@@ -503,7 +503,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
 listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun, sawn-off, Champion or escopeta;
-Winchester, Spencer, Springfield or cut-down Rolling Block) with a line on what the chosen one is like. 1 2 3
+Winchester, Henry, Spencer, Springfield or cut-down Rolling Block) with a line on what the chosen one is like. 1 2 3
 or a click on a card goes on through its guns and then none; a click on a gun's
 name takes it, or puts it back. Enter or "ride in". The choice is kept across
 restarts. He rides in with those and their cartridges (`Player.RESERVE`; guns
@@ -518,7 +518,7 @@ guns up.
 price is its `points` in `Weapon.DATA`, by how good it is, not by its slot: junk is
 free (horse pistol, escopeta, cut-down Rolling Block), the poor or one-job guns 1 (Navy, Champion,
 Springfield), the solid ones 2 (Colt and Schofield alike: as strong, each with its
-own faults; sawn-off, Spencer), the coach gun 3 and the Winchester, the best gun in
+own faults; sawn-off, Spencer), the coach gun and the Henry 3, and the Winchester, the best gun in
 the game, 4. Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
 or the box left of "ride in") and a stick of dynamite for 2 (G, the right box), in
 every level. What he doesn't buy he hasn't: no free bandage. Each
@@ -530,7 +530,7 @@ keep the level's own kit (a bandage, the level's sticks). `tests/test_budget.gd`
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
 never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, horse pistol), **2** a
-shotgun (coach gun, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Spencer, Springfield, cut-down Rolling Block).
+shotgun (coach gun, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Henry, Spencer, Springfield, cut-down Rolling Block).
 `Player.SLOT` lists what he can carry; the derringer, Sharps and howdah
 still stay where they lie, and the gunsmith may get to them first.
 - A gun for an **empty slot** is his for walking over it.
@@ -545,7 +545,7 @@ still stay where they lie, and the gunsmith may get to them first.
   without a reload.
 - The dead man's cartridges, lying by his gun, come with it (his bandolier): a few
   rounds, never a full belt.
-- **Ammo is by kind, on one belt**: .45 Colt, shotgun shells (coach gun, sawn-off and Champion), .44 rimfire, Spencer
+- **Ammo is by kind, on one belt**: .45 Colt, shotgun shells (coach gun, sawn-off and Champion), .44 rimfire (Winchester and Henry), Spencer
   rimfire, the Sharps' big .50 (the cut-down Rolling Block's too: few men drop them, so
   he lives on what he rode in with and what poachers leave) (the Schofield takes the Colt's .45), and powder and ball for the cap-and-ball Navy and the muzzle-loaders
   (horse pistol, escopeta, Springfield), so those share. Every dead man drops the
@@ -639,6 +639,26 @@ Soldados and cabos carry it; the stranger takes one up off the dead (slot 3,
 - Loaded one round at a time through the side gate on the brass receiver,
   and it can be stopped partway.
 - Damage 2 · very fast bullet · long range · accurate.
+
+### Henry 1860, .44 Henry rimfire — 15 rounds
+The Winchester's forerunner, much the same gun and the same rounds, but worse to
+live with in three ways, so it stays the lesser choice (3 points to the Winchester's
+4) for all its fifteen (14 in the tube, one up; `"tube"` lets it hold more than
+`Weapon.TUBE_CAP`):
+- **Loaded from the front.** No gate in the side: he turns the sleeve at the
+  muzzle, pushes the follower up and drops them in (open 1.1 s, 0.35 s a round,
+  closed 0.9 s; the gun brought up muzzle high, the butt by his foot). A round or
+  two in a hurry costs about 2.4 s against the Winchester's 0.8, so topping up
+  doesn't pay; the whole tube from empty takes about 7.5 s (5.7). It can still be stopped partway.
+- **A cruder lever**: 0.55 s between shots (0.45).
+- **No fore-end**, so his left hand is on the bare barrel: each shot heats it
+  (`"hot"`, 0.3 a shot, cooling 0.15 a second, `Weapon.heat`), and the spread grows
+  with the heat to twice its own (0.7, against 0.6) at its hottest. Half a dozen
+  quick shots and it's wild until it cools; aimed fire hardly warms it.
+About a third of the gang's Winchesters are Henrys (`Enemy.HENRY`, a type's `"henry"`
+chance; its own dice, `henry_rng`): the Rifleman's, a Tirador's captured one. The
+stranger rides in with one (slot 3, 26 rounds) or takes one up off the dead.
+`tests/test_henry.gd`.
 
 Reserve ammo is limited. Dead bandits drop cartridges for the weapon they
 carried, which you collect by walking over them.
@@ -1083,7 +1103,7 @@ generator:
 | Pistolero | poncho, sombrero (3 serapes) | Colt, now and then a cut-down Rolling Block under the poncho | rank and file, often breaks under fire |
 | Bandido | peasant whites, straw sombrero, bandolier, coloured sash (3) | Colt Navy (cap-and-ball), now and then a Champion too | 1 HP, poor aim, thin nerve, slow to react; dangerous for six shots, then an age reloading |
 | Cowboy | vest, bandana (3 palettes) | Colt, a Champion slung for one in four | steady mid-range gunman |
-| Rifleman | duster, bowler (2) | Winchester + Colt | good shot, leader (orders covering fire) |
+| Rifleman | duster, bowler (2) | Winchester (a Henry for one in three) + Colt | good shot, leader (orders covering fire) |
 | Red Scarf | vest, red scarf | coach gun + Colt | rushes in, fires on the move |
 | El Jefe | red duster, sombrero | coach gun + Colt | 4 HP, nerves of steel, leader |
 | Drunkard | shirt, suspenders, slouch hat (2) | Colt, now and then a Champion | wild aim, slow, scared, slurs |
@@ -1153,7 +1173,7 @@ cast-offs (see "The revolution's arsenal" below).
   Colt (8 in 11, and a Champion slung for one in four of those), else a Spencer, a Springfield or an escopeta with a Navy to fall
   back on; 2 HP; "¡Tierra y libertad!".
 - **Tirador**: the same in plainer cloth, with a long eye: a Springfield (less
-  accurate than it should be, in his hands), a Spencer, or a captured Winchester.
+  accurate than it should be, in his hands), a Spencer, or a captured Winchester (or Henry).
 - **Sargento**: bearded, sashed, coach gun (or a Spencer) and Colt; calls the orders
   (rank 1).
 - **Soldadera**: a woman of the revolution in a long dress, crossed bandoliers and a
@@ -1554,7 +1574,7 @@ baked once per death and direction (`pools` in `assets/meta.json`, the same for
 every body) and laid on the ground as the body comes to rest, spreading over a few
 seconds. A body dragged away leaves it behind.
 
-- Upper body, per gun: aim, fire (recoil), cock / fan (Colt), lever (Winchester),
+- Upper body, per gun: aim, fire (recoil), cock / fan (Colt), lever (Winchester, Henry),
   reload open / eject / insert / close, point, flinch, cower, and hit reactions
   (left shoulder, right shoulder, gut).
 - Hits: where the round lands decides the reaction; a leg hit staggers him and

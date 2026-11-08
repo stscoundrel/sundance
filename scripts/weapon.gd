@@ -8,6 +8,7 @@ extends RefCounted
 ##              The Schofield ("topbreak") breaks open and dumps all six at once.
 ##   lever    - Winchester 1866: tube magazine, a lever stroke between shots. The
 ##              Spencer too: a smaller tube, and the hammer thumbed back as well.
+##              The Henry: a longer tube, filled from the front ("open"/"close").
 ##   breech   - everything that opens to load: coach gun, sawn-off, derringer, Sharps,
 ##              howdah. And, near enough, the muzzle-loaders (Springfield rifle-musket,
 ##              escopeta): one charge, the "open/eject/insert/close" steps being the
@@ -16,7 +17,7 @@ extends RefCounted
 
 enum S { READY, CYCLE, OPEN, EJECT, INSERT, CLOSE }
 
-const TUBE_CAP := 12   # plus one in the chamber (a lever gun's "tube" may hold fewer)
+const TUBE_CAP := 12   # plus one in the chamber (a lever gun's "tube" may hold another number)
 # For breech guns, open/eject/insert/close are [seconds, sound]; "hammer" means the
 # hammer is thumbed back after each shot; "volley" lets the right trigger fire every
 # loaded barrel at once. "points": what the stranger's gun costs on the loadout
@@ -39,6 +40,18 @@ const DATA := {
 	"rifle": {"name": "WINCHESTER 1866", "points": 4, "action": "lever", "damage": 2, "pierce": 1, "speed": 900.0, "range": 620.0,
 		"spread": 0.6, "pellets": 1, "noise": 480.0, "sfx": "rifle", "cycle": 0.45, "shake": 2.5, "smoke": 11,
 		"status": {"cycle": "LEVER", "open": "LOADING GATE", "close": ""}},
+	# Henry 1860, the Winchester's forerunner: the same rounds and near enough the same
+	# gun, but worse to live with. Fourteen in the tube under the barrel and one up,
+	# and no gate in the side to load them by: he turns the sleeve at the muzzle,
+	# pushes the follower to the top and drops them in at the front, so a round or
+	# two in a hurry costs nearly as much as the lot. A cruder lever, slower to work.
+	# And nothing to hold it by but the barrel: fire it fast and the heat in his
+	# fingers ("hot", a shot's worth) throws his aim off until it cools.
+	"henry": {"name": "HENRY 1860", "points": 3, "action": "lever", "tube": 14, "damage": 2, "pierce": 1, "speed": 880.0,
+		"range": 600.0, "spread": 0.7, "pellets": 1, "noise": 480.0, "sfx": "rifle", "cycle": 0.55, "shake": 2.5,
+		"smoke": 11, "ammo": "rifle", "hot": 0.3, "open": [1.1, "gate"], "insert": [0.35, "shell_in"],
+		"close": [0.9, "close"],
+		"status": {"cycle": "LEVER", "open": "SLEEVE TURNED", "close": "SLEEVE CLOSED"}},
 	"coach": {"name": "COACH GUN  10 GA", "points": 3, "action": "breech", "barrels": 2, "volley": true,
 		"damage": 1, "speed": 520.0, "range": 175.0, "spread": 9.0, "pellets": 9, "noise": 460.0,
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 20, "smoke_push": 1.5,
@@ -181,6 +194,10 @@ var barrels: Array[int] = []
 var tube := TUBE_CAP   # (set to the gun's own cap())
 var chambered := true
 var ejecting := false   # this lever stroke throws out a fired case
+# A barrel held bare in the hand ("hot"): 0 cool, 1 too hot to hold steady.
+const COOL := 0.15   # of it a second, off
+const HOT_SPREAD := 1.0   # as much again on the spread, at its hottest
+var heat := 0.0
 
 
 func _init(k: String, h: Actor) -> void:
@@ -395,6 +412,9 @@ func start_reload() -> bool:
 		"breech":
 			timer = d["open"][0]
 			_snd(d["open"][1])
+		"lever" when d.has("open"):
+			timer = d["open"][0]
+			_snd(d["open"][1])
 		_:
 			timer = 0.25
 	timer *= slow
@@ -411,6 +431,7 @@ func abort() -> void:
 
 
 func update(delta: float) -> void:
+	heat = maxf(0.0, heat - COOL * delta)
 	if state != S.READY:
 		timer -= delta
 		if timer <= 0.0:
@@ -530,6 +551,9 @@ func _close() -> void:
 		"breech":
 			timer = d["close"][0]
 			_snd(d["close"][1])
+		"lever" when d.has("close"):
+			timer = d["close"][0]
+			_snd(d["close"][1])
 		_:
 			timer = 0.15
 	timer *= slow
@@ -569,7 +593,8 @@ func _colt_fire(fan: bool) -> void:
 func _shoot(mult: int, extra_spread := 0.0) -> void:
 	var h := holder
 	var dir := h.facing
-	var spread := deg_to_rad(d["spread"] * h.accuracy_mult() + extra_spread)
+	var spread := deg_to_rad(d["spread"] * h.accuracy_mult() * (1.0 + heat * HOT_SPREAD) + extra_spread)
+	heat = minf(1.0, heat + float(d.get("hot", 0.0)))
 	var n: int = d["pellets"] * mult
 	var origin := h.global_position + dir * 5.0
 	for i in n:

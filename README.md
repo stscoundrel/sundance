@@ -93,6 +93,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_general.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arsenal.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_champion.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_rollingblock.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_henry.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_kegs.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_laststand.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_rally.gd

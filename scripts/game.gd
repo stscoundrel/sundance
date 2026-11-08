@@ -221,6 +221,7 @@ func _ready() -> void:
 		Enemy.rabble_rng.randomize()
 		Enemy.return_rng.randomize()
 		Enemy.schofield_rng.randomize()
+		Enemy.henry_rng.randomize()
 		Enemy.champion_rng.randomize()
 		Enemy.rollingblock_rng.randomize()
 		Wounds.rng.randomize()
@@ -239,6 +240,7 @@ func _ready() -> void:
 		Enemy.rabble_rng.seed = 23
 		Enemy.return_rng.seed = 29
 		Enemy.schofield_rng.seed = 31
+		Enemy.henry_rng.seed = 89
 		Enemy.champion_rng.seed = 37
 		Enemy.rollingblock_rng.seed = 41
 		Wounds.rng.seed = 41
