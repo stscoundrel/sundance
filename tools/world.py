@@ -2121,6 +2121,157 @@ def nest(along_x=True):
     return m
 
 
+# ---------------------------------------------------------------- Silencio
+
+# A mountain town snowed in for the winter. Everything the town shares with San
+# Miguel is the same model with snow on it (`snowed`, baked as the object's "snow"
+# skin: the same points, so the same anchor, and every window, lantern and sign
+# overlay still sits where it did); what only grows or stands up here has a model
+# of its own below.
+SNOW = np.array([234, 239, 246], float)
+
+
+def snowed(m, seed=0, drift=0.32, patchy=0.0, cap=None):
+    """The model under snow: lying white on whatever faces up (roofs, porches, the
+    tops of crates), heaped in drifts against the foot of every wall, a thin patch
+    here and there. `patchy`: the share of the upward faces left bare (a pine's
+    boughs shed it in clumps). `cap`: only what's higher than this (m) holds it (a
+    woodpile's top logs keep it off the ones under them)."""
+    out = m.copy()
+    P, N = out.P, out.N
+    n1 = hash01(np.floor(P[:, 0] * 2.5), np.floor(P[:, 1] * 2.5), seed + 3)
+    n2 = hash01(np.floor(P[:, 0] * 14), np.floor(P[:, 1] * 14), np.floor(P[:, 2] * 14) + seed)
+    up = N[:, 2]
+    cover = np.clip((up - 0.3) / 0.3, 0, 1) * np.where(n2 > 0.025, 1.0, 0.55)
+    if cap is not None:
+        cover *= P[:, 2] > cap
+    if patchy:
+        cover *= hash01(np.floor(P[:, 0] * 4), np.floor(P[:, 1] * 4), np.floor(P[:, 2] * 3) + seed) > patchy
+    u, _ = face_uv(P, N)
+    heap = drift * (0.35 + 0.8 * hash01(np.floor(u * 1.6), seed + 7)) * (0.8 + 0.4 * n1)
+    low = (np.abs(up) < 0.5) & (P[:, 2] < heap)
+    cover = np.maximum(cover, low.astype(float))
+    snow = SNOW * (0.94 + 0.06 * n2)[:, None]
+    out.C = out.C * (1 - cover[:, None]) + snow * cover[:, None]
+    return out
+
+
+def pine(seed=0, s=1.0):
+    """A mountain pine, dark and tall: boughs in tiers to the top. Its trunk stops a
+    man; its boughs hide him (it fades, like a building, when the stranger's behind)."""
+    rng = np.random.default_rng(171 + seed)
+    c = 0.9 * T
+
+    def needles(P, N):
+        k = hash01(np.floor(P[:, 0] * 9), np.floor(P[:, 1] * 9), np.floor(P[:, 2] * 7) + seed)
+        col = np.tile([44.0, 70, 56], (len(P), 1)) * (0.78 + 0.34 * k)[:, None]
+        col[k > 0.9] = (36, 54, 46)
+        return col
+    m = frustum((c, c, 0), (c, c, 1.2 * s), 0.13 * s, 0.1 * s, (86, 62, 46))
+    tiers = 4 + (seed % 2)
+    for i in range(tiers):
+        z0 = (0.7 + i * 0.95) * s
+        r = (1.15 - i * 0.2) * s * rng.uniform(0.92, 1.08)
+        off = rng.uniform(-0.06, 0.06, 2) * s
+        m += frustum((c + off[0], c + off[1], z0), (c, c, z0 + 1.45 * s), r, 0.04, needles, caps=False)
+    return m
+
+
+def log_wall(base, seed=0):
+    """Squared logs laid one on another, the chinking pale between them."""
+    base = np.array(base, float)
+
+    def f(P, N):
+        u, fid = face_uv(P, N)
+        row = np.floor(P[:, 2] / 0.3)
+        t = (P[:, 2] % 0.3) / 0.3
+        c = base * (0.82 + 0.22 * hash01(row, fid + seed))[:, None] * (0.86 + 0.24 * np.sin(t * math.pi))[:, None]
+        c[t < 0.1] = (176, 164, 140)                                      # the chinking
+        grain = hash01(np.floor(u * 7), row, seed) > 0.9
+        c[grain] *= 0.82
+        return c
+    return f
+
+
+def cabin(w, h, seed, along_y=True):
+    """A log cabin, a stone chimney at one end: the homes of a mountain town."""
+    W, D, Hh = w * T, h * T, 2.7
+    wall = log_wall((128, 90, 62), seed)
+    ops = [dict(face="+y", u=(W / 2 - 0.5, W / 2 + 0.5), z=(0.1, 2.1), kind="door", color=(80, 54, 38)),
+           dict(face="+y", u=(0.6, 1.5), z=(1.0, 1.9), kind="win"),
+           dict(face="+x", u=(D / 2 - 0.45, D / 2 + 0.45), z=(1.0, 1.9), kind="win")]
+    if W > 5.5:
+        ops.append(dict(face="+y", u=(W - 1.5, W - 0.6), z=(1.0, 1.9), kind="win"))
+    fn = decorate(wall, W, D, ops)
+    m = box((0, 0, 0), (W, D, Hh), fn, BSP, skip=("-z",))
+    rise = 1.5
+    m += gable_roof(W, D, Hh, rise, roofing((92, 74, 62)), along_y=along_y, overhang=0.4)
+    m += gable_ends(W, D, Hh, rise, planks((116, 84, 60), vertical=True, seed=seed, mud=0), along_y=along_y)
+    for x, y in ((W, D), (W, 0), (0, D)):   # the log ends crossing at the corners
+        for z in np.arange(0.15, Hh, 0.3):
+            m += beam((x - 0.2 if x else -0.18, y, z), (x + 0.18 if x else 0.2, y, z), 0.12, (150, 112, 78))
+            m += beam((x, y - 0.2 if y else -0.18, z), (x, y + 0.18 if y else 0.2, z), 0.12, (150, 112, 78))
+    stone = lambda P, N: np.tile([132.0, 126, 118], (len(P), 1)) * (0.75 + 0.35 * hash01(np.floor(P[:, 0] * 5 + P[:, 1] * 5), np.floor(P[:, 2] * 4), seed))[:, None]
+    cx, cy = (0.25, D * 0.35) if along_y else (W * 0.35, 0.25)
+    m += box((cx, cy, 0), (cx + 0.8, cy + 0.8, Hh + rise + 0.6), stone, BSP)
+    return m
+
+
+def woodpile():
+    """Split logs stacked for the winter, a man's chest high: they stop a round."""
+    m = Cloud()
+    rng = np.random.default_rng(191)
+
+    def wood(P, N):
+        end = np.abs(N[:, 0]) > 0.7
+        c = np.tile([96.0, 70, 50], (len(P), 1)) * (0.8 + 0.3 * hash01(np.floor(P[:, 1] * 12), np.floor(P[:, 2] * 12)))[:, None]
+        c[end] = (196, 160, 112)
+        ring = end & ((np.hypot(P[:, 1] % 0.2 - 0.1, P[:, 2] % 0.2 - 0.1) % 0.05) < 0.012)
+        c[ring] = (160, 124, 84)
+        return c
+    L = 1.8 * T
+    for row in range(5):
+        for i in range(4 - row // 3):
+            y = 0.14 + i * 0.17 + (row % 2) * 0.08
+            z = 0.1 + row * 0.17
+            m += frustum((0.05 + rng.uniform(0, 0.08), y, z), (L - rng.uniform(0, 0.12), y, z), 0.085, 0.085, wood)
+    return m
+
+
+def boat_over():
+    """A rowboat turned over on the shore for the winter: cover, and dry under it."""
+    def hull(P, N):
+        row = np.floor(P[:, 2] / 0.09)
+        return np.tile([96.0, 76, 60], (len(P), 1)) * (0.84 + 0.2 * hash01(row))[:, None]
+    m = ellipsoid((1.25 * T, 0.4 * T, 0.0), (1.15 * T, 0.36 * T, 0.42), hull, zmin=0.0)
+    m += beam((0.12, 0.4 * T, 0.05), (2.4 * T, 0.4 * T, 0.43), 0.02, (60, 46, 36))   # (an oar left on her)
+    return m
+
+
+def reeds(seed=0):
+    """Dead reeds standing up out of the ice at the pond's edge."""
+    rng = np.random.default_rng(211 + seed)
+    m = Cloud()
+    for i in range(16):
+        x, y = 0.38 + rng.normal(0, 0.14), 0.38 + rng.normal(0, 0.14)
+        h = rng.uniform(0.5, 1.2)
+        lean = rng.uniform(-0.15, 0.15, 2)
+        m += beam((x, y, 0), (x + lean[0], y + lean[1], h), 0.012, (150, 128, 84) if i % 3 else (120, 100, 70))
+        if i % 4 == 0:
+            m += ellipsoid((x + lean[0], y + lean[1], h), (0.025, 0.025, 0.08), (92, 66, 46))
+    return m
+
+
+def stump(seed=0):
+    """A tree cut down for firewood, the axe left in it."""
+    m = frustum((0.3, 0.3, 0), (0.3, 0.3, 0.45), 0.24, 0.22, lambda P, N: np.where(
+        (N[:, 2] > 0.7)[:, None], np.array([[190.0, 154, 108]]), np.array([[90.0, 66, 48]])))
+    if seed == 0:
+        m += beam((0.3, 0.3, 0.45), (0.62, 0.36, 0.78), 0.02, (120, 90, 60))
+        m += box((0.24, 0.26, 0.42), (0.38, 0.32, 0.52), solid((110, 110, 116)), 0.01)
+    return m
+
+
 # Long things baked in pieces along their length, each its own sprite sorted at its
 # own middle, so a man beside one end of a boxcar is drawn in front of it, not
 # behind (one sprite sorts at the middle of the whole car). Name -> (axis, pieces);
@@ -2243,7 +2394,26 @@ BUILDINGS = {
     "nest_x": (lambda: nest(True), (1.6, 0.6), "cover", False, None),
     "nest_y": (lambda: nest(False), (0.6, 1.6), "cover", False, None),
     "carreta": (carreta, (5.0, 1.3), "cover", False, None),
+    # Silencio
+    "pine": (lambda: pine(0), (1.8, 1.8), "post", True, [[0.75, 0.75, 1.05, 1.05]]),
+    "pine_b": (lambda: pine(1, 0.8), (1.8, 1.8), "post", True, [[0.77, 0.77, 1.03, 1.03]]),
+    "cabin": (lambda: cabin(4, 4, 61), (4, 4), "wall", True, None),
+    "cabin_b": (lambda: cabin(5, 4, 67, along_y=False), (5, 4), "wall", True, None),
+    "woodpile": (woodpile, (1.8, 0.8), "cover", False, None),
+    "boat_over": (boat_over, (2.5, 0.8), "cover", False, None),
+    "reeds": (lambda: reeds(0), (0.75, 0.75), "none", False, None),
+    "reeds_b": (lambda: reeds(1), (0.75, 0.75), "none", False, None),
+    "stump": (lambda: stump(0), (0.6, 0.6), "cover", False, None),
 }
+
+# What Silencio wears snowed over (see `snowed`): the town's buildings, and the props
+# its streets and yards have, with how much of their tops the snow leaves bare.
+SNOWY = {k: {} for k in ("saloon", "store", "sheriff", "bank", "church", "stable", "water_tower", "hotel", "barber",
+                         "undertaker", "assay", "feed", "gunsmith", "cabin", "cabin_b", "crate", "barrel", "wagon",
+                         "trough", "coffin", "hitch", "cross", "crate_stack", "sacks", "rock", "rock_b", "rock_c",
+                         "wagon_over", "woodpile", "boat_over", "stump", "table", "chair", "headstone", "headstone_b",
+                         "upturned_n", "upturned_s", "upturned_e", "upturned_w")}
+SNOWY.update({"woodpile": {"cap": 0.7}, "boat_over": {"cap": 0.3}, "pine": {"patchy": 0.45, "drift": 0.2}, "pine_b": {"patchy": 0.4, "drift": 0.2}})
 
 
 def _chunk_entries():

@@ -25,7 +25,7 @@ the stranger failed him.
 
 ## Levels
 
-After the title card comes the level picker (San Miguel, Cruz Verde and Paso Esperanza; the shuffled
+After the title card comes the level picker (San Miguel, Cruz Verde, Paso Esperanza and Silencio; the shuffled
 San Miguels and the wave test are hidden, kept for the tests) ("Where to, stranger?"; up/down and
 Enter, a number or a click), then the loadout. The levels are listed in
 `data/levels.json`, each a map (a town file) and, optionally, a **count**: with one,
@@ -398,6 +398,52 @@ own dice (`Minefield.rng`). `tests/test_mines.gd` checks the layout and the reac
 the prompt, a stick on a charge, the ripple's order, the men on it killed, the
 stranger, gun and breastwork untouched, the army's cover not, the rout reaching men
 off his screen and their coming on again, and that it's spent.
+
+**Silencio** (the fourth level, in the making: an homage to Corbucci's *The Great
+Silence*, an original place in its spirit). A mountain town snowed in for the
+winter, the pass shut on everyone in it. Bounty hunters came up for the outlaws'
+heads, and the snow caught both: they keep an uneasy truce till the thaw, the
+hunters at the east end of the one main street (the jail, the hotel, the bank, their
+horses in the stable), the outlaws at the west end (the cabins, the feed barn, and
+the old livery that's their hideout, with their stolen gold in a strongbox), and
+between them the saloon, the store and the church are nobody's. A frozen pond lies at
+the north-west edge, behind the outlaws' end, fishing holes cut in it and boats
+turned over on its shore. The stranger leaves his horse among the pines at the foot
+of the south trail and comes up on foot. He can win either way: kill the lot, or
+take the strongbox (two hands: slow, no gun; drop it to fight) back down to his
+horse. Planned, with the user (built so far: phase 1): 1 the place → 2 the two gangs
+(their own bodies and types, the hunters' Buntline; each on its own turf, their
+alarms their own) → 3 the strongbox and the way out → 4 footprints in the snow that
+the gang follows like blood, and falling snow that shortens everyone's sight → 5 the
+truce, and the stranger breaking it (framing one side, a street war; how blame and
+the count work is to be settled first) → 6 townsfolk, dressing, a line, tuning.
+For now San Miguel's gang stands in: the hardier sort at the hunters' end, the
+rabble at the outlaws', a pair on the saloon's porch, one walking the ice.
+
+The look: `tools/make_silencio.py` lays it out. The ground is baked white (the map's
+`"snow"`): main street and the cross streets trodden grey, slush where it's churned
+up, dead stalks through the drifts, and the pond's `"ice"` grey-blue, dusted, cracked,
+banked at the rim, its `"ice_holes"` black. The town is San Miguel's timber
+buildings and props, baked a second time under snow (`world.snowed`: white on every
+face that looks up, drifts against the foot of every wall), and the map's `"skin":
+"snow"` swaps each object's look for that one as the level loads, its wrecked
+states too, so nothing in the game that goes by an object's name changes. Its own
+things: log cabins with stone chimneys, pines (the trunk stops a man, the boughs
+fade like a building's), stacked firewood, stumps, reeds through the ice.
+
+The weather (the map's `"weather": "snow"`). It's snowing, out of a grey sky: no
+sun. The grade over the screen (`shaders/post.gdshader`, warm desert light
+everywhere else) goes cold, paler and flatter, and the snowy skins are baked under
+cloud (the faces turned from the sky not so dark, those towards it not so bright,
+their shadows faint). The flakes (`scripts/snowfall.gd`) are in the world, so they
+pan with the town, wrapped round the view: three depths, the far ones fine, slow
+and faint, the near ones bigger and quicker with a grey underside so they show
+against the snow on the ground; all drifting east on the wind and swaying. Only
+looks for now, on dice of their own: what the snow does to a man's sight is
+phase 4's. For now the
+ice is ground like any other; anything it does (going through it, a blast breaking
+it under the gang) waits on the user. `tests/test_silencio.gd` checks the snow
+on everything, the pond at the edge, the ways from the horse, and a quiet spell.
 
 ## Controls
 

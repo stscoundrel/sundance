@@ -261,12 +261,14 @@ def project(P):
     return sx, sy
 
 
-def shade(cloud):
+def shade(cloud, overcast=False):
+    """Light on each point: the sun's, stepped to a few levels; under cloud the steps
+    close up (the faces turned from the sky not so dark, those towards it not so bright)."""
     N = _norm(cloud.N)
     facing = N @ VIEW
     d = N @ SUN
     d = np.where(facing < -0.05, -0.4, d)
-    lvl = 0.6 + 0.55 * np.clip(d, 0, 1)
+    lvl = (0.74 + 0.3 * np.clip(d, 0, 1)) if overcast else (0.6 + 0.55 * np.clip(d, 0, 1))
     idx = np.abs(lvl[:, None] - LEVELS[None, :]).argmin(1)
     f = LEVELS[idx]
     col = cloud.C * f[:, None]
@@ -276,7 +278,8 @@ def shade(cloud):
 
 
 def render(cloud, size=None, anchor=None, shadow=True, outline=True, edges=True,
-           scale=PIX, ground=None, shadow_alpha=96, pad=6, shadow_extra=None, want_slots=False, want_coord=None):
+           scale=PIX, ground=None, shadow_alpha=96, pad=6, shadow_extra=None, want_slots=False, want_coord=None,
+           overcast=False):
     """Render to an RGBA array. Returns (img, anchor) where anchor is the pixel of
     the model origin. ground: Cloud drawn first at ground level (pools, decals).
     want_coord: an axis (0 x, 1 y); also returns, per pixel, that coordinate of the
@@ -285,7 +288,7 @@ def render(cloud, size=None, anchor=None, shadow=True, outline=True, edges=True,
     sx, sy = project(P)
     sx, sy = sx * scale, sy * scale
     depth = P @ VIEW
-    col = shade(cloud)
+    col = shade(cloud, overcast)
 
     shp = None
     if shadow:

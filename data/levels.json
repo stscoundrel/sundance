@@ -40,6 +40,7 @@
              {"loads": 30, "groups": [{"from": "east scrub", "count": 12}, {"from": "north-east", "count": 6}]},
              {"loads": 35, "groups": [{"from": "east road", "count": 7}, {"from": "south-east", "count": 6}, {"from": "south", "count": 7}, {"from": "east road", "kinds": ["capitan", "abanderado"]}]},
              {"loads": 40, "groups": [{"from": "east road", "count": 8}, {"from": "south-east", "count": 5}, {"from": "east scrub", "count": 9}]}]},
+  {"id": "silencio", "name": "Silencio", "map": "res://data/silencio.json", "note": "Snowed in. Bounty hunters at one end, outlaws at the other."},
   {"id": "test_yard", "name": "Test yard", "map": "res://data/test_yard.json", "hidden": true, "note": "A bare yard: no streets, townsfolk, reserve, boot hill or holdouts."},
   {"id": "test_yard_5", "name": "Test yard", "map": "res://data/test_yard.json", "count": 5, "hidden": true},
   {"id": "test_yard_waves", "name": "Test yard", "map": "res://data/test_yard.json", "count": 4, "hidden": true,

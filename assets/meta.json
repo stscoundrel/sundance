@@ -740595,6 +740595,16 @@
      6.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/saloon.png",
+     "anchor": [
+      344,
+      276
+     ]
+    }
+   },
    "shutters": [
     {
      "file": "res://assets/sprites/world/shutters/saloon_0.png",
@@ -740750,7 +740760,6 @@
      "z": 3.5
     }
    ],
-   "paint": "wood",
    "glass": [
     {
      "file": "res://assets/sprites/world/glass/saloon_0.png",
@@ -741059,6 +741068,16 @@
      5.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/store.png",
+     "anchor": [
+      296,
+      191
+     ]
+    }
+   },
    "shutters": [
     {
      "file": "res://assets/sprites/world/shutters/store_0.png",
@@ -741129,7 +741148,6 @@
      "z": 1.0
     }
    ],
-   "paint": "wood",
    "glass": [
     {
      "file": "res://assets/sprites/world/glass/store_0.png",
@@ -741303,6 +741321,16 @@
      5.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/sheriff.png",
+     "anchor": [
+      296,
+      182
+     ]
+    }
+   },
    "lanterns": [
     {
      "file": "res://assets/sprites/world/lantern/sheriff_0.png",
@@ -741338,8 +741366,7 @@
       6.088
      ]
     }
-   ],
-   "paint": "wood"
+   ]
   },
   "bank": {
    "file": "res://assets/sprites/world/bank.png",
@@ -741367,6 +741394,16 @@
      6.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/bank.png",
+     "anchor": [
+      344,
+      252
+     ]
+    }
+   },
    "lanterns": [
     {
      "file": "res://assets/sprites/world/lantern/bank_0.png",
@@ -741402,8 +741439,7 @@
       7.087999999999999
      ]
     }
-   ],
-   "paint": "wood"
+   ]
   },
   "adobe_a": {
    "file": "res://assets/sprites/world/adobe_a.png",
@@ -741595,7 +741631,16 @@
      4.16
     ]
    ],
-   "paint": "wood"
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/church.png",
+     "anchor": [
+      342,
+      331
+     ]
+    }
+   }
   },
   "stable": {
    "file": "res://assets/sprites/world/stable.png",
@@ -741623,7 +741668,16 @@
      5.4
     ]
    ],
-   "paint": "wood"
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/stable.png",
+     "anchor": [
+      266,
+      196
+     ]
+    }
+   }
   },
   "water_tower": {
    "file": "res://assets/sprites/world/water_tower.png",
@@ -741664,7 +741718,16 @@
     ]
    ],
    "doors": [],
-   "paint": "wood"
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/water_tower.png",
+     "anchor": [
+      102,
+      247
+     ]
+    }
+   }
   },
   "gallows": {
    "file": "res://assets/sprites/world/gallows.png",
@@ -741714,6 +741777,16 @@
      6.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/hotel.png",
+     "anchor": [
+      344,
+      268
+     ]
+    }
+   },
    "shutters": [
     {
      "file": "res://assets/sprites/world/shutters/hotel_0.png",
@@ -741903,7 +741976,6 @@
      "z": 3.6
     }
    ],
-   "paint": "wood",
    "glass": [
     {
      "file": "res://assets/sprites/world/glass/hotel_0.png",
@@ -742266,6 +742338,16 @@
      4.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/barber.png",
+     "anchor": [
+      248,
+      172
+     ]
+    }
+   },
    "shutters": [
     {
      "file": "res://assets/sprites/world/shutters/barber_0.png",
@@ -742336,7 +742418,6 @@
      "z": 1.0
     }
    ],
-   "paint": "wood",
    "glass": [
     {
      "file": "res://assets/sprites/world/glass/barber_0.png",
@@ -742510,6 +742591,16 @@
      5.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/undertaker.png",
+     "anchor": [
+      296,
+      181
+     ]
+    }
+   },
    "shutters": [
     {
      "file": "res://assets/sprites/world/shutters/undertaker_0.png",
@@ -742580,7 +742671,6 @@
      "z": 1.0
     }
    ],
-   "paint": "wood",
    "glass": [
     {
      "file": "res://assets/sprites/world/glass/undertaker_0.png",
@@ -742754,6 +742844,16 @@
      4.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/assay.png",
+     "anchor": [
+      248,
+      182
+     ]
+    }
+   },
    "shutters": [
     {
      "file": "res://assets/sprites/world/shutters/assay_0.png",
@@ -742824,7 +742924,6 @@
      "z": 1.0
     }
    ],
-   "paint": "wood",
    "glass": [
     {
      "file": "res://assets/sprites/world/glass/assay_0.png",
@@ -742998,6 +743097,16 @@
      5.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/feed.png",
+     "anchor": [
+      296,
+      201
+     ]
+    }
+   },
    "shutters": [
     {
      "file": "res://assets/sprites/world/shutters/feed_0.png",
@@ -743068,7 +743177,6 @@
      "z": 1.0
     }
    ],
-   "paint": "wood",
    "glass": [
     {
      "file": "res://assets/sprites/world/glass/feed_0.png",
@@ -743242,6 +743350,16 @@
      4.4
     ]
    ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/gunsmith.png",
+     "anchor": [
+      248,
+      183
+     ]
+    }
+   },
    "shutters": [
     {
      "file": "res://assets/sprites/world/shutters/gunsmith_0.png",
@@ -743278,7 +743396,6 @@
      "z": 1.0
     }
    ],
-   "paint": "wood",
    "glass": [
     {
      "file": "res://assets/sprites/world/glass/gunsmith_0.png",
@@ -743472,7 +743589,32 @@
       13
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/crate.png",
+     "anchor": [
+      45,
+      51
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/crate_1.png",
+       "anchor": [
+        45,
+        51
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/crate_2.png",
+       "anchor": [
+        39,
+        13
+       ]
+      }
+     ]
+    }
+   }
   },
   "barrel": {
    "file": "res://assets/sprites/world/barrel.png",
@@ -743510,7 +743652,32 @@
       13
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/barrel.png",
+     "anchor": [
+      25,
+      46
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/barrel_1.png",
+       "anchor": [
+        33,
+        46
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/barrel_2.png",
+       "anchor": [
+        38,
+        13
+       ]
+      }
+     ]
+    }
+   }
   },
   "wagon": {
    "file": "res://assets/sprites/world/wagon.png",
@@ -743548,7 +743715,32 @@
       11
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/wagon.png",
+     "anchor": [
+      50,
+      52
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/wagon_1.png",
+       "anchor": [
+        51,
+        52
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/wagon_2.png",
+       "anchor": [
+        48,
+        11
+       ]
+      }
+     ]
+    }
+   }
   },
   "trough": {
    "file": "res://assets/sprites/world/trough.png",
@@ -743586,7 +743778,32 @@
       7
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/trough.png",
+     "anchor": [
+      33,
+      35
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/trough_1.png",
+       "anchor": [
+        33,
+        35
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/trough_2.png",
+       "anchor": [
+        19,
+        7
+       ]
+      }
+     ]
+    }
+   }
   },
   "coffin": {
    "file": "res://assets/sprites/world/coffin.png",
@@ -743624,7 +743841,32 @@
       9
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/coffin.png",
+     "anchor": [
+      31,
+      25
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/coffin_1.png",
+       "anchor": [
+        34,
+        25
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/coffin_2.png",
+       "anchor": [
+        42,
+        9
+       ]
+      }
+     ]
+    }
+   }
   },
   "hitch": {
    "file": "res://assets/sprites/world/hitch.png",
@@ -743646,7 +743888,16 @@
      0.2
     ]
    ],
-   "doors": []
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/hitch.png",
+     "anchor": [
+      13,
+      52
+     ]
+    }
+   }
   },
   "cactus": {
    "file": "res://assets/sprites/world/cactus.png",
@@ -743690,7 +743941,16 @@
      0.2
     ]
    ],
-   "doors": []
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/cross.png",
+     "anchor": [
+      13,
+      55
+     ]
+    }
+   }
   },
   "mound": {
    "file": "res://assets/sprites/world/mound.png",
@@ -743783,7 +744043,32 @@
      ]
     }
    ],
-   "fragile": true
+   "fragile": true,
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/chair.png",
+     "anchor": [
+      23,
+      52
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/chair_1.png",
+       "anchor": [
+        43,
+        17
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/chair_2.png",
+       "anchor": [
+        34,
+        13
+       ]
+      }
+     ]
+    }
+   }
   },
   "table": {
    "file": "res://assets/sprites/world/table.png",
@@ -743822,7 +744107,32 @@
      ]
     }
    ],
-   "fragile": true
+   "fragile": true,
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/table.png",
+     "anchor": [
+      33,
+      46
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/table_1.png",
+       "anchor": [
+        33,
+        43
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/table_2.png",
+       "anchor": [
+        36,
+        10
+       ]
+      }
+     ]
+    }
+   }
   },
   "coop": {
    "file": "res://assets/sprites/world/coop.png",
@@ -744717,7 +745027,16 @@
      0.25
     ]
    ],
-   "doors": []
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/headstone.png",
+     "anchor": [
+      14,
+      32
+     ]
+    }
+   }
   },
   "headstone_b": {
    "file": "res://assets/sprites/world/headstone_b.png",
@@ -744739,7 +745058,16 @@
      0.25
     ]
    ],
-   "doors": []
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/headstone_b.png",
+     "anchor": [
+      13,
+      33
+     ]
+    }
+   }
   },
   "stone_circle": {
    "file": "res://assets/sprites/world/stone_circle.png",
@@ -744821,7 +745149,32 @@
       12
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/crate_stack.png",
+     "anchor": [
+      45,
+      87
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/crate_stack_1.png",
+       "anchor": [
+        48,
+        87
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/crate_stack_2.png",
+       "anchor": [
+        43,
+        12
+       ]
+      }
+     ]
+    }
+   }
   },
   "upturned_n": {
    "file": "res://assets/sprites/world/upturned_n.png",
@@ -744859,7 +745212,32 @@
       5
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/upturned_n.png",
+     "anchor": [
+      32,
+      42
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/upturned_n_1.png",
+       "anchor": [
+        32,
+        42
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/upturned_n_2.png",
+       "anchor": [
+        32,
+        5
+       ]
+      }
+     ]
+    }
+   }
   },
   "upturned_s": {
    "file": "res://assets/sprites/world/upturned_s.png",
@@ -744897,7 +745275,32 @@
       19
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/upturned_s.png",
+     "anchor": [
+      35,
+      37
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/upturned_s_1.png",
+       "anchor": [
+        38,
+        37
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/upturned_s_2.png",
+       "anchor": [
+        40,
+        19
+       ]
+      }
+     ]
+    }
+   }
   },
   "upturned_w": {
    "file": "res://assets/sprites/world/upturned_w.png",
@@ -744935,7 +745338,32 @@
       12
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/upturned_w.png",
+     "anchor": [
+      64,
+      42
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/upturned_w_1.png",
+       "anchor": [
+        64,
+        42
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/upturned_w_2.png",
+       "anchor": [
+        64,
+        12
+       ]
+      }
+     ]
+    }
+   }
   },
   "upturned_e": {
    "file": "res://assets/sprites/world/upturned_e.png",
@@ -744973,7 +745401,32 @@
       8
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/upturned_e.png",
+     "anchor": [
+      61,
+      37
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/upturned_e_1.png",
+       "anchor": [
+        61,
+        37
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/upturned_e_2.png",
+       "anchor": [
+        51,
+        8
+       ]
+      }
+     ]
+    }
+   }
   },
   "keg": {
    "file": "res://assets/sprites/world/keg.png",
@@ -745890,7 +746343,16 @@
      0.8
     ]
    ],
-   "doors": []
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/rock.png",
+     "anchor": [
+      36,
+      12
+     ]
+    }
+   }
   },
   "rock_b": {
    "file": "res://assets/sprites/world/rock_b.png",
@@ -745912,7 +746374,16 @@
      0.6
     ]
    ],
-   "doors": []
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/rock_b.png",
+     "anchor": [
+      29,
+      16
+     ]
+    }
+   }
   },
   "carreta_0": {
    "file": "res://assets/sprites/world/carreta_0.png",
@@ -745986,7 +746457,16 @@
      1.3
     ]
    ],
-   "doors": []
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/rock_c.png",
+     "anchor": [
+      54,
+      21
+     ]
+    }
+   }
   },
   "wagon_over": {
    "file": "res://assets/sprites/world/wagon_over.png",
@@ -746024,7 +746504,32 @@
       -1
      ]
     }
-   ]
+   ],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/wagon_over.png",
+     "anchor": [
+      76,
+      55
+     ],
+     "states": [
+      {
+       "file": "res://assets/sprites/world/snow/wagon_over_1.png",
+       "anchor": [
+        76,
+        55
+       ]
+      },
+      {
+       "file": "res://assets/sprites/world/snow/wagon_over_2.png",
+       "anchor": [
+        97,
+        -1
+       ]
+      }
+     ]
+    }
+   }
   },
   "sacks": {
    "file": "res://assets/sprites/world/sacks.png",
@@ -746046,7 +746551,16 @@
      0.6
     ]
    ],
-   "doors": []
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/sacks.png",
+     "anchor": [
+      24,
+      16
+     ]
+    }
+   }
   },
   "handcar": {
    "file": "res://assets/sprites/world/handcar.png",
@@ -746211,6 +746725,507 @@
      ]
     }
    ]
+  },
+  "pine": {
+   "file": "res://assets/sprites/world/pine.png",
+   "anchor": [
+    64,
+    200
+   ],
+   "footprint": [
+    1.8,
+    1.8
+   ],
+   "collide": "post",
+   "fade": true,
+   "colliders": [
+    [
+     0.75,
+     0.75,
+     1.05,
+     1.05
+    ]
+   ],
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/pine.png",
+     "anchor": [
+      64,
+      200
+     ]
+    }
+   }
+  },
+  "pine_b": {
+   "file": "res://assets/sprites/world/pine_b.png",
+   "anchor": [
+    53,
+    189
+   ],
+   "footprint": [
+    1.8,
+    1.8
+   ],
+   "collide": "post",
+   "fade": true,
+   "colliders": [
+    [
+     0.77,
+     0.77,
+     1.03,
+     1.03
+    ]
+   ],
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/pine_b.png",
+     "anchor": [
+      53,
+      189
+     ]
+    }
+   }
+  },
+  "cabin": {
+   "file": "res://assets/sprites/world/cabin.png",
+   "anchor": [
+    229,
+    194
+   ],
+   "footprint": [
+    4,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     4,
+     4
+    ]
+   ],
+   "doors": [
+    [
+     2.0,
+     4.4
+    ]
+   ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/cabin.png",
+     "anchor": [
+      229,
+      194
+     ]
+    }
+   },
+   "shutters": [
+    {
+     "file": "res://assets/sprites/world/shutters/cabin_0.png",
+     "cell": [
+      83,
+      86
+     ],
+     "frames": 4,
+     "anchor": [
+      199,
+      -9
+     ],
+     "at": [
+      0.8400000000000001,
+      4.0
+     ],
+     "z": 1.0
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/cabin_1.png",
+     "cell": [
+      83,
+      89
+     ],
+     "frames": 4,
+     "anchor": [
+      -60,
+      -34
+     ],
+     "at": [
+      4.0,
+      2.0
+     ],
+     "z": 1.0
+    }
+   ],
+   "glass": [
+    {
+     "file": "res://assets/sprites/world/glass/cabin_0.png",
+     "cell": [
+      30,
+      52
+     ],
+     "frames": 1,
+     "anchor": [
+      167,
+      -22
+     ],
+     "shutter": 0,
+     "span": [
+      [
+       0.48,
+       4.0
+      ],
+      [
+       1.2,
+       4.0
+      ]
+     ],
+     "z": [
+      1.0,
+      1.9
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/glass/cabin_1.png",
+     "cell": [
+      31,
+      52
+     ],
+     "frames": 1,
+     "anchor": [
+      -81,
+      -50
+     ],
+     "shutter": 1,
+     "span": [
+      [
+       4.0,
+       1.64
+      ],
+      [
+       4.0,
+       2.3600000000000003
+      ]
+     ],
+     "z": [
+      1.0,
+      1.9
+     ]
+    }
+   ]
+  },
+  "cabin_b": {
+   "file": "res://assets/sprites/world/cabin_b.png",
+   "anchor": [
+    229,
+    186
+   ],
+   "footprint": [
+    5,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     5,
+     4
+    ]
+   ],
+   "doors": [
+    [
+     2.5,
+     4.4
+    ]
+   ],
+   "paint": "wood",
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/cabin_b.png",
+     "anchor": [
+      229,
+      186
+     ]
+    }
+   },
+   "shutters": [
+    {
+     "file": "res://assets/sprites/world/shutters/cabin_b_0.png",
+     "cell": [
+      83,
+      86
+     ],
+     "frames": 4,
+     "anchor": [
+      199,
+      -9
+     ],
+     "at": [
+      0.8400000000000001,
+      4.0
+     ],
+     "z": 1.0
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/cabin_b_1.png",
+     "cell": [
+      83,
+      89
+     ],
+     "frames": 4,
+     "anchor": [
+      -108,
+      -58
+     ],
+     "at": [
+      5.0,
+      2.0
+     ],
+     "z": 1.0
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/cabin_b_2.png",
+     "cell": [
+      79,
+      89
+     ],
+     "frames": 4,
+     "anchor": [
+      39,
+      -86
+     ],
+     "at": [
+      4.16,
+      4.0
+     ],
+     "z": 1.0
+    }
+   ],
+   "glass": [
+    {
+     "file": "res://assets/sprites/world/glass/cabin_b_0.png",
+     "cell": [
+      30,
+      52
+     ],
+     "frames": 1,
+     "anchor": [
+      167,
+      -22
+     ],
+     "shutter": 0,
+     "span": [
+      [
+       0.48,
+       4.0
+      ],
+      [
+       1.2,
+       4.0
+      ]
+     ],
+     "z": [
+      1.0,
+      1.9
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/glass/cabin_b_1.png",
+     "cell": [
+      31,
+      52
+     ],
+     "frames": 1,
+     "anchor": [
+      -129,
+      -74
+     ],
+     "shutter": 1,
+     "span": [
+      [
+       5.0,
+       1.64
+      ],
+      [
+       5.0,
+       2.3600000000000003
+      ]
+     ],
+     "z": [
+      1.0,
+      1.9
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/glass/cabin_b_2.png",
+     "cell": [
+      30,
+      51
+     ],
+     "frames": 1,
+     "anchor": [
+      8,
+      -102
+     ],
+     "shutter": 2,
+     "span": [
+      [
+       3.8,
+       4.0
+      ],
+      [
+       4.5200000000000005,
+       4.0
+      ]
+     ],
+     "z": [
+      1.0,
+      1.9
+     ]
+    }
+   ]
+  },
+  "woodpile": {
+   "file": "res://assets/sprites/world/woodpile.png",
+   "anchor": [
+    34,
+    43
+   ],
+   "footprint": [
+    1.8,
+    0.8
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.8,
+     0.8
+    ]
+   ],
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/woodpile.png",
+     "anchor": [
+      34,
+      43
+     ]
+    }
+   }
+  },
+  "boat_over": {
+   "file": "res://assets/sprites/world/boat_over.png",
+   "anchor": [
+    24,
+    2
+   ],
+   "footprint": [
+    2.5,
+    0.8
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     2.5,
+     0.8
+    ]
+   ],
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/boat_over.png",
+     "anchor": [
+      24,
+      2
+     ]
+    }
+   }
+  },
+  "stump": {
+   "file": "res://assets/sprites/world/stump.png",
+   "anchor": [
+    20,
+    25
+   ],
+   "footprint": [
+    0.6,
+    0.6
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.6,
+     0.6
+    ]
+   ],
+   "doors": [],
+   "skins": {
+    "snow": {
+     "file": "res://assets/sprites/world/snow/stump.png",
+     "anchor": [
+      20,
+      25
+     ]
+    }
+   }
+  },
+  "reeds": {
+   "file": "res://assets/sprites/world/reeds.png",
+   "anchor": [
+    30,
+    49
+   ],
+   "footprint": [
+    0.75,
+    0.75
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.75,
+     0.75
+    ]
+   ],
+   "doors": []
+  },
+  "reeds_b": {
+   "file": "res://assets/sprites/world/reeds_b.png",
+   "anchor": [
+    23,
+    45
+   ],
+   "footprint": [
+    0.75,
+    0.75
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.75,
+     0.75
+    ]
+   ],
+   "doors": []
   }
  },
  "tumbleweed": {
@@ -747748,5 +748763,12 @@
     23
    ]
   }
- ]
+ ],
+ "ground_silencio": {
+  "file": "res://assets/sprites/ground_silencio.png",
+  "origin": [
+   -1280,
+   -128
+  ]
+ }
 }

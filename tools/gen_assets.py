@@ -90,6 +90,10 @@ ADOBE = {"adobe_a", "adobe_b", "cantina", "wall_x8", "wall_x4", "wall_y8", "wall
          "bastion", "chapel", "barracks", "casa_grande", "jacal", "jacal_b"}
 
 
+# Silencio's sky: snow falling out of cloud, so its skins are lit flat, their shadows faint.
+OVERCAST = {"overcast": True, "shadow_alpha": 40}
+
+
 def gen_world(meta):
     # SUNDANCE_OBJECTS=coop,hencrate re-bakes only those objects and keeps the rest.
     only = [o for o in os.environ.get("SUNDANCE_OBJECTS", "").split(",") if o]
@@ -130,6 +134,18 @@ def gen_world(meta):
                 im, anc = render(sm, edges=True)
                 meta["objects"][name]["states"].append({"file": save(im, f"sprites/world/{name}_{i + 1}.png"),
                                                         "anchor": list(anc)})
+        if name in world.SNOWY:   # Silencio's look: the same thing under snow (a map's "skin")
+            seed = sum(map(ord, name))
+            im, anc = render(world.snowed(model, seed, **world.SNOWY[name]), edges=True, **OVERCAST)
+            skin = {"file": save(im, f"sprites/world/snow/{name}.png"), "anchor": list(anc)}
+            looks = world.FRAGILE[name]()[1:] if name in world.FRAGILE \
+                else world.prop_states(name)[1:] if name in world.BREAKABLE else []
+            if looks:
+                skin["states"] = []
+                for i, sm in enumerate(looks):
+                    im, anc = render(world.snowed(sm, seed, **world.SNOWY[name]), edges=True, **OVERCAST)
+                    skin["states"].append({"file": save(im, f"sprites/world/snow/{name}_{i + 1}.png"), "anchor": list(anc)})
+            meta["objects"][name]["skins"] = {"snow": skin}
         if world.WINDOWS:
             meta["objects"][name]["shutters"] = _shutters(name, list(world.WINDOWS), model)
             panes = [i for i, g in enumerate(world.GLAZED) if g]
@@ -346,6 +362,14 @@ def gen_ground(meta, level, key="ground"):
     sand = np.array([[166, 124, 84], [182, 140, 96], [196, 156, 108], [210, 172, 122]], np.float32)
     dirt = np.array([[132, 96, 66], [146, 108, 74], [158, 118, 82], [170, 130, 90]], np.float32)
     mud = np.array([[74, 52, 38], [88, 62, 44], [102, 74, 52]], np.float32)
+    haze = np.array([150, 112, 80])
+    snow = level.get("snow", False)
+    if snow:   # Silencio: snow for sand, the streets trodden grey, slush for mud, a white haze
+        sand = np.array([[204, 212, 226], [216, 223, 235], [227, 233, 242], [238, 242, 248]], np.float32)
+        dirt = np.array([[164, 160, 160], [178, 175, 174], [192, 190, 190], [206, 205, 206]], np.float32)
+        mud = np.array([[112, 100, 92], [128, 116, 106], [144, 134, 124]], np.float32)
+        haze = np.array([200, 208, 222])
+    ice = np.array([[132, 160, 178], [146, 172, 190], [160, 186, 202]], np.float32)
     xs = np.arange(W, dtype=np.float32)
     band = 256
     for y_start in range(0, H, band):
@@ -363,7 +387,7 @@ def gen_ground(meta, level, key="ground"):
         img = sand[np.clip((tone - 0.25) / 0.5 * 4, 0, 3.99).astype(int)]
         inside = (gx >= 0) & (gx < N) & (gy >= 0) & (gy < N)
 
-        for bx0, by0, bx1, by1 in level.get("boothills", [level["boothill"]] if "boothill" in level else []):
+        for bx0, by0, bx1, by1 in [] if snow else level.get("boothills", [level["boothill"]] if "boothill" in level else []):
             bh = (gx > bx0) & (gx < bx1) & (gy > by0) & (gy < by1)
             img[bh] = img[bh] * 0.9 + np.array([170, 100, 70]) * 0.1
 
@@ -400,6 +424,28 @@ def gen_ground(meta, level, key="ground"):
             img[puddle] = np.array([104, 104, 94], np.float32) * (0.9 + 0.15 * n_small[puddle])[:, None]
             img[puddle & (fine > 0.93)] = (150, 150, 136)
 
+        # frozen water: grey-blue ice, dusted with snow in drifts, cracked, a pale
+        # rim where the snow's banked up on the shore; holes cut through it, black
+        for cx, cy, rx, ry in level.get("ice", []):
+            dd = np.hypot((gx - cx) / rx, (gy - cy) / ry) + (n_mid - 0.5) * 0.25 + (n_small - 0.5) * 0.08
+            core = dd < 1.0
+            if not core.any():
+                continue
+            it = np.clip(0.75 * n_big + 0.35 * n_mid - 0.1 + 0.05 * fine, 0, 1)[core][:, None]   # (smooth: stepped tones went blotchy)
+            img[core] = ice[0] + (ice[2] - ice[0]) * it
+            dust = np.clip((n_mid * 0.8 + n_small * 0.3 - 0.62 - 0.25 * (1 - dd)) / 0.2, 0, 1)[core][:, None]
+            img[core] = img[core] * (1 - 0.6 * dust) + sand[1] * 0.6 * dust
+            crack = core & ((np.abs(n_small - 0.5) < 0.012) | (np.abs(lnoise(xs, ys, 40 * K, 5) - 0.5) < 0.008))
+            img[crack] *= 0.72
+            glint = core & (fine > 0.996)
+            img[glint] = (236, 244, 250)
+            rim = (dd >= 1.0) & (dd < 1.07)
+            img[rim] = img[rim] * 0.8 + np.array([150, 160, 176]) * 0.2
+        for hx, hy in level.get("ice_holes", []):
+            dd = np.hypot(gx - hx, gy - hy) + (n_small - 0.5) * 0.08
+            img[dd < 0.42] = (238, 242, 248)                         # the chips heaped round it
+            img[dd < 0.3] = np.array([30, 40, 50]) + 14 * n_small[dd < 0.3][:, None]
+
         # the railroad: ballast, ties and two rails; where it's been torn up ("gaps"),
         # the rails gone, the ties scattered, the ballast kicked about
         gravel = np.array([[70, 64, 60], [82, 76, 70], [96, 88, 80]], np.float32)   # dark, cindery: it doesn't read as sand
@@ -434,7 +480,7 @@ def gen_ground(meta, level, key="ground"):
 
         dist = np.maximum.reduce([-gx, gx - N, -gy, gy - N, np.zeros_like(gx)])
         fade = np.clip(dist / M, 0, 1)
-        img = img * (1 - 0.35 * fade[..., None]) + np.array([150, 112, 80]) * 0.35 * fade[..., None]
+        img = img * (1 - 0.35 * fade[..., None]) + haze * 0.35 * fade[..., None]
         border = inside & ((np.minimum.reduce([gx, N - gx, gy, N - gy])) < 0.06)
         img[border] *= 0.9
         out[y_start:y_start + h] = np.clip(img, 0, 255).astype(np.uint8)
@@ -448,7 +494,8 @@ def gen_ground(meta, level, key="ground"):
             for _ in range(rng.integers(4, 10)):
                 dx = int(rng.integers(-2 * K, 2 * K + 1))
                 hgt = int(rng.integers(1, 3 * K + 1))
-                col = (134, 128, 66) if rng.random() < 0.5 else (110, 104, 56)
+                col = ((134, 128, 66) if rng.random() < 0.5 else (110, 104, 56)) if not snow \
+                    else ((120, 100, 72) if rng.random() < 0.5 else (92, 78, 60))   # (dead stalks up through the snow)
                 for j in range(hgt):
                     yy, xx = y - j, x + dx + (j * np.sign(dx) if hgt > 2 else 0)
                     if 0 <= yy < H and 0 <= xx < W:

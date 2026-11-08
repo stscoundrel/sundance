@@ -52,6 +52,7 @@ var quiet_after := 45.0             # seconds without gunfire or a fight before 
 var last_gunfire := -1e9
 var last_gunfire_at := Vector2.INF
 var director: Director = null   # a level's waves, if it has any
+var snowfall: Snowfall = null   # a snowy map's weather (see Snowfall), if it has any
 var hanging: Hanging = null     # a man on the gallows to save, if the level has one
 var captive: Captive = null     # a man tied to a pole, if the level has one
 var cargo: Cargo = null         # the arms to be carried off, if the level has them (it's won at the wagon)
@@ -322,6 +323,11 @@ func _load_level() -> void:
 			level_entry = l
 	level_pick = maxi(0, levels.find(level_entry))
 	level = _load_json(level_entry["map"])
+	if level.has("skin"):   # Silencio's town is San Miguel's under snow: the same things, baked white on top
+		for m in meta["objects"].values():
+			var sk: Dictionary = m.get("skins", {}).get(level["skin"], {})
+			for k in sk:
+				m[k] = sk[k]
 	if level_entry.has("count"):   # (dealt out once the town's built: see _spawn_actors)
 		var n := int(level_entry["count"])
 		var gang: Array = level["enemies"]
@@ -1052,6 +1058,13 @@ func _build_overlay() -> void:
 	mat.shader = POST_SHADER
 	post.material = mat
 	post_layer.add_child(post)
+	if level.get("weather", "") == "snow":   # Silencio: cloud, cold and flat, and the snow coming down out of it
+		mat.set_shader_parameter("tint", Vector3(0.97, 1.0, 1.05))
+		mat.set_shader_parameter("sat", 0.62)
+		mat.set_shader_parameter("contrast", 0.94)
+		mat.set_shader_parameter("lift", 0.05)
+		snowfall = Snowfall.new()
+		add_child(snowfall)
 
 	hud_layer = CanvasLayer.new()
 	hud_layer.layer = 10
