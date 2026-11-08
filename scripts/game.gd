@@ -65,7 +65,10 @@ var haze := Vector2.ONE
 # A gang with a coordinator (El General: "coordinator" in his type) fights to his
 # orders while he lives: the alarm sends men out and falls back on a holdout. Down
 # he goes, and it's over: no more orders, every man shaken, the faint-hearted run.
-var leaderless := false
+# (Each gang's own: see `gangs`. This is the one gang's, or the unnamed one's.)
+var leaderless: bool:
+	get: return gangs[""]["leaderless"]
+	set(v): gangs[""]["leaderless"] = v
 var flags: Array[Dictionary] = []   # colours lying in the dirt: {at, rec}
 var said_line := false   # the level's line, said
 const FLAG_SEEN := 300.0    # px: men this near see the colours go down (or up again)
@@ -802,7 +805,7 @@ func _build_world() -> void:
 			good.append(p)
 	cover_points = good
 
-	for i in 5:
+	for i in (0 if level.get("weather", "") == "snow" else 5):   # (no tumbleweed blows through the snow)
 		var tw := Tumbleweed.new()
 		tw.setup(self, Iso.to_screen(Vector2(randf_range(0, size), randf_range(0, size))))
 		world.add_child(tw)
@@ -822,6 +825,8 @@ func _add_enemy(kind: String, pos: Vector2, patrol: PackedVector2Array, facing_d
 	var en := Enemy.new()
 	world.add_child(en)
 	en.setup(self, kind, pos, patrol, facing_deg, overrides)
+	if not gangs.has(en.gang):
+		gangs[en.gang] = _gang_state()
 	en.died.connect(_on_enemy_died)
 	enemies.append(en)
 	return en
@@ -1270,12 +1275,57 @@ const SEND_EVERY := 30.0       # s before each group sends another pair
 const FORTIFY_LOSS := 0.33     # of the gang down: time to fall back
 const GROUP := 220.0           # px: men this close together are one post
 const FAR := 350.0             # px from the fight: out of it
-var alarm := 0.0
-var alarm_stage := 0
+# Two gangs in one town (Silencio's hunters and outlaws: a type's "gang") keep
+# each their own alarm, their own losses, their own holdout and their own head.
+# Trouble at the other end of town puts a gang on edge, no more: it watches its
+# own ground (OTHER_END: uneasy, never sending men out or falling back), and a
+# leader's death breaks only his own. Everywhere else there's the one gang, "",
+# whose state these names below are.
+const OTHER_END := SEND - 5.0
+var gangs := {"": _gang_state()}
 var alarm_cd := 0.0
-var send_cd := 0.0
-var fallen := 0                # dead or downed
-var holdout: Dictionary = {}   # (for tools/profile: how hard the queries are worked)
+var alarm: float:
+	get: return gangs[""]["alarm"]
+	set(v): gangs[""]["alarm"] = v
+var alarm_stage: int:
+	get: return gangs[""]["stage"]
+	set(v): gangs[""]["stage"] = v
+var send_cd: float:
+	get: return gangs[""]["send_cd"]
+	set(v): gangs[""]["send_cd"] = v
+var fallen: int:               # dead or downed
+	get: return gangs[""]["fallen"]
+	set(v): gangs[""]["fallen"] = v
+var holdout: Dictionary:
+	get: return gangs[""]["holdout"]
+	set(v): gangs[""]["holdout"] = v
+
+
+static func _gang_state() -> Dictionary:
+	return {"alarm": 0.0, "stage": 0, "send_cd": 0.0, "fallen": 0, "holdout": {}, "leaderless": false}
+
+
+## The gang a man's in ("" if the level has the one).
+static func gang_of(a: Node) -> String:
+	return a.gang if a is Enemy else ""
+
+
+## The gang whose men are nearest this spot: whose trouble it is.
+func gang_near(at: Vector2) -> String:
+	var best := ""
+	var best_d := INF
+	for e in enemies:
+		if e.alive and e.global_position.distance_to(at) < best_d:
+			best_d = e.global_position.distance_to(at)
+			best = e.gang
+	return best
+
+
+## Living men of this gang.
+func alive_in(g: String) -> int:
+	return enemies.filter(func(e): return e.alive and e.gang == g).size()
+
+# (for tools/profile: how hard the queries are worked)
 
 
 func ray(from: Vector2, to: Vector2, mask: int, exclude: Array[RID] = [], areas := false) -> Dictionary:
@@ -1798,14 +1848,18 @@ func in_hand(a: Actor) -> bool:
 
 ## Their general down: the gang's lost its head.
 func lose_the_head(who: Enemy) -> void:
-	if leaderless:
+	var gs: Dictionary = gangs[who.gang]
+	if gs["leaderless"]:
 		return
-	leaderless = true
-	hud.banner("¡Mataron al general!  The garrison's lost its head!")
+	gs["leaderless"] = true
+	if who.gang == "":
+		hud.banner("¡Mataron al general!  The garrison's lost its head!")
+	else:
+		hud.banner("%s is dead!  The %s have lost their head!" % [who.tdata["name"], who.gang])
 	sfx("sting", null, -6.0, 0.0)
 	stats["lost its head"] = stats.get("lost its head", 0) + 1
 	for e in enemies:
-		if e.alive and e != who:
+		if e.alive and e != who and e.gang == who.gang:   # (the other gang's only glad of it)
 			e.lose_heart()
 
 
@@ -2011,7 +2065,7 @@ func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void
 				rally("gunfire")
 	if kind == "shot" and source == player:
 		_note_fire(player.global_position)
-	raise_alarm({"shot": 1.0, "enemy_shot": 0.3, "blast": 6.0}.get(kind, 0.0))
+	raise_alarm({"shot": 1.0, "enemy_shot": 0.3, "blast": 6.0}.get(kind, 0.0), pos)
 	if kind == "shot":
 		player_fired = true
 		report_sighting(pos)   # his muzzle flash and the crack give him away
@@ -2029,7 +2083,7 @@ func make_noise(pos: Vector2, radius: float, kind: String, source: Node) -> void
 
 func alert_allies(caller: Enemy, radius: float, target: Vector2) -> void:
 	for e in enemies:
-		if e != caller and e.alive and e.global_position.distance_to(caller.global_position) < radius:
+		if e != caller and e.alive and e.gang == caller.gang and e.global_position.distance_to(caller.global_position) < radius:
 			e.alert_to(target)
 
 
@@ -2050,7 +2104,8 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 
 
 func _on_enemy_died(e: Actor) -> void:
-	fallen += 1
+	var side := gang_of(e)
+	gangs[side]["fallen"] += 1
 	if e.killer == player:
 		stats["his kills"] = stats.get("his kills", 0) + 1
 		if player.down:   # from the dirt: and a man coming to finish him, or an officer, is a blow to them
@@ -2060,7 +2115,7 @@ func _on_enemy_died(e: Actor) -> void:
 				for o in enemies:
 					if o.alive and o.global_position.distance_to(e.global_position) < 200.0:
 						o.shaken = minf(1.0, o.shaken + 0.4)
-	raise_alarm(5.0)
+	raise_alarm(5.0, e.global_position, side)
 	if e is Enemy and e.tdata.get("coordinator", false):
 		lose_the_head(e)
 	elif e is Enemy and e.tdata.get("commander", false):
@@ -2070,7 +2125,7 @@ func _on_enemy_died(e: Actor) -> void:
 	if e is Enemy and e.killer == player and player.gun:
 		_gun_fright(e.global_position)
 	if e.has_meta("scout") and e.alarm_role == "scout":
-		raise_alarm(10.0)   # sent to look, and never came back
+		raise_alarm(10.0, e.global_position, side)   # sent to look, and never came back
 		stats["scouts lost"] = stats.get("scouts lost", 0) + 1
 	if e.killer == player and not spot_at(player.global_position).is_empty():
 		spot_at(player.global_position)["kills"] += 1
@@ -3116,46 +3171,65 @@ func drip(a: Actor, at: Vector2) -> void:
 
 # ------------------------------------------------------------------ the gang's alarm
 
-func raise_alarm(amount: float) -> void:
-	if amount > 0.0 and not Engine.has_meta("no_alarm"):
+## `at`: where it happened, and `own`: whose trouble it is (else the gang nearest
+## it); the other gang only gets uneasy over it.
+func raise_alarm(amount: float, at := Vector2.INF, own := "?") -> void:
+	if amount <= 0.0 or Engine.has_meta("no_alarm"):
+		return
+	if gangs.size() == 1:
 		alarm += amount
+		return
+	var theirs := own if own != "?" else (gang_near(at) if at != Vector2.INF else "?")
+	for g in gangs:
+		var gs: Dictionary = gangs[g]
+		if theirs == "?" or g == theirs:
+			gs["alarm"] += amount
+		elif gs["alarm"] < OTHER_END:
+			gs["alarm"] = minf(gs["alarm"] + amount, OTHER_END)
 
 
-## Men out of the fight, at their posts (or on their rounds) well away from it.
-func _far_from_fight() -> Array:
+## Men of this gang out of the fight, at their posts (or on their rounds) well away from it.
+func _far_from_fight(g := "") -> Array:
 	var out := []
 	for e in enemies:
-		if e.alive and e.revealed and not e.in_posse and e.st in [Enemy.St.GUARD, Enemy.St.PATROL, Enemy.St.RETURN] \
+		if e.alive and e.gang == g and e.revealed and not e.in_posse and e.st in [Enemy.St.GUARD, Enemy.St.PATROL, Enemy.St.RETURN] \
 				and e.global_position.distance_to(seen_pos) > FAR:
 			out.append(e)
 	return out
 
 
 func _gang_alarm(delta: float) -> void:
-	if leaderless:
+	for g in gangs:
+		_one_gang_alarm(g, gangs[g], delta)
+
+
+func _one_gang_alarm(g: String, gs: Dictionary, delta: float) -> void:
+	if gs["leaderless"]:
 		return   # nobody giving the orders now: every man for himself
 	if quiet_for() > 30.0:
-		alarm = maxf(0.0, alarm - 0.2 * delta)   # a long quiet: the nerves settle (a little)
-	if alarm < UNEASY or seen_pos == Vector2.ZERO:
+		gs["alarm"] = maxf(0.0, gs["alarm"] - 0.2 * delta)   # a long quiet: the nerves settle (a little)
+	if gs["alarm"] < UNEASY or seen_pos == Vector2.ZERO:
 		return
-	var far := _far_from_fight()
-	alarm_stage = maxi(alarm_stage, 1)
+	var far := _far_from_fight(g)
+	gs["stage"] = maxi(gs["stage"], 1)
 	for e in far:
 		e.get_uneasy(seen_pos)
 	# losing badly: the rest fall back to a holdout away from the fight
-	if fallen >= maxi(3, ceili(enemies.size() * FORTIFY_LOSS)) and not level.get("holdouts", []).is_empty():
-		if holdout.is_empty():
-			_pick_holdout()
+	var holdouts: Array = level.get("holdouts", []).filter(func(h): return h.get("gang", g) == g)
+	var men := enemies.filter(func(e): return e.gang == g).size()
+	if gs["fallen"] >= maxi(3, ceili(men * FORTIFY_LOSS)) and not holdouts.is_empty():
+		if gs["holdout"].is_empty():
+			_pick_holdout(g, gs, holdouts)
 		for e in far:
 			if e.alarm_role != "fortified":   # (scouts back at their posts too)
-				e.fortify(_holdout_spot(e), seen_pos)
-		alarm_stage = 3
+				e.fortify(_holdout_spot(e, gs["holdout"]), seen_pos)
+		gs["stage"] = 3
 		return
 	# a long fight: each post sends a pair to see what's going on
-	send_cd -= delta
-	if alarm >= SEND and send_cd <= 0.0:
-		send_cd = SEND_EVERY
-		alarm_stage = 2
+	gs["send_cd"] -= delta
+	if gs["alarm"] >= SEND and gs["send_cd"] <= 0.0:
+		gs["send_cd"] = SEND_EVERY
+		gs["stage"] = 2
 		for group in _posts(far):
 			if group.size() < 2:
 				continue   # a man alone holds his post
@@ -3181,28 +3255,31 @@ func _posts(men: Array) -> Array:
 	return out
 
 
-func _pick_holdout() -> void:
+func _pick_holdout(g: String, gs: Dictionary, holdouts: Array) -> void:
 	var best: Dictionary = {}
-	for h in level["holdouts"]:
+	for h in holdouts:
 		var at := Iso.to_screen(Vector2(h["x"], h["y"]))
 		if best.is_empty() or at.distance_to(seen_pos) > best["at"].distance_to(seen_pos):
 			best = {"name": h["name"], "at": at, "taken": []}
-	holdout = best
-	hud.banner("¡Al %s, muchachos!  The gang falls back to the %s!" % [best["name"], best["name"]])
+	gs["holdout"] = best
+	if g == "":
+		hud.banner("¡Al %s, muchachos!  The gang falls back to the %s!" % [best["name"], best["name"]])
+	else:
+		hud.banner("The %s fall back to the %s!" % [g, best["name"]])
 	stats["holdout"] = best["name"]
 
 
 ## A place at the holdout for him: cover near it nobody's taken, else open ground.
-func _holdout_spot(e: Enemy) -> Vector2:
-	var at: Vector2 = holdout["at"]
+func _holdout_spot(e: Enemy, ho: Dictionary) -> Vector2:
+	var at: Vector2 = ho["at"]
 	var best := Vector2.INF
 	for c in cover_points:
-		if c.distance_to(at) < 150.0 and not c in holdout["taken"] \
+		if c.distance_to(at) < 150.0 and not c in ho["taken"] \
 				and (best == Vector2.INF or c.distance_to(at) < best.distance_to(at)):
 			best = c
 	if best == Vector2.INF:
 		best = free_point_near(at, 60.0)
-	holdout["taken"].append(best)
+	ho["taken"].append(best)
 	return best
 
 
@@ -3213,8 +3290,8 @@ func comrades_to_tell(e: Enemy, threat: Vector2) -> Vector2:
 	var best := Vector2.INF
 	var best_d := 700.0
 	for o in enemies:
-		if o == e or not o.alive or not o.revealed or o.st == Enemy.St.COMBAT:
-			continue
+		if o == e or not o.alive or not o.revealed or o.st == Enemy.St.COMBAT or o.gang != e.gang:
+			continue   # (the news is for his own: the other gang can find out for itself)
 		var to: Vector2 = o.global_position - e.global_position
 		var d := to.length()
 		if d < best_d and d > 60.0 and to.normalized().dot(away) > -0.2:
@@ -3225,9 +3302,9 @@ func comrades_to_tell(e: Enemy, threat: Vector2) -> Vector2:
 
 ## He's made it to them: they all know now.
 func news(from: Enemy, threat: Vector2) -> void:
-	raise_alarm(8.0)
+	raise_alarm(8.0, from.global_position, from.gang)
 	for o in enemies:
-		if o != from and o.alive and o.revealed and o.st != Enemy.St.COMBAT \
+		if o != from and o.alive and o.revealed and o.st != Enemy.St.COMBAT and o.gang == from.gang \
 				and o.global_position.distance_to(from.global_position) < 160.0:
 			o.get_uneasy(threat)
 	stats["news brought"] = stats.get("news brought", 0) + 1
@@ -3255,7 +3332,7 @@ func _send_rescuers() -> void:
 		var best_d := Enemy.RESCUE_NEAR
 		for e in enemies:
 			if not e.alive or e.reaction != "" or e.runner_to != Vector2.INF or e.stick or not e.revealed \
-					or e.posted():   # (his place is at the gallows, or the pole)
+					or e.posted() or e.gang != d.gang:   # (his place is at the gallows, or the pole; the other gang leaves him there)
 				continue
 			var dist := e.global_position.distance_to(d.global_position)
 			if dist < best_d:

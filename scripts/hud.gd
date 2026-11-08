@@ -227,6 +227,8 @@ func _draw_status(p: Player) -> void:
 	draw_set_transform(Vector2.ZERO)
 	var n: int = game.alive_enemies()
 	var label := "%s  %d" % [game.level.get("foe_count", "BANDITS"), n]   # (a map may name its own: FEDERALES)
+	if game.level.has("gangs"):   # two gangs, a count each (Silencio: HUNTERS 12   OUTLAWS 16)
+		label = "     ".join(game.level["gangs"].map(func(g): return "%s  %d" % [g.to_upper(), game.alive_in(g)]))
 	_text(Vector2(0, 16), label, 12, INK, font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	if game.director:
 		_draw_waves(game.director)
@@ -675,7 +677,10 @@ func _draw_title() -> void:
 	draw_texture_rect(t, Rect2(Vector2(round(page.x / 2 - sz.x / 2), 110), sz), false, Color(1, 1, 1, a))
 	var town: String = game.level.get("name", "")
 	_text(Vector2(0, 100), "~ un western all'italiana ~", 10, Color(0.85, 0.7, 0.5, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	_text(Vector2(0, 196), "%s.  %d bandits.  One stranger." % [town, game.enemies.size() + (game.director.indoors() if game.director else 0)], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	var who := "%d bandits" % (game.enemies.size() + (game.director.indoors() if game.director else 0))
+	if game.level.has("gangs"):   # Silencio: "12 hunters, 16 outlaws"
+		who = ", ".join(game.level["gangs"].map(func(g): return "%d %s" % [game.alive_in(g), g]))
+	_text(Vector2(0, 196), "%s.  %s.  One stranger." % [town, who], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	var lines := [
 		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   E knife (hold: drag a body)   B bandage   1 2 3 guns",
 		"RMB: fan the Colt's hammer  /  fire both barrels of a double gun",

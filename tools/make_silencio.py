@@ -8,7 +8,7 @@ it), and between them the saloon, the store and the church are nobody's. A froze
 pond lies at the north-west edge, behind the outlaws' end. The stranger leaves his
 horse down the south trail, among the pines, and comes up it on foot.
 
-For now (phase 1) the gang is San Miguel's, standing in for both sides.
+Twelve hunters hold the east end, sixteen outlaws the west.
 
 Usage: tools/.venv/bin/python tools/make_silencio.py
 """
@@ -105,34 +105,56 @@ PINES = [("pine" if i % 3 else "pine_b", x, y) for i, (x, y) in enumerate(PINES)
 MUD = [[6.8, 31.0, 1.2], [28.0, 31.4, 1.4], [47.6, 31.0, 1.0], [17.0, 32.0, 1.0], [43.0, 47.4, 0.9],
        [22.0, 47.6, 0.9], [32.4, 50.6, 0.8]]
 
-# Stand-ins (phase 1): San Miguel's gang, the hardier sort at the hunters' end, the
-# rabble at the outlaws'.
-ENEMIES = [
-    # the outlaws' end
-    {"kind": "jefe", "x": 17.6, "y": 29.6, "facing": 90},   # at the hideout's door
-    {"kind": "bandido", "x": 13.0, "y": 29.8, "facing": 60},
-    {"kind": "bandido", "x": 5.0, "y": 32.4, "patrol": [[5.0, 32.4], [19.0, 32.4]]},
-    {"kind": "redscarf", "x": 21.8, "y": 26.4, "facing": 90},
-    {"kind": "redscarf", "x": 9.6, "y": 43.0, "facing": 270},
-    {"kind": "hillbilly", "x": 12.0, "y": 12.0, "patrol": [[12.0, 12.0], [5.0, 6.0]]},   # out on the ice
-    {"kind": "drunkard", "x": 16.4, "y": 41.8, "facing": 300},
-    {"kind": "pistolero", "x": 22.0, "y": 36.0, "patrol": [[22.0, 36.0], [22.0, 46.0]]},
-    {"kind": "bandido", "x": 18.0, "y": 47.4, "patrol": [[18.0, 47.4], [8.0, 47.4]]},
-    # nobody's: a pair on the saloon's porch
-    {"kind": "gambler", "x": 27.8, "y": 29.4, "facing": 100},
-    {"kind": "saloon_girl", "x": 29.2, "y": 29.4, "facing": 70},
-    # the hunters' end
-    {"kind": "rifleman", "x": 46.4, "y": 29.6, "facing": 180},
-    {"kind": "rifleman", "x": 56.0, "y": 29.6, "facing": 160},
-    {"kind": "gunslinger", "x": 43.0, "y": 31.6, "patrol": [[43.0, 31.6], [60.0, 31.6]]},
-    {"kind": "gunslinger", "x": 43.0, "y": 38.0, "patrol": [[43.0, 38.0], [43.0, 47.0]]},
-    {"kind": "poacher", "x": 47.0, "y": 20.6, "facing": 180},
-    {"kind": "cowboy", "x": 52.0, "y": 47.4, "patrol": [[52.0, 47.4], [58.0, 47.4]]},
-    {"kind": "pistolero", "x": 50.0, "y": 18.4, "patrol": [[50.0, 18.4], [58.0, 18.4]]},
-    {"kind": "cowboy", "x": 59.0, "y": 42.6, "facing": 200},
-]
+# The gangs. Facing, as the screen goes: west along main street 206, east 26,
+# north 334, south 154.
+W, E, NORTH, S = 206, 26, 334, 154
+# San Miguel's old timer, who'd fit either side: in winter colours, with no Spanish.
+OLD_HUNTER = {"gang": "hunters", "tongue": "english", "palettes": [
+    {"coat": [58, 56, 62], "shirt": [160, 152, 138], "trousers": [64, 62, 66], "boots": [36, 30, 26], "hat": [50, 46, 42],
+     "band": [30, 26, 24], "skin": [200, 146, 116], "hair": [222, 218, 208]}]}
+OLD_OUTLAW = {"gang": "outlaws", "tongue": "english", "palettes": [
+    {"coat": [112, 86, 62], "shirt": [120, 60, 50], "trousers": [84, 72, 58], "boots": [62, 46, 32], "hat": [92, 72, 52],
+     "band": [60, 46, 34], "skin": [196, 142, 110], "hair": [214, 210, 200]}]}
 
-HOLDOUTS = [{"name": "hideout", "x": 17.8, "y": 29.6}, {"name": "jail", "x": 47.5, "y": 29.6},
+# The bounty hunters, twelve, at the east end: the jail their headquarters, long
+# guns on the porches looking down main street, men walking their streets.
+HUNTERS = [
+    {"kind": "hunter_boss", "x": 48.0, "y": 29.8, "facing": W},                    # at the jail door
+    {"kind": "buntline", "x": 44.0, "y": 31.5, "facing": W},                       # out in the street, at the line
+    {"kind": "sharpshooter", "x": 52.0, "y": 29.7, "facing": W},                   # the hotel porch
+    {"kind": "sharpshooter", "x": 58.2, "y": 29.6, "facing": W},
+    {"kind": "sharpshooter", "x": 43.0, "y": 18.5, "facing": W},                   # the north street's corner
+    {"kind": "manhunter", "x": 46.0, "y": 32.6, "patrol": [[46.0, 32.6], [60.0, 32.6]]},
+    {"kind": "manhunter", "x": 43.0, "y": 36.0, "patrol": [[43.0, 36.0], [43.0, 46.0]]},
+    {"kind": "manhunter", "x": 46.0, "y": 18.6, "patrol": [[46.0, 18.6], [58.0, 18.6]]},
+    {"kind": "manhunter", "x": 46.0, "y": 47.6, "patrol": [[46.0, 47.6], [58.0, 47.6]]},
+    {"kind": "manhunter", "x": 49.0, "y": 42.0, "facing": S},                      # behind the bank
+    {"kind": "manhunter", "x": 26.4, "y": 29.6, "facing": E},                      # on the saloon's porch: nobody's ground
+    dict({"kind": "oldtimer", "x": 61.0, "y": 31.0, "facing": E}, **OLD_HUNTER),    # watching the valley road
+]
+# The outlaws, sixteen, at the west end: the chief at the hideout's door with his
+# heavies, trappers about the cabins and the streets, a woodsman over the pond.
+OUTLAWS = [
+    {"kind": "outlaw_chief", "x": 17.6, "y": 29.6, "facing": E},
+    {"kind": "mountainman", "x": 19.6, "y": 30.8, "facing": E},
+    {"kind": "mountainman", "x": 13.0, "y": 29.8, "facing": E},                    # at the feed barn
+    {"kind": "woodsman", "x": 19.0, "y": 9.0, "facing": W},                        # over the pond
+    {"kind": "woodsman", "x": 6.0, "y": 46.2, "facing": E},                        # the south street's end
+    {"kind": "trapper", "x": 2.0, "y": 32.6, "patrol": [[2.0, 32.6], [19.0, 32.6]]},
+    {"kind": "trapper", "x": 21.8, "y": 26.4, "facing": E},
+    {"kind": "trapper", "x": 12.0, "y": 12.0, "patrol": [[12.0, 12.0], [5.0, 6.0]]},   # out on the ice
+    {"kind": "trapper", "x": 9.6, "y": 43.0, "facing": NORTH},
+    {"kind": "trapper", "x": 22.0, "y": 36.0, "patrol": [[22.0, 36.0], [22.0, 46.0]]},
+    {"kind": "trapper", "x": 18.0, "y": 47.4, "patrol": [[18.0, 47.4], [8.0, 47.4]]},
+    {"kind": "trapper", "x": 1.2, "y": 30.8, "facing": W},                         # at the pass road
+    {"kind": "trappeur", "x": 5.5, "y": 23.0, "facing": S},
+    {"kind": "trappeur", "x": 10.6, "y": 21.6, "facing": S},
+    {"kind": "trappeur", "x": 29.6, "y": 29.8, "facing": W},                       # on the saloon's porch, across from the hunter
+    dict({"kind": "oldtimer", "x": 16.4, "y": 41.8, "facing": NORTH}, **OLD_OUTLAW),
+]
+ENEMIES = HUNTERS + OUTLAWS
+
+HOLDOUTS = [{"name": "hideout", "x": 17.8, "y": 29.6, "gang": "outlaws"}, {"name": "jail", "x": 47.5, "y": 29.6, "gang": "hunters"},
             {"name": "church", "x": 31.0, "y": 16.4}]
 ENTRIES = [{"name": "valley road", "x": 63.3, "y": 31.5}, {"name": "pass road", "x": 0.7, "y": 31.5},
            {"name": "south trail", "x": 32.5, "y": 63.3}]
@@ -160,6 +182,7 @@ def main():
         "objects": objects,
         "player": PLAYER,
         "enemies": ENEMIES,
+        "gangs": ["hunters", "outlaws"],
         "civilians": [],
         "holdouts": HOLDOUTS,
         "posts": posts,
@@ -167,8 +190,8 @@ def main():
         "center": CENTER,
         "posse": False,
     })
-    print("Silencio: %d buildings, %d props, %d pines, %d stand-in bandits, %d guard posts" % (
-        len(BUILDINGS_AT), len(PROPS), len(PINES), len(ENEMIES), len(posts)))
+    print("Silencio: %d buildings, %d props, %d pines, %d hunters, %d outlaws, %d guard posts" % (
+        len(BUILDINGS_AT), len(PROPS), len(PINES), len(HUNTERS), len(OUTLAWS), len(posts)))
 
 
 if __name__ == "__main__":

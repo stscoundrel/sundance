@@ -28,6 +28,7 @@ const LEASH := 140.0   # px: the hangman fights no further than this from his ga
 const LEASH_LOST := 3.0   # s without a sight of the stranger, and he's back to it
 
 var kind := "pistolero"
+var gang := ""   # whose side he's on, where a town has two (Silencio's "hunters", "outlaws"): his type's "gang"
 var flag_at := Vector2.INF   # the colours in the dirt, and him running to raise them
 var tdata: Dictionary     # his type, merged with defaults and placement overrides
 var stats: Dictionary     # {"keep": preferred range, "cadence": pause between shots}
@@ -310,6 +311,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	setup_body(g, pos)
 	kind = k
 	tdata = g.enemy_type(k, overrides)
+	gang = tdata.get("gang", "")
 	loadout = _pick_loadout()
 	var single: float = tdata.get("champion", 0.0)
 	if single > 0.0 and loadout.size() == 1 and loadout[0] in PISTOLS and not tdata.get("pistols_only", false) \
@@ -710,7 +712,7 @@ func fortify(spot: Vector2, at: Vector2) -> void:
 ## Made it to the others with the news?
 func _tell_news() -> bool:
 	for o in game.enemies:
-		if o != self and o.alive and o.revealed and o.st != St.COMBAT \
+		if o != self and o.alive and o.revealed and o.st != St.COMBAT and o.gang == gang \
 				and o.global_position.distance_to(global_position) < 50.0:
 			bearing_news = false
 			velocity = Vector2.ZERO
@@ -779,7 +781,7 @@ func _found_corpse(e: Enemy) -> void:
 	path_to(e.global_position)
 	_mark("!")
 	for o in game.enemies:
-		if o != self and o.alive and o.global_position.distance_to(global_position) < 220.0 and o.st != St.COMBAT:
+		if o != self and o.alive and o.gang == gang and o.global_position.distance_to(global_position) < 220.0 and o.st != St.COMBAT:
 			o.wary = true
 			o.start_investigate(e.global_position, true)
 
@@ -2004,7 +2006,7 @@ func start_rescue(d: Enemy) -> void:
 		_say(_line("rescue", RESCUE_LINES))
 	if game.staleness() < game.FRESH:
 		for o in game.enemies:
-			if o != self and o.alive and o.global_position.distance_to(global_position) < 260.0:
+			if o != self and o.alive and o.gang == gang and o.global_position.distance_to(global_position) < 260.0:
 				o.suppress(game.seen_pos, randf_range(3.0, 4.5))
 	_log("goes to get a downed man")
 

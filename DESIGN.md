@@ -417,8 +417,25 @@ alarms their own) → 3 the strongbox and the way out → 4 footprints in the sn
 the gang follows like blood, and falling snow that shortens everyone's sight → 5 the
 truce, and the stranger breaking it (framing one side, a street war; how blame and
 the count work is to be settled first) → 6 townsfolk, dressing, a line, tuning.
-For now San Miguel's gang stands in: the hardier sort at the hunters' end, the
-rabble at the outlaws', a pair on the saloon's porch, one walking the ice.
+Twelve hunters hold the east end: the boss at the jail door, the Buntline man out
+in the street at the line, sharpshooters on the porches looking down main street,
+manhunters walking their streets, the old timer watching the valley road. Sixteen
+outlaws hold the west: the chief at the hideout's door with his two mountain men,
+trappers about the cabins and the streets (one out on the ice), a woodsman over the
+pond, the old timer by the cabins. A hunter and a French trapper sit on the
+saloon's porch across from one another: nobody's ground. The HUD counts each gang
+(the map's `"gangs"`), and the old timer, who'd fit either side, comes in winter
+colours with no Spanish (the map entry's own `"gang"`, `"tongue"`, `"palettes"`).
+
+Each gang has its own alarm (`game.gangs`, by a type's `"gang"`): gunfire, a man
+down, a lost scout or news build it for the gang it happens to (the nearest, or the
+dead man's), while the other only gets uneasy over it (`OTHER_END`, under what sends
+men out): on edge, watching its own ground, never coming to help. Each counts its
+own fallen and falls back to its own holdout (the hideout, the jail; the church is
+either's), news and calls for help and rescues stay within a gang, and a leader's
+death breaks only his own: the other gang's only glad of it. Everywhere else
+there's the one gang, unnamed, and nothing changes. No tumbleweed blows through
+the snow.
 
 The look: `tools/make_silencio.py` lays it out. The ground is baked white (the map's
 `"snow"`): main street and the cross streets trodden grey, slush where it's churned
@@ -443,7 +460,8 @@ looks for now, on dice of their own: what the snow does to a man's sight is
 phase 4's. For now the
 ice is ground like any other; anything it does (going through it, a blast breaking
 it under the gang) waits on the user. `tests/test_silencio.gd` checks the snow
-on everything, the pond at the edge, the ways from the horse, and a quiet spell.
+on everything, the pond at the edge, the gangs and their alarms, the ways from the
+horse, and a quiet spell.
 
 ## Controls
 
@@ -1422,9 +1440,9 @@ The outlaws:
 - **The chief** (`outlaw_chief`: the pale capote, a broad hat, grey beard): a Spencer
   and a Navy; keeps the strongbox, and his death breaks them.
 
-For now these are only their types and bodies: who stands where, each gang's own
-alarm and the two counts come next. `tests/test_buntline.gd` checks each says its
-side and is baked with all its guns, and the leaders.
+Where they stand and how each gang keeps its own alarm: see Silencio under Levels.
+`tests/test_buntline.gd` checks each says its side and is baked with all its guns,
+and the leaders; `tests/test_silencio.gd` the gangs in town and their alarms.
 
 ## Townsfolk
 

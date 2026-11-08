@@ -1,9 +1,15 @@
 extends SceneTree
-## Silencio, the snowbound town (phase 1: the place, San Miguel's gang standing in):
+## Silencio, the snowbound town (the place, and its two gangs):
 ##   map    - the town's things wear their snow (every object with a snow skin is
 ##            drawn from it, and a crate shot up stays snowed on); the frozen pond
 ##            lies at the map's edge, holes cut in it; the gang's there, nobody else;
 ##            snow's falling, and the light's cold and flat under the cloud.
+##   gangs  - twelve bounty hunters at the east end, sixteen outlaws at the west
+##            (a pair of them on the saloon's porch between), none of San Miguel's,
+##            the old timer on each side in winter colours; a count each.
+##   alarm  - trouble at one end is that gang's: the other only gets uneasy over it
+##            (never enough to send men out); each counts its own fallen; the
+##            outlaws' chief down leaves the outlaws leaderless, not the hunters.
 ##   ways   - from his horse down the south trail the stranger can get to the
 ##            outlaws' hideout, the jail at the hunters' end, the saloon, the
 ##            church, out onto the ice, and to both ends of main street.
@@ -21,6 +27,7 @@ var _flake0 := Vector4.ZERO
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
 	Engine.set_meta("level", "silencio")
+	Engine.set_meta("no_downed", true)   # (the chief shot dead, not left in the snow)
 	seed(5)
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
@@ -39,7 +46,7 @@ func _reaches(a: Vector2, b: Vector2) -> bool:
 
 func _map() -> void:
 	step = "map"
-	check(game.enemies.size() == 19 and game.civilians.is_empty(), "who's there: %d, %d" % [game.enemies.size(), game.civilians.size()])
+	check(game.enemies.size() == 28 and game.civilians.is_empty(), "who's there: %d, %d" % [game.enemies.size(), game.civilians.size()])
 	var snowy := 0
 	for rec in game.placed:
 		var m: Dictionary = game.meta["objects"][rec["type"]]
@@ -68,6 +75,51 @@ func _map() -> void:
 	check(mat.get_shader_parameter("tint").z > 1.0 and mat.get_shader_parameter("contrast") < 1.0, "still the desert's sun")
 
 
+func _gangs() -> void:
+	step = "gangs"
+	check(game.alive_in("hunters") == 12 and game.alive_in("outlaws") == 16 and game.alive_in("") == 0,
+		"hunters %d, outlaws %d, nobody's %d" % [game.alive_in("hunters"), game.alive_in("outlaws"), game.alive_in("")])
+	var types: Dictionary = game.enemy_data["types"]
+	for e in game.enemies:
+		var x: float = Iso.to_grid(e.global_position).x
+		var porch: bool = x > 24.0 and x < 31.0   # (the saloon's: nobody's ground)
+		check(porch or (e.gang == "hunters") == (x > 40.0), "a %s of the %s at x %.1f" % [e.kind, e.gang, x])
+		check(types[e.kind].has("gang") or e.kind == "oldtimer", "one of San Miguel's: %s" % e.kind)
+		check(e.tdata.get("tongue", "") == "english", "a %s with Spanish in him" % e.kind)
+		if e.kind == "oldtimer":
+			check(e.tdata["palettes"].size() == 1 and e.tdata["palettes"][0]["coat"] != types["oldtimer"]["palettes"][0]["coat"],
+				"the old timer's in his desert coat")
+	check(game.level["gangs"] == ["hunters", "outlaws"], "the counts: %s" % [game.level.get("gangs")])
+
+
+## Trouble at the outlaws' end; then their chief shot dead.
+func _alarm() -> void:
+	step = "alarm"
+	var out: Enemy = null
+	var chief: Enemy = null
+	for e in game.enemies:
+		if e.kind == "trapper" and out == null:
+			out = e
+		if e.kind == "outlaw_chief":
+			chief = e
+	for i in 30:
+		game.raise_alarm(6.0, out.global_position)
+	var gs: Dictionary = game.gangs
+	check(gs["outlaws"]["alarm"] >= game.SEND, "the outlaws' own trouble only got them to %.0f" % gs["outlaws"]["alarm"])
+	check(gs["hunters"]["alarm"] >= game.UNEASY and gs["hunters"]["alarm"] <= game.OTHER_END,
+		"the hunters over it: %.0f" % gs["hunters"]["alarm"])
+	chief.hp = 1
+	chief.take_hit(5, Vector2.RIGHT, game.player)
+	check(not chief.alive, "the chief's still alive")
+	if not chief.alive:
+		check(gs["outlaws"]["leaderless"] and not gs["hunters"]["leaderless"] and not game.leaderless,
+			"leaderless: outlaws %s, hunters %s" % [gs["outlaws"]["leaderless"], gs["hunters"]["leaderless"]])
+		check(gs["outlaws"]["fallen"] == 1 and gs["hunters"]["fallen"] == 0, "the fallen counted on the wrong side")
+		for e in game.enemies:
+			if e.alive and e.gang == "hunters":
+				check(e.shaken < 1.0, "a hunter took the chief's death to heart")
+
+
 func _ways() -> void:
 	step = "ways"
 	var start := Vector2(game.level["player"]["x"], game.level["player"]["y"])
@@ -80,6 +132,7 @@ func _process(delta: float) -> bool:
 	frame += 1
 	if frame == 3:
 		_map()
+		_gangs()
 		_ways()
 		game.begin()
 	if frame <= 3:
@@ -94,6 +147,7 @@ func _process(delta: float) -> bool:
 	check(f.y != _flake0.y, "the snow's stopped falling")
 	step = "quiet"
 	check(game.state == "play", "it ended by itself: %s" % game.state)
+	_alarm()
 	print("silencio test: %s" % ("OK" if failures == 0 else "%d FAILURES" % failures))
 	quit(failures)
 	return true
