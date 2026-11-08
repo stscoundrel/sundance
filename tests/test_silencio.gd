@@ -70,7 +70,7 @@ func _map() -> void:
 	check((game.level["ice_holes"] as Array).size() == 3, "holes in the ice: %s" % [game.level["ice_holes"]])
 	check(game.meta.has("ground_silencio") and game.level["ground"] == "ground_silencio", "no snow on the ground")
 	# the weather: snow falling, and the grade gone cold and flat under the cloud
-	check(game.snowfall != null and game.snowfall.flakes.size() == Snowfall.COUNT, "no snow falling")
+	check(game.snowfall != null and game.snowfall.flakes.size() == Snowfall.STORM_COUNT and game.footprints != null, "no snow falling")
 	var mat := game.post.material as ShaderMaterial
 	check(mat.get_shader_parameter("tint").z > 1.0 and mat.get_shader_parameter("contrast") < 1.0, "still the desert's sun")
 

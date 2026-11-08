@@ -99,6 +99,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_mgun.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_mines.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_silencio.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_strongbox.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_snow.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_general.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arsenal.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_champion.gd

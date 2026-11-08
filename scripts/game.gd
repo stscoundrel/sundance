@@ -53,6 +53,9 @@ var last_gunfire := -1e9
 var last_gunfire_at := Vector2.INF
 var director: Director = null   # a level's waves, if it has any
 var snowfall: Snowfall = null   # a snowy map's weather (see Snowfall), if it has any
+var footprints: Footprints = null   # and the tracks everyone leaves in its snow
+var sight := 1.0                # of a man's sight the weather leaves him (Snowfall: snow, a squall)
+var wind_player: AudioStreamPlayer
 var hanging: Hanging = null     # a man on the gallows to save, if the level has one
 var captive: Captive = null     # a man tied to a pole, if the level has one
 var cargo: Cargo = null         # the arms to be carried off, if the level has them (it's won at the wagon)
@@ -229,6 +232,7 @@ func _ready() -> void:
 		MGun.rng.randomize()
 		Minefield.rng.randomize()
 		Strongbox.rng.randomize()
+		Snowfall.rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
 		loot_rng.randomize()
@@ -272,6 +276,7 @@ func _ready() -> void:
 		MGun.rng.seed = 79
 		Minefield.rng.seed = 83
 		Strongbox.rng.seed = 101
+		Snowfall.rng.seed = 103
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -303,6 +308,7 @@ func _ready() -> void:
 	add_child(wind)
 	wind.finished.connect(wind.play)
 	wind.play()
+	wind_player = wind
 	sfx("bell", null, -4.0, 0.0)
 	if _args.has("guns"):
 		start_guns = Array(_args["guns"].split(",")).filter(func(k): return Player.SLOT.has(k))
@@ -1077,7 +1083,11 @@ func _build_overlay() -> void:
 		mat.set_shader_parameter("contrast", 0.94)
 		mat.set_shader_parameter("lift", 0.05)
 		snowfall = Snowfall.new()
+		snowfall.setup(self)
 		add_child(snowfall)
+		footprints = Footprints.new()
+		footprints.setup(self)
+		add_child(footprints)
 
 	hud_layer = CanvasLayer.new()
 	hud_layer.layer = 10
@@ -1144,6 +1154,9 @@ func _process(delta: float) -> void:
 	hurt_fx = max(0.0, hurt_fx - delta * 2.0)
 	var mat := post.material as ShaderMaterial
 	mat.set_shader_parameter("time_s", now / 1000.0)
+	if snowfall:   # a squall: the white closing in, and the wind howling
+		mat.set_shader_parameter("fog", snowfall.storm)
+		wind_player.volume_db = -12.0 + 9.0 * snowfall.storm
 	mat.set_shader_parameter("hurt", hurt_fx)
 	if player and player.down:
 		# the colour going out of it as he bleeds, and his heart, slowing
@@ -3385,8 +3398,8 @@ func trail_lead(e: Enemy, newer: float) -> Dictionary:
 		var d: Dictionary = trails[i]
 		if d["t"] <= newer or clock - d["t"] > TRAIL_FRESH:
 			break
-		if not d["player"]:
-			continue
+		if not d["player"] or d.get("depth", 1.0) < Footprints.LEAD:
+			continue   # (a print the snow's half filled is no lead)
 		var dist: float = e.global_position.distance_to(d["at"])
 		if dist < TRAIL_SEE and e.visibility_of(d["at"], true, false) > 0.0:
 			return d

@@ -188,6 +188,7 @@ var patching := false
 # His blood: a wounded stranger leaves a trail, and a bandit who comes across it
 # follows it (see game.trail_lead).
 const TRAIL_LINES := ["Blood... he's hit.", "¡Sangre! Por aquí.", "He's bleeding. Follow it."]
+const TRACK_LINES := ["Tracks. Fresh ones.", "Somebody came through here...", "Boot prints. Follow 'em."]   # (in the snow: see Footprints)
 var trail_t := -1.0          # when the last drop he followed fell
 var trail_look := 0.0
 # Downed: a hit that would kill may only put him in the dirt instead, out of the
@@ -470,7 +471,7 @@ func reveal() -> void:
 # ------------------------------------------------------------------ senses
 
 func view_range() -> float:
-	return VIEW * (1.2 if wary or st == St.COMBAT else 1.0)
+	return VIEW * (1.2 if wary or st == St.COMBAT else 1.0) * game.sight   # (snow falling, a squall: see Snowfall)
 
 
 func half_fov() -> float:
@@ -747,8 +748,8 @@ func _follow_blood(lead: Dictionary) -> void:
 		running = false
 		_mark("?")
 		if shout_t <= 0.0:
-			_say(_line("blood", TRAIL_LINES))
-		_log("follows the blood")
+			_say(_line("tracks", TRACK_LINES) if lead.get("print", false) else _line("blood", TRAIL_LINES))
+		_log("follows the tracks" if lead.get("print", false) else "follows the blood")
 	search_t = maxf(search_t, 12.0)
 	wait = 0.0
 	path_to(lead["at"])

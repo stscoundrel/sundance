@@ -411,10 +411,11 @@ the north-west edge, behind the outlaws' end, fishing holes cut in it and boats
 turned over on its shore. The stranger leaves his horse among the pines at the foot
 of the south trail and comes up on foot. He can win either way: kill the lot, or
 take the strongbox (two hands: slow, no gun; drop it to fight) back down to his
-horse. Planned, with the user (built so far: phase 1): 1 the place → 2 the two gangs
+horse. Planned, with the user: 1 the place → 2 the two gangs
 (their own bodies and types, the hunters' Buntline; each on its own turf, their
 alarms their own) → 3 the strongbox and the way out → 4 footprints in the snow that
-the gang follows like blood, and falling snow that shortens everyone's sight → 5 the
+the gang follows like blood, and falling snow that shortens everyone's sight, in
+squalls (built so far: phases 1-4) → 5 the
 truce, and the stranger breaking it (framing one side, a street war; how blame and
 the count work is to be settled first) → 6 townsfolk, dressing, a line, tuning.
 Twelve hunters hold the east end: the boss at the jail door, the Buntline man out
@@ -479,9 +480,31 @@ cloud (the faces turned from the sky not so dark, those towards it not so bright
 their shadows faint). The flakes (`scripts/snowfall.gd`) are in the world, so they
 pan with the town, wrapped round the view: three depths, the far ones fine, slow
 and faint, the near ones bigger and quicker with a grey underside so they show
-against the snow on the ground; all drifting east on the wind and swaying. Only
-looks for now, on dice of their own: what the snow does to a man's sight is
-phase 4's. For now the
+against the snow on the ground; all drifting east on the wind and swaying.
+
+Most of the time it falls steady; every minute or so a squall comes down off the
+mountain (the snowstorm of *The Hateful Eight*): the first 40-70 s in, each building
+over 8 s, blowing at its worst for 20-35 s, dying away over 8 s, then 45-80 s of
+steady snow before the next, on game time and its own dice (`Snowfall.rng`). In a
+squall the snow thickens and drives near flat, the white closes in from the edges
+of the screen (the post shader's `fog`), the wind howls louder, and a toast says
+one's coming. It's what everyone sees by: `game.sight`, 0.85 of a man's sight in
+the steady snow and 0.55 in a squall's worst (every bandit's view range, so the
+cones shrink too).
+
+**Footprints** (`scripts/footprints.gd`). Everyone walking the snow leaves boot
+prints, a stride (8 px) apart, left and right: the stranger, both gangs. Not on the
+trodden streets (one more set is nothing among the rest) and not on the ice. They
+fill in as it snows, in a minute of the steady snow and three times as fast in a
+squall, fading as they go (drawn five times a second, only those on screen). The
+stranger's are a trail, as his blood is: each goes on `game.trails` (marked
+"print", the same dictionary, filling there as it fills here), and a guard who sees
+fresh ones follows them ("Tracks. Fresh ones."); half filled in, they're no lead.
+The gangs' prints are only to look at. So the way through town is the streets (no
+tracks, but in the open) or the snow (cover, and a trail behind him), and a squall
+covers him twice over. `tests/test_snow.gd` checks his prints and where they don't
+go, theirs, the filling, a guard on his tracks and one not on filled ones, and a
+squall's sight, white-out and filling. For now the
 ice is ground like any other; anything it does (going through it, a blast breaking
 it under the gang) waits on the user. `tests/test_silencio.gd` checks the snow
 on everything, the pond at the edge, the gangs and their alarms, the ways from the
