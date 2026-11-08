@@ -9,6 +9,8 @@ extends RefCounted
 ##   lever    - Winchester 1866: tube magazine, a lever stroke between shots. The
 ##              Spencer too: a smaller tube, and the hammer thumbed back as well.
 ##              The Henry: a longer tube, filled from the front ("open"/"close").
+##              And the Spencer 1882 shotgun ("pump"): the slide worked instead of
+##              a lever, and run dry it wants two strokes to bring a shell up.
 ##   breech   - everything that opens to load: coach gun, sawn-off, derringer, Sharps,
 ##              howdah. And, near enough, the muzzle-loaders (Springfield rifle-musket,
 ##              escopeta): one charge, the "open/eject/insert/close" steps being the
@@ -57,6 +59,17 @@ const DATA := {
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 20, "smoke_push": 1.5,
 		"open": [0.4, "break_open"], "eject": [0.35, "eject"], "insert": [0.42, "shell_in"], "close": [0.35, "close"],
 		"status": {"cycle": "", "open": "BREAKING OPEN", "close": "CLOSING"}},
+	# Spencer 1882, the first slide-action shotgun: five shells in the tube under the
+	# barrel and one up, which no other scattergun comes near. But the slide is
+	# heavy and stiff, slower between shots than any lever, and run dry the carrier
+	# has dropped: the first stroke only lifts it, the second chambers. The empties
+	# go straight up out of the top of the frame. A 12 bore, a little tighter than
+	# the coach gun and with no barrels to loose together. Takes the coach gun's shells.
+	"spencer82": {"name": "SPENCER 1882 PUMP", "points": 5, "action": "lever", "pump": true, "tube": 5,
+		"damage": 1, "speed": 520.0, "range": 195.0, "spread": 7.5, "pellets": 8, "noise": 460.0,
+		"sfx": "coach", "cycle": 0.85, "shake": 4.0, "smoke": 20, "smoke_push": 1.5, "ammo": "coach",
+		"insert": [0.45, "shell_in"],
+		"status": {"cycle": "PUMP", "open": "LOADING PORT", "close": ""}},
 	# A double gun with the barrels and the stock cut down: easy to carry under a coat,
 	# useless past a few paces and murder inside them. Takes the coach gun's shells.
 	"sawnoff": {"name": "SAWN-OFF 12 GA", "points": 2, "action": "breech", "barrels": 2, "volley": true,
@@ -194,6 +207,10 @@ var barrels: Array[int] = []
 var tube := TUBE_CAP   # (set to the gun's own cap())
 var chambered := true
 var ejecting := false   # this lever stroke throws out a fired case
+# A pump gun fired empty ("pump"): the carrier's down, and the next stroke with a
+# shell in the tube is two (one long cycle, "racking").
+var dry := false
+var racking := false
 # A barrel held bare in the hand ("hot"): 0 cool, 1 too hot to hold steady.
 const COOL := 0.15   # of it a second, off
 const HOT_SPREAD := 1.0   # as much again on the spread, at its hottest
@@ -235,6 +252,7 @@ func copy_load(o: Weapon) -> void:
 	barrels = o.barrels.duplicate()
 	tube = o.tube
 	chambered = o.chambered
+	dry = o.dry
 
 
 ## What it's loaded with: the cartridges (or powder and ball) on a belt.
@@ -330,6 +348,7 @@ func trigger() -> void:
 		"lever":
 			if chambered:
 				chambered = false
+				dry = d.get("pump", false) and tube == 0
 				_shoot(1)
 				_cycle(d["cycle"])
 				ejecting = true   # the lever throws out the spent case
@@ -339,9 +358,7 @@ func trigger() -> void:
 				# anyway, chambering a round if there is one; no case comes out
 				if tube == 0:
 					_snd("dry", 2.0)
-				_cycle(d["cycle"])
-				ejecting = false
-				_snd("lever")
+				_work()
 
 
 ## Right trigger: every loaded barrel at once, on guns that allow it.
@@ -433,7 +450,10 @@ func abort() -> void:
 func update(delta: float) -> void:
 	heat = maxf(0.0, heat - COOL * delta)
 	if state != S.READY:
+		var was := timer
 		timer -= delta
+		if racking and was > d["cycle"] * slow and timer <= d["cycle"] * slow:
+			_snd("lever")   # the second stroke
 		if timer <= 0.0:
 			_advance()
 	if action == "revolver" and fanning and state == S.READY and cocked:
@@ -451,9 +471,11 @@ func _advance() -> void:
 					_snd("cock", -2.0)
 			elif action == "breech" and d.get("hammer", false) and barrels.has(1):
 				_snd("cock", -4.0)
-			elif action == "lever" and not chambered and tube > 0:
+			elif action == "lever" and not chambered and tube > 0 and not (dry and not racking):
 				tube -= 1
 				chambered = true
+				dry = false
+			racking = false
 		S.OPEN, S.EJECT, S.INSERT:
 			_reload_step()
 		S.CLOSE:
@@ -466,9 +488,7 @@ func _advance() -> void:
 						cur = (cur + i) % n
 						break
 			elif action == "lever" and not chambered and tube > 0:
-				_cycle(d["cycle"])
-				ejecting = false
-				_snd("lever")
+				_work()
 
 
 func _reload_step() -> void:
@@ -557,6 +577,15 @@ func _close() -> void:
 		_:
 			timer = 0.15
 	timer *= slow
+
+
+## A lever (or slide) worked with nothing in the chamber to throw out, bringing one
+## up from the tube if there is one: the stroke doubled on a pump gun run dry.
+func _work() -> void:
+	racking = dry and tube > 0
+	_cycle(d["cycle"] * (2.0 if racking else 1.0))
+	ejecting = false
+	_snd("lever")
 
 
 func _cycle(t: float) -> void:

@@ -222,6 +222,7 @@ func _ready() -> void:
 		Enemy.return_rng.randomize()
 		Enemy.schofield_rng.randomize()
 		Enemy.henry_rng.randomize()
+		Enemy.pump_rng.randomize()
 		Enemy.champion_rng.randomize()
 		Enemy.rollingblock_rng.randomize()
 		Wounds.rng.randomize()
@@ -241,6 +242,7 @@ func _ready() -> void:
 		Enemy.return_rng.seed = 29
 		Enemy.schofield_rng.seed = 31
 		Enemy.henry_rng.seed = 89
+		Enemy.pump_rng.seed = 97
 		Enemy.champion_rng.seed = 37
 		Enemy.rollingblock_rng.seed = 41
 		Wounds.rng.seed = 41
@@ -3567,6 +3569,11 @@ func anim_event(a: Actor, ev: String, n := 1) -> void:
 			puff.case(gun + Vector2(randf_range(-1.5, 1.5), randf_range(-1, 1)),
 				Vector2(randf_range(-18, 18), -randf_range(0, 15)), randf_range(2.2, 3.0),
 				Color(0.9, 0.72, 0.3).darkened(randf_range(0.0, 0.25)), 900.0, Brass.rng.randf_range(-3.0, 3.0))
+		world.add_child(puff)
+		return
+	if ev == "brass" and a.weapon and a.weapon.d.get("pump", false):   # the Spencer's: straight up out of the frame
+		puff.case(at + Vector2(0, -2), Vector2(Brass.rng.randf_range(-12, 12), -Brass.rng.randf_range(70, 95)),
+			Brass.rng.randf_range(1.5, 2.5), Color(0.72, 0.16, 0.12), 200.0, Brass.rng.randf_range(-6.0, 5.0))
 		world.add_child(puff)
 		return
 	if ev == "shells":   # a shell out of each barrel: two from a double gun, one from the Champion

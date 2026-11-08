@@ -219,6 +219,8 @@ func _upper_choice() -> String:
 			Weapon.S.CYCLE:
 				if weapon.fanning:
 					return "fan"
+				if weapon.racking and has_anim(_upper_key("lever2")):
+					return "lever2"   # a pump gun run dry: two strokes
 				for a in ["cock", "lever"]:   # whichever this gun has
 					if has_anim(_upper_key(a)):
 						return a

@@ -38,7 +38,7 @@ def template_guns():
     """Which guns each body template must be baked holding (every gun its types carry).
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
-    out = {"hero": ["colt", "coach", "rifle", "henry", "schofield", "navy", "pistola", "sawnoff", "champion", "escopeta", "spencer",
+    out = {"hero": ["colt", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "pistola", "sawnoff", "champion", "escopeta", "spencer",
                     "springfield", "rollingblock", "remington", "mgun"]}
 
     def need(template, g, t=None):
@@ -51,6 +51,9 @@ def template_guns():
         # and a Winchester the old Henry (Enemy.HENRY, or the type's "henry")
         if g == "rifle" and (t is None or t.get("henry", 0.3) > 0):
             need(template, "henry")
+        # and a coach gun the Spencer pump, for a type that says so (Enemy, "pump")
+        if g == "coach" and t is not None and t.get("pump", 0) > 0:
+            need(template, "spencer82")
 
     def champion(template, chance, guns, cut=0):
         # a man with only a sidearm may have a Champion slung too (Enemy.CHAMPION), or
@@ -107,7 +110,7 @@ def template_guns():
 
 
 CARRY_SET = {"mg": "mgcarry"}   # a carrier's load, by the pose set he carries it in
-GUN_LEN = {"m1895": 1.0, "remington": 1.3, "colt": 0.31, "schofield": 0.33, "coach": 0.97, "rifle": 1.1, "henry": 1.12, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
+GUN_LEN = {"m1895": 1.0, "remington": 1.3, "colt": 0.31, "schofield": 0.33, "coach": 0.97, "spencer82": 1.02, "rifle": 1.1, "henry": 1.12, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
@@ -486,6 +489,18 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
             out += beam(hinge + side * o + upb * 0.012, hinge + ab * bl + side * o + upb * 0.012, 0.022, GUNMETAL)
             out += beam(at(0.27, (o * 1.4, 0.03)), at(0.31, (o * 1.6, 0.075)), 0.012, STEEL)  # hammers
         out += beam(hinge - upb * 0.025, hinge + ab * (bl * 0.42) - upb * 0.025, 0.03, WOOD)
+    elif kind == "spencer82":
+        # Spencer 1882 slide-action: a walnut stock, a deep blued frame with the port on
+        # top the empties fly out of, one long barrel, the tube under it and on the tube
+        # a ribbed wooden slide, run back towards the frame by `lever`
+        out += frustum(at(0.0, (0, -0.045)), at(0.3), 0.058, 0.03, WOOD)
+        out += box(tuple(at(0.29) - 0.038), tuple(at(0.42) + 0.038), STEEL)              # frame
+        out += beam(at(0.33, (0, 0.04)), at(0.38, (0, 0.04)), 0.012, GUNMETAL)          # the port's cover
+        out += beam(at(0.42, (0, 0.012)), at(1.0, (0, 0.012)), 0.022, GUNMETAL)
+        out += beam(at(0.42, (0, -0.022)), at(0.8, (0, -0.022)), 0.016, GUNMETAL)       # magazine tube
+        back = 0.12 * lever
+        out += beam(at(0.5 - back, (0, -0.024)), at(0.68 - back, (0, -0.024)), 0.03, WOOD)   # the slide
+        out += beam(at(0.29, (0, -0.045)), at(0.36, (0, -0.045)), 0.01, STEEL)          # trigger guard
     elif kind == "henry":
         # Henry 1860: a straight walnut stock and the brass frame like the Winchester's,
         # but no fore-end: the long barrel and the tube under it are one slotted piece
@@ -1307,6 +1322,18 @@ def _key_poses(w):
                     pose = P(pose, **{g: G(pose[g]["B"] + pose[g]["D"] * 0.17, pose[g]["D"])})
             k[name] = pose
         return k
+    if w == "spencer82":
+        # held at the hip like the coach gun, the left hand out on the slide; the slide
+        # run back and forward again between shots, and loaded from underneath, the gun
+        # rolled a little, shells thumbed up into the port one at a time
+        k = _key_poses("coach")
+        D = k["aim"]["gun"]["D"] / np.linalg.norm(k["aim"]["gun"]["D"])
+        k["lever"] = P(k["aim"], hL=k["aim"]["hL"] - D * 0.12 * GUN_LEN[w], lever=1.0)
+        k["lever_half"] = P(k["aim"], hL=k["aim"]["hL"] - D * 0.06 * GUN_LEN[w], lever=0.5)
+        k["load"] = P(k["load"], broken=0.0, hL=V(0.3, -0.08, 0.1))
+        k["insert_a"] = P(k["load"], **BELT_L)
+        k["insert_b"] = P(k["load"], eL=V(0.12, 0.16, 0.12), hL=V(0.16, -0.13, 0.1))
+        return k
     if w == "champion":
         # held at the hip and broken open like the coach gun; the thumb up to the hammer
         k = _key_poses("coach")
@@ -1610,6 +1637,15 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 8, events={1: "brass"})
         add("reload_insert", [k["insert_a"], k["insert_b"]], 5.5, True)
         add("reload_close", _frames([k["load"], k["aim"]], 2), 7)
+    elif w == "spencer82":
+        # the slide run back, the empty up out of the top, and forward again: a heavy
+        # stroke; run dry, it takes two
+        pump = [k["lever_half"], k["lever"], k["lever"], k["lever_half"], k["aim"]]
+        add("lever", pump, 5.9, events={1: "brass"})
+        add("lever2", pump + pump, 5.9)
+        add("reload_open", _frames([k["aim"], k["load"]], 2), 8)
+        add("reload_insert", [k["insert_a"], k["insert_b"]], 4.5, True)
+        add("reload_close", _frames([k["load"], k["aim"]], 2), 8)
     elif w == "henry":
         # a stiffer lever; the gun brought up muzzle high to load, the sleeve turned
         add("lever", [k["lever_half"], k["lever"], k["lever_half"], k["aim"]], 7.5, events={1: "brass"})

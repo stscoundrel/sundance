@@ -229,6 +229,9 @@ static var schofield_rng := RandomNumberGenerator.new()
 # type): fifteen rounds, but a slow, awkward gun to keep fed. Its own dice too.
 const HENRY := 0.3
 static var henry_rng := RandomNumberGenerator.new()
+# A man who can afford it may have the new Spencer pump gun for his coach gun (data
+# "pump": the chance; El Jefe's). Nobody's does unless his type says. Its own dice.
+static var pump_rng := RandomNumberGenerator.new()
 # The low end of the gang may carry a Champion single-barrel slung beside the sidearm
 # (data "champion": the chance, for his type, or for a wave's arms option). One shot
 # from a little further off than a coach gun would reach, and more often than not
@@ -324,6 +327,8 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	loadout = loadout.map(func(gun): return "schofield" if gun == "colt" and schofield_rng.randf() < top else gun)
 	var old: float = tdata.get("henry", HENRY)
 	loadout = loadout.map(func(gun): return "henry" if gun == "rifle" and henry_rng.randf() < old else gun)
+	var pump: float = tdata.get("pump", 0.0)
+	loadout = loadout.map(func(gun): return "spencer82" if gun == "coach" and pump > 0.0 and pump_rng.randf() < pump else gun)
 	stats = {"keep": _v2(tdata["range"]) * game.haze.x, "cadence": _v2(tdata["cadence"])}
 	hp = int(tdata["hp"])
 	max_hp = hp

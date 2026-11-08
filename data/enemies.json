@@ -115,7 +115,7 @@
       ]
     },
     "jefe": {
-      "finish": 1.0, "name": "El Jefe", "gasp": 0.65, "boss": true, "template": "duster_sombrero", "loadout": ["coach", "colt"],
+      "finish": 1.0, "name": "El Jefe", "gasp": 0.65, "boss": true, "template": "duster_sombrero", "loadout": ["coach", "colt"], "pump": 0.33,
       "hp": 4, "range": [30, 95], "cadence": [0.45, 0.9], "nerve": [0.95, 0.95],
       "rank": 2, "cover_call": 1.0, "fires_on_move": true, "draw_sidearm": 0.8, "flank": 0.4,
       "palettes": [

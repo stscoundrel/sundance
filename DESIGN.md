@@ -502,7 +502,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
-listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun, sawn-off, Champion or escopeta;
+listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun, Spencer pump, sawn-off, Champion or escopeta;
 Winchester, Henry, Spencer, Springfield or cut-down Rolling Block) with a line on what the chosen one is like. 1 2 3
 or a click on a card goes on through its guns and then none; a click on a gun's
 name takes it, or puts it back. Enter or "ride in". The choice is kept across
@@ -518,8 +518,8 @@ guns up.
 price is its `points` in `Weapon.DATA`, by how good it is, not by its slot: junk is
 free (horse pistol, escopeta, cut-down Rolling Block), the poor or one-job guns 1 (Navy, Champion,
 Springfield), the solid ones 2 (Colt and Schofield alike: as strong, each with its
-own faults; sawn-off, Spencer), the coach gun and the Henry 3, and the Winchester, the best gun in
-the game, 4. Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
+own faults; sawn-off, Spencer), the coach gun and the Henry 3, the Winchester, the best gun in
+the game, 4, and the Spencer pump gun, rare and new, 5: the dearest. Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
 or the box left of "ride in") and a stick of dynamite for 2 (G, the right box), in
 every level. What he doesn't buy he hasn't: no free bandage. Each
 gun line shows its price, greyed when he can't afford it with what else he's taken;
@@ -530,7 +530,7 @@ keep the level's own kit (a bandage, the level's sticks). `tests/test_budget.gd`
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
 never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, horse pistol), **2** a
-shotgun (coach gun, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Henry, Spencer, Springfield, cut-down Rolling Block).
+shotgun (coach gun, Spencer pump, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Henry, Spencer, Springfield, cut-down Rolling Block).
 `Player.SLOT` lists what he can carry; the derringer, Sharps and howdah
 still stay where they lie, and the gunsmith may get to them first.
 - A gun for an **empty slot** is his for walking over it.
@@ -545,7 +545,7 @@ still stay where they lie, and the gunsmith may get to them first.
   without a reload.
 - The dead man's cartridges, lying by his gun, come with it (his bandolier): a few
   rounds, never a full belt.
-- **Ammo is by kind, on one belt**: .45 Colt, shotgun shells (coach gun, sawn-off and Champion), .44 rimfire (Winchester and Henry), Spencer
+- **Ammo is by kind, on one belt**: .45 Colt, shotgun shells (coach gun, Spencer pump, sawn-off and Champion), .44 rimfire (Winchester and Henry), Spencer
   rimfire, the Sharps' big .50 (the cut-down Rolling Block's too: few men drop them, so
   he lives on what he rode in with and what poachers leave) (the Schofield takes the Colt's .45), and powder and ball for the cap-and-ball Navy and the muzzle-loaders
   (horse pistol, escopeta, Springfield), so those share. Every dead man drops the
@@ -639,6 +639,24 @@ Soldados and cabos carry it; the stranger takes one up off the dead (slot 3,
 - Loaded one round at a time through the side gate on the brass receiver,
   and it can be stopped partway.
 - Damage 2 · very fast bullet · long range · accurate.
+
+### Spencer 1882 slide-action shotgun, 12 ga — 6 shells
+The first pump gun, new and rare, and for its six shells (five in the tube, one up)
+the strongest shotgun there is: 5 points, the dearest gun on the loadout card. A 12
+bore on the coach gun's shells, its pattern a little tighter and longer (8 pellets,
+spread 7.5, range 195; the coach gun 9, 9, 175), but no barrels to loose together.
+- **A stiff slide**: 0.85 s between shots, slower than any lever.
+- **Run dry, two strokes.** Fired empty, the carrier has dropped (`Weapon.dry`): once
+  he's loaded, the first stroke only lifts it and the second chambers, one long
+  cycle (`racking`, 1.7 s, its own two-stroke animation `lever2`). Loading with a
+  shell still up needs no stroke at all.
+- **Loaded a shell at a time** through the port underneath (0.45 s each), stoppable
+  like the Winchester.
+- **The empties fly straight up** out of the top of the frame and fall where he
+  stands (red, like a shotgun's).
+One El Jefe in three carries it for his coach gun (the type's `"pump"` chance,
+`Enemy.pump_rng`); nobody else. The stranger rides in with it (slot 2, 10 shells)
+or takes it off a dead Jefe. `tests/test_pump.gd`.
 
 ### Henry 1860, .44 Henry rimfire — 15 rounds
 The Winchester's forerunner, much the same gun and the same rounds, but worse to
@@ -1105,7 +1123,7 @@ generator:
 | Cowboy | vest, bandana (3 palettes) | Colt, a Champion slung for one in four | steady mid-range gunman |
 | Rifleman | duster, bowler (2) | Winchester (a Henry for one in three) + Colt | good shot, leader (orders covering fire) |
 | Red Scarf | vest, red scarf | coach gun + Colt | rushes in, fires on the move |
-| El Jefe | red duster, sombrero | coach gun + Colt | 4 HP, nerves of steel, leader |
+| El Jefe | red duster, sombrero | coach gun (the Spencer pump for one in three) + Colt | 4 HP, nerves of steel, leader |
 | Drunkard | shirt, suspenders, slouch hat (2) | Colt, now and then a Champion | wild aim, slow, scared, slurs |
 | Gambler | frock coat, top hat (2) | Remington derringer | quick hands, cool head |
 | Saloon girl | dress and shawl (3) | derringer (3 in 4) or Colt | opportunist, passes as townsfolk until something's up |
@@ -1574,7 +1592,7 @@ baked once per death and direction (`pools` in `assets/meta.json`, the same for
 every body) and laid on the ground as the body comes to rest, spreading over a few
 seconds. A body dragged away leaves it behind.
 
-- Upper body, per gun: aim, fire (recoil), cock / fan (Colt), lever (Winchester, Henry),
+- Upper body, per gun: aim, fire (recoil), cock / fan (Colt), lever (Winchester, Henry; the slide of the Spencer pump, and its double stroke `lever2`),
   reload open / eject / insert / close, point, flinch, cower, and hit reactions
   (left shoulder, right shoulder, gut).
 - Hits: where the round lands decides the reaction; a leg hit staggers him and
