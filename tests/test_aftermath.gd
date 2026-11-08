@@ -11,6 +11,7 @@ extends SceneTree
 
 const QUIET := 8.0
 const LIMIT := 420.0
+const BY_PADRE := Vector2(17, 45)   # (tiles) where the padre's dead fall, up from boot hill
 
 var game: Node
 var frame := 0
@@ -130,7 +131,8 @@ func _process(delta: float) -> bool:
 	return true
 
 
-## Three bandits go down, the ones nearest the undertakers; nobody makes a fuss.
+## Three bandits go down, the ones nearest the undertakers, and one the padre's; nobody
+## makes a fuss.
 func _kill_three() -> void:
 	var undertakers: Array[Vector2] = []
 	for c in game.civilians:
@@ -155,6 +157,21 @@ func _kill_three() -> void:
 	for e in game.enemies:
 		if not e in dead:
 			e.process_mode = Node.PROCESS_MODE_DISABLED   # the rest hold still
+	# The scene is staged by boot hill: the dead fall a short haul from it, the
+	# padre and the undertaker are about there already. (How far a man is dragged is
+	# nothing to the test, and a walk across town is minutes of it.)
+	var dice := RandomNumberGenerator.new()
+	dice.seed = 5
+	var falls := [Vector2(8, 47), Vector2(12, 47), Vector2(15, 48)]   # (boot hill's north edge)
+	for i in 3:
+		dead[i].global_position = game.free_point_near(Iso.to_screen(falls[i]), 12.0, dice)
+	dead[3].global_position = game.free_point_near(Iso.to_screen(BY_PADRE), 12.0, dice)
+	for c in game.civilians:
+		if c.priest:
+			c.global_position = game.free_point_near(Iso.to_screen(BY_PADRE + Vector2(2, 0)), 12.0, dice)
+		elif c.undertaker and Iso.to_grid(c.global_position).x > 30.0:
+			c.global_position = game.free_point_near(Iso.to_screen(Vector2(19, 47)), 12.0, dice)
+			c.home = c.global_position   # (his day starts here, not across town)
 	for e in dead:
 		e.die(Vector2.RIGHT)
 	# and a townsman, down by the church (the padre's nearest)
@@ -163,6 +180,7 @@ func _kill_three() -> void:
 		if not (c.undertaker or c.priest) and c.global_position.distance_to(church) < best:
 			best = c.global_position.distance_to(church)
 			townsman = c
+	townsman.global_position = game.free_point_near(Iso.to_screen(BY_PADRE + Vector2(0, 2)), 12.0, dice)
 	townsman.die(Vector2.RIGHT)
 	for e in game.enemies:
 		if e.alive:

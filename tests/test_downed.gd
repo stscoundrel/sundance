@@ -97,7 +97,7 @@ func _process(delta: float) -> bool:
 		print("downed test: ", "OK" if failures == 0 else "%d failures" % failures)
 		quit(1 if failures else 0)
 		return true
-	if t >= queue[0][0]:
+	if t >= queue[0][0] or (queue[0].size() > 2 and queue[0][2].call()):   # (or as soon as it's done)
 		t = 0.0
 		var c: Callable = queue.pop_front()[1]
 		c.call()
@@ -158,7 +158,8 @@ func _rescue() -> void:
 		check(a.alive and a.hp == 1 and not a.downed, "he should be back up with 1 HP")
 		check(a.weapon != null and a.weapon.kind == a.loadout[0], "his gun back in hand")
 		check(max_drag_t > 3.0, "he wasn't dragged or bandaged for long (%.1f s)" % max_drag_t)
-		_dropped()])
+		_dropped(),
+		func(): return a.alive and not a.downed])
 
 
 func _dropped() -> void:

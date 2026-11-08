@@ -69,7 +69,7 @@ func _process(delta: float) -> bool:
 		print("alarm test: ", "OK" if failures == 0 else "%d failures" % failures)
 		quit(1 if failures else 0)
 		return true
-	if t >= queue[0][0]:
+	if t >= queue[0][0] or (queue[0].size() > 2 and queue[0][2].call()):   # (or as soon as it's done)
 		t = 0.0
 		var c: Callable = queue.pop_front()[1]
 		c.call()
@@ -108,7 +108,8 @@ func _quiet() -> void:
 	_shots(5)
 	queue.append([2.0, func():
 		check(far.all(func(e): return e.alarm_role == ""), "a few far shots stirred the far side")
-		_uneasy()])
+		_uneasy(),
+		func(): return game.stats.get("news brought", 0) == 1 and game.enemies.any(func(e): return e.alarm_role == "uneasy")])
 
 
 func _uneasy() -> void:
@@ -159,4 +160,7 @@ func _fallback() -> void:
 		print("at the holdout: %d of %d who fell back" % [there, back.size()])
 		check(back.all(func(e): return e.home.distance_to(game.holdout["at"]) < 170.0), "someone fell back somewhere else")
 		# (the latest to fall back are still on their way)
-		check(there >= back.size() * 0.7, "too few got there (%d of %d)" % [there, back.size()])])
+		check(there >= back.size() * 0.7, "too few got there (%d of %d)" % [there, back.size()]),
+		func():
+			var back: Array = game.enemies.filter(func(e): return e.alive and e.alarm_role == "fortified")
+			return not back.is_empty() and back.filter(func(e): return e.global_position.distance_to(game.holdout["at"]) < 170.0).size() >= back.size() * 0.7])

@@ -71,7 +71,7 @@ func _process(delta: float) -> bool:
 		print("signs test: ", "OK" if failures == 0 else "%d failures" % failures)
 		quit(1 if failures else 0)
 		return true
-	if t >= queue[0][0]:
+	if t >= queue[0][0] or (queue[0].size() > 2 and queue[0][2].call()):   # (or as soon as it's done)
 		t = 0.0
 		var c: Callable = queue.pop_front()[1]
 		c.call()
@@ -163,4 +163,6 @@ func _mended() -> void:
 			"the carpenter didn't hang the sign straight")
 		check(cloth["state"] == 0 and cloth2["state"] == 0 and cloth["sprite"].frame in [0, 1, 2],
 			"the washing wasn't pegged out again")
-		check(cloth["body"] != null, "pegged out again, it can't be hit")])
+		check(cloth["body"] != null, "pegged out again, it can't be hit"),
+		func(): return sign["state"] == 0 and sign["sprite"].frame == game.SIGN_REST and sign["body"] != null \
+			and cloth["state"] == 0 and cloth2["state"] == 0 and cloth["body"] != null])

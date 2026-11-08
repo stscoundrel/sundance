@@ -93,7 +93,8 @@ func _process(delta: float) -> bool:
 		for e in game.enemies:   # one for the padre, in the middle of it all
 			if e.kind == "revolucionario" and e.alive:
 				e.die(Vector2.RIGHT, null, "death_slump")
-	if t < 210.0 and game.state == "play":
+	var seen_enough: bool = all_out > 0.0 and game.stats.get("arrivals", 0) >= 12 and game.stats.get("waves warned", 0) >= 5 and blessed_under_fire >= 1
+	if t < 210.0 and game.state == "play" and not seen_enough:
 		return false
 	print("after %.0f s: %s; %d of %d down, %d walked in; stats %s" % [t, game.state,
 		game.enemies.filter(func(e): return not e.alive).size(), game.enemies.size(), game.stats.get("arrivals", 0), game.stats])

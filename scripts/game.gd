@@ -295,7 +295,8 @@ func _ready() -> void:
 	_setup_audio()
 	for k in meta["sfx"]:
 		_streams[k] = _takes(k)   # all up front: a first load mid-fight stalls the frame
-	_preload(meta)   # every sprite too, for the same reason (a crate's wreck, a pool of blood...)
+	if DisplayServer.get_name() != "headless":
+		_preload(meta)   # every sprite too, for the same reason (a crate's wreck, a pool of blood...)
 	var wind := AudioStreamPlayer.new()
 	wind.stream = load(meta["sfx"]["wind"])
 	wind.volume_db = -12.0

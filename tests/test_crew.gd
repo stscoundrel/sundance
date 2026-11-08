@@ -86,7 +86,7 @@ func _process(delta: float) -> bool:
 		print("crew test: ", "OK" if failures == 0 else "%d failures" % failures)
 		quit(1 if failures else 0)
 		return true
-	if t >= queue[0][0]:
+	if t >= queue[0][0] or (queue[0].size() > 2 and queue[0][2].call()):
 		t = 0.0
 		var c: Callable = queue.pop_front()[1]
 		c.call()
@@ -111,9 +111,12 @@ func _mend() -> void:
 	crates.sort_custom(func(a, b): return game.prop_centre(a).distance_to(cp) < game.prop_centre(b).distance_to(cp))
 	crate = crates[0]
 	var barrels: Array = game.props.filter(func(p): return p["kind"] == "barrel")
-	barrels.sort_custom(func(a, b): return game.prop_centre(a).distance_to(cp) > game.prop_centre(b).distance_to(cp))
-	barrel = barrels.filter(func(b): return game.prop_centre(b).distance_to(cp) < 900.0)[0]
-	chair = _of("chair").filter(func(c): return c["at"].distance_to(keeper.home) > game.KEEPS)[0]
+	barrels.sort_custom(func(a, b): return game.prop_centre(a).distance_to(cp) < game.prop_centre(b).distance_to(cp))
+	var crate_d: float = game.prop_centre(crate).distance_to(cp)
+	barrel = barrels.filter(func(b): return game.prop_centre(b).distance_to(cp) > crate_d + 150.0)[0]   # (well past the crate, no further)
+	var chairs: Array = _of("chair").filter(func(c): return c["at"].distance_to(keeper.home) > game.KEEPS)
+	chairs.sort_custom(func(a, b): return a["at"].distance_to(cp) < b["at"].distance_to(cp))
+	chair = chairs[0]
 	table = _of("table").filter(func(c): return c["at"].distance_to(keeper.home) < game.KEEPS)[0]
 	schair = _of("chair").filter(func(c): return c["at"].distance_to(keeper.home) < game.KEEPS)[0]
 	_wreck(crate, 2)
@@ -140,7 +143,8 @@ func _mend() -> void:
 		check(table in by_keeper and schair in by_keeper, "the keeper didn't see to his own table and chair")
 		check(not chair in by_keeper, "the keeper mended a chair that isn't his")
 		check(not game.scars.any(func(s): return s["prop"] in watching), "mended things still on the mayor's list")
-		_sweep()]]
+		_sweep(),
+		func(): return watching.all(func(i): return i["state"] == 0)]]
 
 
 func _sweep() -> void:
@@ -154,12 +158,16 @@ func _sweep() -> void:
 	queue.append([90.0, func():
 		check(near.call() == 0, "%d marks left unswept" % near.call())
 		check(game.trails.filter(func(d): return d["at"].distance_to(at) < 90.0).is_empty(), "the blood trail is still there")
-		_hens()])
+		_hens(),
+		func(): return near.call() == 0 and game.trails.filter(func(d): return d["at"].distance_to(at) < 90.0).is_empty()])
 
 
 func _hens() -> void:
 	step = "hens"
 	var crates: Array = _of("hencrate")
+	var wives: Array = game.civilians.filter(func(o): return o.henwife)
+	var near_wife := func(h: Dictionary) -> float: return wives.map(func(o): return o.global_position.distance_to(h["at"])).min()
+	crates.sort_custom(func(a, b): return near_wife.call(a) < near_wife.call(b))   # (one of theirs, not across town)
 	var c: Dictionary = crates[0]
 	game.hit_fragile(c, c["at"])
 	queue.append([120.0, func():
@@ -168,14 +176,16 @@ func _hens() -> void:
 			game.stats.get("hens home", 0)])
 		check(strays.size() <= 1, "%d hens still astray" % strays.size())
 		check(game.stats.get("hens cooped", 0) + game.stats.get("hens home", 0) >= 2, "nobody shooed the hens home")
-		_scare()])
+		_scare(),
+		func(): return game.stats.get("hens cooped", 0) + game.stats.get("hens home", 0) >= 2 \
+			and game.hens.filter(func(h): return h.position.distance_to(game.coop_for(h.position)["at"]) >= game.STRAY).size() <= 1])
 
 
 func _scare() -> void:
 	step = "scare"
 	var crates: Array = game.props.filter(func(p): return p["kind"] == "crate" and p["state"] == 0)
-	crates.sort_custom(func(a, b): return game.prop_centre(a).distance_to(carpenter.global_position) \
-		< game.prop_centre(b).distance_to(carpenter.global_position))
+	crates.sort_custom(func(a, b): return game.prop_centre(a).distance_to(carpenter.home) \
+		< game.prop_centre(b).distance_to(carpenter.home))   # (he's on his way home by now)
 	crate = crates[0]
 	_wreck(crate, 2)
 	queue.append([0.2, func(): _wait_fixing(0.0)])

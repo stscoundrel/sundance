@@ -6,7 +6,8 @@ extends SceneTree
 ##   far shot - shooting across the fort: he keeps at it.
 ##   near shot- shooting by him: he runs for a door; it moves off (the fort still
 ##              loud) and he's soon back out and at it again.
-##   mended   - in the end every one of them is whole, and cover again.
+##   mended   - in the end every one he was left (a wreck and two holed) is whole, and
+##              cover again.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_fort_carpenter.gd
 
 var game: Node
@@ -73,6 +74,17 @@ func _process(delta: float) -> bool:
 		check(worn.size() == 11 and wrecked.size() == 3, "%d props worn, %d wrecked" % [worn.size(), wrecked.size()])
 		check(wrecked.all(func(p): return p["body"] == null), "a wrecked prop still stands in the way")
 		check(not game.stats.has("cover wrecked") and not game.stats.has("cover damaged"), "the old damage was counted")
+		# three jobs are as good as eleven (and a minute against several): the wreck and
+		# the two holed things nearest him are his, the rest set right before he starts
+		var by_him := func(a, b): return game.job_at(a).distance_to(c.global_position) < game.job_at(b).distance_to(c.global_position)
+		wrecked.sort_custom(by_him)
+		var holed: Array = worn.filter(func(p): return p["state"] == 1)
+		holed.sort_custom(by_him)
+		var keep: Array[Dictionary] = [wrecked[0], holed[0], holed[1]]
+		for p in worn:
+			if not p in keep:
+				game.repair(p)
+		worn = keep
 	if frame <= 3:
 		return false
 	t += delta

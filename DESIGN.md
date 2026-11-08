@@ -1680,7 +1680,8 @@ off carry on; that a snitch stares (and hasn't run yet) after 1.8 s, then reache
 bandit and starts the fight; that an honest townsman looks away; that concealed
 bandits pass as townsfolk, let the stranger stand a few paces off, and draw when he
 walks right up; and that a dead townsman counts as an innocent.
-`tests/test_aftermath.gd` (with a shortened quiet period) checks the undertakers
+`tests/test_aftermath.gd` (with a shortened quiet period, and the dead, the padre and
+the undertaker staged a short haul from boot hill) checks the undertakers
 bury every body, wait for the quiet, drop a body and run at a shot, come back out
 and finish, and that buried men are no longer found; that the padre blesses a dead
 townsman and bandits and never runs from gunfire; and that an undertaker takes a blessed man over a nearer
@@ -1706,12 +1707,13 @@ by his shop back on his feet.
 `tests/test_cemetery.gd` checks the families go grave to grave and stay in the
 cemetery, carry on through shooting in the fort, scatter off the map at shooting by
 the west gate and are back soon after it moves off (the fort still loud), and that
-the digger digs out all three graves, lets each coffin down and fills it in, and the
-families mourn at each fresh grave.
+the digger digs out a grave (one of the three: the other two are left open), lets the
+coffin down and fills it in, and the families mourn at the fresh grave.
 `tests/test_fort_carpenter.gd` checks Cruz Verde opens with eleven props worn
 (three wrecked, out of the way), uncounted; the carpenter starts on them at once,
 works through shooting across the fort, runs from shooting by him and is soon back,
-and in the end mends every one, cover again.
+and in the end mends every one he was left (the test sets all but a wreck and two
+holed things right before he starts), cover again.
 `tests/test_litter.gd` checks Cruz Verde opens with last night's bottles lying about
 the fort and the two sweepers start on them at once and sweep up every one.
 `tests/test_shutters.gd` checks creeping down main street slams far fewer shutters

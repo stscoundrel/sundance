@@ -6,19 +6,28 @@
 # Logs go to .godot/test_logs/ (or $SUNDANCE_LOGS). The tests are deterministic, so
 # one that fails here but passes alone means wall-clock time is leaking into the
 # game (see CLAUDE.md).
+# The longest tests start first (by how long each took last time, kept in
+# .godot/test_times; a new one counts as long), so the suite doesn't end on one
+# slow test running alone while the other slots sit idle.
 cd "$(dirname "$0")/.." || exit 1
 LOGS=${SUNDANCE_LOGS:-.godot/test_logs}
-rm -rf "$LOGS" && mkdir -p "$LOGS"
+TIMES=.godot/test_times
+rm -rf "$LOGS" && mkdir -p "$LOGS" && touch "$TIMES"
 export LOGS
 if [ $# -gt 0 ]; then
 	TESTS="$*"
 else
 	TESTS=$(ls tests/test_*.gd | grep -v perf)
 fi
-printf '%s\n' $TESTS | xargs -P 8 -I {} sh -c '
+for t in $TESTS; do
+	echo "$(awk -v n="$(basename "$t" .gd)" '$2 == n { s = $1 } END { print (s == "" ? 99999 : s) }' "$TIMES") $t"
+done | sort -rn | cut -d' ' -f2 | xargs -P 8 -I {} sh -c '
 	n=$(basename {} .gd)
+	s=$(date +%s)
 	godot --headless --path . --fixed-fps 60 -s {} > "$LOGS/$n.log" 2>&1
-	echo $? > "$LOGS/$n.exit"'
+	echo $? > "$LOGS/$n.exit"
+	echo "$(($(date +%s) - s)) $n" > "$LOGS/$n.secs"'
+cat "$LOGS"/*.secs "$TIMES" 2>/dev/null | awk '!seen[$2]++' > "$TIMES.new" && mv "$TIMES.new" "$TIMES"
 bad=0
 for f in "$LOGS"/*.log; do
 	n=$(basename "$f" .log)

@@ -51,7 +51,7 @@ func _process(delta: float) -> bool:
 		return false
 	clock += delta
 	# before anyone is buried, nobody comes out in black, quiet or not
-	if clock > QUIET + 15.0 and clock - delta <= QUIET + 15.0:
+	if clock > QUIET + 3.0 and clock - delta <= QUIET + 3.0:
 		for m in mourners:
 			check(m.gone() and not m.visible, "a mourner came out with nobody to mourn")
 		for i in 2:

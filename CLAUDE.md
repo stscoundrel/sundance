@@ -39,7 +39,7 @@ changing it.
 ## Testing
 
 ```bash
-tools/run_tests.sh                                   # the whole suite, 8 at a time
+tools/run_tests.sh                                   # the whole suite, 8 at a time, longest first
 tools/run_tests.sh tests/test_kegs.gd                # some of it
 godot --headless --path . --fixed-fps 60 -s tests/test_pickups.gd   # one, output to the terminal
 ```
@@ -56,6 +56,10 @@ godot --headless --path . --fixed-fps 60 -s tests/test_pickups.gd   # one, outpu
   suite; it needs a quiet machine.
 - A level's opening runs for a few seconds after `game.begin()` before the stranger can
   act: wait for it (or poll for what you need) rather than counting frames.
+- Keep a test's playtime short (a game-minute or so; never several): poll for what it
+  waits for, with the old wait as the limit, rather than sleeping a fixed time; stage
+  the scene close by (the dead a short haul from boot hill, a wreck by the carpenter)
+  and stage one of a thing where one proves it. No speeding the game up in tests.
 
 ## Assets
 
