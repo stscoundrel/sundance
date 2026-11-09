@@ -179,8 +179,16 @@ STRONGBOX = [17.0, 29.15]
 # Whose ground is whose (tiles, x0 y0 x1 y1): a body found on the other gang's is
 # their doing (see game.weigh_death). Between the cross streets is nobody's.
 TURF = {"outlaws": [0, 0, 22, 64], "hunters": [42, 0, 64, 64]}
-# Where each gang pushes up to in a street war: its own edge of nobody's ground.
-LINES = {"outlaws": [25.0, 31.5], "hunters": [39.0, 31.5]}
+# Where each gang pushes up to in a street war, by turns: its own edge of nobody's
+# ground on main street, then round the backs, up the north street and the south
+# street, deep towards the other end (a flank that gets round can turn it).
+LINES = {"outlaws": [[25.0, 31.5], [37.0, 18.5], [37.0, 47.5]],
+         "hunters": [[39.0, 31.5], [27.0, 18.5], [27.0, 47.5]]}
+# Each gang's camp, off the map: where the way to it leaves the map, and how many
+# come back with a runner (see Director). The outlaws' is up behind the frozen pond,
+# the bounty hunters' down the valley at the far corner: fewer of them, better armed.
+CAMPS = {"outlaws": {"name": "the camp behind the lake", "x": 6.0, "y": 0.6, "count": 10},
+         "hunters": {"name": "the camp down the valley", "x": 63.3, "y": 47.5, "count": 5}}
 HORSE = ("horse", 34.0, 61.6)
 HORSE_AT = [35.15, 62.1]
 
@@ -214,6 +222,7 @@ def main():
         "posse": False,
         "turf": TURF,
         "lines": LINES,
+        "camps": CAMPS,
         "strongbox": STRONGBOX,
         "horse": HORSE_AT,
     })

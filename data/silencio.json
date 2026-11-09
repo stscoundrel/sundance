@@ -1708,13 +1708,47 @@
  },
  "lines": {
   "outlaws": [
-   25.0,
-   31.5
+   [
+    25.0,
+    31.5
+   ],
+   [
+    37.0,
+    18.5
+   ],
+   [
+    37.0,
+    47.5
+   ]
   ],
   "hunters": [
-   39.0,
-   31.5
+   [
+    39.0,
+    31.5
+   ],
+   [
+    27.0,
+    18.5
+   ],
+   [
+    27.0,
+    47.5
+   ]
   ]
+ },
+ "camps": {
+  "outlaws": {
+   "name": "the camp behind the lake",
+   "x": 6.0,
+   "y": 0.6,
+   "count": 10
+  },
+  "hunters": {
+   "name": "the camp down the valley",
+   "x": 63.3,
+   "y": 47.5,
+   "count": 5
+  }
  },
  "strongbox": [
   17.0,

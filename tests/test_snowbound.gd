@@ -5,7 +5,7 @@ extends SceneTree
 ##   shy     - one walking up to a townsman's door does: he's in, and stays in a
 ##             good while longer than San Miguel's folk would.
 ##   feud    - at the other gang's man a gang man shoots wide and slow: his spread
-##             FEUD_SPREAD times what it is at the stranger.
+##             FEUD_SPREAD times what it is at the stranger, and never under FEUD_MIN.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_snowbound.gd
 
 var game: Node
@@ -109,7 +109,8 @@ func _plan() -> void:
 			var b: Enemy = game._add_enemy("manhunter", Iso.to_screen(Vector2(34.0, 44.0)), PackedVector2Array(), 0.0, {"gang": "hunters"})
 			var at_him := a.accuracy_mult()
 			a.foe = b
-			check(is_equal_approx(a.accuracy_mult(), at_him * Enemy.FEUD_SPREAD),
-				"his spread at the other gang should be %.1fx (%.2f vs %.2f)" % [Enemy.FEUD_SPREAD, a.accuracy_mult(), at_him])
+			check(a.accuracy_mult() >= at_him * Enemy.FEUD_SPREAD - 0.001,
+				"his spread at the other gang should be %.1fx at least (%.2f vs %.2f)" % [Enemy.FEUD_SPREAD, a.accuracy_mult(), at_him])
+			check(a.accuracy_mult() * float(a.weapon.d["spread"]) >= Enemy.FEUD_MIN - 0.001, "and never under %.0f degrees" % Enemy.FEUD_MIN)
 			return true],
 	]

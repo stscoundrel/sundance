@@ -25,6 +25,15 @@ extends Node
 ## loading instead of the clock ("loads": n, once that many are in the wagons): the
 ## faster the arms go, the sooner the army's on them. Word of it comes a couple of
 ## loads before.
+##
+## Two gangs in one town (Silencio) each have a camp of their own off the map (the
+## map's "camps": {gang: {"name", "x", "y" where the way to it leaves the map,
+## "count", "after"}}). A gang down to its last RUNNER_AT men sends one running for
+## it, the nearest, everything else forgotten: a banner says so, and the stranger (or
+## the other gang) can stop him. Once he's off the map they're on their way, and
+## "after" seconds on they walk in by the same way: at war, up to the gang's lines;
+## else at the stranger, or to their holdout. Each gang tries it once: the runner
+## shot, and no help is coming.
 
 const WARN := 15.0          # s of warning: which roads they're coming down
 const EVERY := 0.45         # s between men walking in off the same road (a band, not a file)
@@ -35,6 +44,8 @@ const READY := Vector2(1.5, 2.5)     # s: out of the door, the ones who were rea
 const ASLEEP := Vector2(12.0, 18.0)  # s: the ones who had to wake up first
 const WARN_LOADS := 2       # loads of warning, for a wave that comes with the loading
 const RALLY_AFTER := 20.0   # s after a wave's due that word comes of the next one rallying, after a lull
+const RUNNER_AT := 3        # men left on their feet, and a gang sends for its camp
+const CAMP_T := 25.0        # s from the runner getting there to the first of them walking back in
 
 var game: Node
 var waves: Array = []
@@ -52,6 +63,7 @@ var quiet := false          # roused by the quiet, not the shooting
 var from_shot := false      # the waves count from the first shot
 var rallied := -1           # the last wave word has come of it rallying
 var arms_sets := {}         # name -> loadout options (levels.json "arms")
+var camps := {}             # gang -> {name, at, count, after, state ("", "running", "fetching", "sent", "lost"), runner, due}
 
 
 func setup(g: Node, wave_list: Array, from_first_shot := false) -> void:
@@ -67,6 +79,10 @@ func setup(g: Node, wave_list: Array, from_first_shot := false) -> void:
 			delay = maxf(0.5, float(sl["after"]) + rng.randf_range(-0.5, 0.5))
 		sleepers.append({"kind": sl["kind"], "at": Iso.to_screen(Vector2(sl["x"], sl["y"])),
 			"delay": delay, "ready": delay < 5.0})
+	for gang in g.level.get("camps", {}):
+		var c: Dictionary = g.level["camps"][gang]
+		camps[gang] = {"name": c["name"], "at": Iso.to_screen(Vector2(c["x"], c["y"])), "count": int(c["count"]),
+			"after": float(c.get("after", CAMP_T)), "state": "", "runner": null, "due": 0.0}
 	var mid := _center()
 	for e in g.level.get("entries", []):
 		var at := Iso.to_screen(Vector2(e["x"], e["y"]))
@@ -111,7 +127,8 @@ func arriving_from() -> Array:
 
 ## All in: no wave still to come or still walking in, nobody still indoors.
 func done() -> bool:
-	return next >= waves.size() and queue.is_empty() and sleepers.is_empty()
+	return next >= waves.size() and queue.is_empty() and sleepers.is_empty() \
+		and camps.values().all(func(c): return not c["state"] in ["running", "fetching"])
 
 
 ## How many in the gang all told, those indoors included.
@@ -124,6 +141,7 @@ func _process(delta: float) -> void:
 		return
 	clock += delta
 	_rouse()
+	_camps()
 	var wc := wave_clock()
 	if next < waves.size() and wc >= 0.0:
 		var w: Dictionary = waves[next]
@@ -202,6 +220,77 @@ func _wake() -> void:
 			en.say_line("spot", ["¡Vámonos!", "¿Qué pasa?", "¡A las armas!"] if sl["ready"] else ["¡Mis botas!", "¿Quién dispara?", "¡Ay, mi cabeza!"])
 
 
+# ------------------------------------------------------------------ the camps
+
+func _camps() -> void:
+	for g in camps:
+		var c: Dictionary = camps[g]
+		match c["state"]:
+			"":
+				var left: int = game.alive_in(g)
+				if left > 0 and left <= RUNNER_AT:
+					_send_runner(g, c)
+			"running":
+				var r: Enemy = c["runner"]
+				if not is_instance_valid(r) or not r.alive:
+					c["state"] = "lost"
+					game.hud.banner("The %s' runner is down!  No help is coming." % g)
+					game.stats["runners down"] = game.stats.get("runners down", 0) + 1
+			"fetching":
+				if clock >= c["due"]:
+					c["state"] = "sent"
+					_send_camp(g, c)
+
+
+## The nearest of them to the camp (the boss last of all) drops everything and runs.
+func _send_runner(g: String, c: Dictionary) -> void:
+	var men: Array = game.enemies.filter(func(e): return e.alive and e.gang == g)
+	men.sort_custom(func(a, b):
+		if a.tdata.get("boss", false) != b.tdata.get("boss", false):
+			return b.tdata.get("boss", false)
+		return a.global_position.distance_to(c["at"]) < b.global_position.distance_to(c["at"]))
+	var r: Enemy = men[0]
+	c["runner"] = r
+	c["state"] = "running"
+	r.run_to_camp(c["at"])
+	game.hud.banner("One of the %s breaks for %s!  Stop him, or %d more are coming!" % [g, c["name"], c["count"]])
+	game.sfx("sting", null, -10.0, 0.0)
+	game.stats["runners"] = game.stats.get("runners", 0) + 1
+
+
+## He's there (off the map): they're on their way.
+func runner_home(r: Enemy) -> void:
+	for g in camps:
+		var c: Dictionary = camps[g]
+		if c["runner"] == r and c["state"] == "running":
+			c["state"] = "fetching"
+			c["due"] = clock + c["after"]
+			game.hud.banner("The %s' runner made it to %s!  %d more are on their way." % [g, c["name"], c["count"]])
+			game.sfx("sting", null, -8.0, 0.0)
+			game.stats["runners home"] = game.stats.get("runners home", 0) + 1
+	game.gone_off(r)
+
+
+## The men from the camp, of the gang's own sorts as the map has them (no second boss),
+## down the way the runner went. They come back with him.
+func _send_camp(g: String, c: Dictionary) -> void:
+	var pool: Array = []
+	for e in game.level["enemies"]:
+		var t: Dictionary = game.enemy_type(e["kind"])
+		if t.get("gang", "") == g and not e.has("gang") and not t.get("boss", false) and not t.get("coordinator", false):
+			pool.append(e["kind"])
+	var entry := {"name": c["name"], "at": c["at"], "into": c["at"] + (_center() - c["at"]).normalized() * 40.0, "gang": g}
+	for i in c["count"]:
+		queue.append([entry, pool[rng.randi_range(0, pool.size() - 1)] if not pool.is_empty() else "bandido", []])
+	spawn_t = 0.0
+	var gs: Dictionary = game.gangs[g]
+	gs["dug_in"] = false   # (new blood: they push again, and dig in again only after losing a third of the lot)
+	gs["fallen"] = 0
+	game.hud.banner("%d %s come in from %s!" % [c["count"], g, c["name"]])
+	game.sfx("sting", null, -6.0, 0.0)
+	game.stats["camp men"] = game.stats.get("camp men", 0) + c["count"]
+
+
 func _roads_in_queue() -> float:
 	var seen := {}
 	for q in queue:
@@ -267,6 +356,15 @@ func _walk_in(q: Array) -> void:
 		en.shaken = 0.7
 		en.nerve *= 0.7
 		game.stats["arrive headless"] = game.stats.get("arrive headless", 0) + 1
+	if entry.has("gang"):   # from a gang's camp: into its war, or after the stranger
+		if game.war:
+			en.start_investigate(game.war_line(entry["gang"], rng), true)
+		elif game.staleness() < 20.0:
+			en.enter_combat(game.seen_pos, false, false)
+		else:
+			en.wary = true
+			en.start_investigate(_center(), true)
+		return
 	if game.level.has("assault"):   # an army: each man for a spot by the train, the stranger or no
 		en.assault_to(_assault_spot(en, at))
 		en.enter_combat(game.player.global_position, false, false)

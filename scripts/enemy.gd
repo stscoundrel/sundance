@@ -37,7 +37,9 @@ static var feud_rng := RandomNumberGenerator.new()   # (the street war: its own 
 # Between the gangs the shooting is slow and wild: they keep their heads down and
 # blaze away from cover, so the war drags on and the street stays full of guns.
 const FEUD_SPREAD := 3.0   # x his spread, at the other gang's man
-const FEUD_PACE := 2.4     # x his time between shots, at the other gang's man
+const FEUD_PACE := 3.0     # x his time between shots, at the other gang's man
+const FEUD_MIN := 20.0     # degrees of spread at the least, whatever his gun: even a rifle misses
+const WAR_EAR := 120.0     # px: the war's gunfire this close draws him to it
 var gang := ""   # whose side he's on, where a town has two (Silencio's "hunters", "outlaws"): his type's "gang"
 var flag_at := Vector2.INF   # the colours in the dirt, and him running to raise them
 var tdata: Dictionary     # his type, merged with defaults and placement overrides
@@ -297,6 +299,7 @@ var volley_at := -1.0
 var volley_cd := 0.0
 var deserting := false
 var desert_to := Vector2.INF
+var camp_to := Vector2.INF   # his gang's camp, off the map: he's running for more men (Director)
 var hunt_rolled := false
 var hunting: Civilian = null
 var bounds := Vector2i.ZERO              # (bounds made, and how many of them to cover: for the tests)
@@ -596,7 +599,12 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 			if st != St.COMBAT and source is Enemy:
 				if game.war and (source.gang != gang or source.foe != null):
 					if foe == null and revealed and reaction == "":
-						start_investigate(pos, true)   # (the street war: off to where it's going on)
+						# the street war: close by, he goes to it; further off he stays where he
+						# is, wary (the gang's pushes do the moving: see game._war_tick)
+						if d < WAR_EAR:
+							start_investigate(pos, true)
+						else:
+							wary = true
 				else:
 					enter_combat(source.last_known, false, false)
 		"scream":   # a townsman crying murder at what the stranger's doing, there
@@ -793,6 +801,9 @@ func _found_corpse(e: Enemy) -> void:
 	game.weigh_death(self, e)   # (one of theirs? whose doing?)
 	if st == St.COMBAT:
 		return
+	if game.war and is_instance_valid(e.killer) and e.killer is Enemy and e.killer.gang != gang:
+		wary = true   # the street war's: nothing to go and look at, out there in their sights
+		return
 	wary = true
 	st = St.SEARCH
 	search_t = 10.0
@@ -841,7 +852,7 @@ func near_miss(from: Vector2) -> void:
 func witness_death(at: Vector2, killer: Vector2, dead: Enemy = null) -> void:
 	if not alive:
 		return
-	if dead and game.at_war(self, dead.killer) or (dead and dead.killer is Enemy and dead.killer.gang == gang):
+	if dead and game.at_war(self, dead.killer) or (dead and is_instance_valid(dead.killer) and dead.killer is Enemy and dead.killer.gang == gang):
 		# the street war: the other gang's doing (or his own side's, at one of them),
 		# nothing to do with the stranger; his man to shoot back at, if it's theirs
 		if dead.killer is Enemy and dead.killer.gang != gang and dead.killer.alive:
@@ -1148,6 +1159,8 @@ func _physics_process(delta: float) -> void:
 		_at_gallows(delta)
 	elif deserting:
 		_desert_run()
+	elif camp_to != Vector2.INF:
+		_camp_run(delta)
 	elif flag_at != Vector2.INF:
 		_to_flag()   # (the colours first, whatever's flying)
 	elif game.captive and game.captive.holds(self):
@@ -2145,7 +2158,9 @@ func _feuding(delta: float) -> bool:
 
 
 func _nearest_foe() -> Enemy:
-	var reach := view_range() * (0.85 if alarm_role == "fortified" else 1.4)
+	# (no further than a little past his gun's reach: he doesn't go out across the
+	# street after a man he can't hit; the gang's pushes do the moving)
+	var reach := minf(view_range() * (0.85 if alarm_role == "fortified" else 1.4), reach() * 1.2)
 	var best: Enemy = null
 	var best_d := reach
 	for o in game.enemies:
@@ -2835,6 +2850,29 @@ func desert() -> void:
 	_log("deserts")
 
 
+## Down to the last few: he's away to fetch the rest of them from the camp, and
+## nothing stops him but a bullet.
+func run_to_camp(at: Vector2) -> void:
+	camp_to = at
+	reaction = ""
+	pending = ""
+	foe = null
+	alarm_role = ""
+	st = St.INVESTIGATE
+	path_to(at if game.is_free(at) else game.free_point_near(at, 40.0, feud_rng))
+	_say(_line("camp", ["I'm going for the others!", "Hold 'em! I'll bring the rest!", "Back to the camp!"], feud_rng))
+	_log("runs for the camp")
+
+
+func _camp_run(_delta: float) -> void:
+	crouched = false
+	var g := Iso.to_grid(global_position)
+	var edge := minf(minf(g.x, g.y), minf(game.size - g.x, game.size - g.y)) < 1.2
+	if follow_path(run) or edge:   # (the path's end: the camp's way, or as near it as the ground allows)
+		camp_to = Vector2.INF
+		game.director.runner_home(self)
+
+
 func _desert_run() -> void:
 	crouched = false
 	var g := Iso.to_grid(global_position)
@@ -2978,7 +3016,7 @@ func accuracy_mult() -> float:
 	if panic:
 		return m * 5.0   # wild, over the shoulder
 	if foe != null and st != St.COMBAT:
-		return m * FEUD_SPREAD   # (at the other gang: see _feuding)
+		return maxf(m * FEUD_SPREAD, FEUD_MIN / maxf(0.1, float(weapon.d["spread"])))   # (at the other gang: see _feuding)
 	if suppress_t > 0.0:
 		m *= 1.5
 	if velocity.length() > 5.0:

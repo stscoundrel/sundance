@@ -290,7 +290,8 @@ func _ready() -> void:
 	tex_scale = float(meta.get("tex_scale", 1.0))
 	_build_world()
 	_spawn_actors()
-	if (level_entry.has("waves") and not Engine.has_meta("no_waves")) or level.has("sleepers"):   # (tests of the cargo leave the army out)
+	if (level_entry.has("waves") and not Engine.has_meta("no_waves")) or level.has("sleepers") \
+			or (level.has("camps") and not Engine.has_meta("no_camps")):   # (tests of the cargo leave the army out)
 		director = Director.new()
 		director.setup(self, level_entry.get("waves", []), level_entry.get("waves_from", "") == "first_shot")
 		add_child(director)
@@ -1350,7 +1351,11 @@ func gang_near(at: Vector2) -> String:
 # Silencio's two gangs keep a truce till the thaw. Break it and they're at war: each
 # shoots the other's men on sight and pushes for the middle of town (see
 # Enemy._feuding), till a gang that's lost a third of its men falls back to its
-# holdout and digs in. The stranger's still everyone's enemy.
+# holdout and digs in. The stranger's still everyone's enemy. It isn't only a fight
+# down main street: each gang's "lines" are its own edge of nobody's ground on main
+# street and, round the backs, a flank on the north and the south streets, pushed
+# deep towards the other gang's end; a gang sends its pushes up each in turn, so
+# the fighting spreads, and one flank getting round can turn it.
 #
 # What breaks it: the outlaws missing their gold (it can only be the hunters), or a
 # gang finding one of its own dead with a reason to think the others did it: he's
@@ -1358,15 +1363,33 @@ func gang_near(at: Vector2) -> String:
 # carry and the gang hasn't seen the stranger with one, or nobody else is in town
 # to have done it (they haven't seen the stranger at all). Seen, and with nothing
 # pointing elsewhere, it's the stranger they blame. Trigger happy: once is enough.
+# And the other gang's men seen on their ground with guns out (chasing the stranger
+# in there, say): if the gang hasn't seen him, it can only be an attack.
 var war := false
 const DIG_IN := 0.33        # of a gang down: it falls back to its holdout and holds it
 const PUSH_EVERY := 12.0    # s between a gang sending men up to the middle
 const PUSH_MEN := 3
 
 
+## Where a gang pushes up to, by turns: main street, then each flank (the map's
+## "lines": one [x, y] or a list of them). `dice` picks one at random instead.
+func war_line(g: String, dice: RandomNumberGenerator = null) -> Vector2:
+	var lines: Array = level.get("lines", {}).get(g, [level["center"]["x"], level["center"]["y"]])
+	if not lines[0] is Array:
+		lines = [lines]
+	var i := 0
+	if dice:
+		i = dice.randi_range(0, lines.size() - 1)
+	else:
+		i = gangs[g].get("push_i", 0) % lines.size()
+		gangs[g]["push_i"] = i + 1
+	return Iso.to_screen(Vector2(lines[i][0], lines[i][1]))
+
+
 ## Would these two shoot each other? Only at war, and of different gangs.
 func at_war(a: Actor, b: Actor) -> bool:
-	return war and a is Enemy and b is Enemy and a.gang != b.gang and a.gang != "" and b.gang != ""
+	return war and is_instance_valid(a) and is_instance_valid(b) and a is Enemy and b is Enemy \
+		and a.gang != b.gang and a.gang != "" and b.gang != ""
 
 
 func other_gang(g: String) -> String:
@@ -1426,6 +1449,25 @@ func weigh_death(finder: Enemy, dead: Enemy) -> void:
 		start_war(why[0].to_upper() + why.substr(1))
 
 
+## Men of one gang on the other's ground, hunting (fighting, searching, going to look,
+## in a hurry about something), seen there by one of the other gang: if that gang
+## hasn't seen the stranger, they've no idea who it is they're after. It's an attack.
+func _trespass_tick() -> void:
+	for h in enemies:
+		if not h.alive or h.gang == "" or not (h.st in [Enemy.St.COMBAT, Enemy.St.SEARCH, Enemy.St.INVESTIGATE] or h.reaction != ""):
+			continue
+		var them := other_gang(h.gang)
+		if them == "" or gangs[them]["seen"] or not on_turf(h.global_position, them):
+			continue
+		for o in enemies:
+			if o.alive and o.gang == them and o.visibility_of(h.global_position, false) > 0.0:
+				stats["blamed"] = "trespass"
+				o.foe = h
+				start_war("%s on the %s' ground, guns out!  The %s take it for an attack!" % [
+					h.gang[0].to_upper() + h.gang.substr(1), them, them])
+				return
+
+
 func start_war(why: String) -> void:
 	if war:
 		return
@@ -1436,6 +1478,9 @@ func start_war(why: String) -> void:
 	sfx("sting", null, -6.0, 0.0)
 	for g in gangs:
 		gangs[g]["push_cd"] = 2.0
+	var named: Array = level.get("gangs", [])
+	for i in named.size():
+		gangs[named[i]]["push_i"] = 1 + i   # (round a flank first, each gang its own: then main street)
 
 
 ## The war, every half second: a gang that's lost too many digs in; one that hasn't
@@ -1463,8 +1508,7 @@ func _war_tick(delta: float) -> void:
 		if gs["push_cd"] > 0.0:
 			continue
 		gs["push_cd"] = PUSH_EVERY
-		var at: Array = level.get("lines", {}).get(g, [level["center"]["x"], level["center"]["y"]])   # (where it goes up to)
-		var line := Iso.to_screen(Vector2(at[0], at[1]))
+		var line := war_line(g)   # (where it goes up to: main street, or round a flank)
 		var free: Array = up.filter(func(e): return e.foe == null and e.reaction == "" and e.alarm_role == "" \
 			and not e.tdata.get("boss", false) and not e.kind in ["sharpshooter", "woodsman"])
 		free.sort_custom(func(a, b): return a.global_position.distance_to(line) < b.global_position.distance_to(line))
@@ -1823,6 +1867,8 @@ func _physics_process(delta: float) -> void:
 		_gang_alarm(0.5)
 		if war:
 			_war_tick(0.5)
+		elif level.has("turf"):
+			_trespass_tick()
 	if player.down:
 		finish_cd -= delta
 		if finish_cd <= 0.0:
@@ -2292,7 +2338,7 @@ func _on_enemy_died(e: Actor) -> void:
 		spot_at(player.global_position)["kills"] += 1
 	for o in enemies:
 		if o.alive and o != e and saw.call(o):
-			o.witness_death(e.global_position, e.killer.global_position if e.killer is Enemy else player.global_position, e)
+			o.witness_death(e.global_position, e.killer.global_position if is_instance_valid(e.killer) and e.killer is Enemy else player.global_position, e)
 	if e is Enemy and level.has("turf") and not war:   # one of theirs saw him go down: whose doing?
 		for o in enemies:
 			if o.alive and o.gang == e.gang and saw.call(o) and line_of_sight(o.global_position, e.global_position, false):
@@ -3500,7 +3546,7 @@ func _send_rescuers() -> void:
 		var best_d := Enemy.RESCUE_NEAR
 		for e in enemies:
 			if not e.alive or e.reaction != "" or e.runner_to != Vector2.INF or e.stick or not e.revealed \
-					or e.posted() or e.gang != d.gang:   # (his place is at the gallows, or the pole; the other gang leaves him there)
+					or e.posted() or e.gang != d.gang or war:   # (his place is at the gallows, or the pole; the other gang leaves him there; the street war's too hot to go out into)
 				continue
 			var dist := e.global_position.distance_to(d.global_position)
 			if dist < best_d:

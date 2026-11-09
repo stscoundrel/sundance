@@ -510,7 +510,13 @@ was shot with a gun only they carry, and not one the gang's seen the stranger wi
 (each gang remembers what it's seen him holding: fight with a dead man's gun to
 frame his side); or nobody else is in town that they know of (they haven't seen the
 stranger at all). Seen, and nothing pointing elsewhere, it's the stranger they
-blame. Trigger happy: once is enough. A banner says who blames whom and why ("Shot
+blame. Trigger happy: once is enough. And the misunderstanding: the other gang's men
+seen on a gang's ground with their guns out (fighting, searching, going to look:
+the hunters chasing the stranger into the outlaws' end, say), by a gang that hasn't
+seen him itself. Who else could they be after? It's an attack (`game._trespass_tick`,
+every half second; a man of theirs merely standing about there is no attack, and
+once the gang has seen the stranger they know who it is). A banner says who blames whom and why ("Hunters on the outlaws' ground, guns out!
+The outlaws take it for an attack!", "Shot
 with an outlaw's gun!  The hunters blame the outlaws for murder!", "The gold's
 gone!  The outlaws blame the hunters!"), and a toast that the truce is broken.
 
@@ -518,15 +524,35 @@ At war, a man not busy with the stranger shoots the nearest of the other gang he
 see (to his gun's range; further off, he closes in), slow and wild: three times his
 spread at the stranger (`Enemy.FEUD_SPREAD`) and 2.4 times the wait between shots
 (`FEUD_PACE`, on the war's own dice), heads down, blazing away from cover, so the
-war drags on and the street stays full of guns. Their rounds hurt each other now; hit by one of them, he answers
+war drags on and the street stays full of guns; and never under 20 degrees of spread
+whatever the gun (`FEUD_MIN`), so a rifle misses too. Their rounds hurt each other now; hit by one of them, he answers
 that man, not the stranger, and one who sees a comrade shot down by them goes for
-the killer, not out looking for the stranger over it. Every 12 s each gang sends three men up to its edge of
-nobody's ground (the map's `"lines"`), and gunfire between the gangs draws others to
-it. A gang that's lost a third falls back to its holdout (the hideout, the jail) and
+the killer, not out looking for the stranger over it, and nobody goes out to a
+body or to rescue a man down in the street war: it's too hot out there. Every 12 s
+each gang sends three men up, by turns, to its edge of nobody's ground on main
+street and round the backs to a flank deep up the north and the south streets (the
+map's `"lines"`; each gang starts on a flank of its own), so the fighting spreads
+off main street and a flank that gets round can turn it. The war's gunfire draws
+only those close by (120 px, `Enemy.WAR_EAR`); the rest stay where they are, wary,
+and nobody goes out across the street after a man further off than his gun
+carries. A gang that's lost a third falls back to its holdout (the hideout, the jail) and
 digs in, shooting only at those who come near. The stranger is still everyone's
-enemy, and only his own kills count for him. If they finish each other off, the
-level's won (for now: reinforcements coming in when that happens are a later idea:
-the level should stay dangerous). `tests/test_war.gd` checks the truce holding, a
+enemy, and only his own kills count for him.
+
+**The camps** (the map's `"camps"`, `Director`). Each gang has a camp just off the
+map: the outlaws' up behind the frozen pond, the hunters' down the valley at the far
+south-east corner. A gang down to its last three (`Director.RUNNER_AT`, whoever or
+whatever did it) sends the man nearest the camp running for it, the boss last of
+all, everything else forgotten. A banner says so ("One of the outlaws breaks for
+the camp behind the lake!  Stop him, or 10 more are coming!"): the stranger, or the
+other gang at war, can shoot him on the way, and then no help comes. Off the map,
+he's there; 25 s later the men walk in by the same way: ten outlaws, five hunters
+(fewer of them, better armed), of the gang's own sorts (no second boss). At war
+they go up to the gang's lines, else after the stranger (or to look round the
+middle of town), and the gang's no longer dug in. Each gang tries it once. The
+level isn't won while a runner's running or men are coming. `tests/test_camps.gd` checks a
+runner home and his gang's men in, a runner shot, and the pushes by turns.
+`tests/test_war.gd` checks the truce holding, a
 knifed man blamed on the other gang, the porch pair shooting it out, a gang digging
 in, and each reason for blame on its own.
 
