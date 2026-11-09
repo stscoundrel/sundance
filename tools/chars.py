@@ -2142,13 +2142,3 @@ def dropped_gun(kind, variant):
     d = (math.cos(ang), math.sin(ang), 0.0)
     b = (-math.cos(ang) * GUN_LEN[kind] / 2, -math.sin(ang) * GUN_LEN[kind] / 2, 0.035)
     return weapon_model(kind, b, d)
-
-
-def portrait():
-    look = Look("hero", _DATA["player"]["palette"])
-    m = build_legs(look, legs_pose("stand"))
-    m += build_upper(look, "colt", _key_poses("colt")["aim"])[0]
-    m.transform(rot_y(-0.5), pivot=(0, 0, 1.6))
-    m.transform(rot_z(yaw_for_dir(2) - 0.3))
-    img, anc = render(m, size=(80, 80), anchor=(40, 276), scale=8.4, shadow=False, edges=False)  # UI: fixed 2x
-    return img

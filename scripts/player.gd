@@ -324,9 +324,16 @@ static func cost(guns: Array, kit: Array = []) -> int:
 	return n
 
 
-## The guns that go in each slot, in the order the loadout screen offers them.
+## The guns that go in each slot, in the order the loadout screen offers them: the
+## dearest first, so the best of a slot heads its card (equal prices as SLOT has them).
 static func choices(slot: String) -> Array:
-	return SLOT.keys().filter(func(k): return SLOT[k] == slot and not k in TROPHIES)
+	var keys := SLOT.keys()
+	var out := keys.filter(func(k): return SLOT[k] == slot and not k in TROPHIES)
+	out.sort_custom(func(a, b):
+		var pa := int(Weapon.DATA[a].get("points", 0))
+		var pb := int(Weapon.DATA[b].get("points", 0))
+		return pa > pb if pa != pb else keys.find(a) < keys.find(b))
+	return out
 
 
 ## The guns he rides in with (at least one, one a slot), each with its cartridges.

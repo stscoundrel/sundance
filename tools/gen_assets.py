@@ -538,11 +538,118 @@ def gen_fx(meta):
                       "cell": [24 * PIX, 24 * PIX], "frames": 3}
 
 
+def paint_portrait():
+    """The stranger in the HUD's corner, painted like the eyes close-up: head and
+    shoulders against a dusk sky, the flat brim pulled low so its shadow takes his
+    eyes, light from the left, stubble, the cigar in the corner of his mouth, the
+    duster's collar and the bandolier across it. Laid out on the HUD's 40x40 box."""
+    pal = {k: np.array(v, float) for k, v in chars._DATA["player"]["palette"].items()}
+    K = UI_PIX
+    S = 40 * K
+    rng = np.random.default_rng(23)
+    v, u = (np.mgrid[0:S, 0:S].astype(float) + 0.5) / K
+    fine = rng.random((S, S))
+    felt = noise2(S, S, 3 * K, 3)
+    lit = lambda a, b: np.clip(1.12 - 0.42 * (u - a) / (b - a), 0.6, 1.15)[..., None]   # sun from the left
+    # the sky: dusk going down behind the hills
+    img = (np.array([168, 92, 48], float) * (1 - v / 40)[..., None]
+           + np.array([92, 44, 30], float) * (v / 40)[..., None])
+    sun = np.hypot(u - 6, v - 23.5) < 3.6
+    img[sun] = img[sun] * 0.5 + np.array([236, 186, 110]) * 0.5
+    hills = v > 28.5 + 1.6 * np.sin(u / 4.3) + 0.8 * np.sin(u / 1.7)
+    img[hills] = (70, 36, 28)
+    fig = np.zeros((S, S), bool)
+
+    def put(mask, col):
+        img[mask] = col[mask] if np.ndim(col) == 3 else col
+        fig[mask] = True
+
+    # shoulders: the duster, its collar turned up, the shirt in the V
+    sh = (v > 28.6) & (np.abs(u - 20) < 8.5 + (v - 28.6) * 2.6)
+    put(sh, pal["coat"] * lit(8, 34) * (0.92 + 0.12 * felt)[..., None])
+    vee = sh & (np.abs(u - 20) < (v - 29.5) * 0.42 + 1.4)
+    put(vee, pal["shirt"] * lit(16, 25) * 0.9)
+    lapel = sh & ~vee & (np.abs(u - 20) < (v - 29.5) * 0.42 + 2.4)
+    put(lapel, pal["coat"] * 0.62)
+    seam = sh & (np.abs(np.abs(u - 20) - (9.2 + (v - 28.6) * 2.6)) < 0.7)   # the shoulder's edge
+    put(seam, pal["coat"] * 0.55)
+    # the bandolier: left shoulder down to his right hip, brass in its loops
+    d = (u - 10.5) * 0.55 - (v - 30.5) * 0.83   # across the strap
+    t = (u - 10.5) * 0.83 + (v - 30.5) * 0.55   # along it
+    strap = sh & (np.abs(d) < 1.5) & (t > -2)
+    put(strap, np.array([96, 64, 40], float) * lit(8, 34))
+    shell = strap & (np.abs(d) < 0.9) & (np.mod(t, 2.0) < 1.0)
+    put(shell, np.array([212, 168, 80], float) * lit(8, 34))
+    # neck, in the jaw's shadow
+    put((np.abs(u - 20) < 3.3) & (v > 24) & (v < 30), pal["skin"] * 0.62)
+    # hair at his neck and temples, under the brim
+    hair = (np.abs(u - 20) < 7.0) & (np.abs(u - 20) > 4.5) & (v > 13) & (v < 21.5)
+    put(hair & (fine > 0.1), pal["hair"] * lit(13, 27))
+    # the head: a long face, a hard jaw
+    half = 6.0 - np.clip(v - 21.5, 0, None) * 0.42
+    head = (np.abs(u - 20) < half) & (v > 11) & (v < 28.2) & (((v - 19) / 9.2) ** 2 + ((u - 20) / 6.4) ** 2 < 1.05)
+    face = pal["skin"] * lit(14, 26) * (0.94 + 0.1 * felt)[..., None]
+    put(head, face)
+    ear = (np.hypot((u - 13.7) / 1.1, (v - 19.5) / 2.0) < 1)
+    put(ear, pal["skin"] * 0.95)
+    put(ear & (np.hypot((u - 13.9) / 0.5, (v - 19.6) / 1.1) < 1), pal["skin"] * 0.7)
+    # the nose: its lit side, its shadowed side, the dark under it
+    ridge = head & (v > 18) & (v < 23)
+    put(ridge & (u > 18.4) & (u < 19.6), face * 1.14)
+    put(ridge & (u >= 19.6) & (u < 21.2) & (v > 19 + (u - 19.6)), face * 0.72)
+    put(head & (v >= 22.6) & (v < 23.4) & (np.abs(u - 19.8) < 1.4), face * 0.55)
+    # hollow cheeks under the cheekbones
+    put(head & (v > 21) & (v < 25.5) & (np.abs(u - 24.0 + (v - 21) * 0.15) < 0.8), face * 0.78)
+    put(head & (v > 21) & (v < 25) & (np.abs(u - 15.7 - (v - 21) * 0.15) < 0.6), face * 0.9)
+    # the mouth, a hard line, and stubble on his chin and jaw
+    put(head & (np.abs(v - 25.2 - 0.12 * (u - 20)) < 0.45) & (np.abs(u - 20) < 2.6), np.array([92, 52, 40], float))
+    put(head & (v > 25.6) & (v < 26.3) & (np.abs(u - 20) < 1.8), face * 1.06)
+    stub = head & (v > 23.2) & (fine > 0.55) & ~(np.abs(v - 25.2) < 0.5)
+    img[stub] *= 0.78
+    put(head & (v > 27.0), face * 0.8)
+    # the brim's shadow: everything above his nose's tip is dark, the eyes gone in it
+    edge = 19.6 + 0.35 * np.sin(u * 1.3) + 0.06 * (u - 20)
+    dark = fig & (v < edge) & (v > 11)
+    img[dark] = img[dark] * 0.26 + np.array([26, 16, 14]) * 0.3
+    soft = fig & (v >= edge) & (v < edge + 1.0)
+    img[soft] *= 0.65
+    # the faintest catch of light in one eye, under there
+    glint = (np.hypot(u - 17.4, v - 18.0) < 0.5)
+    img[glint] = (120, 96, 70)
+    # the cigar from the corner of his mouth, its coal and a thread of smoke
+    cd = (u - 21.6) * 0.26 - (v - 25.3) * 0.97
+    ct = (u - 21.6) * 0.97 + (v - 25.3) * 0.26
+    cig = (np.abs(cd) < 0.8) & (ct > 0) & (ct < 5.2)
+    put(cig, np.array([150, 98, 58], float) * (1.1 - 0.3 * (cd < 0))[..., None])
+    put((np.abs(cd) < 0.8) & (ct >= 5.2) & (ct < 5.9), np.array([168, 160, 150], float))
+    put((np.abs(cd) < 0.7) & (ct >= 5.9) & (ct < 6.6), np.array([240, 110, 40], float))
+    for i in range(14):
+        sx, sy = 28.0 + 0.9 * math.sin(i * 0.7), 26.2 - i * 0.75
+        m = np.hypot(u - sx, v - sy) < 0.5 + i * 0.03
+        img[m] = img[m] * (0.55 + i * 0.03) + np.array([200, 190, 176]) * (0.45 - i * 0.03)
+    # the hat: a flat crown, the band, the wide brim tipped down at the front
+    tilt = 0.07 * (u - 20)
+    crown = (np.abs(u - 20) < 7.3 - (13.5 - v) * 0.06) & (v > 4.6 + tilt * 0.5) & (v < 13.5)
+    put(crown, pal["hat"] * lit(12, 28) * (0.88 + 0.22 * felt)[..., None])
+    put(crown & (v < 5.8 + tilt * 0.5), pal["hat"] * 1.35 * lit(12, 28))
+    put(crown & (v > 11.0) & (v < 13.2), pal["band"] * lit(12, 28))
+    put(crown & (np.abs(u - 20 + 0.3 * (v - 5)) < 0.45) & (v > 6) & (v < 10.8), pal["hat"] * 0.7)   # the crease
+    rim = np.hypot((u - 20) / 17.5, (v - 14.4 - tilt) / 3.2) < 1
+    top = rim & (v < 14.4 + tilt)
+    put(rim, pal["hat"] * 0.5 * (0.9 + 0.2 * felt)[..., None])   # the underside, towards us
+    put(top & ~crown, pal["hat"] * lit(2, 38) * 1.1 * (0.88 + 0.22 * felt)[..., None])
+    put(rim & (np.abs(v - 14.4 - tilt) < 0.45), pal["hat"] * 0.85 * lit(2, 38))   # the brim's edge
+    # a dark outline round him, as the sprites have
+    out = ~fig & (np.roll(fig, 1, 0) | np.roll(fig, -1, 0) | np.roll(fig, 1, 1) | np.roll(fig, -1, 1))
+    img[out] = img[out] * 0.4 + np.array([24, 14, 12]) * 0.6
+    img = (np.floor(np.clip(img, 0, 255) / 12) * 12).astype(np.uint8)
+    return np.dstack([img, np.full((S, S), 255, np.uint8)])
+
+
 def gen_ui(meta):
     meta["ui"] = {}
     # portrait
-    p = chars.portrait()
-    meta["ui"]["portrait"] = save(p, "sprites/ui/portrait.png")
+    meta["ui"]["portrait"] = save(paint_portrait(), "sprites/ui/portrait.png")
     # the guns the stranger can carry, side-on, for the loadout screen (Player.SLOT)
     meta["ui"]["guns"] = {}
     for kind in ("colt", "buntline", "schofield", "navy", "pistola", "coach", "spencer82", "sawnoff", "champion", "escopeta", "rifle", "henry", "spencer",

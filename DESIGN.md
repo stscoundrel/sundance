@@ -683,8 +683,11 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
-listing what goes in it (Colt, Schofield, Navy or horse pistol; coach gun, Spencer pump, sawn-off, Champion or escopeta;
-Winchester, Henry, Spencer, Springfield or cut-down Rolling Block) with a line on what the chosen one is like. 1 2 3
+listing what goes in it, dearest first (`Player.choices`: Colt, Schofield, Navy, horse pistol; Spencer pump, coach gun,
+sawn-off, Champion, escopeta; Winchester, Henry, Spencer, Remington, Springfield, cut-down Rolling Block) with a line on
+what the chosen one is like. The cards all stand as tall as the longest list needs, so a new gun grows them and pushes
+the kit and "ride in" down rather than slipping under them; `tests/test_cards.gd` checks every gun's name, price and
+blurb fit its card and the whole screen fits the page. 1 2 3
 or a click on a card goes on through its guns and then none; a click on a gun's
 name takes it, or puts it back. Enter or "ride in". The choice is kept across
 restarts. He rides in with those and their cartridges (`Player.RESERVE`; guns
@@ -1265,6 +1268,9 @@ carried, which you collect by walking over them.
   church bell. If a bandit lays eyes on the hero before he has fired a shot, the
   game slows briefly while an extreme close-up of his eyes crosses the screen
   (1.7 s, counted in unscaled frame time so headless tests stay deterministic).
+  The stranger's portrait in the HUD's corner is painted the same way
+  (`paint_portrait` in the `ui` step): head and shoulders against a dusk sky, the
+  flat brim's shadow taking his eyes, stubble, the cigar, the duster and bandolier.
 - Sound: gunshots are loud and echoing, like the films: a hard crack, a saturated
   powder blast and a low boom, then a long stereo canyon tail whose echoes bounce
   left and right (three takes per gun, no pitched "pew"). Gunfire carries across

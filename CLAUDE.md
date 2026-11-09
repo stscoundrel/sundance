@@ -76,8 +76,6 @@ godot --headless --path . --import                               # after any bak
   templates need it from enemies.json and levels.json. Re-bake those templates, then `fx`
   (the dropped-gun sprites); for the stranger, also `ui` (loadout card art) and the hero.
 - Baking many templates takes 10+ minutes: run it in the background.
-- The `ui` step rewrites `assets/sprites/ui/portrait.png` with small differences; restore
-  it with `git checkout` unless the portrait was meant to change.
 
 ## Looking at it
 
