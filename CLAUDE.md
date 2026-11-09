@@ -74,7 +74,8 @@ godot --headless --path . --import                               # after any bak
 - A new gun for bandits: its model in `weapon_model` and `GUN_LEN` (`tools/chars.py`),
   poses in `_key_poses`, animations in `upper_anims`; `template_guns()` works out which
   templates need it from enemies.json and levels.json. Re-bake those templates, then `fx`
-  (the dropped-gun sprites); for the stranger, also `ui` (loadout card art) and the hero.
+  (the dropped-gun sprites); for the stranger, also the hero, and a card model in `tools/card_guns.py`
+  baked with `ui` (loadout card art).
 - Baking many templates takes 10+ minutes: run it in the background.
 
 ## Looking at it

@@ -562,6 +562,7 @@ func _draw_levels() -> void:
 # ------------------------------------------------------------------ loadout
 
 const CARD_W := 186.0
+const GUN_TEXELS := 2.0         # the card's gun art is baked at its size on the card, two texels a point (gen_assets UI_PIX)
 const CARD := Vector2(31, 84)   # the first card's corner; the others follow 10 px apart
 const GUN_ROW := 11.0           # a gun's line on a card
 const OPTION_Y := 100.0         # the top of a card's first gun to pick from
@@ -646,8 +647,7 @@ func _draw_loadout(_p: Player) -> void:
 			Color(0.95, 0.75, 0.35) if on else Color(INK, 0.5), font, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)
 		if on:
 			var t: Texture2D = game.tex(game.meta["ui"]["guns"][k])
-			var sz := t.get_size()
-			sz *= minf(2.0, 140.0 / sz.x)
+			var sz := t.get_size() / GUN_TEXELS
 			draw_texture_rect(t, Rect2(r.position + Vector2(CARD_W / 2 - sz.x / 2, 47 - sz.y / 2), sz), false)
 			_text(Vector2(r.position.x, r.position.y + 78), Weapon.DATA[k]["name"], 8, INK, null, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)
 			_text(Vector2(r.position.x, r.position.y + 90), BLURB[k], 8, Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, CARD_W)

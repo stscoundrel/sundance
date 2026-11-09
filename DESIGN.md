@@ -685,7 +685,10 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
 listing what goes in it, dearest first (`Player.choices`: Colt, Schofield, Navy, horse pistol; Spencer pump, coach gun,
 sawn-off, Champion, escopeta; Winchester, Henry, Spencer, Remington, Springfield, cut-down Rolling Block) with a line on
-what the chosen one is like. The cards all stand as tall as the longest list needs, so a new gun grows them and pushes
+what the chosen one is like, and its picture. The pictures aren't the guns of play blown up: each gun has a finer model
+of its own for the card (`tools/card_guns.py`), at its true proportions where the game's are oversized to read in a
+man's hands, with the fluted cylinder, the lever, the bands and the grain of the stock, baked at the very pixels the
+card shows it at. The cards all stand as tall as the longest list needs, so a new gun grows them and pushes
 the kit and "ride in" down rather than slipping under them; `tests/test_cards.gd` checks every gun's name, price and
 blurb fit its card and the whole screen fits the page. 1 2 3
 or a click on a card goes on through its guns and then none; a click on a gun's

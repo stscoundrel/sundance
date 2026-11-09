@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import chars  # noqa: E402
 import world  # noqa: E402
+import render3d  # noqa: E402
 from render3d import render, noise2, PIX, PX, PY  # noqa: E402
 
 UI_PIX = 2  # the HUD art is drawn at 2x its 640x360 layout
@@ -656,8 +657,17 @@ def gen_ui(meta):
                  "springfield", "rollingblock", "remington"):
         L = chars.GUN_LEN[kind]
         d = np.array([1.0, -1.0, 0.0]) / math.sqrt(2)   # along the screen, muzzle to the right
-        img, _ = render(chars.weapon_model(kind, -d * L / 2, d), scale=PIX * (2.4 if kind in chars.PISTOLS else 1.2),
-                        shadow=False)
+        base = PIX * (2.4 if kind in chars.PISTOLS else 1.2)
+        w = render(chars.weapon_model(kind, -d * L / 2, d), scale=base, shadow=False)[0].shape[1]
+        # the card shows it up to 140 points wide (and never past twice this size); bake it
+        # at just the screen pixels that makes, sampled that much finer, so it stands sharp
+        k = min(2.0, 140.0 / w) * UI_PIX
+        render3d.PIX = PIX * k
+        try:
+            model = chars.weapon_model(kind, -d * L / 2, d, detail=True)
+        finally:
+            render3d.PIX = PIX
+        img, _ = render(model, scale=base * k, shadow=False, pad=round(6 * k))
         meta["ui"]["guns"][kind] = save(img, f"sprites/ui/gun_{kind}.png")
 
     # extreme close-up of the hero's eyes

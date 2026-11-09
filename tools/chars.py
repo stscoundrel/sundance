@@ -318,9 +318,10 @@ def _head_fn(look, hc):
 
 # ---------------------------------------------------------------- guns
 
-def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
+def weapon_model(kind, butt, direction, lever=0.0, broken=0.0, detail=False):
     """A gun from its butt along `direction`. lever (0..1) throws the Winchester's
-    lever; broken (0..1) drops the coach gun's barrels on their hinge."""
+    lever; broken (0..1) drops the coach gun's barrels on their hinge. detail asks for
+    the loadout card's finer model, where there is one."""
     out = Cloud()
     butt = np.array(butt, float)
     a = np.array(direction, float)
@@ -331,6 +332,11 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0):
         side = np.array([0, 1.0, 0])
     side /= np.linalg.norm(side)
     up = np.cross(side, a)
+    if detail:
+        import card_guns
+        fine = card_guns.model(kind, butt, a, side, up)
+        if fine is not None:
+            return fine
 
     def at(t, off=(0, 0), axis=None, origin=None, length=None):
         ax = a if axis is None else axis
