@@ -1,7 +1,7 @@
 extends SceneTree
 ## The Spencer 1882 pump gun (the test yard, its gang parked out of the way):
 ##   gun      - six shells (five in the tube, one up) of the coach gun's, 5 points,
-##              the dearest gun with the Winchester; a 12 bore a little tighter and further than the
+##              the dearest long gun with the Winchester (only the pair of Colts dearer); a 12 bore a little tighter and further than the
 ##              coach gun, no volley; the slide slower than any lever.
 ##   dry      - fired empty and loaded again, it takes two strokes (one long cycle)
 ##              before it'll fire; loaded with one still up, one stroke as ever.
@@ -74,7 +74,7 @@ func _gun() -> void:
 	var sp: Dictionary = Weapon.DATA["spencer82"]
 	var coach: Dictionary = Weapon.DATA["coach"]
 	for k in Weapon.DATA:
-		if k != "spencer82" and Weapon.DATA[k].has("points"):
+		if not k in ["spencer82", "colts"] and Weapon.DATA[k].has("points"):
 			check(sp["points"] >= Weapon.DATA[k]["points"], "cheaper than the %s" % k)
 	check(sp["points"] == 5, "costs %d" % sp["points"])
 	check(Player.SLOT["spencer82"] == "coach" and "spencer82" in Player.choices("coach"), "not on the shotgun card")

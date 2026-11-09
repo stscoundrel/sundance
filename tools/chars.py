@@ -38,7 +38,7 @@ def template_guns():
     """Which guns each body template must be baked holding (every gun its types carry).
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
-    out = {"hero": ["colt", "buntline", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "howdah", "derringer", "pistola", "sawnoff", "champion", "escopeta", "spencer",
+    out = {"hero": ["colts", "colt", "buntline", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "howdah", "derringer", "pistola", "sawnoff", "champion", "escopeta", "spencer",
                     "springfield", "rollingblock", "remington", "mgun", "strongbox"]}
 
     def need(template, g, t=None):
@@ -112,7 +112,7 @@ def template_guns():
 
 
 CARRY_SET = {"mg": "mgcarry"}   # a carrier's load, by the pose set he carries it in
-GUN_LEN = {"m1895": 1.0, "remington": 1.3, "colt": 0.31, "buntline": 0.52, "schofield": 0.33, "coach": 0.97, "spencer82": 1.02, "rifle": 1.1, "henry": 1.12, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
+GUN_LEN = {"colts": 0.31, "m1895": 1.0, "remington": 1.3, "colt": 0.31, "buntline": 0.52, "schofield": 0.33, "coach": 0.97, "spencer82": 1.02, "rifle": 1.1, "henry": 1.12, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
@@ -332,6 +332,13 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0, detail=False):
         side = np.array([0, 1.0, 0])
     side /= np.linalg.norm(side)
     up = np.cross(side, a)
+    if kind == "colts":
+        # a pair: the second a little ahead of the first, beside it in the dirt and
+        # above it on the card, where the picture is side-on
+        off = (up * 0.075 if detail else -side * 0.07) + a * 0.05
+        out += weapon_model("colt", butt, a, detail=detail)
+        out += weapon_model("colt", butt + off, a, detail=detail)
+        return out
     if detail:
         import card_guns
         fine = card_guns.model(kind, butt, a, side, up)

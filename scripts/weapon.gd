@@ -97,10 +97,15 @@ const DATA := {
 		"open": [0.3, "break_open"], "eject": [0.3, "eject"], "insert": [0.4, "shell_in"], "close": [0.3, "cock"],
 		"status": {"cycle": "COCKING", "open": "SNAPPED OPEN", "close": "CLOSING"}},
 	# A pair of Colts, one in each hand. Chambers alternate between the guns, so the
-	# left is already cocked as the right fires; reloading is one gun at a time.
-	"colts": {"name": "PAIR OF COLTS", "action": "revolver", "twin": true, "chambers": 12, "damage": 2,
+	# left is already cocked as the right fires; reloading is one gun at a time: the
+	# left put away while the right is loaded, then the right put away and the left
+	# drawn ("swap"), and a round goes in slower than a Colt's with a second gun at
+	# his hip to mind, so the twelve take well over twice as long as one Colt's six. The dearest gun
+	# on the stranger's card; a dead gunslinger leaves his as two Colts ("drops").
+	"colts": {"name": "PAIR OF COLTS", "points": 6, "action": "revolver", "twin": true, "chambers": 12, "damage": 2,
 		"speed": 650.0, "range": 340.0, "spread": 3.0, "pellets": 1, "noise": 380.0, "sfx": "colt",
 		"cycle": 0.16, "shake": 2.0, "smoke": 9, "ammo": "colt", "drops": ["colt", "colt"],
+		"eject": [0.36, "eject"], "insert": [0.6, "shell_in"], "swap": [1.6, "gate"],
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
 	# Colt Navy 1851, cap-and-ball: no cartridges. Each chamber takes powder, a ball
 	# rammed home with the loading lever and a cap on the nipple, so a reload takes
@@ -213,6 +218,7 @@ var cur := 0
 var cocked := true
 var fanning := false
 var hand := 0   # the hand that fired last: 0 right, 1 left (a pair of guns)
+var swap_due := false   # a pair being loaded: the left gun's turn is still to come
 # Breech guns, same encoding per barrel.
 var barrels: Array[int] = []
 # Lever action.
@@ -426,6 +432,8 @@ func start_reload() -> bool:
 				return false
 	stop_requested = false
 	reload_idx = 0
+	if d.get("twin", false):   # (the swap only if both guns want loading)
+		swap_due = _hand_wants(0) and _hand_wants(1)
 	state = S.OPEN
 	if holder.has_method("on_reload"):
 		holder.on_reload()
@@ -527,8 +535,15 @@ func _reload_step() -> void:
 				_step(S.INSERT, d["insert"][0], d["insert"][1])
 				return
 		"revolver":
+			var twin: bool = d.get("twin", false)
 			while reload_idx < chambers.size():
-				var c := (cur + reload_idx) % chambers.size()
+				# a pair: the right gun's six (the even chambers), then the left's
+				var c := (reload_idx * 2 % chambers.size() + reload_idx * 2 / chambers.size()) if twin \
+					else (cur + reload_idx) % chambers.size()
+				if twin and swap_due and reload_idx == chambers.size() / 2:
+					swap_due = false
+					_step(S.OPEN, d["swap"][0], d["swap"][1])
+					return
 				if chambers[c] == 2:
 					chambers[c] = 0
 					var ej: Array = d.get("eject", [0.26, "eject"])
@@ -563,6 +578,14 @@ func _reload_step() -> void:
 				_step(S.INSERT, ins[0], ins[1])
 				return
 	_close()
+
+
+## Whether one of a pair's guns (0 right, 1 left) has a spent or empty chamber.
+func _hand_wants(h: int) -> bool:
+	for i in range(h, chambers.size(), 2):
+		if chambers[i] != 1:
+			return true
+	return false
 
 
 func _step(s: S, t: float, snd: String) -> void:

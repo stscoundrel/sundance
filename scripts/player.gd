@@ -8,10 +8,10 @@ extends Actor
 ## Cartridges go in his belt whether he has the gun for them yet or not.
 
 const ORDER := ["colt", "coach", "rifle"]
-const SLOT := {"colt": "colt", "schofield": "colt", "buntline": "colt", "navy": "colt", "howdah": "colt", "derringer": "colt", "pistola": "colt",
+const SLOT := {"colts": "colt", "colt": "colt", "schofield": "colt", "buntline": "colt", "navy": "colt", "howdah": "colt", "derringer": "colt", "pistola": "colt",
 	"coach": "coach", "spencer82": "coach", "sawnoff": "coach", "champion": "coach", "escopeta": "coach",
 	"rifle": "rifle", "henry": "rifle", "spencer": "rifle", "springfield": "rifle", "rollingblock": "rifle", "remington": "rifle"}   # the guns he can take up, by slot
-const RESERVE := {"colt": 30, "schofield": 30, "buntline": 30, "navy": 24, "howdah": 10, "derringer": 12, "pistola": 12,
+const RESERVE := {"colts": 36, "colt": 30, "schofield": 30, "buntline": 30, "navy": 24, "howdah": 10, "derringer": 12, "pistola": 12,
 	"coach": 10, "spencer82": 10, "sawnoff": 10, "champion": 10, "escopeta": 8,
 	"rifle": 26, "henry": 26, "spencer": 21, "springfield": 12, "rollingblock": 10, "remington": 12}   # what he rides in with, per gun (to his belt)
 const TROPHIES := ["buntline"]   # his only off the dead: not on the loadout screen
@@ -97,7 +97,7 @@ var down_t := 0.0              # bleeding out
 var lie_facing := Vector2.RIGHT   # the way his boots point, lying there
 var dirt_drops := 0            # men he's dropped this last stand
 var held_before := ""          # the gun he had in hand when he fell
-var boot: Weapon = null        # the revolver from his boot, if he had no Colt
+var boot: Weapon = null        # the revolver from his boot, if he had no Colt (or his pair's right gun)
 var _bot_down_t := 0.0
 var sticks := 0                # dynamite he carries
 var stick: Dynamite = null     # lit, in his hand
@@ -772,7 +772,16 @@ func _go_down(from_dir: Vector2, shooter: Actor) -> void:
 	weapon.fanning = false
 	held_before = current
 	dirt_drops = 0
-	if "colt" in owned:   # (his revolver, or whatever pistol he's taken up in its place)
+	if "colt" in owned and weapons["colt"].d.get("twin", false):
+		# a pair: one hand's on the dirt, so the right gun alone, as loaded as it is
+		switch_to("colt")
+		switch_t = 0.0
+		boot = Weapon.new("colt", self)
+		for i in 6:
+			boot.chambers[i] = weapons["colt"].chambers[i * 2]
+		boot.cur = maxi(0, boot.chambers.find(1))
+		weapon = boot
+	elif "colt" in owned:   # (his revolver, or whatever pistol he's taken up in its place)
 		switch_to("colt")
 		switch_t = 0.0
 	else:   # a revolver out of his boot, loaded, and whatever rounds for it he has on his belt
@@ -901,6 +910,9 @@ func _get_up(own := true, nerve := false) -> void:
 	bleeding = nerve
 	limp_t = 6.0
 	weapon.slow = 1.0
+	if boot and weapons["colt"].d.get("twin", false) and "colt" in owned:
+		for i in 6:   # the right gun goes back to being half of the pair
+			weapons["colt"].chambers[i * 2] = boot.chambers[i]
 	boot = null
 	current = held_before
 	weapon = weapons[held_before]

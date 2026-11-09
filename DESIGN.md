@@ -615,7 +615,8 @@ length): the moment slows, a sting, and the colour starts going out of it. He li
 propped on an elbow, boots towards whoever dropped him, in the same poses as the
 gang's last gasp, with one bar left. He can't move, but he can drag himself round
 on his elbow to face any way, boots and all (2.5 rad/s: a man behind him takes over
-a second to face; flanked still costs him). It's his Colt if he rode in with one; if not, a revolver
+a second to face; flanked still costs him). It's his Colt if he rode in with one (with the pair, the right gun alone, as loaded as it
+was, the left left in its holster; up again, it's half of the pair as he left it); if not, a revolver
 comes out of his boot (a Colt, a Schofield or a Navy, loaded). Everything takes half as long again
 one-handed in the dirt (no fanning), and lying flat he's a small target: his hurtbox
 lies along him, and he counts as crouched, so low cover stops everything. A heartbeat
@@ -683,7 +684,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
-listing what goes in it, dearest first (`Player.choices`: Colt, Schofield, Navy, howdah, derringer, horse pistol; Spencer pump, coach gun,
+listing what goes in it, dearest first (`Player.choices`: pair of Colts, Colt, Schofield, Navy, howdah, derringer, horse pistol; Spencer pump, coach gun,
 sawn-off, Champion, escopeta; Winchester, Henry, Spencer, Remington, Springfield, cut-down Rolling Block) with a line on
 what the chosen one is like, and its picture. The pictures aren't the guns of play blown up: each gun has a finer model
 of its own for the card (`tools/card_guns.py`), at its true proportions where the game's are oversized to read in a
@@ -710,7 +711,8 @@ weak shots and an age to load; sawn-off), the six-guns 3 (Colt and Schofield ali
 strong, each with its own faults), the coach gun 3. Rifles cost a point more than their like
 elsewhere, for the reach: the cut-down Rolling Block 1 (the cheapest, none free), the
 Springfield 2, the Spencer and the Remington 3, the Henry 4, and the Winchester, the best gun
-in the game, 5, as dear as the Spencer pump gun, rare and new: the two dearest. Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
+in the game, 5, as dear as the Spencer pump gun, rare and new. Dearest of all, 6, is the
+pair of Colts: twelve shots right and left, at a price in the reload (below). Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
 or the box left of "ride in") and a stick of dynamite for 2 (G, the right box), in
 every level. What he doesn't buy he hasn't: no free bandage. Each
 gun line shows its price, greyed when he can't afford it with what else he's taken;
@@ -720,7 +722,7 @@ until it fits. Guns taken off the dead are free. The tests that skip the screen
 keep the level's own kit (a bandage, the level's sticks). `tests/test_budget.gd`.
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
-never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, howdah, derringer, horse pistol), **2** a
+never change meaning: **1** a revolver or pistol (pair of Colts, Colt, Schofield, Navy, howdah, derringer, horse pistol), **2** a
 shotgun (coach gun, Spencer pump, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Henry, Spencer, Springfield, cut-down Rolling Block).
 `Player.SLOT` lists what he can carry; the Sharps still stays where it
 lies, and the gunsmith may get to it first. The gamblers' and saloon girls'
@@ -1362,8 +1364,16 @@ falling-block buffalo rifle (damage 3, the longest range, reloaded after every s
 The **howdah pistol** is a two-barrel .577 break-action hand cannon (damage 2 per
 barrel, both can go at once). The gunslinger's **pair of Colts** holds twelve: the
 chambers alternate between the guns, so he fires right, left, right, with only a
-short pause between; he reloads one gun at a time while the other sits holstered
-(`tests/test_gunslinger.gd` pits one against a pistolero under fire). The
+short pause between; he reloads one gun at a time, the right first while the left
+sits holstered, then the right put away and the left drawn (`"swap"`, 1.6 s, only if
+both want loading), and each round goes in slower than a Colt's (0.6 s to 0.5) with a
+second gun to mind, so the twelve take about 2.4 times one Colt's six (`tests/test_gunslinger.gd` pits one against a pistolero under fire). The stranger
+can ride in with a pair too, for 6 points (the hero wears a second holster for it, in every
+level): it can't be fanned, it reloads the same slow way, and given up for another gun
+it lies in the dirt as a pair, loaded as it was, for him to take back; a dead
+gunslinger's still come apart into two single Colts. His gun panel shows both cylinders,
+the left gun's on the left and the right's on the right, each turned to its next chamber,
+with the hammer bright on the one to fire next. `tests/test_pair.gd`. The
 **Colt Navy 1851** is the old cap-and-ball revolver the bandidos carry: six shots,
 damage 1, a fog of black-powder smoke, and no cartridges. Each chamber is charged
 with powder and ball, rammed and capped, so a full reload takes about 11 s (a

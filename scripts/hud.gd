@@ -327,23 +327,18 @@ func _draw_weapon(p: Player) -> void:
 	_text(Vector2(516, 316), w.d["name"], 8, INK)
 	var c := Vector2(536, 336)
 	match w.action:
+		"revolver" when w.d.get("twin", false):
+			# a pair: the left gun's cylinder on the left, the right's on the right (the
+			# even chambers), each turned to its next chamber; the one to fire next is
+			# the one cocked
+			for h in 2:
+				var mine: Array[int] = []
+				for i in range(h, w.chambers.size(), 2):
+					mine.append(w.chambers[i])
+				var nxt := w.cur if w.cur % 2 == h else (w.cur + 1) % w.chambers.size()
+				_draw_cylinder(c + Vector2(26 if h == 0 else -8, 0), mine, nxt / 2, w.cocked and w.cur % 2 == h)
 		"revolver":
-			draw_circle(c, 15, Color(0.2, 0.2, 0.22))
-			draw_circle(c, 3, Color(0.12, 0.12, 0.13))
-			for i in 6:
-				var idx := (w.cur + i) % 6
-				var pos := c + Vector2.from_angle(-PI / 2 + i * TAU / 6.0) * 9.5
-				match w.chambers[idx]:
-					1:
-						draw_circle(pos, 3.5, BRASS)
-						draw_circle(pos, 1.3, BRASS_DARK)
-					2:
-						draw_circle(pos, 3.5, BRASS_DARK)
-						draw_circle(pos, 2.0, Color(0.05, 0.04, 0.03))
-					_:
-						draw_circle(pos, 3.5, Color(0.04, 0.04, 0.04))
-			var hammer := Color(0.8, 0.8, 0.82) if w.cocked else Color(0.35, 0.35, 0.38)
-			draw_colored_polygon(PackedVector2Array([c + Vector2(-3, -21), c + Vector2(3, -21), c + Vector2(0, -17)]), hammer)
+			_draw_cylinder(c, w.chambers, w.cur, w.cocked)
 		"breech":
 			var n := w.barrels.size()
 			for i in n:
@@ -365,13 +360,35 @@ func _draw_weapon(p: Player) -> void:
 			for i in w.cap():
 				var r := Rect2(c.x - 6 + i * 4, c.y - 6, 3, 12)
 				draw_rect(r, BRASS if i < w.tube else Color(0.12, 0.1, 0.08))
-	_text(Vector2(box.position.x + 70 if w.action != "lever" else box.position.x + 4, box.position.y + 47), "+%d" % w.reserve, 8, INK)
+	var at := 4 if w.action == "lever" else (96 if w.d.get("twin", false) else 70)
+	_text(Vector2(box.position.x + at, box.position.y + 47), "+%d" % w.reserve, 8, INK)
 	var st := w.status()
 	if st != "":
 		_text(Vector2(box.position.x, box.position.y - 4), st, 8, Color(1, 0.8, 0.4), null, HORIZONTAL_ALIGNMENT_RIGHT, box.size.x)
 	if w.kind == "colt" and w.fanning:
 		_text(Vector2(box.position.x + 66, box.position.y + 34), "FANNING", 8, Color(1, 0.5, 0.3))
 	draw_set_transform(Vector2.ZERO)
+
+
+## A revolver's cylinder seen from behind: its chambers (1 live, 2 fired, 0 empty)
+## with `top` under the hammer, and the hammer, bright when it's cocked.
+func _draw_cylinder(c: Vector2, chambers: Array[int], top: int, cocked: bool) -> void:
+	var n := chambers.size()
+	draw_circle(c, 15, Color(0.2, 0.2, 0.22))
+	draw_circle(c, 3, Color(0.12, 0.12, 0.13))
+	for i in n:
+		var pos := c + Vector2.from_angle(-PI / 2 + i * TAU / n) * 9.5
+		match chambers[(top + i) % n]:
+			1:
+				draw_circle(pos, 3.5, BRASS)
+				draw_circle(pos, 1.3, BRASS_DARK)
+			2:
+				draw_circle(pos, 3.5, BRASS_DARK)
+				draw_circle(pos, 2.0, Color(0.05, 0.04, 0.03))
+			_:
+				draw_circle(pos, 3.5, Color(0.04, 0.04, 0.04))
+	var hammer := Color(0.8, 0.8, 0.82) if cocked else Color(0.35, 0.35, 0.38)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(-3, -21), c + Vector2(3, -21), c + Vector2(0, -17)]), hammer)
 
 
 ## The hour of the hanging under the bandit count, red while the hangman's at the
@@ -568,7 +585,7 @@ const GUN_ROW := 11.0           # a gun's line on a card
 const OPTION_Y := 100.0         # the top of a card's first gun to pick from
 const KIT_NAME := {"bandage": "A BANDAGE  [B]", "dynamite": "A STICK OF DYNAMITE  [G]"}
 const SLOT_NAME := {"colt": "SIDEARM", "coach": "SHOTGUN", "rifle": "RIFLE"}
-const BLURB := {"colt": "six, quick to load, fanned", "buntline": "six, long reach, slow to come up",
+const BLURB := {"colts": "twelve, right and left, slow to load", "colt": "six, quick to load, fanned", "buntline": "six, long reach, slow to come up",
 	"schofield": "six, all out and in at once",
 	"navy": "six, weak, slow to load",
 	"howdah": "two big rounds, or both at once",

@@ -49,7 +49,7 @@ func _process(_delta: float) -> bool:
 		check(Player.cost(["colt"]) == Player.cost(["schofield"]), "the Colt and the Schofield should cost the same")
 		check(Player.cost(["colt"]) == 3 and Player.cost(["navy"]) == 2, "the Colt 3, the Navy 2")
 		check(Player.cost(["howdah"]) == 1 and Player.cost(["derringer"]) == 0, "the howdah 1, the derringer free")
-		check(Player.choices("colt") == ["colt", "schofield", "navy", "howdah", "derringer", "pistola"],
+		check(Player.choices("colt") == ["colts", "colt", "schofield", "navy", "howdah", "derringer", "pistola"],
 			"the sidearms, dearest first (%s)" % [Player.choices("colt")])
 		check(Player.cost(["pistola"]) == 0 and Player.cost(["escopeta"]) == 0, "junk should be free")
 		check(Player.cost(["rifle"]) == 5 and Player.cost(["coach"]) == 3 and Player.cost(["sawnoff"]) == 2,

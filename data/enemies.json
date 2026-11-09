@@ -5,7 +5,7 @@
             "poncho_a", "poncho_b", "poncho_c", "dress"],
 
   "templates": {
-    "hero":            {"style": "duster", "hat": "flat",     "cigar": true,  "bandolier": true,  "mustache": false},
+    "hero":            {"style": "duster", "hat": "flat",     "cigar": true,  "bandolier": true,  "mustache": false, "holsters": 2},
     "poncho":          {"style": "poncho", "hat": "sombrero", "mustache": true},
     "duster_bowler":   {"style": "duster", "hat": "bowler",   "mustache": true},
     "vest":            {"style": "vest",   "hat": "flat",     "bandolier": true, "scarf": true},
