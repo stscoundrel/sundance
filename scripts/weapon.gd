@@ -23,8 +23,8 @@ const TUBE_CAP := 12   # plus one in the chamber (a lever gun's "tube" may hold 
 # For breech guns, open/eject/insert/close are [seconds, sound]; "hammer" means the
 # hammer is thumbed back after each shot; "volley" lets the right trigger fire every
 # loaded barrel at once. "points": what the stranger's gun costs on the loadout
-# screen, out of the level's budget (0 for junk, 3 for a good revolver, 4 for the
-# Winchester).
+# screen, out of the level's budget (0 for junk, 3 for a good revolver, 5 for the
+# Winchester and the Spencer pump).
 const DATA := {
 	"colt": {"name": "COLT SINGLE ACTION ARMY", "points": 3, "action": "revolver", "damage": 2, "speed": 650.0,
 		"range": 380.0, "spread": 2.2, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.32,
@@ -49,7 +49,7 @@ const DATA := {
 		"shake": 2.0, "smoke": 9, "ammo": "colt", "open": [0.6, "break_open"], "eject": [0.4, "eject"],
 		"insert": [0.33, "shell_in"], "close": [0.45, "close"],
 		"status": {"cycle": "COCKING", "open": "BROKEN OPEN", "close": "LATCHED, COCKING"}},
-	"rifle": {"name": "WINCHESTER 1866", "points": 4, "action": "lever", "damage": 2, "pierce": 1, "speed": 900.0, "range": 620.0,
+	"rifle": {"name": "WINCHESTER 1866", "points": 5, "action": "lever", "damage": 2, "pierce": 1, "speed": 900.0, "range": 620.0,
 		"spread": 0.6, "pellets": 1, "noise": 480.0, "sfx": "rifle", "cycle": 0.45, "shake": 2.5, "smoke": 11,
 		"status": {"cycle": "LEVER", "open": "LOADING GATE", "close": ""}},
 	# Henry 1860, the Winchester's forerunner: the same rounds and near enough the same
@@ -59,7 +59,7 @@ const DATA := {
 	# two in a hurry costs nearly as much as the lot. A cruder lever, slower to work.
 	# And nothing to hold it by but the barrel: fire it fast and the heat in his
 	# fingers ("hot", a shot's worth) throws his aim off until it cools.
-	"henry": {"name": "HENRY 1860", "points": 3, "action": "lever", "tube": 14, "damage": 2, "pierce": 1, "speed": 880.0,
+	"henry": {"name": "HENRY 1860", "points": 4, "action": "lever", "tube": 14, "damage": 2, "pierce": 1, "speed": 880.0,
 		"range": 600.0, "spread": 0.7, "pellets": 1, "noise": 480.0, "sfx": "rifle", "cycle": 0.55, "shake": 2.5,
 		"smoke": 11, "ammo": "rifle", "hot": 0.3, "open": [1.1, "gate"], "insert": [0.35, "shell_in"],
 		"close": [0.9, "close"],
@@ -112,14 +112,14 @@ const DATA := {
 	# Spencer 1860 carbine, the revolution's cast-off repeater: seven rounds in a tube
 	# through the butt, and between shots both the lever and the hammer to work.
 	# Slower than the Winchester and fewer rounds, with a heavier, slower bullet.
-	"spencer": {"name": "SPENCER CARBINE", "points": 2, "action": "lever", "tube": 7, "damage": 2, "pierce": 1, "speed": 820.0,
+	"spencer": {"name": "SPENCER CARBINE", "points": 3, "action": "lever", "tube": 7, "damage": 2, "pierce": 1, "speed": 820.0,
 		"range": 540.0, "spread": 0.9, "pellets": 1, "noise": 480.0, "sfx": "spencer", "cycle": 0.85, "shake": 2.8,
 		"smoke": 14, "smoke_push": 1.1, "insert": [0.5, "shell_in"],
 		"status": {"cycle": "LEVER, HAMMER", "open": "MAGAZINE OUT", "close": ""}},
 	# Springfield Model 1861 rifle-musket: a fine gun, a .58 Minie ball that carries far
 	# and hits hard, but a muzzle-loader. Bite the paper cartridge, pour, ram the ball
 	# home, cap the nipple. Good in good hands; the revolution's aren't always.
-	"springfield": {"name": "SPRINGFIELD 1861", "points": 1, "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
+	"springfield": {"name": "SPRINGFIELD 1861", "points": 2, "action": "breech", "barrels": 1, "hammer": true, "muzzle": true,
 		"damage": 3, "pierce": 1, "speed": 950.0, "range": 700.0, "spread": 0.5, "pellets": 1, "noise": 560.0,
 		"sfx": "musket", "cycle": 0.5, "shake": 4.0, "smoke": 24, "smoke_push": 1.6,
 		"open": [1.0, "gate"], "eject": [1.1, "pour"], "insert": [3.4, "ram"], "close": [1.2, "cock"], "ammo": "powder",
@@ -129,7 +129,7 @@ const DATA := {
 	# round that still hits like a rifle, and the block rolls back for the next one
 	# quicker than anything else single-shot; but there's nothing left to aim it with,
 	# and nothing much past pistol range. The Sharps' cartridges fit it.
-	"rollingblock": {"name": "CUT-DOWN ROLLING BLOCK", "points": 0, "action": "breech", "barrels": 1, "hammer": true,
+	"rollingblock": {"name": "CUT-DOWN ROLLING BLOCK", "points": 1, "action": "breech", "barrels": 1, "hammer": true,
 		"damage": 2, "speed": 800.0, "range": 320.0, "spread": 2.6, "pellets": 1, "noise": 520.0,
 		"sfx": "sharps", "cycle": 0.35, "shake": 3.5, "smoke": 14, "smoke_push": 1.2, "ammo": "sharps",
 		"open": [0.25, "lever"], "eject": [0.25, "eject"], "insert": [0.4, "shell_in"], "close": [0.25, "lever"],
@@ -139,7 +139,7 @@ const DATA := {
 	# under the thumb and the next goes in as quick as anything single-shot, so a
 	# steady man keeps up a fire with it; it reaches as far as the Springfield and
 	# throws less wide. Same rounds as the Sharps, for now.
-	"remington": {"name": "REMINGTON ROLLING BLOCK", "points": 2, "action": "breech", "barrels": 1, "hammer": true,
+	"remington": {"name": "REMINGTON ROLLING BLOCK", "points": 3, "action": "breech", "barrels": 1, "hammer": true,
 		"damage": 3, "pierce": 1, "speed": 950.0, "range": 680.0, "spread": 0.6, "pellets": 1, "noise": 540.0,
 		"sfx": "sharps", "cycle": 0.35, "shake": 4.0, "smoke": 16, "smoke_push": 1.3, "ammo": "sharps",
 		"open": [0.3, "lever"], "eject": [0.3, "eject"], "insert": [0.5, "shell_in"], "close": [0.3, "lever"],

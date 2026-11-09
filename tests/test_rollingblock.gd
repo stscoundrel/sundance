@@ -1,7 +1,7 @@
 extends SceneTree
-## The cut-down Rolling Block, the rifle slot's junk gun (the test yard, its gang
+## The cut-down Rolling Block, the rifle slot's cheapest gun (the test yard, its gang
 ## parked out of the way):
-##   gun      - free on the loadout screen, on the Sharps' cartridges: a rifle's hit,
+##   gun      - a point on the loadout screen, on the Sharps' cartridges: a rifle's hit,
 ##              but short and wild, and the quickest single-shot to load.
 ##   carriers - now and then a pistolero has one under his poncho, more rarely a
 ##              revolucionario: never a man out of a door, nor one passing as
@@ -73,8 +73,9 @@ func _reload_time(kind: String) -> float:
 func _gun() -> void:
 	step = "gun"
 	var cut: Dictionary = Weapon.DATA["rollingblock"]
-	check(cut["points"] == 0, "it costs %d points" % cut["points"])
-	check(Player.cost(["pistola", "escopeta", "rollingblock"]) == 0, "a junk loadout isn't free")
+	check(cut["points"] == 1, "it costs %d points" % cut["points"])
+	for k in Player.choices("rifle"):
+		check(k == "rollingblock" or Weapon.DATA[k]["points"] > cut["points"], "the %s is as cheap" % k)
 	for k in ["rifle", "spencer", "springfield"]:
 		check(cut["range"] < Weapon.DATA[k]["range"] * 0.65, "reaches as far as the %s" % k)
 		check(cut["spread"] > Weapon.DATA[k]["spread"] * 2.0, "as true as the %s" % k)

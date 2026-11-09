@@ -704,12 +704,13 @@ guns up.
 `data/levels.json` (12 where none is named: a good gun in each slot and a bandage,
 the Colt, the coach gun and the Winchester, with no points left for a stick). A gun's
 price is its `points` in `Weapon.DATA`, by how good it is, not by its slot: junk is
-free (horse pistol, the derringer's two little shots, escopeta, cut-down Rolling Block), the
-poor or one-job guns 1 (the howdah, two big shots and then a reload; Champion, Springfield), the
-middling ones 2 (the Navy, six weak shots and an age to load; sawn-off, Spencer), the six-guns 3
-(Colt and Schofield alike: as strong, each with its own faults), the coach gun and the Henry 3,
-the Winchester, the best gun in
-the game, 4, and the Spencer pump gun, rare and new, 5: the dearest. Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
+free (horse pistol, the derringer's two little shots, escopeta), the poor or one-job guns 1
+(the howdah, two big shots and then a reload; Champion), the middling ones 2 (the Navy, six
+weak shots and an age to load; sawn-off), the six-guns 3 (Colt and Schofield alike: as
+strong, each with its own faults), the coach gun 3. Rifles cost a point more than their like
+elsewhere, for the reach: the cut-down Rolling Block 1 (the cheapest, none free), the
+Springfield 2, the Spencer and the Remington 3, the Henry 4, and the Winchester, the best gun
+in the game, 5, as dear as the Spencer pump gun, rare and new: the two dearest. Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
 or the box left of "ride in") and a stick of dynamite for 2 (G, the right box), in
 every level. What he doesn't buy he hasn't: no free bandage. Each
 gun line shows its price, greyed when he can't afford it with what else he's taken;
@@ -805,7 +806,7 @@ slung beside the sidearm, and the stranger can take one up for his shotgun slot.
   `tests/test_champion.gd`.
 
 ### Remington Rolling Block carbine, cut down — single shot, on the Sharps' .50 rounds
-The rifle slot's junk gun, free on the loadout screen: a carbine somebody took a saw
+The rifle slot's junk gun, its cheapest at a point on the loadout screen: a carbine somebody took a saw
 to, the stock cut back to a pistol grip and the barrel short of the fore-end, so it
 rides under a poncho. The spaghetti westerns' own: in Corbucci's *The Great Silence*,
 *Compañeros* and *Minnesota Clay*, and in a kid's hands in Leone's *Duck, You Sucker!*.
@@ -832,7 +833,7 @@ nearly to the muzzle, the full stock, the block that rolls back under the thumb.
 One round at a time but quickly (open, out, in, shut in about 1.4 s), as far as the
 Springfield (680) and truer (spread 0.6), damage 3, through one man into the next.
 Soldados and cabos carry it; the stranger takes one up off the dead (slot 3,
-"REMINGTON ROLLING BLOCK"; 2 points on the loadout card, 12 rounds to ride in with).
+"REMINGTON ROLLING BLOCK"; 3 points on the loadout card, 12 rounds to ride in with).
 
 ### Winchester Model 1866 "Yellow Boy" carbine, .44 Henry rimfire — 13 rounds
 - Lever worked between shots (~0.45 s).
@@ -842,7 +843,7 @@ Soldados and cabos carry it; the stranger takes one up off the dead (slot 3,
 
 ### Spencer 1882 slide-action shotgun, 12 ga — 6 shells
 The first pump gun, new and rare, and for its six shells (five in the tube, one up)
-the strongest shotgun there is: 5 points, the dearest gun on the loadout card. A 12
+the strongest shotgun there is: 5 points, as dear as the Winchester and dearer than anything else. A 12
 bore on the coach gun's shells, its pattern a little tighter and longer (8 pellets,
 spread 7.5, range 195; the coach gun 9, 9, 175), but no barrels to loose together.
 - **A stiff slide**: 0.85 s between shots, slower than any lever.
@@ -860,8 +861,8 @@ or takes it off a dead Jefe. `tests/test_pump.gd`.
 
 ### Henry 1860, .44 Henry rimfire — 15 rounds
 The Winchester's forerunner, much the same gun and the same rounds, but worse to
-live with in three ways, so it stays the lesser choice (3 points to the Winchester's
-4) for all its fifteen (14 in the tube, one up; `"tube"` lets it hold more than
+live with in three ways, so it stays the lesser choice (4 points to the Winchester's
+5) for all its fifteen (14 in the tube, one up; `"tube"` lets it hold more than
 `Weapon.TUBE_CAP`):
 - **Loaded from the front.** No gate in the side: he turns the sleeve at the
   muzzle, pushes the follower up and drops them in (open 1.1 s, 0.35 s a round,

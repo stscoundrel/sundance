@@ -2,7 +2,7 @@ extends SceneTree
 ## The Henry 1860, the Winchester's forerunner (the test yard, its gang parked out of
 ## the way):
 ##   gun      - fifteen rounds (fourteen in the tube, one up) on the Winchester's
-##              cartridges, 3 points against its 4; a slower lever.
+##              cartridges, 4 points against its 5; a slower lever.
 ##   loading  - filled at the muzzle: a round or two costs nearly as much as the lot,
 ##              and the whole tube takes longer than the Winchester's.
 ##   heat     - nothing to hold but the barrel: fired fast it throws wider, and
@@ -85,7 +85,7 @@ func _gun() -> void:
 	step = "gun"
 	var h: Dictionary = Weapon.DATA["henry"]
 	var win: Dictionary = Weapon.DATA["rifle"]
-	check(h["points"] == 3 and win["points"] == 4, "the Henry costs %d, the Winchester %d" % [h["points"], win["points"]])
+	check(h["points"] == 4 and win["points"] == 5, "the Henry costs %d, the Winchester %d" % [h["points"], win["points"]])
 	check(Player.SLOT["henry"] == "rifle" and "henry" in Player.choices("rifle"), "not on the rifle card")
 	check(h["cycle"] > win["cycle"], "its lever's no slower than the Winchester's")
 	check(h["damage"] == win["damage"] and h["range"] <= win["range"], "not the Winchester's round")
