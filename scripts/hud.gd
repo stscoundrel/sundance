@@ -215,6 +215,11 @@ func _draw_status(p: Player) -> void:
 		draw_rect(Rect2(sx + i * 6, 343, 4, 9), Color(0.7, 0.14, 0.1))
 		draw_rect(Rect2(sx + i * 6, 346, 4, 1), Color(0.85, 0.78, 0.6))
 		draw_line(Vector2(sx + i * 6 + 2, 343), Vector2(sx + i * 6 + 3, 341), Color(0.25, 0.2, 0.15), 1.0)
+	# and his silver (Q): a coin each
+	var cx := sx + p.sticks * 6 + (5 if p.sticks > 0 else 1)
+	for i in p.pesos:
+		draw_circle(Vector2(cx + i * 7, 348), 2.6, Color(0.78, 0.78, 0.74))
+		draw_circle(Vector2(cx + i * 7 - 0.7, 347.3), 0.9, Color(1, 1, 0.95))
 	if p.bandage_t >= 0.0:
 		var f: float = p.bandage_t / (Player.STAND_BANDAGE_T if p.down else Player.BANDAGE_T)
 		_text(Vector2(54, 338), "BANDAGING", 8, INK)

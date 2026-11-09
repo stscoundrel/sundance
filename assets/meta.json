@@ -949834,7 +949834,9 @@
   "musket_3": "res://assets/sfx/musket_3.wav",
   "pour": "res://assets/sfx/pour.wav",
   "ram": "res://assets/sfx/ram.wav",
-  "heart": "res://assets/sfx/heart.wav"
+  "heart": "res://assets/sfx/heart.wav",
+  "clink": "res://assets/sfx/clink.wav",
+  "clink_2": "res://assets/sfx/clink_2.wav"
  },
  "ground": {
   "file": "res://assets/sprites/ground.png",

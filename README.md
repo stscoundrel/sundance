@@ -13,7 +13,7 @@ godot --path .
 
 WASD move · mouse aim · LMB fire · RMB fan the Colt / fire both barrels · C or Ctrl crouch ·
 R reload (fire stops a partial reload) · 1/2/3 or wheel to switch guns · E knife (hold to drag
-a body; at the gallows or the pole, hold to cut the man loose; by the machine gun, get on or off it; by the plunger, fire the mines; by the strongbox, take it up or set it down) · B bandage · G throw dynamite · F swap for the gun at your feet · Esc the menu (the town paused: resume, start over, another town,
+a body; at the gallows or the pole, hold to cut the man loose; by the machine gun, get on or off it; by the plunger, fire the mines; by the strongbox, take it up or set it down) · B bandage · G throw dynamite · Q toss a peso · F swap for the gun at your feet · Esc the menu (the town paused: resume, start over, another town,
 leave the game) · after a win, Enter rides on to the next town; after a loss, Enter tries it again.
 On the title, the picker and the loadout, Esc goes back a step; the picker's last row leaves the game.
 
@@ -90,6 +90,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_sharps.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_reinforcements.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_knife.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_drag.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_peso.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_menu.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_hanging.gd

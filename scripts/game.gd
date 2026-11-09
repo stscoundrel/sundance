@@ -122,6 +122,7 @@ const DYN_CD := 20.0         # s after a blast before anyone lights another
 const THROW_MIN := 100.0     # px: never close enough to catch it himself
 const THROW_MAX := 220.0
 var lit: Array[Dynamite] = []
+var pesos_heard: Array = []   # [{at, t}]: where money's fallen from the sky lately (see peso_landed)
 var dyn_cd := 0.0
 # Cover that wears: crates, barrels, coffins, troughs and wagons take the rounds that
 # hit them, look shot up past half, and fall to a heap of boards (no longer cover,
@@ -139,8 +140,14 @@ const RUNS_FROM := 2                 # rank: officers know a lit keg when they s
 const SPOT_STICK := 0.35             # chance one of the rest sees the stranger's stick land in time
 var charges: Array[Charge] = []
 const BANDAGE_DROP := 0.2     # chance a dead man leaves a bandage he hadn't used
+const PESO_DROP := 0.25       # chance a dead man's pockets give up a peso
+const PESO_START := 3         # pesos the stranger rides in with
+const PESO_EAR := 140.0       # px: how far off a peso's clink is heard
+const PESO_SPOT := 120.0      # px: pesos landing this close together are the same trick
+const PESO_MEMORY := 90.0     # s the gang remembers money falling from the sky there
 const STICK_DROP := 0.5       # and the dynamite he hadn't thrown
 var loot_rng := RandomNumberGenerator.new()
+var peso_rng := RandomNumberGenerator.new()   # (the pesos: a dead man's, the clink of a tossed one)
 var litter_rng := RandomNumberGenerator.new()   # (how last night's bottles lie)
 var rise_rng := RandomNumberGenerator.new()     # (what they say when he gets up out of the dirt)
 var scars: Array[Dictionary] = []   # damage for the mayor to tut over: {at, seen, prop}
@@ -254,6 +261,8 @@ func _ready() -> void:
 		Hanging.rng.randomize()
 		Captive.rng.randomize()
 		Brass.rng.randomize()
+		Enemy.peso_rng.randomize()
+		peso_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
 		Chicken.rng.seed = 11
@@ -282,6 +291,8 @@ func _ready() -> void:
 		Strongbox.rng.seed = 101
 		Snowfall.rng.seed = 103
 		Enemy.feud_rng.seed = 107
+		Enemy.peso_rng.seed = 109
+		peso_rng.seed = 113
 	_parse_args()
 	_setup_input()
 	meta = _load_json(META_PATH)
@@ -490,7 +501,7 @@ func _setup_input() -> void:
 	var keys := {
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN],
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
-		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E], "bandage": [KEY_B], "throw": [KEY_G], "take": [KEY_F],
+		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E], "bandage": [KEY_B], "throw": [KEY_G], "toss": [KEY_Q], "take": [KEY_F],
 		"weapon_1": [KEY_1], "weapon_2": [KEY_2], "weapon_3": [KEY_3],
 		"restart": [KEY_ENTER], "quit": [KEY_ESCAPE],
 	}
@@ -548,6 +559,7 @@ func begin() -> void:
 	if kit_chosen:
 		player.bandages = 1 if "bandage" in start_kit else 0
 		player.sticks = 1 if "dynamite" in start_kit else 0
+	player.pesos = PESO_START
 	state = "play"
 	hud.hide_title()
 
@@ -2707,6 +2719,8 @@ func _drop_kit(e: Actor) -> void:
 		_drop_ammo("bandage", e.global_position + Vector2(loot_rng.randf_range(-8, 8), 6))
 	if e.sticks > 0 and e.stick == null and loot_rng.randf() < STICK_DROP:
 		_drop_ammo("dynamite", e.global_position + Vector2(loot_rng.randf_range(-8, 8), -2))
+	if peso_rng.randf() < PESO_DROP:
+		_drop_ammo("peso", e.global_position + Vector2(peso_rng.randf_range(-8, 8), 2))
 
 
 func _drop_ammo(kind: String, at: Vector2) -> Pickup:
@@ -2928,6 +2942,32 @@ func light_stick(by: Enemy) -> Dynamite:
 	lit.append(d)
 	stats["dynamite lit"] = stats.get("dynamite lit", 0) + 1
 	return d
+
+
+## A peso of the stranger's comes down in the street with a clink, and lies there to
+## be had. The nearest of the gang in earshot with nothing better to do goes for it
+## (only the one); nobody near, and it's still his to pick up. The gang remembers
+## money falling from the sky by the same spot (see Enemy.go_for_peso).
+func peso_landed(at: Vector2) -> void:
+	sfx("clink", at, -6.0, 0.08, peso_rng)
+	stats["pesos tossed"] = stats.get("pesos tossed", 0) + 1
+	var c := _drop_ammo("peso", at)
+	c.set_meta("tossed", true)
+	var taker: Enemy = null
+	var best := PESO_EAR
+	for e in enemies:
+		var d := e.global_position.distance_to(at)
+		if d < best and e.can_be_lured():
+			best = d
+			taker = e
+	if taker == null:
+		return
+	var times := 0
+	for h in pesos_heard:
+		if clock - h["t"] < PESO_MEMORY and at.distance_to(h["at"]) < PESO_SPOT:
+			times += 1
+	pesos_heard.append({"at": at, "t": clock})
+	taker.go_for_peso(c, times)
 
 
 ## It's down and fizzing: anyone close who knows what that is gets clear of it. One
@@ -3519,7 +3559,7 @@ func raise_alarm(amount: float, at := Vector2.INF, own := "?") -> void:
 func _far_from_fight(g := "") -> Array:
 	var out := []
 	for e in enemies:
-		if e.alive and e.gang == g and e.revealed and not e.in_posse and e.st in [Enemy.St.GUARD, Enemy.St.PATROL, Enemy.St.RETURN] \
+		if e.alive and e.gang == g and e.revealed and not e.in_posse and e.st in [Enemy.St.GUARD, Enemy.St.PATROL, Enemy.St.RETURN, Enemy.St.ERRAND] \
 				and e.global_position.distance_to(seen_pos) > FAR:
 			out.append(e)
 	return out

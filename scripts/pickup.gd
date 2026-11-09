@@ -2,10 +2,11 @@ class_name Pickup
 extends Area2D
 ## Cartridges dropped by a dead bandit, for the weapon he carried (powder and ball,
 ## for the cap-and-ball and muzzle-loaders); or a bandage he never got to use, or
-## the stick of dynamite he never got to throw.
+## the stick of dynamite he never got to throw, or a peso (from his pockets, or one
+## the stranger tossed that nobody's come for).
 
-const AMOUNT := {"colt": 6, "coach": 4, "rifle": 7, "spencer": 5, "sharps": 4, "powder": 4, "bandage": 1, "dynamite": 1}
-const CARRY := {"bandage": 1, "dynamite": 1}   # one of each on him at a time: the rest stay where they lie
+const AMOUNT := {"colt": 6, "coach": 4, "rifle": 7, "spencer": 5, "sharps": 4, "powder": 4, "bandage": 1, "dynamite": 1, "peso": 1}
+const CARRY := {"bandage": 1, "dynamite": 1, "peso": 5}   # one of each on him at a time (five pesos): the rest stay where they lie
 
 var game: Node
 var kind := "colt"
@@ -40,11 +41,17 @@ func _on_body(b: Node) -> void:
 					return
 				b.sticks += 1
 				game.hud.toast("Dynamite picked up  [G]")
+			"peso":
+				if b.pesos >= CARRY[kind]:
+					return
+				b.pesos += 1
+				if not has_meta("tossed"):
+					game.hud.toast("A peso  [Q]")
 			_:
 				b.belt[kind] = b.belt.get(kind, 0) + AMOUNT[kind]
 		if kind in CARRY:
 			game.stats[kind + " picked up"] = game.stats.get(kind + " picked up", 0) + 1
-		game.sfx("pickup", null, 0.0)
+		game.sfx("pickup", null, 0.0, 0.06, game.peso_rng if kind == "peso" else null)   # (the peso's own dice)
 		queue_free()
 
 
@@ -68,6 +75,13 @@ func _draw() -> void:
 		draw_rect(Rect2(-1, -2, 1, 3), Color(0.85, 0.78, 0.6))
 		draw_line(Vector2(4, -1), Vector2(6, -3), Color(0.22, 0.17, 0.12), 1.0)
 		draw_rect(Rect2(Vector2(-4, 1), Vector2(9, 1)), Color(0, 0, 0, 0.3))
+		return
+	if kind == "peso":   # a silver coin lying flat, catching the light
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.55))
+		draw_circle(Vector2(0, 1), 3.2, Color(0, 0, 0, 0.3))
+		draw_circle(Vector2.ZERO, 2.6, Color(0.62, 0.62, 0.6).lerp(Color(0.95, 0.95, 0.9), glint * 0.7))
+		draw_circle(Vector2(-0.6, -0.6), 1.0, Color(1, 1, 0.95, 0.4 + 0.5 * glint))
+		draw_set_transform(Vector2.ZERO)
 		return
 	if kind == "powder":   # paper cartridges, twisted shut, and a powder flask
 		for i in 3:

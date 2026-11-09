@@ -1158,6 +1158,22 @@ carried, which you collect by walking over them.
   the rest only now and then (35%). A hit in the wind-up makes him fumble it at his
   feet one time in four (always, if it kills him). The HUD shows his sticks after his
   bandages.
+- **The peso** (Q; `tests/test_peso.gd`): the stranger rides into every town with
+  three silver pesos, and a dead man's pockets give one up about a time in four (he
+  carries five at most). Flicked off his thumb at the cursor (30 to 170 px; it goes
+  over a crate, not a wall), it comes down with a clink heard about 140 px off and
+  lies there glinting. The nearest of the gang in earshot who's at his post or on his
+  rounds and calm (not one passing as townsfolk, not the hangman or the captor, not
+  the posse) goes for it, alone: "¿Qué es eso?", a walk over, stooped 1.4 s with his
+  eyes on the dirt (his sight cut to under half and narrowed), "¡Un peso!", and he
+  walks back. The men of his post (within 100 px) stay put and turn to watch him go,
+  which turns their eyes too. He's unaware the whole way, so it's a knife's chance,
+  or a moment to slip past the post. The gang remembers money falling from the sky
+  (within 120 px of the same spot, for 90 s): the second time he goes but says
+  "¿Otra vez?" after and has a look round, wary; the third nobody stoops for it ("It's
+  a trick!") and the whole post comes to see who's throwing it, suspicious and wary.
+  A peso nobody hears, or one he gets to first, is his to pick up again. Its own dice
+  (`Enemy.peso_rng`, `game.peso_rng`).
 - **The rabble** (`"rabble"` per type; `tests/test_rally.gd`): in a big fight, with
   eight or more of them in combat round the stranger, the rank and file given to it
   (drunks most, revolucionarios, soldaderas and bandidos often, a few cowboys,

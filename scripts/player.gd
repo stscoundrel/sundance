@@ -65,6 +65,11 @@ const STICK_FUSE := 3.2      # s from lighting to the bang
 const STICK_MIN := 40.0      # px: never at his own feet
 const STICK_MAX := 230.0
 const STICK_FUMBLE := 0.25   # chance a hit in the wind-up makes him drop it at his feet
+# A peso flicked off his thumb (Q), to draw one of them off his post (see
+# game.peso_landed): a short throw, not a lob.
+const PESO_MIN := 30.0
+const PESO_MAX := 170.0
+const PESO_FLICK := 0.15     # s from the flick to the coin leaving his hand
 
 var weapons := {}               # slot -> the gun in it (or the one he'd ride in with, if empty)
 var owned: Array[String] = []   # the slots he has a gun in, in ORDER
@@ -102,6 +107,8 @@ var _bot_down_t := 0.0
 var sticks := 0                # dynamite he carries
 var stick: Dynamite = null     # lit, in his hand
 var throw_t := 0.0             # the wind-up left
+var pesos := 0                 # silver in his pocket, to toss (Q)
+var flick_t := -1.0            # a peso on its way out of his hand; < 0 when not
 var gun: MGun = null           # the machine gun he's on, if he is
 var shout := ""                # a line he says, over his head a moment (he hasn't much to say)
 var shout_t := 0.0
@@ -160,6 +167,10 @@ func _physics_process(delta: float) -> void:
 			_lifted()
 	if bandage_t >= 0.0:
 		_bandage(delta, input)
+	if flick_t >= 0.0:
+		flick_t -= delta
+		if flick_t < 0.0:
+			_flick_peso()
 	if stick:
 		velocity *= 0.5   # (winding up)
 		throw_t -= delta
@@ -244,6 +255,8 @@ func _handle_actions() -> void:
 		start_bandage()
 	if Input.is_action_just_pressed("throw"):
 		light_stick()
+	if Input.is_action_just_pressed("toss"):
+		toss_peso()
 	if stick:
 		return   # (both hands busy)
 	if Input.is_action_just_pressed("take") and not dragging:
@@ -553,6 +566,28 @@ func light_stick() -> bool:
 	play_action("throw")
 	game.stats["his dynamite"] = game.stats.get("his dynamite", 0) + 1
 	return true
+
+
+## A peso off his thumb at the cursor (see _flick_peso).
+func toss_peso() -> bool:
+	if pesos <= 0 or flick_t >= 0.0 or stick or bandage_t >= 0.0 or knife_t >= 0.0 or dragging or down or gun:
+		return false
+	pesos -= 1
+	flick_t = PESO_FLICK
+	play_action("point")
+	return true
+
+
+func _flick_peso() -> void:
+	var to := get_global_mouse_position()
+	if game._args.has("toss-at"):   # (for the tests: grid x,y)
+		var xy: PackedStringArray = game._args["toss-at"].split(",")
+		to = Iso.to_screen(Vector2(float(xy[0]), float(xy[1])))
+	var off := to - global_position
+	to = global_position + off.normalized() * clampf(off.length(), PESO_MIN, PESO_MAX)
+	var c := Peso.new()
+	game.world.add_child(c)
+	c.setup(game, global_position, to)
 
 
 ## Away towards the cursor (as near or as far as he can throw).

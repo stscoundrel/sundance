@@ -1261,6 +1261,23 @@ def gen_sfx(meta):
         return (np.sin(2 * np.pi * f * tt * (1 - 0.3 * tt / 0.16)) * np.exp(-tt / 0.045)
                 + lowpass(hrng3.normal(0, 1, len(tt)), 160) * np.exp(-tt / 0.02) * 0.6) * amp
     write("heart", place(0.5, [(0.0, beat(52, 1.0)), (0.18, beat(46, 0.7))]), meta, 0.8, 1.2)
+    # A silver peso landing in the street: a bright strike, a bounce or two closing
+    # up, then the coin rolling on its rim and shivering flat. Two takes.
+    crng = np.random.default_rng(99)
+    for take in ("clink", "clink_2"):
+        f0 = crng.uniform(3300, 3900)
+        parts = [(0.0, tink(crng, f0, 0.03, 1.0, 0.25))]
+        at, gap, a = 0.0, crng.uniform(0.09, 0.12), 0.6
+        for _ in range(3):
+            at += gap
+            parts.append((at, tink(crng, f0 * crng.uniform(0.97, 1.03), 0.02, a, 0.2)))
+            gap *= 0.62
+            a *= 0.6
+        spin = t_of(0.3)
+        rate = 18 + 70 * spin / 0.3   # (faster and faster as it settles)
+        shiver = np.sin(2 * np.pi * f0 * 1.1 * spin) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * np.cumsum(rate) / SR)))
+        parts.append((at + 0.03, shiver * np.exp(-spin / 0.12) * 0.12))
+        write(take, room(place(0.75, parts), crng, 0.04, 0.2), meta, 0.6)
 
 
 def main():

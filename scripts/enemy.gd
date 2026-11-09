@@ -3,7 +3,7 @@ extends Actor
 ## Bandit AI: guard or patrol, grow suspicious of glimpses and noises, fight with a
 ## reaction delay and aim error, run to cover to reload, search when they lose you.
 
-enum St { GUARD, PATROL, INVESTIGATE, COMBAT, SEARCH, RETURN, POSSE }
+enum St { GUARD, PATROL, INVESTIGATE, COMBAT, SEARCH, RETURN, POSSE, ERRAND }
 
 const WALK := 24.0
 const RUN := 46.0
@@ -320,6 +320,24 @@ const NEWS_LINES := ["He's killing everyone!", "¡Es el diablo!", "They're all d
 var alarm_role := ""         # "", "uneasy", "scout", "fortified"
 var bearing_news := false    # running from the fight to his comrades
 
+# A peso in the street (the stranger's, tossed with Q: see game.peso_landed): one man
+# of the post goes to have it, the others watching him go. He walks over, stoops for
+# it with his eyes on the dirt, pockets it and walks back. A second one by the same
+# spot and he wonders aloud and has a look round after; a third and it's plain
+# somebody's throwing money at them, and the whole post goes to see who. Its own dice.
+const PESO_STOOP := 1.4      # s bent over it, his eyes on the ground
+const PESO_MATES := 100.0    # px from him: the men of his post, who watch him go
+const PESO_HEAR_LINES := ["¿Qué es eso?", "What was that?", "¿Eh?", "Hear that?"]
+const PESO_LINES := ["¡Un peso!", "Well, look at that.", "¡Mira nomás!", "Finders keepers."]
+const PESO_AGAIN_LINES := ["¿Otra vez?", "Another one?", "Somebody's got a hole in his pocket..."]
+const PESO_TRICK_LINES := ["¡Es un truco!", "It's a trick!", "Somebody's throwing money at us."]
+static var peso_rng := RandomNumberGenerator.new()
+var errand := ""             # "peso": off his post on a little business of his own (St.ERRAND)
+var errand_t := 0.0
+var errand_peso: Pickup = null
+var errand_wise := false     # (the second peso: he'll look about him after)
+var watching: Enemy = null   # a mate of his post off on an errand, and him watching him go
+
 
 ## Everything that makes this bandit who he is comes from his type in
 ## data/enemies.json (merged over the defaults, then any per-placement overrides).
@@ -484,11 +502,19 @@ func reveal() -> void:
 # ------------------------------------------------------------------ senses
 
 func view_range() -> float:
-	return VIEW * (1.2 if wary or st == St.COMBAT else 1.0) * game.sight   # (snow falling, a squall: see Snowfall)
+	return VIEW * (1.2 if wary or st == St.COMBAT else 1.0) * game.sight * eyes().x   # (snow falling, a squall: see Snowfall)
 
 
 func half_fov() -> float:
-	return FOV * 0.5 * (1.4 if wary or st == St.COMBAT else 1.0)
+	return FOV * 0.5 * (1.4 if wary or st == St.COMBAT else 1.0) * eyes().y
+
+
+## How much his mind's on watching: (reach, width) of his eyes, cut down while he's
+## busy with something else (stooped for a peso).
+func eyes() -> Vector2:
+	if st == St.ERRAND and errand == "peso" and errand_t > 0.0:
+		return Vector2(0.45, 0.6)
+	return Vector2.ONE
 
 
 func visibility_of(pos: Vector2, low: bool, check_near := true) -> float:
@@ -658,6 +684,10 @@ func start_investigate(pos: Vector2, run: bool) -> void:
 	reveal()
 	if st == St.COMBAT:
 		return
+	if st == St.ERRAND:
+		errand = ""   # (whatever it was can wait)
+		errand_t = 0.0
+		crouched = false
 	st = St.INVESTIGATE
 	look_t = 0.0
 	running = run
@@ -1221,6 +1251,8 @@ func _run_state(delta: float) -> void:
 				st = St.PATROL if patrol.size() > 1 else St.GUARD
 		St.POSSE:
 			_posse(delta)
+		St.ERRAND:
+			_errand(delta)
 
 
 func _check_stuck(delta: float, before: Vector2) -> void:
@@ -1263,6 +1295,11 @@ func _guard(delta: float) -> void:
 		return
 	velocity = Vector2.ZERO
 	desired = home_facing.rotated(sin(t * 0.5) * 0.7)
+	if watching:
+		if is_instance_valid(watching) and watching.alive and watching.st == St.ERRAND:
+			desired = (watching.global_position - global_position).normalized()
+		else:
+			watching = null
 
 
 ## The hangman's place is at the foot of the gallows steps till the man's dropped,
@@ -1387,6 +1424,81 @@ func _search(delta: float) -> void:
 			path_to(game.free_point_near(last_known, 80.0))
 
 
+## Could a peso clinking down lure him off: at his post or on his rounds, calm, his
+## own man (not one passing as townsfolk, not tied to a gallows or a posse).
+func can_be_lured() -> bool:
+	return alive and revealed and st in [St.GUARD, St.PATROL, St.RETURN] and reaction == "" \
+		and not posted() and not in_posse and not deserting and runner_to == Vector2.INF \
+		and flag_at == Vector2.INF and not is_staggered()
+
+
+## A peso clinked down by him (`times`: how many have before, by that spot, lately).
+func go_for_peso(c: Pickup, times: int) -> void:
+	var mates: Array[Enemy] = []
+	for e in game.enemies:
+		if e != self and e.can_be_lured() and e.st == St.GUARD \
+				and e.global_position.distance_to(global_position) < PESO_MATES:
+			mates.append(e)
+	if times >= 2:   # money from heaven three times over: someone's having them on
+		_say(_line("peso_trick", PESO_TRICK_LINES, peso_rng))
+		for e in [self] + mates:
+			e.suspicion = maxf(e.suspicion, 0.6)
+			e.wary = true
+			e.start_investigate(c.global_position, true)
+		_log("peso trick")
+		return
+	st = St.ERRAND
+	errand = "peso"
+	errand_t = 0.0
+	errand_peso = c
+	errand_wise = times == 1
+	c.set_meta("claimed", self)
+	_mark("?")
+	if peso_rng.randf() < 0.6:
+		_say(_line("peso_hear", PESO_HEAR_LINES, peso_rng))
+	path_to(c.global_position)
+	for e in mates:
+		e.watching = self
+	_log("peso lure")
+
+
+func _errand(delta: float) -> void:
+	match errand:
+		"peso":
+			_peso_errand(delta)
+		_:
+			_go_back()
+
+
+func _peso_errand(delta: float) -> void:
+	var c := errand_peso
+	if not is_instance_valid(c) or c.is_queued_for_deletion():
+		errand = ""   # (picked up from under his nose)
+		_go_back()
+		return
+	if errand_t <= 0.0 and global_position.distance_to(c.global_position) > 10.0 and not follow_path(walk):
+		return
+	velocity = Vector2.ZERO
+	crouched = true
+	desired = (c.global_position - global_position).normalized() if global_position.distance_to(c.global_position) > 2.0 else facing
+	errand_t += delta
+	if errand_t < PESO_STOOP:
+		return
+	crouched = false
+	c.queue_free()
+	game.stats["pesos taken"] = game.stats.get("pesos taken", 0) + 1
+	errand = ""
+	errand_t = 0.0
+	if errand_wise:
+		_say(_line("peso_again", PESO_AGAIN_LINES, peso_rng))
+		wary = true
+		start_investigate(global_position, false)   # (and a good look round)
+	else:
+		if peso_rng.randf() < 0.7:
+			_say(_line("peso", PESO_LINES, peso_rng))
+		_go_back()
+
+
 ## Done looking: back to his post, or back in with the posse.
 func _go_back() -> void:
 	if in_posse:
@@ -1406,7 +1518,7 @@ func join_posse(slot: int) -> void:
 	for e in game.enemies:
 		if not e.alive and not known_corpses.has(e):
 			known_corpses.append(e)   # they all know who's down by now
-	if st in [St.GUARD, St.PATROL, St.RETURN, St.INVESTIGATE]:
+	if st in [St.GUARD, St.PATROL, St.RETURN, St.INVESTIGATE, St.ERRAND]:
 		st = St.POSSE
 		path = PackedVector2Array()
 		suspicion = 0.0
