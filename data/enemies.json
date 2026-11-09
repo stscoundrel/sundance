@@ -23,6 +23,7 @@
     "apprentice":      {"style": "vest",   "hat": "bowler",   "holsters": 0},
     "gunsmith":        {"style": "shirt",  "hat": "bowler",   "apron": true, "spectacles": true, "mustache": true, "holsters": 0},
     "widow":           {"style": "dress",  "hat": "rebozo",   "female": true, "sleeves": true},
+    "townsman_winter": {"style": "suit",   "hat": "slouch", "scarf": true, "gloves": true, "mustache": true},
     "priest":          {"style": "duster", "hat": "flat",     "collar": true, "holsters": 0},
     "nun":             {"style": "dress",  "hat": "habit",    "female": true, "sleeves": true, "shawl": false, "wimple": true, "rosary": true},
     "gravedigger":     {"style": "shirt",  "hat": "slouch",   "suspenders": true, "beard": true, "holsters": 0},
@@ -582,6 +583,17 @@
         "palettes": [
           {"dress": [70, 80, 110], "accent": [220, 214, 196], "boots": [40, 30, 26], "skin": [214, 170, 140], "hair": [90, 60, 36]},
           {"dress": [110, 96, 80], "accent": [160, 40, 34], "boots": [40, 30, 26], "skin": [180, 124, 92], "hair": [30, 22, 18]}]},
+      "snowbound": {"name": "Townsman", "template": "townsman_winter", "shy": true, "nerve": [0.0, 0.5], "snitch": 0.1, "wander": 25,
+        "shouts": {"flee": ["Lord help us!", "Not again!", "Get inside!"], "shy": ["Evening.", "No trouble, mister.", "...", "Not my business."],
+                   "snitch": ["Over there. Leave us be."]},
+        "palettes": [
+          {"coat": [64, 58, 52], "vest": [86, 74, 60], "shirt": [190, 182, 166], "accent": [120, 44, 38], "trousers": [58, 54, 50], "boots": [44, 34, 28], "hat": [70, 62, 52], "band": [40, 36, 32], "skin": [206, 156, 124], "hair": [110, 80, 50]},
+          {"coat": [44, 48, 56], "vest": [70, 64, 58], "shirt": [176, 170, 160], "accent": [150, 140, 120], "trousers": [50, 48, 50], "boots": [36, 28, 24], "hat": [50, 46, 44], "band": [30, 28, 26], "skin": [196, 140, 108], "hair": [60, 44, 32]}]},
+      "snowbound_woman": {"name": "Townswoman", "template": "widow", "shy": true, "nerve": [0.0, 0.4], "snitch": 0.0, "wander": 20,
+        "shouts": {"flee": ["Oh, my Lord!", "My children!", "Help!"], "shy": ["...", "Lord keep us."]},
+        "palettes": [
+          {"dress": [70, 62, 70], "accent": [40, 36, 40], "hat": [44, 38, 42], "boots": [36, 28, 24], "skin": [214, 170, 140], "hair": [90, 60, 36]},
+          {"dress": [84, 70, 54], "accent": [96, 40, 36], "hat": [60, 50, 42], "boots": [36, 28, 24], "skin": [196, 146, 112], "hair": [40, 30, 24]}]},
       "gentleman": {"name": "Gentleman", "template": "suit", "nerve": [0.4, 0.9],
         "shouts": {"flee": ["Good heavens!", "I say!"], "snitch": ["Gentlemen! A ruffian!"]},
         "palettes_from": "gambler"},

@@ -2285,32 +2285,70 @@ def strongbox():
     return m
 
 
+def _limb(pts, rs, col, sq=1.0):
+    """A tapering run of segments through pts, radius rs at each, round at the joints
+    (a horse's leg, neck or tail). sq flattens it side to side."""
+    m = Cloud()
+    for (p0, r0), (p1, r1) in zip(zip(pts, rs), zip(pts[1:], rs[1:])):
+        m += frustum(p0, p1, r0, r1, col, su=1.0, sw=sq)
+    for p, r in zip(pts[1:-1], rs[1:-1]):
+        m += ellipsoid(p, (r, r * sq, r), col)
+    return m
+
+
 def horse():
     """The stranger's horse, tied to a post at the foot of the trail, facing -x: a
-    dark bay, saddled, a blanket under the saddle and the bags behind it, waiting."""
+    dark bay, saddled, a blanket under the saddle and the bags behind it, waiting
+    head down with a hind hoof cocked against the cold."""
     m = Cloud()
-    col, dark = (92, 58, 38), (50, 34, 26)
-    x, y = 1.9, 0.62
-    m += ellipsoid((x, y, 1.12), (0.8, 0.3, 0.34), col)                                  # barrel
-    m += ellipsoid((x + 0.55, y, 1.15), (0.3, 0.28, 0.3), col)                            # quarters
-    m += beam((x - 0.55, y, 1.25), (x - 0.92, y, 1.66), 0.2, col)                        # neck
-    m += beam((x - 0.98, y, 1.76), (x - 1.32, y, 1.45), 0.11, col)                        # head, hung low
-    m += ellipsoid((x - 1.34, y, 1.43), (0.1, 0.1, 0.1), dark)                            # muzzle
-    m += beam((x - 0.5, y, 1.5), (x - 0.92, y, 1.88), 0.07, dark)                         # mane
+    col, dark, hoof = (92, 58, 38), (44, 30, 24), (34, 28, 24)
+    x, y = 1.85, 0.62
+    m += ellipsoid((x, y, 1.13), (0.6, 0.29, 0.33), col)                                 # barrel
+    m += ellipsoid((x - 0.52, y, 1.17), (0.3, 0.26, 0.34), col)                          # chest
+    m += ellipsoid((x + 0.52, y, 1.2), (0.36, 0.28, 0.33), col)                          # quarters
+    m += ellipsoid((x - 0.38, y, 1.4), (0.24, 0.14, 0.13), col)                          # withers
     for s in (-1, 1):
-        m += beam((x - 0.95, y + s * 0.06, 1.84), (x - 0.92, y + s * 0.09, 2.0), 0.03, col)   # ears
-        for dx in (-0.52, 0.55):
-            m += beam((x + dx, y + s * 0.15, 0.95), (x + dx, y + s * 0.15, 0.22), 0.08, col)
-            m += beam((x + dx, y + s * 0.15, 0.22), (x + dx, y + s * 0.15, 0.0), 0.065, dark)
-    m += beam((x + 0.82, y, 1.3), (x + 0.98, y, 0.62), 0.07, dark)                        # tail
-    m += box((x - 0.4, y - 0.33, 1.38), (x + 0.2, y + 0.33, 1.45), solid((120, 40, 34)), 0.02)   # blanket
-    m += ellipsoid((x - 0.1, y, 1.5), (0.3, 0.26, 0.09), (70, 46, 30))                    # saddle
-    m += beam((x - 0.36, y, 1.5), (x - 0.36, y, 1.66), 0.035, (70, 46, 30))               # horn
+        m += ellipsoid((x + 0.58, y + s * 0.12, 0.98), (0.24, 0.13, 0.26), col)          # thighs
+        m += ellipsoid((x - 0.5, y + s * 0.13, 0.98), (0.13, 0.1, 0.16), col)            # shoulders
+    # neck, deep and narrow, up from the chest to the poll; the head hung low off it
+    m += _limb([(x - 0.5, y, 1.3), (x - 0.78, y, 1.6), (x - 0.98, y, 1.76)], [0.22, 0.16, 0.12], col, 0.62)
+    m += _limb([(x - 1.0, y, 1.8), (x - 1.16, y, 1.6), (x - 1.3, y, 1.38)], [0.12, 0.1, 0.075], col, 0.75)
+    m += ellipsoid((x - 1.31, y, 1.37), (0.08, 0.07, 0.07), dark)                         # muzzle
+    m += _limb([(x - 0.42, y, 1.52), (x - 0.72, y, 1.76), (x - 0.97, y, 1.9)], [0.05, 0.06, 0.05], dark, 0.6)   # mane
+    m += ellipsoid((x - 1.05, y, 1.84), (0.06, 0.05, 0.05), dark)                         # forelock
     for s in (-1, 1):
-        m += box((x + 0.25, y + s * 0.33 - 0.07, 1.1), (x + 0.52, y + s * 0.33 + 0.07, 1.4), solid((84, 56, 36)), 0.02)   # bags
+        m += frustum((x - 0.96, y + s * 0.06, 1.86), (x - 0.92, y + s * 0.08, 2.0), 0.035, 0.01, col)   # ears
+        m += ellipsoid((x - 1.1, y + s * 0.085, 1.72), (0.025, 0.012, 0.02), (24, 18, 16))  # eyes
+        # forelegs: forearm, knee, cannon, fetlock, hoof
+        fy = y + s * 0.13
+        m += _limb([(x - 0.5, fy, 0.95), (x - 0.5, fy, 0.5), (x - 0.49, fy, 0.16), (x - 0.45, fy, 0.07)],
+                   [0.085, 0.055, 0.045, 0.05], col)
+        m += frustum((x - 0.45, fy, 0.08), (x - 0.44, fy, 0.0), 0.05, 0.065, hoof)
+        # hind legs: gaskin back to the hock, the cannon down; the near one cocked
+        hy = y + s * 0.15
+        if s < 0:
+            m += _limb([(x + 0.62, hy, 0.85), (x + 0.74, hy, 0.5), (x + 0.6, hy, 0.18), (x + 0.52, hy, 0.12)],
+                       [0.09, 0.055, 0.045, 0.05], col)
+            m += frustum((x + 0.53, hy, 0.13), (x + 0.47, hy, 0.07), 0.05, 0.06, hoof)
+        else:
+            m += _limb([(x + 0.62, hy, 0.85), (x + 0.76, hy, 0.5), (x + 0.7, hy, 0.16), (x + 0.66, hy, 0.07)],
+                       [0.09, 0.055, 0.045, 0.05], col)
+            m += frustum((x + 0.66, hy, 0.08), (x + 0.65, hy, 0.0), 0.05, 0.065, hoof)
+    m += _limb([(x + 0.84, y, 1.36), (x + 0.96, y, 1.15), (x + 1.0, y, 0.85), (x + 0.98, y, 0.58)],
+               [0.06, 0.08, 0.07, 0.04], dark, 0.7)                                       # tail
+    # the blanket over his back, the saddle on it, the bags behind and the stirrups down
+    m += ellipsoid((x - 0.1, y, 1.13), (0.38, 0.325, 0.36), (120, 40, 34), zmin=1.24)
+    m += ellipsoid((x - 0.12, y, 1.5), (0.25, 0.2, 0.07), (70, 46, 30))                   # saddle
+    m += frustum((x - 0.34, y, 1.5), (x - 0.36, y, 1.64), 0.04, 0.03, (70, 46, 30))       # horn
+    m += ellipsoid((x + 0.12, y, 1.55), (0.06, 0.18, 0.06), (70, 46, 30))                 # cantle
+    for s in (-1, 1):
+        m += ellipsoid((x + 0.34, y + s * 0.3, 1.3), (0.14, 0.07, 0.13), (84, 56, 36))     # bags
+        m += box((x - 0.16, y + s * 0.3 - 0.015, 0.95), (x - 0.06, y + s * 0.3 + 0.015, 1.42), solid((64, 42, 28)), 0.02)   # fenders
+        m += box((x - 0.17, y + s * 0.3 - 0.04, 0.9), (x - 0.05, y + s * 0.3 + 0.04, 0.95), solid((50, 36, 26)), 0.02)      # stirrups
+    m += beam((x + 0.3, y - 0.18, 1.48), (x + 0.3, y + 0.18, 1.48), 0.07, (150, 140, 120))   # the bedroll
     post = (0.12, y, 0.0)
     m += beam(post, (0.12, y, 1.2), 0.06, (110, 82, 58))                                 # the post he's tied to
-    m += beam((0.12, y, 1.05), (x - 1.3, y, 1.46), 0.012, (40, 30, 24))                 # the reins
+    m += beam((0.12, y, 1.05), (x - 1.3, y, 1.36), 0.012, (40, 30, 24))                 # the reins
     return m
 
 

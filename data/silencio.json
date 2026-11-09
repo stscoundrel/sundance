@@ -1106,7 +1106,57 @@
   "hunters",
   "outlaws"
  ],
- "civilians": [],
+ "civilians": [
+  {
+   "kind": "snowbound",
+   "x": 33.0,
+   "y": 29.4,
+   "facing": 154,
+   "palette": 0
+  },
+  {
+   "kind": "snowbound",
+   "x": 33.6,
+   "y": 40.4,
+   "facing": 154,
+   "palette": 1
+  },
+  {
+   "kind": "snowbound",
+   "x": 39.6,
+   "y": 40.6,
+   "facing": 206,
+   "palette": 0
+  },
+  {
+   "kind": "snowbound",
+   "x": 48.0,
+   "y": 50.6,
+   "facing": 334,
+   "palette": 1
+  },
+  {
+   "kind": "snowbound_woman",
+   "x": 31.2,
+   "y": 16.2,
+   "facing": 334,
+   "palette": 0
+  },
+  {
+   "kind": "snowbound_woman",
+   "x": 26.4,
+   "y": 50.6,
+   "facing": 334,
+   "palette": 1
+  },
+  {
+   "kind": "snowbound_woman",
+   "x": 15.6,
+   "y": 51.0,
+   "facing": 26,
+   "palette": 0
+  }
+ ],
  "holdouts": [
   {
    "name": "hideout",

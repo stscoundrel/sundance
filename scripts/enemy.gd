@@ -34,6 +34,10 @@ var feud_cd := 0.0
 var silent_death := false   # knifed unawares: no one hears it (game._on_enemy_died)
 var killed_with := ""    # the gun (or "knife", "dynamite") that did for him: who did it? (game.weigh_death)
 static var feud_rng := RandomNumberGenerator.new()   # (the street war: its own dice)
+# Between the gangs the shooting is slow and wild: they keep their heads down and
+# blaze away from cover, so the war drags on and the street stays full of guns.
+const FEUD_SPREAD := 3.0   # x his spread, at the other gang's man
+const FEUD_PACE := 2.4     # x his time between shots, at the other gang's man
 var gang := ""   # whose side he's on, where a town has two (Silencio's "hunters", "outlaws"): his type's "gang"
 var flag_at := Vector2.INF   # the colours in the dirt, and him running to raise them
 var tdata: Dictionary     # his type, merged with defaults and placement overrides
@@ -2136,7 +2140,7 @@ func _feuding(delta: float) -> bool:
 	if feud_cd <= 0.0 and weapon.can_fire():
 		weapon.trigger()
 		since_shot = 0.0
-		feud_cd = feud_rng.randf_range(stats["cadence"].x, stats["cadence"].y) * 1.3
+		feud_cd = feud_rng.randf_range(stats["cadence"].x, stats["cadence"].y) * FEUD_PACE
 	return true
 
 
@@ -2973,6 +2977,8 @@ func accuracy_mult() -> float:
 	var m: float = (AIM_SPREAD_SHOTGUN if weapon.is_shotgun() else AIM_SPREAD) * float(tdata["aim"]) * game.haze.y
 	if panic:
 		return m * 5.0   # wild, over the shoulder
+	if foe != null and st != St.COMBAT:
+		return m * FEUD_SPREAD   # (at the other gang: see _feuding)
 	if suppress_t > 0.0:
 		m *= 1.5
 	if velocity.length() > 5.0:

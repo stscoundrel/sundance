@@ -46,7 +46,7 @@ func _reaches(a: Vector2, b: Vector2) -> bool:
 
 func _map() -> void:
 	step = "map"
-	check(game.enemies.size() == 28 and game.civilians.is_empty(), "who's there: %d, %d" % [game.enemies.size(), game.civilians.size()])
+	check(game.enemies.size() == 28 and game.civilians.size() == 7 and game.civilians.all(func(c): return c.shy), "who's there: %d, %d" % [game.enemies.size(), game.civilians.size()])
 	var snowy := 0
 	for rec in game.placed:
 		var m: Dictionary = game.meta["objects"][rec["type"]]

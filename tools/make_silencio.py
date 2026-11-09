@@ -153,6 +153,18 @@ OUTLAWS = [
     dict({"kind": "oldtimer", "x": 16.4, "y": 41.8, "facing": NORTH}, **OLD_OUTLAW),
 ]
 ENEMIES = HUNTERS + OUTLAWS
+# The townsfolk, what's left of them: shut in between two gangs for the winter, they
+# keep to their own doorsteps on nobody's ground and the south street, and are in at
+# the door the moment an armed man comes their way (see Civilian, "shy").
+TOWNSFOLK = [
+    {"kind": "snowbound", "x": 33.0, "y": 29.4, "facing": S, "palette": 0},           # the storekeeper, on his porch
+    {"kind": "snowbound", "x": 33.6, "y": 40.4, "facing": S, "palette": 1},           # behind the assay office
+    {"kind": "snowbound", "x": 39.6, "y": 40.6, "facing": W, "palette": 0},           # at the gunsmith's back door
+    {"kind": "snowbound", "x": 48.0, "y": 50.6, "facing": NORTH, "palette": 1},       # at his cabin, the hunters' end
+    {"kind": "snowbound_woman", "x": 31.2, "y": 16.2, "facing": NORTH, "palette": 0}, # at the church door
+    {"kind": "snowbound_woman", "x": 26.4, "y": 50.6, "facing": NORTH, "palette": 1}, # by her woodpile
+    {"kind": "snowbound_woman", "x": 15.6, "y": 51.0, "facing": E, "palette": 0},     # at her cabin, the outlaws' end
+]
 
 HOLDOUTS = [{"name": "hideout", "x": 17.8, "y": 29.6, "gang": "outlaws"}, {"name": "jail", "x": 47.5, "y": 29.6, "gang": "hunters"},
             {"name": "church", "x": 31.0, "y": 16.4}]
@@ -177,7 +189,7 @@ BUILDING_KINDS = {k for k, *_ in BUILDINGS_AT}
 
 def main():
     objects = [{"type": k, "x": x, "y": y} for k, x, y in BUILDINGS_AT + PROPS + PINES + [HORSE]]
-    solid = layout.check(N, objects, ENEMIES + ENTRIES + HOLDOUTS + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")])
+    solid = layout.check(N, objects, ENEMIES + TOWNSFOLK + ENTRIES + HOLDOUTS + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")])
     posts = layout.make_posts(N, STREETS, solid, ENEMIES, PLAYER, BUILDING_KINDS)
     layout.write("silencio.json", {
         "name": "Silencio",
@@ -194,7 +206,7 @@ def main():
         "player": PLAYER,
         "enemies": ENEMIES,
         "gangs": ["hunters", "outlaws"],
-        "civilians": [],
+        "civilians": TOWNSFOLK,
         "holdouts": HOLDOUTS,
         "posts": posts,
         "entries": ENTRIES,
@@ -205,8 +217,8 @@ def main():
         "strongbox": STRONGBOX,
         "horse": HORSE_AT,
     })
-    print("Silencio: %d buildings, %d props, %d pines, %d hunters, %d outlaws, %d guard posts" % (
-        len(BUILDINGS_AT), len(PROPS), len(PINES), len(HUNTERS), len(OUTLAWS), len(posts)))
+    print("Silencio: %d buildings, %d props, %d pines, %d hunters, %d outlaws, %d townsfolk, %d guard posts" % (
+        len(BUILDINGS_AT), len(PROPS), len(PINES), len(HUNTERS), len(OUTLAWS), len(TOWNSFOLK), len(posts)))
 
 
 if __name__ == "__main__":

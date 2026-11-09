@@ -58,6 +58,10 @@ extends Actor
 ## and they're out again in a few seconds. Their comandante ("role": "leader")
 ## stands by the cargo waving them on and won't take cover for anyone; shoot him and
 ## they carry on just the same.
+## Silencio's folk ("shy") live between two gangs, snowed in with them for the winter:
+## they keep to their own doorsteps, and an armed man walking their way (either
+## gang's, or the stranger) has them in at the door without a word, or barely one.
+## They give it a good while before they look out again.
 
 enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
 	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY, TO_FIX, FIX, TO_SWEEP, SWEEP, HERD,
@@ -96,6 +100,8 @@ const FIX_T := 12.0        # s at a broken crate, barrel, wagon...
 const MEND_T := 6.0        # s at a chair, table or coop
 const SWEEP_T := 4.0       # s sweeping a spot
 const GUNFIRE := ["shot", "enemy_shot", "blast"]
+const SHY_NEAR := 95.0      # px: an armed man walking this close, in sight, and a shy one's indoors
+const SHY_BACK := Vector2(12.0, 30.0)   # s more quiet than the rest before he looks out again
 const SHELTER_EAR := 320.0 # px from the chapel door: gunfire this near brings the sister out to it
 const SHELTER_FOR := 10.0  # s without a shot near it and she's back inside
 const NEAR_FIRE := 220.0   # px: gunfire this close to the barber, or his door, sends him in
@@ -200,6 +206,8 @@ var wards := PackedVector2Array()   # where gunfire also concerns the cemetery f
 var pit: Dictionary = {}     # the open grave the digger's at
 var kneel := false
 var local := false           # minds only gunfire close by, and works through the rest
+var shy := false             # Silencio's: in at the door when an armed man comes his way
+var shy_look := 0.0
 var condemned := false       # the man on the gallows (see Hanging)
 var bound := false           # noosed and tied: going nowhere, whatever happens
 var last_words := false      # shot in the middle of a line: what he got out stays over him a moment
@@ -221,7 +229,8 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	condemned = tdata.get("role", "") == "condemned"
 	if tdata.has("ward"):
 		wards.append(Iso.to_screen(Vector2(tdata["ward"][0], tdata["ward"][1])))
-	if sister or barber or local:
+	shy = tdata.get("shy", false)
+	if sister or barber or local or shy:
 		dice = rng
 	elif condemned:
 		dice = Hanging.rng
@@ -416,6 +425,36 @@ func _flee() -> void:
 	game.stats["civilian flees"] = game.stats.get("civilian flees", 0) + 1
 
 
+## An armed man coming his way: he doesn't wait to learn which side he's on. Only a
+## man on the move (the ones standing guard by his door he's lived with all winter).
+func _shy(delta: float) -> bool:
+	shy_look -= delta
+	if shy_look > 0.0:
+		return false
+	shy_look = 0.4
+	var p: Player = game.player
+	var near: Vector2 = Vector2.INF
+	if p.alive and global_position.distance_to(p.global_position) < SHY_NEAR and p.velocity.length() > 5.0 and sees(p.global_position):
+		near = p.global_position
+	else:
+		for e in game.enemies:
+			if e.alive and not e.downed and e.velocity.length() > 5.0 \
+					and global_position.distance_to(e.global_position) < SHY_NEAR and sees(e.global_position):
+				near = e.global_position
+				break
+	if near == Vector2.INF:
+		return false
+	threat = near
+	st = St.FLEE
+	hid_at = game.refuge_for(global_position, threat)
+	path = game.find_path(global_position, hid_at)
+	path_i = 0
+	if _rf() < 0.3:
+		_say(_line("shy", ["..."]))
+	game.stats["civilian shy"] = game.stats.get("civilian shy", 0) + 1
+	return true
+
+
 # ------------------------------------------------------------------ frame
 
 func _physics_process(delta: float) -> void:
@@ -528,6 +567,8 @@ func _perceive(delta: float) -> void:
 	if not p.alive or st in [St.FLEE, St.COWER, St.SNITCH] or st in WORK:
 		return
 	sidle = Vector2.ZERO
+	if shy and st in [St.IDLE, St.WALK] and _shy(delta):
+		return
 	if sees(p.global_position):
 		saw_t += delta
 		seen_at = p.global_position
@@ -643,7 +684,7 @@ func _go_inside(hiding := true) -> void:
 	fade.tween_property(self, "modulate:a", 0.0, 0.4)
 	fade.tween_callback(func(): visible = false)
 	inside_t = 0.0
-	back_after = _rr(0.0, 15.0)   # they don't all come out at once
+	back_after = _rr(SHY_BACK.x, SHY_BACK.y) if shy else _rr(0.0, 15.0)   # they don't all come out at once
 	if hiding:
 		game.stats["civilian hides"] = game.stats.get("civilian hides", 0) + 1
 

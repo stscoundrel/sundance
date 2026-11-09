@@ -417,13 +417,21 @@ alarms their own) → 3 the strongbox and the way out → 4 footprints in the sn
 the gang follows like blood, and falling snow that shortens everyone's sight, in
 squalls → 5 the
 truce, and the stranger breaking it (framing one side, a street war) → 6 townsfolk,
-dressing, a line, tuning (built so far: phases 1-5).
+dressing, a line, tuning (built so far: phases 1-5, and of 6 the townsfolk, the
+line and the horse).
+Why the truce: the pass is snowed shut, and nobody gets out till the thaw. The
+stranger's line, a moment in, is no line at all: "..." over his head (the level's
+`"line"`), as silent as the man in the film.
 Twelve hunters hold the east end: the boss at the jail door, the Buntline man out
 in the street at the line, sharpshooters on the porches looking down main street,
 manhunters walking their streets, the old timer watching the valley road. Sixteen
 outlaws hold the west: the chief at the hideout's door with his two mountain men,
 trappers about the cabins and the streets (one out on the ice), a woodsman over the
-pond, the old timer by the cabins. A hunter and a French trapper sit on the
+pond, the old timer by the cabins. Seven townsfolk are left in town, shut in for the
+winter between the two gangs (see Townsfolk: "shy"): a storekeeper on his porch,
+men at the back doors of the assay office and the gunsmith's and at a cabin in the
+hunters' end, women at the church door and at two cabins down the south street.
+A hunter and a French trapper sit on the
 saloon's porch across from one another: nobody's ground. The HUD counts each gang
 (the map's `"gangs"`), and the old timer, who'd fit either side, comes in winter
 colours with no Spanish (the map entry's own `"gang"`, `"tongue"`, `"palettes"`).
@@ -507,8 +515,10 @@ with an outlaw's gun!  The hunters blame the outlaws for murder!", "The gold's
 gone!  The outlaws blame the hunters!"), and a toast that the truce is broken.
 
 At war, a man not busy with the stranger shoots the nearest of the other gang he can
-see (to his gun's range, on its cadence and the war's own dice; further off, he
-closes in), and their rounds hurt each other now; hit by one of them, he answers
+see (to his gun's range; further off, he closes in), slow and wild: three times his
+spread at the stranger (`Enemy.FEUD_SPREAD`) and 2.4 times the wait between shots
+(`FEUD_PACE`, on the war's own dice), heads down, blazing away from cover, so the
+war drags on and the street stays full of guns. Their rounds hurt each other now; hit by one of them, he answers
 that man, not the stranger, and one who sees a comrade shot down by them goes for
 the killer, not out looking for the stranger over it. Every 12 s each gang sends three men up to its edge of
 nobody's ground (the map's `"lines"`), and gunfire between the gangs draws others to
@@ -1534,6 +1544,13 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
 `shouts`), placed by `tools/make_town.py`.
 
 - **Life**: each idles near home and strolls about within `wander` px of it.
+- **Shy** (`"shy"`: Silencio's townsmen and women, in winter coats and black shawls).
+  Shut in between two gangs, they keep to their own doorsteps, and an armed man on
+  the move walking within 95 px in their sight (either gang's, or the stranger) has
+  them in at the nearest door, barely a word ("...", "No trouble, mister."). A man
+  standing his post by the door they've lived with all winter. They wait 12-30 s
+  more quiet than anyone else before looking out again, on their own dice
+  (`Civilian.rng`). Few snitch (one townsman in ten): fear makes some talk.
 - **Panic**: gunfire within ~110 px, or in view within ~320 px, a round cracking
   past (whoever fired it), or a man dropping in front of him sends him running.
   He heads for the nearest doorway that doesn't take him towards the shooting, or
