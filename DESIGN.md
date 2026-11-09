@@ -1174,6 +1174,21 @@ carried, which you collect by walking over them.
   a trick!") and the whole post comes to see who's throwing it, suspicious and wary.
   A peso nobody hears, or one he gets to first, is his to pick up again. Its own dice
   (`Enemy.peso_rng`, `game.peso_rng`).
+- **Habits** (`Enemy._habits`; `tests/test_habits.gd`): a man standing his post,
+  calm, with the town quiet 20 s and nobody of his post already off, has his habits.
+  *A smoke*, every 60-150 s: ten seconds fishing in his pockets with his head bent to
+  his cupped hand, a match flaring at about six (its scratch heard close by), his sight
+  cut to a third and narrowed meanwhile ("smoke" pose: left hand at the mouth, the gun
+  hanging low). Then he stands there 30-60 s puffing, an ember and a thread of smoke at
+  his mouth, his eyes his own again. In every town. *A call of nature*, every 100-260 s,
+  but not in a fight's towns (`game.flirting_ok`): off to the nearest wall 40-130 px
+  from his post that he can walk to ("Back in a minute."), facing it with his back to
+  the street (none handy: 70-100 px off, his back to his post) and his gun put by
+  ("relieve" pose), his sight cut short for 12-18 s,
+  then back. His post stands empty meanwhile and he's a knife's chance at the wall. A
+  mate of his post keeps count: gone over 40 s (the knife found him), and the mate
+  goes to see ("¿Pepe?"), and finds what there is to find. Anything that calls him off
+  ends it. Their own dice (`Enemy.habit_rng`).
 - **The rabble** (`"rabble"` per type; `tests/test_rally.gd`): in a big fight, with
   eight or more of them in combat round the stranger, the rank and file given to it
   (drunks most, revolucionarios, soldaderas and bandidos often, a few cowboys,

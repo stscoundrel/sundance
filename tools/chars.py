@@ -1575,8 +1575,15 @@ def _shared_poses(k):
     k["light"] = P(low, eL=V(0.12, 0.27, 0.3), hL=V(0.24, 0.1, 0.44), stick=True, nod=0.15)
     k["wind"] = P(low, eL=V(-0.12, 0.3, 0.6), hL=V(-0.2, 0.26, 0.82), stick=True, twist=0.4, lean=-0.12)
     k["lob"] = P(low, eL=V(0.24, 0.16, 0.62), hL=V(0.48, 0.08, 0.8), twist=-0.3, lean=0.15)
+    # a smoke: the left hand cupped at his mouth round the match, head bent to it, the
+    # gun hanging low in the other (Enemy.SMOKE); then a draw on it, the hand down a little
+    k["smoke"] = P(low, eL=V(0.1, 0.22, 0.42), hL=V(0.17, 0.05, 0.64), nod=0.25)
+    k["smoke_b"] = P(low, eL=V(0.1, 0.24, 0.36), hL=V(0.2, 0.08, 0.56), nod=0.1)
+    # a call of nature: the gun put by, both hands low in front, head bowed (Enemy.NATURE)
+    k["relieve"] = dict(eL=V(0.08, 0.22, 0.28), hL=V(0.2, 0.05, 0.04), eR=V(0.08, -0.22, 0.28),
+                        hR=V(0.2, -0.05, 0.04), gun=None, nod=0.35)
     if "gun2" in low:   # a man with two guns flinches and cowers with both
-        for name in ("point_half", "point", "flinch_half", "hit_l", "hit_gut"):
+        for name in ("point_half", "point", "flinch_half", "hit_l", "hit_gut", "smoke", "smoke_b"):
             k[name].pop("gun2", None)
         k["point"]["finger"] = False
     return k
@@ -1820,6 +1827,8 @@ def upper_anims(w):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
                         lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         add("haul", [k["haul"]], 1, True)
+        add("smoke", [k["smoke"], k["smoke"], k["smoke"], k["smoke_b"]], 1.5, True)
+        add("relieve", [k["relieve"]], 1, True)
         # 7 fps: it leaves his hand on frame 4, Enemy.WINDUP (0.57 s) after lighting
         add("throw", [k["light"], k["light"], lerp_pose(k["light"], k["wind"], 0.6), k["wind"], k["lob"],
                       lerp_pose(k["lob"], k["aim"], 0.4), lerp_pose(k["lob"], k["aim"], 0.8)], 7)

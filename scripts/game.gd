@@ -263,6 +263,7 @@ func _ready() -> void:
 		Captive.rng.randomize()
 		Brass.rng.randomize()
 		Enemy.peso_rng.randomize()
+		Enemy.habit_rng.randomize()
 		peso_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
@@ -294,6 +295,7 @@ func _ready() -> void:
 		Snowfall.rng.seed = 103
 		Enemy.feud_rng.seed = 107
 		Enemy.peso_rng.seed = 109
+		Enemy.habit_rng.seed = 131
 		peso_rng.seed = 113
 	_parse_args()
 	_setup_input()

@@ -339,6 +339,35 @@ var errand_wise := false     # (the second peso: he'll look about him after)
 var watching: Enemy = null   # a mate of his post off on an errand, and him watching him go
 var sweetheart: Civilian = null   # a saloon girl at his elbow (Civilian._flirt): eyes only for her
 
+# A man at his post has his habits. Now and then he lights up: a good ten seconds
+# fishing in his pockets for a cigar and the matches, head bent to the flame in his
+# cupped hand, and he sees little; then he stands there puffing, his eyes his own
+# again. And now and then (not in a fight's towns: game.flirting_ok) he has to go:
+# off to the nearest wall a short way from his post, his back to the street and his
+# gun put by, for a quarter of a minute, then back. A mate of his post (if he has
+# one) notices if he's gone too long, and goes to see. Their own dice.
+const SMOKE_EVERY := Vector2(60.0, 150.0)   # s at his post between smokes
+const SMOKE_LIGHT := 10.0                   # s finding it and getting it lit
+const SMOKE_STRIKE := 6.0                   # s in, the match flares
+const SMOKE_PUFF := Vector2(30.0, 60.0)     # s he stands there smoking it after
+const NATURE_EVERY := Vector2(100.0, 260.0) # s at his post between calls of nature
+const NATURE_T := Vector2(12.0, 18.0)       # s at it
+const NATURE_FAR := Vector2(40.0, 130.0)    # px from his post: the wall he goes to
+const NATURE_MISSED := 40.0                 # s gone, and a mate goes to look for him
+const NATURE_LINES := ["Ahorita vuelvo.", "Back in a minute.", "Cover for me.", "Nature calls, amigo."]
+const MISSED_LINES := ["¿Pepe?", "Where'd he get to?", "¿Dónde se metió?", "He's taking his time..."]
+static var habit_rng := RandomNumberGenerator.new()
+var smoke_at := INF          # game.clock of his next smoke
+var smoke_t := -1.0          # time into lighting up; < 0 when not
+var puff_until := -1.0       # game.clock: smoking it till then
+var nature_at := INF         # game.clock of his next call of nature
+var errand_at := Vector2.ZERO    # where he's gone (the wall), and how he'll face it
+var errand_face := Vector2.DOWN
+var errand_since := 0.0      # game.clock he set off
+var errand_len := 0.0        # s he'll be at it
+var waiting_on: Enemy = null # a mate gone off on a call of nature, and him keeping count
+var ember: Node2D            # the match, the cigar's glow and its smoke
+
 
 ## Everything that makes this bandit who he is comes from his type in
 ## data/enemies.json (merged over the defaults, then any per-placement overrides).
@@ -382,6 +411,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	desired = facing
 	patrol = route
 	st = St.PATROL if patrol.size() > 1 else St.GUARD
+	roll_habits()
 	if st == St.PATROL:
 		facing = (patrol[1] - patrol[0]).normalized()
 		desired = facing
@@ -511,11 +541,16 @@ func half_fov() -> float:
 
 
 ## How much his mind's on watching: (reach, width) of his eyes, cut down while he's
-## busy with something else (stooped for a peso, a saloon girl at his elbow).
+## busy with something else (stooped for a peso, a saloon girl at his elbow,
+## lighting up, or at the wall).
 func eyes() -> Vector2:
 	if st == St.ERRAND and errand == "peso" and errand_t > 0.0:
 		return Vector2(0.45, 0.6)
 	if sweetheart and st == St.GUARD and sweetheart.st == Civilian.St.FLIRT:
+		return Vector2(0.3, 0.45)
+	if smoke_t >= 0.0 and st == St.GUARD:
+		return Vector2(0.35, 0.5)
+	if st == St.ERRAND and errand == "nature" and errand_t > 0.0:
 		return Vector2(0.3, 0.45)
 	return Vector2.ONE
 
@@ -658,6 +693,7 @@ func alert_to(pos: Vector2) -> void:
 
 func enter_combat(pos: Vector2, spotted: bool, propagate: bool) -> void:
 	reveal()
+	smoke_t = -1.0
 	var was := st
 	st = St.COMBAT
 	last_known = pos
@@ -691,6 +727,7 @@ func start_investigate(pos: Vector2, run: bool) -> void:
 		errand = ""   # (whatever it was can wait)
 		errand_t = 0.0
 		crouched = false
+	smoke_t = -1.0
 	st = St.INVESTIGATE
 	look_t = 0.0
 	running = run
@@ -1229,6 +1266,8 @@ func _physics_process(delta: float) -> void:
 	_check_stuck(delta, before)
 	update_anim(delta)
 	cone.refresh()
+	if ember:
+		ember.queue_redraw()
 
 
 func _run_state(delta: float) -> void:
@@ -1292,12 +1331,15 @@ func _ask_way(dir: Vector2) -> bool:
 
 func _guard(delta: float) -> void:
 	if global_position.distance_to(home) > 6.0:
+		smoke_t = -1.0
 		if path.is_empty() or path_i >= path.size():
 			path_to(home)
 		follow_path(walk)
 		return
 	velocity = Vector2.ZERO
 	desired = home_facing.rotated(sin(t * 0.5) * 0.7)
+	if _habits(delta):
+		return
 	if sweetheart:
 		if is_instance_valid(sweetheart) and sweetheart.alive and sweetheart.beau == self \
 				and sweetheart.st in [Civilian.St.TO_BEAU, Civilian.St.FLIRT]:
@@ -1457,6 +1499,7 @@ func go_for_peso(c: Pickup, times: int) -> void:
 			e.start_investigate(c.global_position, true)
 		_log("peso trick")
 		return
+	smoke_t = -1.0   # (the smoke can wait)
 	st = St.ERRAND
 	errand = "peso"
 	errand_t = 0.0
@@ -1476,6 +1519,8 @@ func _errand(delta: float) -> void:
 	match errand:
 		"peso":
 			_peso_errand(delta)
+		"nature":
+			_nature_errand(delta)
 		_:
 			_go_back()
 
@@ -1507,6 +1552,163 @@ func _peso_errand(delta: float) -> void:
 		if peso_rng.randf() < 0.7:
 			_say(_line("peso", PESO_LINES, peso_rng))
 		_go_back()
+
+
+# ------------------------------------------------------------------ habits
+
+## His first smoke and call of nature, some way into the level (game._spawn_actors).
+func roll_habits() -> void:
+	smoke_at = game.clock + habit_rng.randf_range(SMOKE_EVERY.x * 0.3, SMOKE_EVERY.y)
+	nature_at = game.clock + habit_rng.randf_range(NATURE_EVERY.x * 0.3, NATURE_EVERY.y)
+
+
+## At his post with nothing going on: a smoke, or a call of nature. True while he's
+## busy lighting up (nothing else for him to do meanwhile).
+func _habits(delta: float) -> bool:
+	if waiting_on:
+		_count_the_minutes()
+	if smoke_t >= 0.0:
+		smoke_t += delta
+		pose = "smoke"
+		desired = home_facing.rotated(0.4)   # (turned a little, out of the wind)
+		if smoke_t >= SMOKE_STRIKE and smoke_t - delta < SMOKE_STRIKE:
+			game.sfx("match", global_position, -10.0, 0.08, habit_rng)
+		if smoke_t >= SMOKE_LIGHT:
+			smoke_t = -1.0
+			puff_until = game.clock + habit_rng.randf_range(SMOKE_PUFF.x, SMOKE_PUFF.y)
+			smoke_at = puff_until + habit_rng.randf_range(SMOKE_EVERY.x, SMOKE_EVERY.y)
+		return true
+	if not _at_ease():
+		return false
+	if game.clock >= nature_at and game.flirting_ok() and has_anim(_upper_key("relieve")):
+		nature_at = game.clock + habit_rng.randf_range(NATURE_EVERY.x, NATURE_EVERY.y)
+		if _go_off_for_nature():
+			return true
+	if game.clock >= smoke_at and game.clock > puff_until and has_anim(_upper_key("smoke")):
+		smoke_t = 0.0
+		game.stats["smokes"] = game.stats.get("smokes", 0) + 1
+		_light_ember()
+		return true
+	return false
+
+
+## Standing his post, calm, nobody at his elbow, nobody of his post off already.
+func _at_ease() -> bool:
+	return revealed and st == St.GUARD and alarm_role == "" and not in_posse and not posted() \
+		and reaction == "" and suspicion < 0.2 and sweetheart == null and watching == null \
+		and waiting_on == null and not sees_player and game.quiet_for() > 20.0
+
+
+## Off to the nearest wall a little way from his post, his back to the street (or,
+## with none handy, a little way off with his back to his post).
+func _go_off_for_nature() -> bool:
+	var best := INF
+	var spot := Vector2.INF
+	var face := Vector2.ZERO
+	var turn := habit_rng.randf() * TAU
+	for i in 16:
+		var dir := Vector2.from_angle(turn + TAU * i / 16.0)
+		var hit: Dictionary = game.ray(home, home + dir * NATURE_FAR.y, Iso.LAYER_WALL)
+		if hit.is_empty():
+			continue
+		var d := home.distance_to(hit["position"])
+		if d < NATURE_FAR.x or d >= best:
+			continue
+		var at: Vector2 = hit["position"] + hit["normal"] * 9.0
+		var way: PackedVector2Array = game.find_path(home, at)
+		if way.is_empty() or way[way.size() - 1].distance_to(at) > 8.0:
+			continue
+		best = d
+		spot = at
+		face = -hit["normal"]
+	if spot == Vector2.INF:   # no wall handy: a little way off, his back to his post
+		for i in 8:
+			var dir := Vector2.from_angle(turn + TAU * i / 8.0)
+			var at: Vector2 = home + dir * habit_rng.randf_range(70.0, 100.0)
+			if not game.ray(home, at, Iso.LAYER_WALL | Iso.LAYER_COVER).is_empty():
+				continue
+			var way: PackedVector2Array = game.find_path(home, at)
+			if way.is_empty() or way[way.size() - 1].distance_to(at) > 8.0:
+				continue
+			spot = at
+			face = dir
+			break
+	if spot == Vector2.INF:
+		return false
+	for e in game.enemies:
+		if e != self and e.alive and e.st == St.GUARD and e.revealed and e.waiting_on == null \
+				and e.home.distance_to(home) < PESO_MATES:
+			e.waiting_on = self   # (his mate keeps count)
+			break
+	st = St.ERRAND
+	errand = "nature"
+	errand_t = 0.0
+	errand_at = spot
+	errand_face = face
+	errand_since = game.clock
+	errand_len = habit_rng.randf_range(NATURE_T.x, NATURE_T.y)
+	path_to(spot)
+	if habit_rng.randf() < 0.5:
+		_say(_line("nature", NATURE_LINES, habit_rng))
+	game.stats["calls of nature"] = game.stats.get("calls of nature", 0) + 1
+	return true
+
+
+func _nature_errand(delta: float) -> void:
+	if errand_t <= 0.0 and global_position.distance_to(errand_at) > 6.0 and not follow_path(walk):
+		return
+	velocity = Vector2.ZERO
+	desired = errand_face
+	pose = "relieve"
+	errand_t += delta
+	if errand_t >= errand_len:
+		errand = ""
+		errand_t = 0.0
+		_go_back()
+
+
+## A mate of his post off on a call of nature: back, and that's that; gone too long
+## (or he's heard him go quiet for good), and he goes to see where he's got to.
+func _count_the_minutes() -> void:
+	var m := waiting_on
+	if not is_instance_valid(m) or (m.alive and not (m.st == St.ERRAND and m.errand == "nature")):
+		waiting_on = null
+		return
+	if game.clock - m.errand_since < NATURE_MISSED:
+		return
+	waiting_on = null
+	_say(_line("missed", MISSED_LINES, habit_rng))
+	start_investigate(m.errand_at if m.alive else m.global_position, false)
+	_log("missed mate")
+
+
+## The match, then the cigar's glow and a thread of smoke, at his mouth.
+func _light_ember() -> void:
+	if ember == null:
+		ember = Node2D.new()
+		ember.z_index = 1
+		ember.draw.connect(_draw_ember)
+		add_child(ember)
+
+
+func _draw_ember() -> void:
+	var lighting := smoke_t >= 0.0
+	if not alive or (not lighting and game.clock > puff_until) or st != St.GUARD:
+		return
+	var mouth := Vector2(facing.x * 3.0, -29.0)
+	if lighting:
+		if smoke_t >= SMOKE_STRIKE and smoke_t < SMOKE_STRIKE + 2.5:   # the match, flaring then steady
+			var k := clampf(1.0 - (smoke_t - SMOKE_STRIKE) / 2.5, 0.3, 1.0)
+			var flick := 0.5 + 0.5 * sin(t * 37.0)
+			ember.draw_circle(mouth + Vector2(facing.x * 2.0, 4.0), 4.0 * k + flick, Color(1.0, 0.75, 0.3, 0.25 * k))
+			ember.draw_circle(mouth + Vector2(facing.x * 2.0, 4.0), 1.2 + flick * 0.5, Color(1.0, 0.95, 0.6, 0.9))
+		return
+	var glow := 0.55 + 0.45 * sin(t * 1.3)
+	ember.draw_circle(mouth + Vector2(facing.x * 2.5, 1.0), 0.8, Color(1.0, 0.45, 0.15, glow))
+	for i in 4:   # a thread of smoke, drifting up and off
+		var f := fposmod(t * 0.35 + i * 0.25, 1.0)
+		var at := mouth + Vector2(facing.x * 3.0 + sin(t * 1.7 + i) * 2.0 + f * 5.0, -f * 16.0)
+		ember.draw_circle(at, 1.0 + f * 2.2, Color(0.85, 0.85, 0.82, 0.3 * (1.0 - f)))
 
 
 ## Done looking: back to his post, or back in with the posse.

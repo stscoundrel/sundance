@@ -1278,6 +1278,18 @@ def gen_sfx(meta):
         shiver = np.sin(2 * np.pi * f0 * 1.1 * spin) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * np.cumsum(rate) / SR)))
         parts.append((at + 0.03, shiver * np.exp(-spin / 0.12) * 0.12))
         write(take, room(place(0.75, parts), crng, 0.04, 0.2), meta, 0.6)
+    # A match struck on a thumbnail or a boot heel: a short scratch, the head catching
+    # with a sputter, then the soft roar of the flame a moment. Two takes.
+    frng = np.random.default_rng(100)
+    for take in ("match", "match_2"):
+        sd = frng.uniform(0.06, 0.1)
+        st = t_of(sd)
+        scratch = highpass(lowpass(frng.normal(0, 1, len(st)), 6500), 1500) * (0.4 + 0.6 * np.sin(np.pi * st / sd))
+        ft = t_of(0.7)
+        flare = lowpass(frng.normal(0, 1, len(ft)), 900) * (1 - np.exp(-ft / 0.02)) * np.exp(-ft / 0.25)
+        pops = [(sd + frng.uniform(0.0, 0.08), highpass(frng.normal(0, 1, int(SR * 0.006)), 2500) * frng.uniform(0.3, 0.7))
+                for _ in range(4)]
+        write(take, room(place(0.9, [(0.0, scratch * 0.8), (sd, flare * 1.4)] + pops), frng, 0.03, 0.15), meta, 0.45)
 
 
 def main():
