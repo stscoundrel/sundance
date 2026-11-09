@@ -139,3 +139,28 @@ and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--aler
 screenshot and quit). The window opens maximized; a screenshot at a set size needs a small
 script that calls `DisplayServer.window_set_mode(WINDOW_MODE_WINDOWED)` and
 `window_set_size` before loading the scene (headless runs always play at 1280x720).
+
+## Releases
+
+Publishing a release on GitHub (Releases > Draft a new release, a tag like `v0.1.0`,
+Publish) runs `.github/workflows/release.yml`. It exports the three presets in
+`export_presets.cfg` with Godot 4.7.2 on a GitHub Linux runner and attaches them to the
+release some minutes later:
+
+- `sundance-0.1.0-windows.zip`: one `Sundance.exe`, the game packed inside
+- `sundance-0.1.0-macos.zip`: `Sundance.app`, universal (Intel and Apple Silicon)
+- `sundance-0.1.0-linux-x86_64.tar.gz`: one `Sundance.x86_64`
+- `SHA256SUMS`
+
+The tag, less its `v`, is written into `application/config/version` for the build and shown
+in the corner of the title card; a build from the editor has no version and shows none.
+Actions > Release > Run workflow makes the same builds as a workflow artifact, without a
+release, to try the pipeline out. No tests run in it.
+
+The builds aren't signed (the Mac app only ad hoc), so worth a line in the release notes:
+on Windows, SmartScreen's "More info > Run anyway"; on macOS, after unzipping,
+`xattr -cr Sundance.app` (or System Settings > Privacy & Security > Open Anyway).
+
+To export locally, install the 4.7.2 export templates (Editor > Manage Export Templates),
+then `godot --headless --path . --export-release macOS build/macos/Sundance.zip`
+(or `Windows`, `Linux`); `build/` is ignored.

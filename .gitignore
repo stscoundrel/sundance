@@ -3,3 +3,5 @@ tools/.venv/
 __pycache__/
 *.tmp
 /screenshots/
+/build/
+/dist/

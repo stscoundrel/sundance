@@ -1,0 +1,94 @@
+# Builds the game for Windows, macOS (one universal app for Intel and Apple Silicon) and Linux
+# whenever a release is published on GitHub, and attaches the downloads to it. Run it by hand
+# (Actions > Release > Run workflow) to get the same builds as workflow artifacts, no release.
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # to attach the builds to the release
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot and its export templates
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-desktop
+
+      - name: Download Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
+          mkdir -p ~/godot && cd ~/godot
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && rm godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          curl -fsSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q templates.tpz && rm templates.tpz
+          # Only the desktop templates are used; the rest would just bloat the cache.
+          rm -f templates/android* templates/ios* templates/visionos* templates/web*
+
+      - name: Install Godot
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          ln -s ~/godot/templates ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      - name: Stamp the version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            tag="${{ github.event.release.tag_name }}"
+            version="${tag#v}"
+          else
+            version="0.0.0-dev.${GITHUB_SHA::7}"
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          sed -i "/^config\/name=/a config/version=\"$version\"" project.godot
+          grep -n "config/version" project.godot
+
+      - name: Import assets
+        run: godot --headless --path . --import
+
+      - name: Export
+        run: |
+          mkdir -p build/windows build/macos build/linux
+          godot --headless --path . --export-release "Windows" build/windows/Sundance.exe
+          godot --headless --path . --export-release "macOS" build/macos/Sundance.zip
+          godot --headless --path . --export-release "Linux" build/linux/Sundance.x86_64
+          # Godot can exit 0 even when an export fails: make sure every build is there.
+          ls -l build/windows/Sundance.exe build/macos/Sundance.zip build/linux/Sundance.x86_64
+
+      - name: Package
+        run: |
+          mkdir dist
+          (cd build/windows && zip -q "../../dist/sundance-${VERSION}-windows.zip" Sundance.exe)
+          cp build/macos/Sundance.zip "dist/sundance-${VERSION}-macos.zip"
+          chmod +x build/linux/Sundance.x86_64
+          tar -czf "dist/sundance-${VERSION}-linux-x86_64.tar.gz" -C build/linux Sundance.x86_64
+          (cd dist && sha256sum * > SHA256SUMS)
+          ls -l dist
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber
+
+      - name: Keep as workflow artifacts
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sundance-${{ env.VERSION }}
+          path: dist/

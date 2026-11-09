@@ -709,3 +709,8 @@ func _draw_title() -> void:
 		_text(Vector2(0, 250 + i * 14), lines[i], 8, Color(0.8, 0.74, 0.62, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	_text(Vector2(0, 320), "click to ride in", 10, Color(0.95, 0.75, 0.35, a * (0.6 + 0.4 * sin(Time.get_ticks_msec() / 300.0))), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	draw_set_transform(Vector2.ZERO)
+	# The release build carries its tag (the pipeline writes it in), so a bug report says which
+	# stranger it was; a build from the editor has none and says nothing.
+	var version: String = ProjectSettings.get_setting("application/config/version", "")
+	if version != "":
+		_text(Vector2(0, 14), "v" + version, 8, Color(0.6, 0.5, 0.4, a * 0.8), null, HORIZONTAL_ALIGNMENT_RIGHT, page.x - 6)
