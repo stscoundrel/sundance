@@ -539,12 +539,13 @@ def gen_fx(meta):
                       "cell": [24 * PIX, 24 * PIX], "frames": 3}
 
 
-def paint_portrait():
+def paint_portrait(dress=None):
     """The stranger in the HUD's corner, painted like the eyes close-up: head and
     shoulders against a dusk sky, the flat brim pulled low so its shadow takes his
     eyes, light from the left, stubble, the cigar in the corner of his mouth, the
-    duster's collar and the bandolier across it. Laid out on the HUD's 40x40 box."""
-    pal = {k: np.array(v, float) for k, v in chars._DATA["player"]["palette"].items()}
+    duster's collar and the bandolier across it. Laid out on the HUD's 40x40 box.
+    `dress`: a level's own colours for him (levels.json's "stranger"), over his usual."""
+    pal = {k: np.array(v, float) for k, v in {**chars._DATA["player"]["palette"], **(dress or {})}.items()}
     K = UI_PIX
     S = 40 * K
     rng = np.random.default_rng(23)
@@ -651,6 +652,11 @@ def gen_ui(meta):
     meta["ui"] = {}
     # portrait
     meta["ui"]["portrait"] = save(paint_portrait(), "sprites/ui/portrait.png")
+    # and one for each level that dresses him differently, so the corner matches the man
+    meta["ui"]["portraits"] = {}
+    for lv in json.load(open(os.path.join(ROOT, "data", "levels.json")))["levels"]:
+        if "stranger" in lv:
+            meta["ui"]["portraits"][lv["id"]] = save(paint_portrait(lv["stranger"]), "sprites/ui/portrait_%s.png" % lv["id"])
     # the guns the stranger can carry, side-on, for the loadout screen (Player.SLOT)
     meta["ui"]["guns"] = {}
     for kind in ("colts", "colt", "buntline", "schofield", "navy", "howdah", "derringer", "pistola", "coach", "spencer82", "sawnoff", "champion", "escopeta", "rifle", "henry", "spencer",

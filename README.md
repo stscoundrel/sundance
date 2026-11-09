@@ -127,6 +127,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_signs.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_wounds.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_hens.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_bandage.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_dress.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_crew.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_downed.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_lastgasp.gd

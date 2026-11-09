@@ -1282,6 +1282,15 @@ carried, which you collect by walking over them.
   The stranger's portrait in the HUD's corner is painted the same way
   (`paint_portrait` in the `ui` step): head and shoulders against a dusk sky, the
   flat brim's shadow taking his eyes, stubble, the cigar, the duster and bandolier.
+- The stranger dresses for the place. His usual colours are enemies.json's
+  `player` palette, a dust-brown duster (San Miguel, and any level that says
+  nothing); a level may give its own (`"stranger"` in levels.json, slot by slot over
+  those), painted by the palette shader, so it costs no re-bake. Cruz Verde has him
+  in the tan suit of the Swedish gun-seller in *Vamos a matar, compañeros*, Paso
+  Esperanza in Corbett's slate grey and black hat from *The Big Gundown*, Silencio
+  in Silence's black from *The Great Silence*, dark against the snow. The `ui`
+  step paints a portrait for each dressed level (`portrait_<id>.png`), and the
+  HUD shows the one for where he is.
 - Sound: gunshots are loud and echoing, like the films: a hard crack, a saturated
   powder blast and a low boom, then a long stereo canyon tail whose echoes bounce
   left and right (three takes per gun, no pitched "pew"). Gunfire carries across

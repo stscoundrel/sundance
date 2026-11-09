@@ -115,7 +115,10 @@ func setup(g: Node, pos: Vector2) -> void:
 	for k in ORDER:
 		weapons[k] = Weapon.new(k, self)
 	arm(ORDER)
-	set_character(g.enemy_data["player"]["template"], g.enemy_data["player"]["palette"])
+	# He dresses for the place: a level's own colours over his usual dust-brown duster.
+	var pal: Dictionary = g.enemy_data["player"]["palette"].duplicate()
+	pal.merge(g.level_entry.get("stranger", {}), true)
+	set_character(g.enemy_data["player"]["template"], pal)
 	facing = Vector2(1, -0.3).normalized()
 
 

@@ -183,7 +183,8 @@ func _draw_knife_mark(at: Vector2, quiet: bool) -> void:
 func _draw_status(p: Player) -> void:
 	draw_set_transform(Vector2(0, page.y - PAGE.y))   # (kept to the bottom-left corner)
 	draw_rect(Rect2(6, 310, 44, 44), PANEL)
-	draw_texture_rect(game.tex(game.meta["ui"]["portrait"]), Rect2(8, 312, 40, 40), false)
+	var face: String = game.meta["ui"].get("portraits", {}).get(game.level_entry.get("id", ""), game.meta["ui"]["portrait"])   # dressed as he is here
+	draw_texture_rect(game.tex(face), Rect2(8, 312, 40, 40), false)
 	draw_rect(Rect2(6, 310, 44, 44), Color(0.5, 0.36, 0.2), false, 1.0)
 	for i in p.max_hp:
 		var r := Rect2(54 + i * 7, 344, 5, 8)
