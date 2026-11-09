@@ -23,6 +23,7 @@
     "apprentice":      {"style": "vest",   "hat": "bowler",   "holsters": 0},
     "gunsmith":        {"style": "shirt",  "hat": "bowler",   "apron": true, "spectacles": true, "mustache": true, "holsters": 0},
     "widow":           {"style": "dress",  "hat": "rebozo",   "female": true, "sleeves": true},
+    "winter_girl":     {"style": "dress",  "hat": "none",     "female": true, "sleeves": true, "furcollar": true},
     "townsman_winter": {"style": "suit",   "hat": "slouch", "scarf": true, "gloves": true, "mustache": true},
     "priest":          {"style": "duster", "hat": "flat",     "collar": true, "holsters": 0},
     "nun":             {"style": "dress",  "hat": "habit",    "female": true, "sleeves": true, "shawl": false, "wimple": true, "rosary": true},
@@ -594,6 +595,12 @@
         "palettes": [
           {"dress": [70, 62, 70], "accent": [40, 36, 40], "hat": [44, 38, 42], "boots": [36, 28, 24], "skin": [214, 170, 140], "hair": [90, 60, 36]},
           {"dress": [84, 70, 54], "accent": [96, 40, 36], "hat": [60, 50, 42], "boots": [36, 28, 24], "skin": [196, 146, 112], "hair": [40, 30, 24]}]},
+      "winter_girl": {"name": "Saloon girl", "template": "winter_girl", "nerve": [0.3, 0.9], "snitch": 0.1, "flirts": true,
+        "shouts": {"flee": ["Oh!", "Not in here!", "Lord!"], "snitch": ["Boys! There's a stranger in town!"]},
+        "palettes": [
+          {"dress": [150, 30, 40], "accent": [30, 24, 26], "poncho_a": [44, 34, 30], "boots": [30, 24, 22], "skin": [214, 170, 140], "hair": [40, 28, 20]},
+          {"dress": [40, 90, 70], "accent": [210, 190, 150], "poncho_a": [110, 84, 60], "boots": [40, 30, 26], "skin": [200, 150, 116], "hair": [150, 90, 40]},
+          {"dress": [90, 50, 110], "accent": [20, 20, 24], "poncho_a": [210, 204, 196], "boots": [30, 24, 22], "skin": [180, 124, 92], "hair": [20, 16, 14]}]},
       "gentleman": {"name": "Gentleman", "template": "suit", "nerve": [0.4, 0.9],
         "shouts": {"flee": ["Good heavens!", "I say!"], "snitch": ["Gentlemen! A ruffian!"]},
         "palettes_from": "gambler"},
@@ -702,7 +709,7 @@
         "palettes": [
           {"dress": [120, 70, 50], "accent": [214, 206, 186], "hat": [70, 90, 110], "boots": [50, 36, 28], "skin": [170, 112, 80], "hair": [40, 30, 26]},
           {"dress": [70, 96, 80], "accent": [220, 210, 190], "hat": [140, 60, 44], "boots": [50, 36, 28], "skin": [190, 130, 96], "hair": [60, 44, 34]}]},
-      "saloon_girl": {"name": "Saloon girl", "template": "dress", "nerve": [0.3, 0.9], "snitch": 0.3,
+      "saloon_girl": {"name": "Saloon girl", "template": "dress", "nerve": [0.3, 0.9], "snitch": 0.3, "flirts": true,
         "shouts": {"flee": ["Oh!", "¡Ay, no!", "Not in here!"], "snitch": ["Boys! There's a stranger in town!"]},
         "palettes_from": "saloon_girl"},
       "cargador": {"name": "Cargador", "template": "revolucionario", "role": "carrier", "load": "case", "snitch": 0.0, "wander": 0,

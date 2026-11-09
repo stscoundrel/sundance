@@ -81,7 +81,7 @@ func _plan() -> void:
 			check(game.player.shout == "...", "his line should be '...', was '%s'" % game.player.shout)
 			game.player.process_mode = Node.PROCESS_MODE_DISABLED   # (out of it from here)
 			step = "still"
-			check(game.civilians.size() == 7, "7 townsfolk, got %d" % game.civilians.size())
+			check(game.civilians.size() == 9, "9 townsfolk (two of them the saloon girls), got %d" % game.civilians.size())
 			woman = _folk_at(31.2, 16.2)
 			check(woman.shy and woman.kind == "snowbound_woman", "the woman at the church door should be shy")
 			var by := woman.global_position + woman.facing * 60.0
@@ -93,6 +93,10 @@ func _plan() -> void:
 			game.enemies.erase(guard)
 			step = "shy"
 			man = _folk_at(33.6, 40.4)
+			man.global_position = man.home   # (at his door, not off for a stroll)
+			man.st = Civilian.St.IDLE
+			man.wait = 100.0
+			man.velocity = Vector2.ZERO
 			man.desired = Vector2.DOWN
 			man.facing = Vector2.DOWN
 			var from := man.global_position + Vector2(0, 150)

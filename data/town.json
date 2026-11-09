@@ -1239,6 +1239,18 @@
    "facing": 60
   },
   {
+   "kind": "saloon_girl",
+   "x": 3.6,
+   "y": 29.6,
+   "facing": 100
+  },
+  {
+   "kind": "saloon_girl",
+   "x": 13.0,
+   "y": 34.2,
+   "facing": 80
+  },
+  {
    "kind": "townsman",
    "x": 15.2,
    "y": 30.2,

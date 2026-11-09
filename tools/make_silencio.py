@@ -164,6 +164,8 @@ TOWNSFOLK = [
     {"kind": "snowbound_woman", "x": 31.2, "y": 16.2, "facing": NORTH, "palette": 0}, # at the church door
     {"kind": "snowbound_woman", "x": 26.4, "y": 50.6, "facing": NORTH, "palette": 1}, # by her woodpile
     {"kind": "snowbound_woman", "x": 15.6, "y": 51.0, "facing": E, "palette": 0},     # at her cabin, the outlaws' end
+    {"kind": "winter_girl", "x": 25.2, "y": 29.9, "facing": S, "palette": 0},         # on the saloon's porch, in furs
+    {"kind": "winter_girl", "x": 27.8, "y": 29.9, "facing": S, "palette": 2},         # (both gangs drink there)
 ]
 
 HOLDOUTS = [{"name": "hideout", "x": 17.8, "y": 29.6, "gang": "outlaws"}, {"name": "jail", "x": 47.5, "y": 29.6, "gang": "hunters"},

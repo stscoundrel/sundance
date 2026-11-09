@@ -337,6 +337,7 @@ var errand_t := 0.0
 var errand_peso: Pickup = null
 var errand_wise := false     # (the second peso: he'll look about him after)
 var watching: Enemy = null   # a mate of his post off on an errand, and him watching him go
+var sweetheart: Civilian = null   # a saloon girl at his elbow (Civilian._flirt): eyes only for her
 
 
 ## Everything that makes this bandit who he is comes from his type in
@@ -510,10 +511,12 @@ func half_fov() -> float:
 
 
 ## How much his mind's on watching: (reach, width) of his eyes, cut down while he's
-## busy with something else (stooped for a peso).
+## busy with something else (stooped for a peso, a saloon girl at his elbow).
 func eyes() -> Vector2:
 	if st == St.ERRAND and errand == "peso" and errand_t > 0.0:
 		return Vector2(0.45, 0.6)
+	if sweetheart and st == St.GUARD and sweetheart.st == Civilian.St.FLIRT:
+		return Vector2(0.3, 0.45)
 	return Vector2.ONE
 
 
@@ -1295,6 +1298,13 @@ func _guard(delta: float) -> void:
 		return
 	velocity = Vector2.ZERO
 	desired = home_facing.rotated(sin(t * 0.5) * 0.7)
+	if sweetheart:
+		if is_instance_valid(sweetheart) and sweetheart.alive and sweetheart.beau == self \
+				and sweetheart.st in [Civilian.St.TO_BEAU, Civilian.St.FLIRT]:
+			if sweetheart.st == Civilian.St.FLIRT:
+				desired = (sweetheart.global_position - global_position).normalized()
+			return
+		sweetheart = null
 	if watching:
 		if is_instance_valid(watching) and watching.alive and watching.st == St.ERRAND:
 			desired = (watching.global_position - global_position).normalized()

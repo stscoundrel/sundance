@@ -1647,6 +1647,19 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
 `shouts`), placed by `tools/make_town.py`.
 
 - **Life**: each idles near home and strolls about within `wander` px of it.
+- **The saloon girls** (`"flirts"`; `tests/test_flirt.gd`): the town's own girls,
+  unarmed, never the gang's girl with the derringer. While the town's quiet each
+  goes out, a while into the level and then every 25-50 s, to one of the men standing
+  guard within ~520 px of her place (at his post, not on his rounds, nobody else's
+  girl at his elbow, none in the last 90 s), stands in front of him a little to one
+  side and keeps him talking for 20-35 s ("Buy a girl a drink, cowboy?" / "Later,
+  darling. I'm on watch."). He has eyes only for her: his sight a short, narrow
+  wedge on her (0.3 of its reach, under half its width), so the street behind him is
+  open. Then she goes home. Anything that calls him off ends it ("Hmph!"), and a
+  fright sends her indoors and frees him at once. Three in San Miguel (by the saloon
+  and the cantina) and two in Silencio, in long sleeves and a fur collar and cuffs
+  (`winter_girl`), who go out to either gang's men. Not in a fight's towns (a level's
+  `"action"`: Cruz Verde, Paso Esperanza). Their own dice (`Civilian.flirt_rng`).
 - **Shy** (`"shy"`: Silencio's townsmen and women, in winter coats and black shawls).
   Shut in between two gangs, they keep to their own doorsteps, and an armed man on
   the move walking within 95 px in their sight (either gang's, or the stranger) has

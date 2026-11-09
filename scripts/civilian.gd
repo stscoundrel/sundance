@@ -66,7 +66,7 @@ extends Actor
 enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
 	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY, TO_FIX, FIX, TO_SWEEP, SWEEP, HERD,
 	SHELTER, TO_PADRE, CARRY_IN, TO_PATIENT, TREAT, TO_DOWNED, TEND, TO_PIT, DIG,
-	TO_LOAD, LOAD, TO_WAGON, STOW, BOARD }
+	TO_LOAD, LOAD, TO_WAGON, STOW, BOARD, TO_BEAU, FLIRT }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -84,7 +84,8 @@ const SNITCH_LINES := ["There! A stranger!", "¡Allá, un gringo!"]
 const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios mío!"]
 const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS, St.TO_GRAVE, St.MOURN, St.TO_GUN,
 	St.PICK, St.HAUL, St.TO_STUMP, St.ORATE, St.TO_SCAR, St.SURVEY, St.TO_FIX, St.FIX, St.TO_SWEEP, St.SWEEP,
-	St.HERD, St.SHELTER, St.TO_PADRE, St.CARRY_IN, St.TO_PATIENT, St.TREAT, St.TO_DOWNED, St.TEND, St.TO_PIT, St.DIG]
+	St.HERD, St.SHELTER, St.TO_PADRE, St.CARRY_IN, St.TO_PATIENT, St.TREAT, St.TO_DOWNED, St.TEND, St.TO_PIT, St.DIG,
+	St.TO_BEAU, St.FLIRT]
 const MEASURE_T := 3.5
 const BLESS_T := 4.0
 const MOURN_T := Vector2(20.0, 32.0)
@@ -126,6 +127,22 @@ const VISIT_T := Vector2(10.0, 18.0)   # s at each grave
 const VISIT_NEAR := 320.0  # px from where she started: the graves she goes round
 const DIG_T := 24.0        # s digging a grave out
 const FILL_T := 12.0       # s filling it in over the coffin
+# The saloon girls ("flirts"; the town's own, never the gang's girl with a derringer
+# in her garter) go out to the men standing guard while the town's quiet, and he has
+# eyes only for her (Enemy.eyes). Not in a fight's towns: see game.flirting_ok.
+# Their own dice.
+const FLIRT_T := Vector2(20.0, 35.0)    # s she keeps him talking
+const FLIRT_REST := Vector2(25.0, 50.0) # s between one and the next
+const FLIRT_FIRST := Vector2(6.0, 25.0) # s into the level before she's out to the first
+const FLIRT_REACH := 520.0  # px from her home: the men she'll go out to
+const FLIRT_AGAIN := 90.0   # s before she'll have the same man again (or another girl will)
+const FLIRT_SAY := Vector2(3.5, 6.5)    # s between lines
+const FLIRT_LINES := ["Buy a girl a drink, cowboy?", "You look lonesome, señor.", "¿Bailamos, guapo?",
+	"Come by the saloon later?", "All alone out here?", "Ooh, is that a Colt?"]
+const BEAU_LINES := ["¡Ay, chula!", "Later, darling. I'm on watch.", "Well, now...", "¡Qué bonita!",
+	"Jefe'd skin me.", "Maybe later, sweetheart."]
+const SNUB_LINES := ["Hmph!", "Suit yourself.", "Men."]
+static var flirt_rng := RandomNumberGenerator.new()
 
 static var rng := RandomNumberGenerator.new()   # the sister's and the barber's dice (the town's stay as seeded)
 
@@ -213,6 +230,12 @@ var bound := false           # noosed and tied: going nowhere, whatever happens
 var last_words := false      # shot in the middle of a line: what he got out stays over him a moment
 var still := false           # hanged: he's done moving
 var refuge := Vector2.INF    # where he runs once he's loose, if not just the nearest door
+var flirts := false          # a saloon girl who goes out to the men on guard
+var beau: Enemy              # the man she's sweet-talking (or on her way to)
+var flirt_cd := 0.0
+var flirt_t := 0.0
+var say_t := 0.0
+var her_turn := true
 
 
 func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {}) -> void:
@@ -230,6 +253,8 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	if tdata.has("ward"):
 		wards.append(Iso.to_screen(Vector2(tdata["ward"][0], tdata["ward"][1])))
 	shy = tdata.get("shy", false)
+	flirts = tdata.get("flirts", false)
+	flirt_cd = flirt_rng.randf_range(FLIRT_FIRST.x, FLIRT_FIRST.y) if flirts else 0.0
 	if sister or barber or local or shy:
 		dice = rng
 	elif condemned:
@@ -370,6 +395,10 @@ func alarm(from: Vector2, scary: bool) -> void:
 	if barber:
 		_duck_in()
 		return
+	if beau:
+		if is_instance_valid(beau) and beau.sweetheart == self:
+			beau.sweetheart = null   # (he's got other things on his mind now, and so has she)
+		beau = null
 	if local:
 		near_shot = game.clock   # (a fright of any kind: they give it a while before coming back)
 	if carrier and not src.is_empty():
@@ -552,6 +581,8 @@ func _physics_process(delta: float) -> void:
 			_dig(delta)
 		St.TO_LOAD, St.LOAD, St.TO_WAGON, St.STOW, St.BOARD:
 			_carry(delta)
+		St.TO_BEAU, St.FLIRT:
+			_flirt(delta)
 	if (carried or load_kind != "") and pose == "":
 		pose = "carry"
 	if velocity.length() > 1.0 and not watching:
@@ -644,6 +675,10 @@ func _idle(delta: float) -> void:
 				return
 	if _calm() and _find_work():
 		return
+	if flirts:
+		flirt_cd -= delta
+		if flirt_cd <= 0.0 and _calm() and game.flirting_ok() and _go_to_beau():
+			return
 	if priest and (brave or game.quiet_for() >= game.quiet_after):
 		body = game.blessing_for(self)
 		if body:
@@ -1588,6 +1623,76 @@ func _let_go_of_patient() -> void:
 ## those who only mind what's close, nothing near them for a few seconds.
 func _calm() -> bool:
 	return game.clock - near_shot > RETURN_T if local else game.quiet_for() >= game.quiet_after
+
+
+# ------------------------------------------------------------------ the saloon girls
+
+## Out to one of the men standing guard near her own place, whoever hasn't had a
+## girl at his elbow lately. None free, and she gives it a while.
+func _go_to_beau() -> bool:
+	var free: Array[Enemy] = []
+	for e in game.enemies:
+		if e.can_be_lured() and e.st == Enemy.St.GUARD and e.alarm_role == "" and e.sweetheart == null \
+				and home.distance_to(e.global_position) < FLIRT_REACH \
+				and game.clock - float(e.get_meta("courted", -1000.0)) > FLIRT_AGAIN:
+			free.append(e)
+	if free.is_empty():
+		flirt_cd = flirt_rng.randf_range(8.0, 15.0)
+		return false
+	beau = free[flirt_rng.randi() % free.size()]
+	beau.sweetheart = self
+	beau.set_meta("courted", game.clock)
+	st = St.TO_BEAU
+	path = game.find_path(global_position, _at_his_elbow())
+	path_i = 0
+	game.stats["flirts"] = game.stats.get("flirts", 0) + 1
+	return true
+
+
+## In front of him, a little to one side: where he'd have to look at her.
+func _at_his_elbow() -> Vector2:
+	return beau.global_position + beau.home_facing.rotated(0.5) * 18.0
+
+
+func _flirt(delta: float) -> void:
+	if not is_instance_valid(beau) or not beau.alive or beau.st != Enemy.St.GUARD or beau.sweetheart != self:
+		_leave_beau(st == St.FLIRT)   # (called away, or worse)
+		return
+	if st == St.TO_BEAU:
+		if global_position.distance_to(_at_his_elbow()) > 6.0 and not _follow(walk):
+			return
+		st = St.FLIRT
+		flirt_t = flirt_rng.randf_range(FLIRT_T.x, FLIRT_T.y)
+		say_t = 0.6
+		her_turn = true
+	velocity = Vector2.ZERO
+	desired = (beau.global_position - global_position).normalized()
+	flirt_t -= delta
+	say_t -= delta
+	if say_t <= 0.0:
+		say_t = flirt_rng.randf_range(FLIRT_SAY.x, FLIRT_SAY.y)
+		if her_turn:
+			var own: Dictionary = tdata.get("shouts", {})
+			var lines: Array = own.get("flirt", FLIRT_LINES)
+			_say(lines[flirt_rng.randi() % lines.size()])
+		else:
+			beau.say_line("beau", BEAU_LINES, flirt_rng)
+		her_turn = not her_turn
+	if flirt_t <= 0.0:
+		_leave_beau(false)
+
+
+## Done with him (or he's gone off): home again, and a while before the next.
+func _leave_beau(snubbed: bool) -> void:
+	if is_instance_valid(beau) and beau.sweetheart == self:
+		beau.sweetheart = null
+	beau = null
+	if snubbed and shout_t <= 0.0:
+		_say(SNUB_LINES[flirt_rng.randi() % SNUB_LINES.size()])
+	flirt_cd = flirt_rng.randf_range(FLIRT_REST.x, FLIRT_REST.y)
+	st = St.WALK
+	path = game.find_path(global_position, home)
+	path_i = 0
 
 
 # ------------------------------------------------------------------ the cemetery

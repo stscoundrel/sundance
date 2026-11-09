@@ -142,6 +142,8 @@ CIVILIANS = [
     {"kind": "mourner", "x": 25.4, "y": 37.4, "facing": 270, "indoors": True},
     {"kind": "mourner", "x": 27.4, "y": 52.4, "facing": 270, "indoors": True},
     {"kind": "saloon_girl", "x": 6.6, "y": 29.8, "facing": 60},
+    {"kind": "saloon_girl", "x": 3.6, "y": 29.6, "facing": 100},   # (the girls go out to the men on guard)
+    {"kind": "saloon_girl", "x": 13.0, "y": 34.2, "facing": 80},   # by the cantina
     {"kind": "townsman", "x": 15.2, "y": 30.2, "facing": 300},
     {"kind": "townsman", "x": 29.4, "y": 29.4, "facing": 120},
     {"kind": "gentleman", "x": 41.6, "y": 30.2, "facing": 200},

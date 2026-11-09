@@ -256,6 +256,7 @@ func _ready() -> void:
 		Enemy.rollingblock_rng.randomize()
 		Wounds.rng.randomize()
 		Civilian.rng.randomize()
+		Civilian.flirt_rng.randomize()
 		litter_rng.randomize()
 		rise_rng.randomize()
 		Hanging.rng.randomize()
@@ -278,6 +279,7 @@ func _ready() -> void:
 		Enemy.rollingblock_rng.seed = 41
 		Wounds.rng.seed = 41
 		Civilian.rng.seed = 43
+		Civilian.flirt_rng.seed = 127
 		litter_rng.seed = 47
 		rise_rng.seed = 61
 		Hanging.rng.seed = 53
@@ -2089,6 +2091,13 @@ func enemy_type(kind: String, overrides := {}) -> Dictionary:
 
 
 ## Seconds since the last shot, as long as nobody is fighting.
+## The quiet business of a town that isn't at war (the saloon girls out to the men on
+## guard; the calls of nature): not in a fight's towns (the level's "action": Cruz
+## Verde, Paso Esperanza).
+func flirting_ok() -> bool:
+	return not level_entry.get("action", false) and not Engine.has_meta("no_flirts")
+
+
 func quiet_for() -> float:
 	return _quiet
 

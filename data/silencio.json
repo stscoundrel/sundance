@@ -1155,6 +1155,20 @@
    "y": 51.0,
    "facing": 26,
    "palette": 0
+  },
+  {
+   "kind": "winter_girl",
+   "x": 25.2,
+   "y": 29.9,
+   "facing": 154,
+   "palette": 0
+  },
+  {
+   "kind": "winter_girl",
+   "x": 27.8,
+   "y": 29.9,
+   "facing": 154,
+   "palette": 2
   }
  ],
  "holdouts": [
