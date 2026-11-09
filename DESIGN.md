@@ -683,7 +683,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
-listing what goes in it, dearest first (`Player.choices`: Colt, Schofield, Navy, horse pistol; Spencer pump, coach gun,
+listing what goes in it, dearest first (`Player.choices`: Colt, Schofield, Navy, howdah, derringer, horse pistol; Spencer pump, coach gun,
 sawn-off, Champion, escopeta; Winchester, Henry, Spencer, Remington, Springfield, cut-down Rolling Block) with a line on
 what the chosen one is like, and its picture. The pictures aren't the guns of play blown up: each gun has a finer model
 of its own for the card (`tools/card_guns.py`), at its true proportions where the game's are oversized to read in a
@@ -701,11 +701,14 @@ he picked up. `tests/test_loadout.gd` covers the screen, the switching, and pick
 guns up.
 
 **Points.** Each choice costs points, out of the level's `budget` in
-`data/levels.json` (12 where none is named, for now enough for everything). A gun's
+`data/levels.json` (12 where none is named: a good gun in each slot and a bandage,
+the Colt, the coach gun and the Winchester, with no points left for a stick). A gun's
 price is its `points` in `Weapon.DATA`, by how good it is, not by its slot: junk is
-free (horse pistol, escopeta, cut-down Rolling Block), the poor or one-job guns 1 (Navy, Champion,
-Springfield), the solid ones 2 (Colt and Schofield alike: as strong, each with its
-own faults; sawn-off, Spencer), the coach gun and the Henry 3, the Winchester, the best gun in
+free (horse pistol, the derringer's two little shots, escopeta, cut-down Rolling Block), the
+poor or one-job guns 1 (the howdah, two big shots and then a reload; Champion, Springfield), the
+middling ones 2 (the Navy, six weak shots and an age to load; sawn-off, Spencer), the six-guns 3
+(Colt and Schofield alike: as strong, each with its own faults), the coach gun and the Henry 3,
+the Winchester, the best gun in
 the game, 4, and the Spencer pump gun, rare and new, 5: the dearest. Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
 or the box left of "ride in") and a stick of dynamite for 2 (G, the right box), in
 every level. What he doesn't buy he hasn't: no free bandage. Each
@@ -716,10 +719,12 @@ until it fits. Guns taken off the dead are free. The tests that skip the screen
 keep the level's own kit (a bandage, the level's sticks). `tests/test_budget.gd`.
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
-never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, horse pistol), **2** a
+never change meaning: **1** a revolver or pistol (Colt, Schofield, Navy, howdah, derringer, horse pistol), **2** a
 shotgun (coach gun, Spencer pump, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Henry, Spencer, Springfield, cut-down Rolling Block).
-`Player.SLOT` lists what he can carry; the derringer, Sharps and howdah
-still stay where they lie, and the gunsmith may get to them first.
+`Player.SLOT` lists what he can carry; the Sharps still stays where it
+lies, and the gunsmith may get to it first. The gamblers' and saloon girls'
+derringers and the old timers' howdahs he can take up, but no dead man drops their
+rounds: he lives on what he rode in with (`Player.RESERVE`).
 - A gun for an **empty slot** is his for walking over it.
 - One for a **slot he's filled** is a swap he has to mean: standing over it, it
   glints, and a line over the gun panel names it, what's in it and what he'd give

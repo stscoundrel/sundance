@@ -23,9 +23,10 @@ const TUBE_CAP := 12   # plus one in the chamber (a lever gun's "tube" may hold 
 # For breech guns, open/eject/insert/close are [seconds, sound]; "hammer" means the
 # hammer is thumbed back after each shot; "volley" lets the right trigger fire every
 # loaded barrel at once. "points": what the stranger's gun costs on the loadout
-# screen, out of the level's budget (0 for junk, 4 for the Winchester).
+# screen, out of the level's budget (0 for junk, 3 for a good revolver, 4 for the
+# Winchester).
 const DATA := {
-	"colt": {"name": "COLT SINGLE ACTION ARMY", "points": 2, "action": "revolver", "damage": 2, "speed": 650.0,
+	"colt": {"name": "COLT SINGLE ACTION ARMY", "points": 3, "action": "revolver", "damage": 2, "speed": 650.0,
 		"range": 380.0, "spread": 2.2, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.32,
 		"shake": 2.0, "smoke": 9, "eject": [0.36, "eject"], "insert": [0.5, "shell_in"],
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
@@ -43,7 +44,7 @@ const DATA := {
 	# lost in the dirt); then six go in quick, no turning the cylinder to each. No
 	# topping up a round or two, then. The hump-backed grip sits oddly in the hand:
 	# a little wilder than the Colt. Takes the same .45 rounds.
-	"schofield": {"name": "SCHOFIELD", "points": 2, "action": "revolver", "topbreak": true, "damage": 2, "speed": 640.0,
+	"schofield": {"name": "SCHOFIELD", "points": 3, "action": "revolver", "topbreak": true, "damage": 2, "speed": 640.0,
 		"range": 370.0, "spread": 3.0, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.34,
 		"shake": 2.0, "smoke": 9, "ammo": "colt", "open": [0.6, "break_open"], "eject": [0.4, "eject"],
 		"insert": [0.33, "shell_in"], "close": [0.45, "close"],
@@ -104,7 +105,7 @@ const DATA := {
 	# Colt Navy 1851, cap-and-ball: no cartridges. Each chamber takes powder, a ball
 	# rammed home with the loading lever and a cap on the nipple, so a reload takes
 	# an age. A little weaker, and a fog of black powder smoke. The bandidos' gun.
-	"navy": {"name": "COLT NAVY 1851", "points": 1, "action": "revolver", "damage": 1, "speed": 600.0, "range": 330.0,
+	"navy": {"name": "COLT NAVY 1851", "points": 2, "action": "revolver", "damage": 1, "speed": 600.0, "range": 330.0,
 		"spread": 3.2, "pellets": 1, "noise": 360.0, "sfx": "colt", "cycle": 0.38, "shake": 2.0, "smoke": 15,
 		"smoke_push": 1.2, "eject": [0.2, "gate"], "insert": [1.5, "shell_in"], "ammo": "powder",
 		"status": {"cycle": "COCKING", "open": "POWDER AND BALL", "close": "CAPPED"}},
@@ -163,7 +164,8 @@ const DATA := {
 		"pellets": 0, "noise": 0.0, "sfx": "", "cycle": 0.0, "shake": 0.0, "smoke": 0, "drops": [],
 		"status": {"cycle": "", "open": "", "close": ""}},
 	# Remington double derringer: two stacked barrels, cocked per shot, short and weak.
-	"derringer": {"name": "REMINGTON DERRINGER", "action": "breech", "barrels": 2, "hammer": true,
+	# Two shots for a man close enough to touch, and then the barrels flipped up.
+	"derringer": {"name": "REMINGTON DERRINGER", "points": 0, "action": "breech", "barrels": 2, "hammer": true,
 		"damage": 1, "speed": 550.0, "range": 160.0, "spread": 3.0, "pellets": 1, "noise": 280.0,
 		"sfx": "derringer", "cycle": 0.4, "shake": 1.0, "smoke": 4, "smoke_push": 0.6,
 		"open": [0.35, "gate"], "eject": [0.35, "eject"], "insert": [0.42, "shell_in"], "close": [0.3, "cock"],
@@ -174,8 +176,9 @@ const DATA := {
 		"sfx": "sharps", "cycle": 0.45, "shake": 4.0, "smoke": 16, "smoke_push": 1.3,
 		"open": [0.4, "lever"], "eject": [0.35, "eject"], "insert": [0.55, "shell_in"], "close": [0.35, "lever"],
 		"status": {"cycle": "COCKING", "open": "BLOCK DOWN", "close": "BLOCK UP"}},
-	# Howdah pistol: a two-barrel .577 made for tigers, old-fashioned even now.
-	"howdah": {"name": "HOWDAH PISTOL .577", "action": "breech", "barrels": 2, "hammer": true, "volley": true,
+	# Howdah pistol: a two-barrel .577 made for tigers, old-fashioned even now. It hits
+	# like a rifle and doesn't reach like one, and both barrels go at once if he likes.
+	"howdah": {"name": "HOWDAH PISTOL .577", "points": 1, "action": "breech", "barrels": 2, "hammer": true, "volley": true,
 		"damage": 2, "speed": 520.0, "range": 230.0, "spread": 2.8, "pellets": 1, "noise": 520.0,
 		"sfx": "howdah", "cycle": 0.38, "shake": 3.5, "smoke": 14, "smoke_push": 1.2,
 		"open": [0.4, "break_open"], "eject": [0.35, "eject"], "insert": [0.45, "shell_in"], "close": [0.35, "close"],

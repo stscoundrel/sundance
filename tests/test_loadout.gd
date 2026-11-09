@@ -51,6 +51,7 @@ func _process(_delta: float) -> bool:
 	frame += 1
 	var p: Player = game.player
 	if frame == 3:
+		game.level_entry["budget"] = 20   # (points enough for any choice: test_budget has the prices)
 		game.picked.assign(["colt", "coach"])
 		game._to_loadout()
 		check(game.state == "loadout", "the title should lead to the loadout screen")
@@ -66,9 +67,9 @@ func _process(_delta: float) -> bool:
 		check(game.picked == ["colt", "rifle"], "and then to no shotgun at all (%s)" % [game.picked])
 		_key(KEY_1)
 		check(game.picked == ["schofield", "rifle"], "1 should go on from the Colt to the Schofield (%s)" % [game.picked])
-		_key(KEY_1)
-		_key(KEY_1)
-		check(game.picked == ["pistola", "rifle"], "and on through the Navy to the horse pistol (%s)" % [game.picked])
+		for i in 4:
+			_key(KEY_1)
+		check(game.picked == ["pistola", "rifle"], "and on through the Navy, the howdah and the derringer to the horse pistol (%s)" % [game.picked])
 		_click("spencer")
 		_click("colt")
 		check(game.picked == ["colt", "spencer"], "a click on a gun's name should take it for its slot (%s)" % [game.picked])

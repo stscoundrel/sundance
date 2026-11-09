@@ -1,6 +1,7 @@
 extends SceneTree
 ## The loadout's points. Each gun costs by how good it is (the horse pistol and the
-## escopeta nothing, the Winchester 4) and kit too (a bandage 1, a stick 2), out of
+## escopeta and the derringer nothing, the howdah 1, the Navy 2, the Colt and the
+## Schofield 3, the Winchester 4) and kit too (a bandage 1, a stick 2), out of
 ## the level's budget. A gun he can't afford stays where it is: a click on it, or
 ## going on through the slot with 1 2 3, passes it by. A choice kept from a richer
 ## level gives back its dearest first. He rides in with the kit he bought, and none
@@ -46,23 +47,27 @@ func _process(_delta: float) -> bool:
 	var p: Player = game.player
 	if frame == 3:
 		check(Player.cost(["colt"]) == Player.cost(["schofield"]), "the Colt and the Schofield should cost the same")
+		check(Player.cost(["colt"]) == 3 and Player.cost(["navy"]) == 2, "the Colt 3, the Navy 2")
+		check(Player.cost(["howdah"]) == 1 and Player.cost(["derringer"]) == 0, "the howdah 1, the derringer free")
+		check(Player.choices("colt") == ["colt", "schofield", "navy", "howdah", "derringer", "pistola"],
+			"the sidearms, dearest first (%s)" % [Player.choices("colt")])
 		check(Player.cost(["pistola"]) == 0 and Player.cost(["escopeta"]) == 0, "junk should be free")
 		check(Player.cost(["rifle"]) == 4 and Player.cost(["coach"]) == 3 and Player.cost(["sawnoff"]) == 2,
 			"the Winchester 4, the coach gun 3, the sawn-off 2")
 		for k in Player.SLOT:
 			check(Weapon.DATA[k].has("points"), "%s has no price" % k)
 		check(game.budget() == 12, "with no budget named, 12 (%d)" % game.budget())
-		check(Player.cost(["colt", "coach", "rifle"], ["bandage", "dynamite"]) <= game.budget(),
-			"the default budget should buy everything")
+		check(Player.cost(["colt", "coach", "rifle"], ["bandage"]) <= game.budget(),
+			"the default budget should buy the Colt, the coach gun, the Winchester and a bandage")
 		check(game.kit_offered() == ["bandage", "dynamite"], "Cruz Verde sells both (%s)" % [game.kit_offered()])
 
 		# a poorer level: 6 points
 		game.level_entry["budget"] = 6
-		game.picked.assign(["colt", "coach", "rifle"])
+		game.picked.assign(["navy", "coach", "rifle"])
 		game.kit.assign(["bandage", "dynamite"])
 		game._to_loadout()
 		check(game.spent() <= 6, "a kept choice over budget should be trimmed (%d)" % game.spent())
-		check(game.picked == ["colt"] and game.kit == ["bandage", "dynamite"],
+		check(game.picked == ["navy"] and game.kit == ["bandage", "dynamite"],
 			"the Winchester, then the coach gun, should go first (%s %s)" % [game.picked, game.kit])
 		_click("rifle")
 		check(not "rifle" in game.picked, "the Winchester is too dear with 1 point left")
@@ -81,11 +86,11 @@ func _process(_delta: float) -> bool:
 		_key(KEY_3)
 		check(game.picked_for("rifle") == "springfield", "and passes the Winchester and the Spencer by (%s)" % [game.picked])
 		_key(KEY_1)
-		check(game.picked_for("colt") == "schofield", "a Colt for a Schofield is even (%s)" % [game.picked])
+		check(game.picked_for("colt") == "howdah", "1 goes on from the Navy to the cheaper howdah (%s)" % [game.picked])
 		_key(KEY_ENTER)
 		check(game.state == "play", "Enter should ride in")
 		check(p.bandages == 1 and p.sticks == 0, "he should ride in with what he bought (%d %d)" % [p.bandages, p.sticks])
-		check(p.weapons["coach"].kind == "sawnoff", "and the sawn-off")
+		check(p.weapons["coach"].kind == "sawnoff" and p.weapons["colt"].kind == "howdah", "and the sawn-off and the howdah")
 	if frame == 6:
 		# the kit he didn't buy, he hasn't
 		game.state = "loadout"

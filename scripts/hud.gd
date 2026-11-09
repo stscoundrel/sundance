@@ -571,6 +571,8 @@ const SLOT_NAME := {"colt": "SIDEARM", "coach": "SHOTGUN", "rifle": "RIFLE"}
 const BLURB := {"colt": "six, quick to load, fanned", "buntline": "six, long reach, slow to come up",
 	"schofield": "six, all out and in at once",
 	"navy": "six, weak, slow to load",
+	"howdah": "two big rounds, or both at once",
+	"derringer": "two shots, close enough to touch",
 	"pistola": "one ball, then the ramrod", "coach": "two barrels, or both at once",
 	"spencer82": "six, a stiff slide",
 	"sawnoff": "two short barrels, murder up close",

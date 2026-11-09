@@ -3,7 +3,7 @@ extends Node2D
 ## (physics queries, pathfinding, noise, bullets, effects, sound) and the match flow.
 
 const LEVELS_PATH := "res://data/levels.json"
-const BUDGET := 12   # loadout points where a level names none: for now, enough for everything
+const BUDGET := 12   # loadout points where a level names none: a good gun in each slot and a bandage
 # The level picker's choice, kept over the scene reload that loads it; and where
 # that reload lands ("loadout" after a pick, "levels" after a restart).
 static var chosen_level := ""
@@ -593,7 +593,7 @@ func _to_loadout() -> void:
 	hud.hide_title()
 
 
-## The points he has to spend on guns and kit: the level's, else enough for anything.
+## The points he has to spend on guns and kit: the level's, else BUDGET.
 func budget() -> int:
 	return int(level_entry.get("budget", BUDGET))
 

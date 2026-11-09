@@ -252,6 +252,44 @@ def pistola(g):
     g.ball((0.45, -0.016, 0), 0.0045, STEEL)
 
 
+
+def derringer(g):
+    """Remington double derringer: the two barrels stacked one over the other with the
+    rib down their side, hinged at the top to flip up, the spur trigger with no guard,
+    one hammer for both, and the bird's-head grip in pearl."""
+    for y in (0.0, -0.019):
+        g.rod((0.07, y), (0.2, y), 0.0094, BLUED)
+        g.bore(0.2, y, 0.0052)
+    g.box(0.07, -0.012, -0.0105, 0.2, -0.007, -0.0094, BLUED)                  # the rib between, each side
+    g.box(0.07, -0.012, 0.0094, 0.2, -0.007, 0.0105, BLUED)
+    g.box(0.07, 0.008, -0.002, 0.2, 0.012, 0.002, BLUED)                       # the top rib
+    g.ball((0.07, 0.012, -0.004), 0.0036, STEEL)                               # the hinge
+    g.box(0.03, -0.034, -0.011, 0.072, 0.006, 0.011, BLUED)                    # the frame
+    g.box(0.038, -0.026, -0.0118, 0.06, -0.016, -0.011, STEEL)                 # the locking lever
+    g.screw(0.05, -0.006, -0.0116)
+    g.hammer(0.034, 0.0, 0.022, 0.016, BLUED)
+    g.line([(0.05, -0.034), (0.048, -0.042), (0.044, -0.048)], 0.0026, STEEL)   # the spur trigger
+    pearl = (226, 220, 206)
+    g.slab(-0.024, 0.036, [(-0.024, -0.034), (-0.01, -0.012), (0.036, -0.004)],
+           [(-0.024, -0.07), (-0.014, -0.086), (0.002, -0.09), (0.014, -0.074), (0.026, -0.05), (0.036, -0.036)],
+           0.0115, pearl)
+    g.line([(0.02, -0.005), (-0.01, -0.012), (-0.022, -0.03), (-0.026, -0.06), (-0.016, -0.084),
+            (0.002, -0.091)], 0.0034, BLUED)                                     # the backstrap, round the bird's head
+    g.screw(0.004, -0.046, -0.012)
+
+
+def howdah(g):
+    """A howdah pistol: a double shotgun's action shrunk to a hand, two fat .577 barrels
+    side by side, the hammers on their locks, two triggers, and a walnut grip curved
+    down to a steel butt cap with its lanyard ring."""
+    w = g.wood(WALNUT)
+    g.slab(0.0, 0.11, [(0.0, -0.062), (0.05, -0.03), (0.11, -0.008)],
+           [(0.0, -0.11), (0.03, -0.12), (0.06, -0.09), (0.09, -0.056), (0.11, -0.046)], 0.015, w)
+    g.line([(-0.002, -0.06), (-0.004, -0.09), (0.004, -0.114), (0.03, -0.122)], 0.0055, STEEL)   # butt cap
+    g.rod((0.008, -0.118, 0), (0.008, -0.13, 0), 0.006, STEEL)                 # the lanyard ring
+    _double(g, 0.15, 0.44, 0.08)
+
+
 # ------------------------------------------------------------------- shotguns
 
 def _butt(g, x1, comb, wrist, toe, color, plate=None, crescent=False):
@@ -517,7 +555,7 @@ def rollingblock(g):
 
 
 DETAILED = {k: f for k, f in globals().items() if k in (
-    "colt", "buntline", "schofield", "navy", "pistola", "coach", "sawnoff", "champion", "spencer82", "escopeta",
+    "colt", "buntline", "schofield", "navy", "howdah", "derringer", "pistola", "coach", "sawnoff", "champion", "spencer82", "escopeta",
     "rifle", "henry", "spencer", "springfield", "remington", "rollingblock")}
 
 
