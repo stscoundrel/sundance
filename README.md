@@ -13,7 +13,9 @@ godot --path .
 
 WASD move · mouse aim · LMB fire · RMB fan the Colt / fire both barrels · C or Ctrl crouch ·
 R reload (fire stops a partial reload) · 1/2/3 or wheel to switch guns · E knife (hold to drag
-a body; at the gallows or the pole, hold to cut the man loose; by the machine gun, get on or off it; by the plunger, fire the mines; by the strongbox, take it up or set it down) · B bandage · G throw dynamite · F swap for the gun at your feet · Enter restart · Esc quit.
+a body; at the gallows or the pole, hold to cut the man loose; by the machine gun, get on or off it; by the plunger, fire the mines; by the strongbox, take it up or set it down) · B bandage · G throw dynamite · F swap for the gun at your feet · Esc the menu (the town paused: resume, start over, another town,
+leave the game) · after a win, Enter rides on to the next town; after a loss, Enter tries it again.
+On the title, the picker and the loadout, Esc goes back a step; the picker's last row leaves the game.
 
 The window can be any size. A bigger one shows more of the town, up to about 640x360 world
 pixels on a 16:9 screen (wider on a 21:9 one); past that the pixels only get bigger. A
@@ -21,7 +23,7 @@ pixels on a 16:9 screen (wider on a 21:9 one); past that the pixels only get big
 
 On the loadout screen: 1/2/3 or a click go through a slot's guns (those you can afford), B and G
 buy a bandage and a stick of dynamite, Enter rides in. Each gun and piece of kit costs points out
-of the level's budget.
+of the level's budget: Silencio 8, San Miguel 12, Cruz Verde 14, Paso Esperanza 18.
 
 ## Assets
 
@@ -89,6 +91,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_reinforcements.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_knife.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_drag.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_menu.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_hanging.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_captive.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_yard.gd

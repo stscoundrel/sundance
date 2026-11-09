@@ -40,8 +40,19 @@ Jefe; each man goes to a post of his kind, kept six tiles from the others where 
 posts allow it, and posts on blocked ground are passed over. A smaller or bigger gang
 scales its saloon reserve (2 to 8) and the size it bands into a posse (3 to 7). The
 hand-drawn San Miguel stays first in the list, unshuffled: the tests and the tuning
-lean on it. Picking another level reloads the scene with it, straight to the guns;
-after a win or a loss, Enter goes back to the picker with the same level ready. A
+lean on it. Picking another level reloads the scene with it, straight to the guns.
+
+**Getting about.** The picker's rows show each town's points (below) and mark the
+ones won this sitting "quiet now" (not saved: a new game starts fresh); under them,
+"Leave the territory" quits. Esc goes back a step: the title to the picker, the
+guns to the picker, the picker to "Leave the territory" (Enter on it leaves, so Esc
+alone never quits). In town Esc brings up a menu with the town paused under it
+(`get_tree().paused`; the HUD layer runs on to draw it and hand it the keys, and the
+wind blows on): back to it, start this town over (at the guns), another town (the
+picker), leave. A win offers the next town in the picker's order: Enter rides on to
+it, at the guns ("ride on to ..." in the menu too); after the last, Enter goes to
+the picker. A loss: Enter goes straight back to the same town's guns, to try it
+another way. The levels can still be played in any order. `tests/test_menu.gd`. A
 map can do without streets (the posse rides between guard posts), townsfolk, a
 reserve, a boot hill (no burials) or holdouts (no falling back), and can name its own
 baked ground; the hidden "Test yard" proves it. `tests/test_levels.gd` checks the
@@ -587,8 +598,8 @@ horse, and a quiet spell.
 | 1 / 2 / 3, wheel | Revolver / shotgun / rifle slot (the ones he has) |
 | F | Swap the gun in that slot for the one at his feet |
 | E | Knife: a silent takedown from behind, or a rush |
-| Enter | Restart after win or loss |
-| Esc | Quit |
+| Enter | After a win: on to the next town · after a loss: the same town again |
+| Esc | Back a step; in town, the menu (paused): resume, start over, another town, quit |
 
 ## Hero
 
@@ -703,7 +714,11 @@ guns up.
 
 **Points.** Each choice costs points, out of the level's `budget` in
 `data/levels.json` (12 where none is named: a good gun in each slot and a bandage,
-the Colt, the coach gun and the Winchester, with no points left for a stick). A gun's
+the Colt, the coach gun and the Winchester, with no points left for a stick). Each
+town gives what it asks of him: Silencio 8 (two gangs to be played off against each
+other, not outgunned: tricks before firepower), San Miguel 12, Cruz Verde 14 (the
+waves), Paso Esperanza 18 (an open fight to hold the train: nearly everything but a
+stick). A gun's
 price is its `points` in `Weapon.DATA`, by how good it is, not by its slot: junk is
 free (horse pistol, the derringer's two little shots, escopeta), the poor or one-job guns 1
 (the howdah, two big shots and then a reload; Champion), the middling ones 2 (the Navy, six

@@ -1,5 +1,5 @@
 {
- "_doc": "The levels the picker offers, in order. 'map' is a town file (tools/make_town.py writes San Miguel's). With 'count', the gang is shuffled: that many bandits on the map's guard posts, the count itself the seed (the same count, the same town), the gang's mix kept from the map's own. Without it, the map's hand-placed gang. 'hidden' ones are for the tests. 'budget': the points the stranger spends on the loadout screen (guns and kit; 12 if none: a good gun in each slot and a bandage). 'dynamite': the sticks he has when a test skips the loadout screen. 'hanging': a man on the map's gallows, dropped 'at' seconds in unless the stranger stops it (see scripts/hanging.gd). 'captive': a man tied to a pole (its corner, tiles), stood over by the garrison man placed nearest 'guard', who counts 'count' seconds from the first shot before he shoots him (see scripts/captive.gd). 'stranger': his clothes for the level ({slot: [r, g, b]}, over enemies.json's player palette; painted by the shader, no re-bake).",
+ "_doc": "The levels the picker offers, in order. 'map' is a town file (tools/make_town.py writes San Miguel's). With 'count', the gang is shuffled: that many bandits on the map's guard posts, the count itself the seed (the same count, the same town), the gang's mix kept from the map's own. Without it, the map's hand-placed gang. 'hidden' ones are for the tests. 'budget': the points the stranger spends on the loadout screen (guns and kit; 12 if none: a good gun in each slot and a bandage), by what the town asks of him: Paso Esperanza's open fight the most, Silencio's two gangs (tricks, not firepower) the fewest. 'dynamite': the sticks he has when a test skips the loadout screen. 'hanging': a man on the map's gallows, dropped 'at' seconds in unless the stranger stops it (see scripts/hanging.gd). 'captive': a man tied to a pole (its corner, tiles), stood over by the garrison man placed nearest 'guard', who counts 'count' seconds from the first shot before he shoots him (see scripts/captive.gd). 'stranger': his clothes for the level ({slot: [r, g, b]}, over enemies.json's player palette; painted by the shader, no re-bake).",
  "arms": {
   "_doc": "Guns a wave can hand its men instead of their own ('arms' on a wave or one of its groups, by name; [] for their own): loadout options, as in enemies.json.",
   "rabble": [{"guns": ["navy"], "weight": 3, "range": [60, 170], "champion": 0.12},
@@ -7,7 +7,7 @@
              {"guns": ["pistola", "pistola"], "weight": 1, "range": [50, 150], "draw_sidearm": 1.0}]
  },
  "levels": [
-  {"id": "san_miguel", "name": "San Miguel", "map": "res://data/town.json", "note": "A border town, 25 of the gang, and a hanging at noon.",
+  {"id": "san_miguel", "name": "San Miguel", "map": "res://data/town.json", "note": "A border town, 25 of the gang, and a hanging at noon.", "budget": 12,
    "hanging": {"at": 300, "condemned": "captive", "hangman": "hangman"}},
   {"id": "san_miguel_15", "hidden": true, "name": "San Miguel", "map": "res://data/town.json", "count": 15, "note": "A quieter week: 15 bandits, shuffled."},
   {"id": "san_miguel_25", "hidden": true, "name": "San Miguel", "map": "res://data/town.json", "count": 25, "note": "The whole gang, shuffled: 25 bandits."},
@@ -16,7 +16,7 @@
    "waves": [{"at": 90, "groups": [{"from": "east road", "count": 4}, {"from": "north trail", "count": 3}]},
              {"at": 180, "groups": [{"from": "west road", "count": 4}, {"from": "south trail", "count": 4}]},
              {"at": 270, "groups": [{"from": "north-east trail", "count": 4}, {"from": "east road", "count": 4}]}]},
-  {"id": "cruz_verde", "stranger": {"coat": [194, 160, 112], "shirt": [214, 206, 186], "trousers": [160, 128, 90], "boots": [86, 58, 38], "hat": [170, 140, 98], "band": [74, 54, 38], "skin": [204, 150, 112], "hair": [124, 96, 64]}, "name": "Cruz Verde", "map": "res://data/cruz_verde.json", "note": "A revolutionary fort, taken by surprise. They keep coming.", "waves_from": "first_shot", "dynamite": 1,
+  {"id": "cruz_verde", "stranger": {"coat": [194, 160, 112], "shirt": [214, 206, 186], "trousers": [160, 128, 90], "boots": [86, 58, 38], "hat": [170, 140, 98], "band": [74, 54, 38], "skin": [204, 150, 112], "hair": [124, 96, 64]}, "name": "Cruz Verde", "map": "res://data/cruz_verde.json", "note": "A revolutionary fort, taken by surprise. They keep coming.", "budget": 14, "waves_from": "first_shot", "dynamite": 1,
    "line": {"who": "stranger", "at": 2.5, "text": "Vamos a matar, compañeros"},
    "captive": {"kind": "captive", "pole": [30.4, 29.85], "guard": [33.8, 18.0], "count": 10},
    "waves": [{"at": 60, "groups": [{"from": "north road", "count": 4}, {"from": "east road", "count": 2}]},
@@ -29,7 +29,7 @@
                          {"from": "north road", "kinds": ["coronel"], "arms": []}]},
              {"at": 285, "arms": "rabble",
               "groups": [{"from": "west road", "count": 5}, {"from": "south road", "count": 5}, {"from": "cemetery", "count": 2}]}]},
-  {"id": "train", "stranger": {"coat": [82, 78, 74], "shirt": [196, 190, 176], "trousers": [56, 52, 50], "boots": [34, 26, 22], "hat": [34, 32, 32], "band": [70, 66, 62], "skin": [188, 134, 98], "hair": [110, 106, 100]}, "name": "Paso Esperanza", "map": "res://data/train.json", "note": "Hold a wrecked train while the rifles go.",
+  {"id": "train", "stranger": {"coat": [82, 78, 74], "shirt": [196, 190, 176], "trousers": [56, 52, 50], "boots": [34, 26, 22], "hat": [34, 32, 32], "band": [70, 66, 62], "skin": [188, 134, 98], "hair": [110, 106, 100]}, "name": "Paso Esperanza", "map": "res://data/train.json", "note": "Hold a wrecked train while the rifles go.", "budget": 18,
    "line": {"who": "stranger", "at": 2.5, "text": "Pintamos de rojo sol y cielo"},
    "cargo": {"loads": 40, "spare": 2},
    "waves": [{"at": 25, "groups": [{"from": "east road", "count": 5}, {"from": "south-east", "count": 4}, {"from": "south", "count": 3}]},
@@ -40,7 +40,7 @@
              {"loads": 30, "groups": [{"from": "east scrub", "count": 12}, {"from": "north-east", "count": 6}]},
              {"loads": 35, "groups": [{"from": "east road", "count": 7}, {"from": "south-east", "count": 6}, {"from": "south", "count": 7}, {"from": "east road", "kinds": ["capitan", "abanderado"]}]},
              {"loads": 40, "groups": [{"from": "east road", "count": 8}, {"from": "south-east", "count": 5}, {"from": "east scrub", "count": 9}]}]},
-  {"id": "silencio", "stranger": {"coat": [30, 30, 36], "shirt": [44, 42, 46], "trousers": [34, 32, 36], "boots": [24, 20, 20], "hat": [28, 26, 30], "band": [16, 16, 18], "skin": [206, 156, 126], "hair": [40, 30, 24]}, "name": "Silencio", "map": "res://data/silencio.json", "note": "Snowed in. Bounty hunters at one end, outlaws at the other.",
+  {"id": "silencio", "stranger": {"coat": [30, 30, 36], "shirt": [44, 42, 46], "trousers": [34, 32, 36], "boots": [24, 20, 20], "hat": [28, 26, 30], "band": [16, 16, 18], "skin": [206, 156, 126], "hair": [40, 30, 24]}, "name": "Silencio", "map": "res://data/silencio.json", "note": "Snowed in. Bounty hunters at one end, outlaws at the other.", "budget": 8,
    "line": {"who": "stranger", "at": 2.5, "text": "..."}},
   {"id": "test_yard", "name": "Test yard", "map": "res://data/test_yard.json", "hidden": true, "note": "A bare yard: no streets, townsfolk, reserve, boot hill or holdouts."},
   {"id": "test_yard_5", "name": "Test yard", "map": "res://data/test_yard.json", "count": 5, "hidden": true},

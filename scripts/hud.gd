@@ -21,6 +21,7 @@ var eyes_on := false
 var eyes_t := 0.0
 var message := ""
 var sub := ""
+var hint := ""   # the end screen's way on (Enter: the next town...)
 var msg_t := 0.0
 var banner_text := ""
 var banner_t := 0.0
@@ -64,10 +65,20 @@ func toast(t: String) -> void:
 	toast_t = 3.0
 
 
-func show_message(m: String, s: String) -> void:
+func show_message(m: String, s: String, h := "") -> void:
 	message = m
 	sub = s
+	hint = h
 	msg_t = 0.0
+
+
+## While Esc's menu is up the game is paused and hears nothing: its keys come here
+## (this layer runs on) and go back to it.
+func _unhandled_input(event: InputEvent) -> void:
+	if game.menu.is_empty():
+		return
+	game.menu_input(event)
+	get_viewport().set_input_as_handled()
 
 
 func _process(delta: float) -> void:
@@ -111,6 +122,8 @@ func _draw() -> void:
 		_draw_loadout(p)
 	elif game.state == "levels":
 		_draw_levels()
+	if not game.menu.is_empty():
+		_draw_menu()
 
 
 ## A line said, in a bubble over a head (screen space), fading out at the end.
@@ -529,9 +542,12 @@ func _draw_innocent() -> void:
 func _draw_message() -> void:
 	var a: float = clamp(msg_t * 1.5, 0.0, 1.0)
 	var y := floorf(page.y / 2)
-	draw_rect(Rect2(0, y - 40, page.x, 70), Color(0, 0, 0, 0.6 * a))
+	draw_rect(Rect2(0, y - 40, page.x, 84), Color(0, 0, 0, 0.6 * a))
 	_text(Vector2(0, y), message, 26, Color(0.95, 0.75, 0.35, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	_text(Vector2(0, y + 20), sub, 8, Color(INK, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	if hint != "" and game.menu.is_empty():
+		var b := Color(0.95, 0.75, 0.35, a * (0.7 + 0.3 * sin(Time.get_ticks_msec() / 300.0)))
+		_text(Vector2(0, y + 36), hint, 10, b, font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 # ------------------------------------------------------------------ levels
@@ -548,9 +564,10 @@ func _row(i: int) -> Rect2:
 	return Rect2(ROW.position + Vector2(0, i * (ROW.size.y + 6)), ROW.size)
 
 
-## Which level row is under the cursor on the picker, or -1.
+## Which level row is under the cursor on the picker, or -1 (the row past the
+## towns is the way out of the game).
 func level_hit(pos: Vector2) -> int:
-	for i in game.levels.size():
+	for i in game.levels.size() + 1:
 		if _row(i).has_point(pos - menu_at()):
 			return i
 	return -1
@@ -572,7 +589,18 @@ func _draw_levels() -> void:
 		draw_rect(r, BRASS if on else Color(0.3, 0.22, 0.15), false, 2.0 if i == game.level_pick else 1.0)
 		_text(r.position + Vector2(10, 13), "[%d]  %s" % [i + 1, l["name"]], 12, Color(0.95, 0.75, 0.35) if on else INK, font)
 		_text(r.position + Vector2(36, 25), l.get("note", ""), 8, Color(INK, 0.85 if on else 0.55))
-	_text(Vector2(0, 340), "up / down and Enter, a number, or a click", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+		_text(r.position + Vector2(0, 13), "%d POINTS" % int(l.get("budget", game.BUDGET)), 8,
+			Color(0.95, 0.75, 0.35) if on else Color(INK, 0.6), font, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 10)
+		if game.ridden.has(l["id"]):
+			_text(r.position + Vector2(0, 13), "quiet now", 8, Color(0.6, 0.78, 0.5, 0.9 if on else 0.6), null, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 70)
+	var q := _row(game.levels.size())
+	q = Rect2(q.position + Vector2(90, 4), Vector2(q.size.x - 180, 20))
+	var qon: bool = game.level_pick == game.levels.size() or over == game.levels.size()
+	draw_rect(q, Color(0.16, 0.1, 0.07, 0.95) if qon else PANEL)
+	draw_rect(q, BRASS if qon else Color(0.3, 0.22, 0.15), false, 2.0 if game.level_pick == game.levels.size() else 1.0)
+	_text(Vector2(q.position.x, q.position.y + 14), "LEAVE THE TERRITORY", 10, Color(0.95, 0.75, 0.35) if qon else Color(INK, 0.6),
+		font, HORIZONTAL_ALIGNMENT_CENTER, q.size.x)
+	_text(Vector2(0, 340), "up / down and Enter, a number, or a click      Esc: the way out", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	draw_colored_polygon(PackedVector2Array([mouse, mouse + Vector2(0, 11), mouse + Vector2(3, 8), mouse + Vector2(7, 8)]), BRASS)
 	draw_set_transform(Vector2.ZERO)
 
@@ -654,7 +682,7 @@ func _draw_loadout(_p: Player) -> void:
 	_text(Vector2(0, 56), "One gun a slot, or none, as far as your money goes. Any other you'll have to take off a dead man.", 8,
 		Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	var left: int = game.budget() - game.spent()
-	_text(Vector2(0, 75), "%d OF %d POINTS LEFT" % [left, game.budget()], 10,
+	_text(Vector2(0, 75), "%s:  %d OF %d POINTS LEFT" % [game.level_entry["name"].to_upper(), left, game.budget()], 10,
 		Color(0.95, 0.75, 0.35) if left > 0 else Color(INK, 0.6), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	var mouse := get_local_mouse_position() - menu_at()
 	for i in Player.ORDER.size():
@@ -702,6 +730,7 @@ func _draw_loadout(_p: Player) -> void:
 	draw_rect(ride, BRASS if ready and ride.has_point(mouse) else Color(0.5, 0.36, 0.2), false, 1.0)
 	_text(Vector2(ride.position.x, ride.position.y + 18), "RIDE IN  [Enter]", 12,
 		Color(0.95, 0.75, 0.35) if ready else Color(INK, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, ride.size.x)
+	_text(Vector2(ride.position.x, ride.end.y + 12), "Esc: another town", 8, Color(INK, 0.45), null, HORIZONTAL_ALIGNMENT_CENTER, ride.size.x)
 	# the mouse is hidden in town; here it gets a small brass pointer
 	draw_colored_polygon(PackedVector2Array([mouse, mouse + Vector2(0, 11), mouse + Vector2(3, 8), mouse + Vector2(7, 8)]), BRASS)
 	draw_set_transform(Vector2.ZERO)
@@ -735,3 +764,49 @@ func _draw_title() -> void:
 	var version: String = ProjectSettings.get_setting("application/config/version", "")
 	if version != "":
 		_text(Vector2(0, 14), "v" + version, 8, Color(0.6, 0.5, 0.4, a * 0.8), null, HORIZONTAL_ALIGNMENT_RIGHT, page.x - 6)
+
+
+# ------------------------------------------------------------------ menu
+
+const MENU_ROW := Rect2(220, 130, 200, 22)
+const MENU_NAME := {"resume": "BACK TO IT", "next": "RIDE ON TO %s", "again": "START THIS TOWN OVER",
+	"levels": "ANOTHER TOWN", "quit": "LEAVE THE TERRITORY"}
+
+
+func _menu_row(i: int) -> Rect2:
+	return Rect2(MENU_ROW.position + Vector2(0, i * (MENU_ROW.size.y + 6)), MENU_ROW.size)
+
+
+## Which of Esc's menu's choices is under the cursor, or -1.
+func menu_hit(pos: Vector2) -> int:
+	for i in game.menu.size():
+		if _menu_row(i).has_point(pos - menu_at()):
+			return i
+	return -1
+
+
+func _menu_name(k: String) -> String:
+	if k == "next":
+		return MENU_NAME[k] % game.next_level()["name"].to_upper()
+	if k == "resume" and game.state != "play":
+		return "BACK"
+	return MENU_NAME[k]
+
+
+func _draw_menu() -> void:
+	draw_rect(Rect2(Vector2.ZERO, page), Color(0.03, 0.02, 0.02, 0.7))
+	var over := menu_hit(get_local_mouse_position())
+	draw_set_transform(menu_at())
+	_text(Vector2(0, 96), game.level_entry["name"].to_upper(), 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	_text(Vector2(0, 114), "The town holds its breath.", 8, Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	for i in game.menu.size():
+		var r := _menu_row(i)
+		var on: bool = i == game.menu_pick or i == over
+		draw_rect(r, Color(0.16, 0.1, 0.07, 0.95) if on else PANEL)
+		draw_rect(r, BRASS if on else Color(0.3, 0.22, 0.15), false, 2.0 if i == game.menu_pick else 1.0)
+		_text(Vector2(r.position.x, r.position.y + 15), "%s  [%d]" % [_menu_name(game.menu[i]), i + 1], 10,
+			Color(0.95, 0.75, 0.35) if on else INK, font, HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+	_text(Vector2(0, 340), "up / down and Enter, a number, or a click      Esc: back", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	var mouse := get_local_mouse_position() - menu_at()
+	draw_colored_polygon(PackedVector2Array([mouse, mouse + Vector2(0, 11), mouse + Vector2(3, 8), mouse + Vector2(7, 8)]), BRASS)
+	draw_set_transform(Vector2.ZERO)

@@ -56,7 +56,11 @@ func _process(_delta: float) -> bool:
 			"the Winchester 5, the coach gun 3, the sawn-off 2")
 		for k in Player.SLOT:
 			check(Weapon.DATA[k].has("points"), "%s has no price" % k)
+		check(game.budget() == 14, "Cruz Verde gives 14 (%d)" % game.budget())
+		var cv: int = game.level_entry["budget"]
+		game.level_entry.erase("budget")
 		check(game.budget() == 12, "with no budget named, 12 (%d)" % game.budget())
+		game.level_entry["budget"] = cv
 		check(Player.cost(["colt", "coach", "rifle"], ["bandage"]) <= game.budget(),
 			"the default budget should buy the Colt, the coach gun, the Winchester and a bandage")
 		check(game.kit_offered() == ["bandage", "dynamite"], "Cruz Verde sells both (%s)" % [game.kit_offered()])

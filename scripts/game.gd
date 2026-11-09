@@ -8,6 +8,9 @@ const BUDGET := 12   # loadout points where a level names none: a good gun in ea
 # that reload lands ("loadout" after a pick, "levels" after a restart).
 static var chosen_level := ""
 static var open_on := ""
+static var ridden := {}         # the towns he's left quiet this sitting (the picker marks them)
+var menu: Array[String] = []    # Esc's menu, while it's up (the town stands still under it)
+var menu_pick := 0
 var levels: Array = []          # the ones the picker shows
 var level_entry: Dictionary = {}
 var level_pick := 0             # the picker's cursor
@@ -310,6 +313,7 @@ func _ready() -> void:
 	wind.volume_db = -12.0
 	add_child(wind)
 	wind.finished.connect(wind.play)
+	wind.process_mode = Node.PROCESS_MODE_ALWAYS   # (it blows on under the menu)
 	wind.play()
 	wind_player = wind
 	sfx("bell", null, -4.0, 0.0)
@@ -332,7 +336,7 @@ func _ready() -> void:
 func _load_level() -> void:
 	var all: Array = _load_json(LEVELS_PATH)["levels"]
 	levels = all.filter(func(l): return not l.get("hidden", false))
-	var want: String = Engine.get_meta("level", _args.get("level", chosen_level))
+	var want: String = Engine.get_meta("level", chosen_level if chosen_level != "" else _args.get("level", ""))
 	level_entry = all[0]
 	for l in all:
 		if l["id"] == want:
@@ -510,7 +514,8 @@ func _setup_input() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("quit"):
-		get_tree().quit()
+		_escape()
+		get_viewport().set_input_as_handled()
 	elif state == "title" and (event is InputEventMouseButton or event is InputEventKey) and event.is_pressed():
 		if Time.get_ticks_msec() - start_time > 600:
 			_to_levels()
@@ -522,9 +527,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_loadout_input(event)
 		get_viewport().set_input_as_handled()
 	elif (state == "won" or state == "lost") and event.is_action_pressed("restart"):
-		Engine.time_scale = 1.0
-		open_on = "levels"   # (the same level under the cursor: Enter again to ride back in)
-		get_tree().reload_current_scene()
+		if state == "lost":
+			ride_to(level_entry["id"], "loadout")   # (straight back to the guns: try it another way)
+		elif not next_level().is_empty():
+			ride_to(next_level()["id"], "loadout")
+		else:
+			ride_to(level_entry["id"], "levels")   # the last of them: choose where to ride
 	elif event is InputEventMouseButton and event.pressed and player and state == "play":
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			player.cycle_weapon(1)
@@ -556,10 +564,10 @@ func _levels_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		match event.keycode:
 			KEY_UP, KEY_W:
-				level_pick = posmod(level_pick - 1, levels.size())
+				level_pick = posmod(level_pick - 1, levels.size() + 1)
 				sfx("close", null, -14.0)
 			KEY_DOWN, KEY_S:
-				level_pick = posmod(level_pick + 1, levels.size())
+				level_pick = posmod(level_pick + 1, levels.size() + 1)
 				sfx("close", null, -14.0)
 			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 				pick_level(level_pick)
@@ -574,16 +582,114 @@ func _levels_input(event: InputEvent) -> void:
 
 
 ## This one: on to the guns if it's the town already loaded, else load it (the
-## scene comes back up at the loadout).
+## scene comes back up at the loadout). The row under the towns leaves the game.
 func pick_level(i: int) -> void:
+	if i >= levels.size():
+		get_tree().quit()
+		return
 	var l: Dictionary = levels[i]
 	sfx("close", null, -8.0)
 	if l["id"] == level_entry["id"]:
 		_to_loadout()
 		return
-	chosen_level = l["id"]
-	open_on = "loadout"
+	ride_to(l["id"], "loadout")
+
+
+## The scene comes back up with town `id`, at "loadout" or "levels".
+func ride_to(id: String, at: String) -> void:
+	get_tree().paused = false
+	Engine.time_scale = 1.0
+	chosen_level = id
+	open_on = at
 	get_tree().reload_current_scene()
+
+
+## The next town on the picker, or {} after the last (or a hidden one, in the tests).
+func next_level() -> Dictionary:
+	var i := levels.find(level_entry)
+	return levels[i + 1] if i >= 0 and i + 1 < levels.size() else {}
+
+
+## Esc goes back a step: the title to the picker, the guns to the picker, and the
+## picker to its last row (leaving: Enter on it). In town it brings up the menu.
+func _escape() -> void:
+	match state:
+		"title":
+			_to_levels()
+		"levels":
+			level_pick = levels.size()
+			sfx("close", null, -14.0)
+		"loadout":
+			_to_levels()
+			sfx("close", null, -14.0)
+		_:
+			open_menu()
+
+
+## The town stops where it is under the menu: back to it, the guns again, another
+## town, or out of the game; after a win, on to the next town too.
+func open_menu() -> void:
+	menu.assign(["resume"])
+	if state == "won" and not next_level().is_empty():
+		menu.append("next")
+	menu.append_array(["again", "levels", "quit"])
+	menu_pick = 0
+	get_tree().paused = true
+	sfx("close", null, -10.0)
+
+
+func close_menu() -> void:
+	menu.clear()
+	get_tree().paused = false
+
+
+## The menu's keys (the hud hands them on: the game's paused under it). Up and down
+## and Enter, a number, or a click; Esc closes it.
+func menu_input(event: InputEvent) -> void:
+	if event.is_action_pressed("quit"):
+		close_menu()
+	elif event is InputEventKey and event.pressed:
+		match event.keycode:
+			KEY_UP, KEY_W:
+				menu_pick = posmod(menu_pick - 1, menu.size())
+				sfx("close", null, -14.0)
+			KEY_DOWN, KEY_S:
+				menu_pick = posmod(menu_pick + 1, menu.size())
+				sfx("close", null, -14.0)
+			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
+				menu_choose(menu[menu_pick])
+			_:
+				var i: int = event.keycode - KEY_1
+				if i >= 0 and i < menu.size():
+					menu_choose(menu[i])
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var i: int = hud.menu_hit(hud.get_local_mouse_position())
+		if i >= 0:
+			menu_choose(menu[i])
+
+
+func menu_choose(k: String) -> void:
+	sfx("close", null, -8.0)
+	match k:
+		"resume":
+			close_menu()
+		"next":
+			ride_to(next_level()["id"], "loadout")
+		"again":
+			ride_to(level_entry["id"], "loadout")
+		"levels":
+			ride_to(level_entry["id"], "levels")
+		"quit":
+			get_tree().quit()
+
+
+## What Enter does at the end of a town, on the end screen's last line.
+func onward() -> String:
+	if state == "lost":
+		return "Enter: ride it again      Esc: the menu"
+	if next_level().is_empty():
+		return "Enter: choose where to ride      Esc: the menu"
+	return "Enter: ride on to %s      Esc: the menu" % next_level()["name"]
 
 
 ## The title card (or the level picker) gives way to choosing his guns.
@@ -1094,6 +1200,7 @@ func _build_overlay() -> void:
 
 	hud_layer = CanvasLayer.new()
 	hud_layer.layer = 10
+	hud_layer.process_mode = Node.PROCESS_MODE_ALWAYS   # (the menu's drawn and heard over a paused town)
 	add_child(hud_layer)
 	hud = Hud.new()
 	hud.game = self
@@ -2368,8 +2475,9 @@ func _on_enemy_died(e: Actor) -> void:
 		or director != null and not director.done()   # (more on the way: it isn't over)
 	if alive_enemies() == 0 and state == "play" and not coming and cargo == null:   # (the cargo's won at the wagon)
 		state = "won"
+		ridden[level_entry["id"]] = true
 		end_time = Time.get_ticks_msec()
-		hud.show_message("THE TOWN IS QUIET" if not player.down else "FROM THE DIRT", _tally() + "press Enter to ride again")
+		hud.show_message("THE TOWN IS QUIET" if not player.down else "FROM THE DIRT", _tally().trim_suffix("   -   "), onward())
 		sfx("win", null, -2.0, 0.0)
 
 
@@ -2420,9 +2528,11 @@ func end_level(won: bool, title: String) -> void:
 		return
 	state = "won" if won else "lost"
 	end_time = Time.get_ticks_msec()
-	if not won:
+	if won:
+		ridden[level_entry["id"]] = true
+	else:
 		Engine.time_scale = 0.35
-	hud.show_message(title, _tally() + "press Enter to ride again")
+	hud.show_message(title, _tally().trim_suffix("   -   "), onward())
 	sfx("win" if won else "lose", null, -2.0, 0.0)
 
 
@@ -2432,7 +2542,7 @@ func _on_player_died(_p: Actor) -> void:
 	state = "lost"
 	end_time = Time.get_ticks_msec()
 	Engine.time_scale = 0.35
-	hud.show_message("ADIOS, AMIGO", _tally() + "press Enter to ride again")
+	hud.show_message("ADIOS, AMIGO", _tally().trim_suffix("   -   "), onward())
 	sfx("lose", null, -2.0, 0.0)
 
 
@@ -4008,6 +4118,8 @@ func sfx(name: String, pos: Variant = null, vol := 0.0, pitch_var := 0.06, dice:
 			ap2.max_distance = 1200.0
 			ap2.attenuation = 1.2
 		p = ap2
+	if get_tree().paused:
+		p.process_mode = Node.PROCESS_MODE_ALWAYS   # (a click on the menu, heard)
 	add_child(p)
 	p.finished.connect(p.queue_free)
 	p.play()
