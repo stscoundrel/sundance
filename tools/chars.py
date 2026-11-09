@@ -39,7 +39,7 @@ def template_guns():
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
     out = {"hero": ["colts", "colt", "buntline", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "howdah", "derringer", "pistola", "sawnoff", "champion", "escopeta", "spencer",
-                    "springfield", "rollingblock", "remington", "mgun", "strongbox"]}
+                    "springfield", "rollingblock", "remington", "sharps", "mgun", "strongbox"]}
 
     def need(template, g, t=None):
         out.setdefault(template, [])

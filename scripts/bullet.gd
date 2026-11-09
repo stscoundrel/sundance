@@ -5,7 +5,8 @@ extends Node2D
 ## just past it is standing (shooting over a crate). A crate, barrel and the like
 ## takes the hit (see game.hit_prop), and a round strong enough goes on through.
 ## Bottles, chairs, lanterns and the like break as it passes (game.hit_fragile), and
-## a window it strikes shatters (game.glass_hit).
+## a window it strikes shatters (game.glass_hit). A Sharps round goes through one
+## thin wall (_through), and on through a man into the one behind him.
 
 var game: Node
 var vel := Vector2.ZERO
@@ -16,6 +17,11 @@ var h := 20.0
 var pellet := false
 var own_cover := 26.0   # px: low cover this near the shooter, it goes over (he's behind it)
 var pierce := 0
+var walls := {}   # the most of each kind of wall it gets through, in tiles (its gun's "walls")
+var men := 0      # how many men it goes on through (its gun's "men")
+# Tiles more of it than that, along the path: a wall as thick, crossed at a slant
+# (to about 45 degrees for a tile of mud brick), but never the narrowest house.
+const SLANT := 0.4
 var travelled := 0.0
 var exclude: Array[RID] = []
 var scared: Array[Actor] = []
@@ -63,6 +69,11 @@ func _physics_process(delta: float) -> void:
 				continue
 			if (a.alive or (a is Enemy and a.downed)) and not (a is Enemy and shooter is Enemy and not game.at_war(a, shooter)):
 				a.take_hit(damage, vel.normalized(), shooter)
+				if men > 0:   # (the Sharps: on through him, into whoever's behind)
+					men -= 1
+					damage = maxi(1, damage - 1)
+					exclude.append(col.get_rid())
+					continue
 				queue_free()
 				return
 			exclude.append(col.get_rid())
@@ -84,6 +95,9 @@ func _physics_process(delta: float) -> void:
 		var holed := false
 		if col.collision_layer & Iso.LAYER_WALL and not game.glass_hit(hp, h):
 			holed = game.wall_hole(col, hp, h, hit["normal"])
+		if col.collision_layer & Iso.LAYER_WALL and _through(col, hp):
+			game.impact(hp, h, vel, true, not holed)
+			continue
 		game.impact(hp, h, vel, true, not holed)   # (a lasting hole: no fading one too)
 		_scare_impact(hp)
 		queue_free()
@@ -100,6 +114,34 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 	queue_redraw()
+
+
+## A round that goes through walls, at one: how much of it lies along the round's
+## path. No more than it gets through of that kind (adobe or wood), and out it
+## comes on the far side, a hole there too, a little spent; and that was its one
+## wall. A house is too deep, end to end: only its corner can be shot through.
+func _through(col: CollisionObject2D, at: Vector2) -> bool:
+	var most: float = walls.get(col.get_meta("paint", ""), 0.0)
+	if most <= 0.0:
+		return false
+	var dir := vel.normalized()
+	var q := PhysicsPointQueryParameters2D.new()
+	q.collision_mask = Iso.LAYER_WALL
+	var space := get_world_2d().direct_space_state
+	var s := 1.0
+	while true:
+		q.position = at + dir * s
+		if not space.intersect_point(q).any(func(r): return r["rid"] == col.get_rid()):
+			break
+		if Iso.to_grid(q.position).distance_to(Iso.to_grid(at)) > most + SLANT:
+			return false
+		s += 1.5
+	walls = {}
+	exclude.append(col.get_rid())
+	damage = maxi(1, damage - 1)
+	game.wall_hole(col, q.position, h, dir)
+	game.impact(q.position, h, vel, true, false)
+	return true
 
 
 ## Bandits the round cracks past get a fright, unless there's a wall between.

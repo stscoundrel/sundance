@@ -2521,6 +2521,9 @@ func spawn_bullet(origin: Vector2, vel: Vector2, range_px: float, damage: int, s
 	b.setup(self, origin, vel, range_px, damage, shooter, height, pellet)
 	b.pierce = pierce
 	b.own_cover = own_cover
+	if shooter and shooter.weapon:   # (the Sharps: through a wall, and through a man)
+		b.walls = shooter.weapon.d.get("walls", {})
+		b.men = int(shooter.weapon.d.get("men", 0))
 	world.add_child(b)
 
 

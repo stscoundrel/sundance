@@ -685,7 +685,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
 listing what goes in it, dearest first (`Player.choices`: pair of Colts, Colt, Schofield, Navy, howdah, derringer, horse pistol; Spencer pump, coach gun,
-sawn-off, Champion, escopeta; Winchester, Henry, Spencer, Remington, Springfield, cut-down Rolling Block) with a line on
+sawn-off, Champion, escopeta; Winchester, Henry, Sharps, Spencer, Remington, Springfield, cut-down Rolling Block) with a line on
 what the chosen one is like, and its picture. The pictures aren't the guns of play blown up: each gun has a finer model
 of its own for the card (`tools/card_guns.py`), at its true proportions where the game's are oversized to read in a
 man's hands, with the fluted cylinder, the lever, the bands and the grain of the stock, baked at the very pixels the
@@ -710,7 +710,8 @@ free (horse pistol, the derringer's two little shots, escopeta), the poor or one
 weak shots and an age to load; sawn-off), the six-guns 3 (Colt and Schofield alike: as
 strong, each with its own faults), the coach gun 3. Rifles cost a point more than their like
 elsewhere, for the reach: the cut-down Rolling Block 1 (the cheapest, none free), the
-Springfield 2, the Spencer and the Remington 3, the Henry 4, and the Winchester, the best gun
+Springfield 2, the Spencer and the Remington 3, the Henry and the Sharps 4 (a point over the
+other single shots, for going through a wall), and the Winchester, the best gun
 in the game, 5, as dear as the Spencer pump gun, rare and new. Dearest of all, 6, is the
 pair of Colts: twelve shots right and left, at a price in the reload (below). Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
 or the box left of "ride in") and a stick of dynamite for 2 (G, the right box), in
@@ -723,9 +724,8 @@ keep the level's own kit (a bandage, the level's sticks). `tests/test_budget.gd`
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
 never change meaning: **1** a revolver or pistol (pair of Colts, Colt, Schofield, Navy, howdah, derringer, horse pistol), **2** a
-shotgun (coach gun, Spencer pump, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Henry, Spencer, Springfield, cut-down Rolling Block).
-`Player.SLOT` lists what he can carry; the Sharps still stays where it
-lies, and the gunsmith may get to it first. The gamblers' and saloon girls'
+shotgun (coach gun, Spencer pump, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Henry, Spencer, Remington, Sharps, Springfield, cut-down Rolling Block).
+`Player.SLOT` lists what he can carry. The gamblers' and saloon girls'
 derringers and the old timers' howdahs he can take up, but no dead man drops their
 rounds: he lives on what he rode in with (`Player.RESERVE`).
 - A gun for an **empty slot** is his for walking over it.
@@ -1361,6 +1361,18 @@ the type, so a quick-handed bandit can't fill the air at nothing.
 The **Remington double derringer** (1866) has two stacked barrels, cocked per shot,
 short range and damage 1; its barrels tip up to reload. The **Sharps 1874** is a single-shot
 falling-block buffalo rifle (damage 3, the longest range, reloaded after every shot).
+Its big .50 goes **through a wall** (`"walls"` in its data, `Bullet._through`): at a wall
+the round measures how much of it lies along its path, and if that's no more than a tile
+of mud brick (the town and fort walls, a gate post) or two and a half of planks (a boxcar,
+the tender), give or take 0.4 for a slant (`Bullet.SLANT`: a wall crossed at up to about
+45 degrees, but never the narrowest house, three tiles), out it comes on the far side, a hole on both faces, one point of damage the
+less; and that was its one wall, the next stops it. Every house is a solid block three tiles
+deep or more, so none is ever shot through end to end, only across a corner. The round
+past the wall cracks by whoever's there like any near miss. It goes **through a man**
+too (`"men"`: 1): on into whoever stands behind him, a point the weaker, and no further,
+so two in a line both go down to one round. Anyone's Sharps does it, the
+poacher's and the woodsman's too: a thin wall is no hiding place from them. The stranger
+can buy one (4 points, 12 rounds to ride in with) or take it off them. `tests/test_sharps.gd`.
 The **howdah pistol** is a two-barrel .577 break-action hand cannon (damage 2 per
 barrel, both can go at once). The gunslinger's **pair of Colts** holds twelve: the
 chambers alternate between the guns, so he fires right, left, right, with only a

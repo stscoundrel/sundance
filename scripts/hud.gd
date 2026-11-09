@@ -597,7 +597,8 @@ const BLURB := {"colts": "twelve, right and left, slow to load", "colt": "six, q
 	"escopeta": "one barrel, a long reload", "rifle": "thirteen, a quick lever",
 	"henry": "fifteen, loaded at the muzzle",
 	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load",
-	"rollingblock": "one hard shot, short, quick to load", "remington": "one hard shot, far, quick to load"}
+	"rollingblock": "one hard shot, short, quick to load", "remington": "one hard shot, far, quick to load",
+	"sharps": "one shot, furthest, through a wall"}
 
 
 ## A slot's card. They all stand as tall as the longest list of guns needs, so a

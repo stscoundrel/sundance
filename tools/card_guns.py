@@ -541,6 +541,30 @@ def remington(g):
     g.ball((1.29, -0.021, 0), 0.0045, STEEL)
 
 
+
+def sharps(g):
+    """Sharps 1874, the buffalo gun: a heavy octagon barrel, the case-hardened frame
+    with its side hammer and the lever under it that drops the block, a short
+    fore-end with its pewter cap, the tall tang sight folded up behind the hammer."""
+    w = g.wood(WALNUT)
+    _butt(g, 0.3, -0.01, (-0.022, -0.056), -0.12, w, STEEL, crescent=True)
+    g.box(0.3, -0.046, -0.017, 0.4, 0.008, 0.017, case_hardened)               # the frame
+    for x, y in ((0.32, -0.02), (0.36, -0.03)):
+        g.screw(x, y, -0.0178)
+    g.hammer(0.33, 0.004, 0.03, 0.024, case_hardened, r=0.0052)
+    g.box(0.268, 0.006, -0.0015, 0.276, 0.04, 0.0015, STEEL)                   # tang sight, up
+    g.box(0.264, 0.034, -0.0035, 0.28, 0.04, 0.0035, STEEL)
+    g.line([(0.4, -0.046), (0.39, -0.07), (0.35, -0.078), (0.31, -0.07), (0.3, -0.05)],
+           0.0035, case_hardened)                                               # the lever, its loop for the hand
+    g.trigger(0.36, -0.046, 0.014)
+    g.slab(0.4, 0.66, [(0.4, -0.006), (0.66, -0.006)], [(0.4, -0.034), (0.66, -0.028)],
+           [(0.4, 0.015), (0.66, 0.012)], w)                                    # fore-end
+    g.rod((0.655, -0.017), (0.672, -0.017), 0.0145, (150, 150, 156))           # its pewter cap
+    g.octagon(0.4, 1.32, 0, 0.0125, BLUED)
+    g.bore(1.32, 0, 0.0062)
+    g.sight(1.3, 0.012, 0.007)
+    g.box(0.52, 0.012, -0.005, 0.57, 0.021, 0.005, BLUED)                      # rear sight on the barrel
+
 def rollingblock(g):
     """A Rolling Block carbine cut down: the stock sawn to a pistol grip, the action, a
     short round barrel and a stub of fore-end."""
@@ -556,7 +580,7 @@ def rollingblock(g):
 
 DETAILED = {k: f for k, f in globals().items() if k in (
     "colt", "buntline", "schofield", "navy", "howdah", "derringer", "pistola", "coach", "sawnoff", "champion", "spencer82", "escopeta",
-    "rifle", "henry", "spencer", "springfield", "remington", "rollingblock")}
+    "rifle", "henry", "spencer", "springfield", "remington", "sharps", "rollingblock")}
 
 
 def model(kind, butt, a, side, up):

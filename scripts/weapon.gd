@@ -176,7 +176,12 @@ const DATA := {
 		"open": [0.35, "gate"], "eject": [0.35, "eject"], "insert": [0.42, "shell_in"], "close": [0.3, "cock"],
 		"status": {"cycle": "COCKING", "open": "BARRELS UP", "close": "CLOSING"}},
 	# Sharps 1874 buffalo rifle: one round, falling block, hits like a train, long reload.
-	"sharps": {"name": "SHARPS 1874", "action": "breech", "barrels": 1, "hammer": true,
+	# The big .50 goes through a wall ("walls": the most of each kind, in tiles, a
+	# round gets through): a mud-brick wall, a boxcar's planks, the corner of a house,
+	# never a whole house; a little spent coming out, and only the one wall. And on
+	# through a man ("men") into the one behind him, a point the weaker. Anyone's
+	# Sharps, the poacher's too. A point dearer than the other single shots.
+	"sharps": {"name": "SHARPS 1874", "points": 4, "walls": {"adobe": 1.0, "wood": 2.5}, "men": 1, "action": "breech", "barrels": 1, "hammer": true,
 		"damage": 3, "pierce": 2, "speed": 1100.0, "range": 820.0, "spread": 0.3, "pellets": 1, "noise": 600.0,
 		"sfx": "sharps", "cycle": 0.45, "shake": 4.0, "smoke": 16, "smoke_push": 1.3,
 		"open": [0.4, "lever"], "eject": [0.35, "eject"], "insert": [0.55, "shell_in"], "close": [0.35, "lever"],

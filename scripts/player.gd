@@ -10,10 +10,10 @@ extends Actor
 const ORDER := ["colt", "coach", "rifle"]
 const SLOT := {"colts": "colt", "colt": "colt", "schofield": "colt", "buntline": "colt", "navy": "colt", "howdah": "colt", "derringer": "colt", "pistola": "colt",
 	"coach": "coach", "spencer82": "coach", "sawnoff": "coach", "champion": "coach", "escopeta": "coach",
-	"rifle": "rifle", "henry": "rifle", "spencer": "rifle", "springfield": "rifle", "rollingblock": "rifle", "remington": "rifle"}   # the guns he can take up, by slot
+	"rifle": "rifle", "henry": "rifle", "spencer": "rifle", "springfield": "rifle", "rollingblock": "rifle", "remington": "rifle", "sharps": "rifle"}   # the guns he can take up, by slot
 const RESERVE := {"colts": 36, "colt": 30, "schofield": 30, "buntline": 30, "navy": 24, "howdah": 10, "derringer": 12, "pistola": 12,
 	"coach": 10, "spencer82": 10, "sawnoff": 10, "champion": 10, "escopeta": 8,
-	"rifle": 26, "henry": 26, "spencer": 21, "springfield": 12, "rollingblock": 10, "remington": 12}   # what he rides in with, per gun (to his belt)
+	"rifle": 26, "henry": 26, "spencer": 21, "springfield": 12, "rollingblock": 10, "remington": 12, "sharps": 12}   # what he rides in with, per gun (to his belt)
 const TROPHIES := ["buntline"]   # his only off the dead: not on the loadout screen
 const KIT := {"bandage": 1, "dynamite": 2}   # what kit costs on the loadout screen (one of each at most)
 const REACH := 13.0   # px: a gun at his feet

@@ -654,7 +654,7 @@ def gen_ui(meta):
     # the guns the stranger can carry, side-on, for the loadout screen (Player.SLOT)
     meta["ui"]["guns"] = {}
     for kind in ("colts", "colt", "buntline", "schofield", "navy", "howdah", "derringer", "pistola", "coach", "spencer82", "sawnoff", "champion", "escopeta", "rifle", "henry", "spencer",
-                 "springfield", "rollingblock", "remington"):
+                 "springfield", "rollingblock", "remington", "sharps"):
         L = chars.GUN_LEN[kind]
         d = np.array([1.0, -1.0, 0.0]) / math.sqrt(2)   # along the screen, muzzle to the right
         base = PIX * (2.4 if kind in chars.PISTOLS else 1.2)
