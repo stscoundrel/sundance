@@ -270,7 +270,7 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	flirts = tdata.get("flirts", false)
 	woodcutter = tdata.get("role", "") == "woodcutter"
 	flirt_cd = flirt_rng.randf_range(FLIRT_FIRST.x, FLIRT_FIRST.y) if flirts else 0.0
-	if tdata.get("role", "") == "woodcutter":
+	if woodcutter:
 		dice = wood_rng
 	elif sister or barber or local or shy:
 		dice = rng
@@ -1673,12 +1673,16 @@ func _woodcut(delta: float) -> void:
 				game.sfx("chop", global_position, -6.0, 0.08, dice)   # (the blade going in)
 			if work_t >= wait:
 				fire = _lowest_fire()
-				if fire == null:
-					work_t = 0.0   # (they're all well stacked: split some more)
+				var way := PackedVector2Array()
+				if fire:
+					way = game.find_path(global_position, _by_the_fire())
+				if fire == null or way.is_empty() or way[way.size() - 1].distance_to(_by_the_fire()) > 10.0:
+					fire = null   # (they're all well stacked, or there's no getting to it: split some more)
+					work_t = 0.0
 					wait = _rr(CHOP_T.x, CHOP_T.y)
 				else:
 					st = St.TO_FIRE
-					path = game.find_path(global_position, _by_the_fire())
+					path = way
 					path_i = 0
 		St.TO_FIRE:
 			pose = "carry"
@@ -1692,7 +1696,7 @@ func _woodcut(delta: float) -> void:
 				desired = (fire.global_position - global_position).normalized()
 			work_t += delta
 			if work_t >= FEED_T:
-				if is_instance_valid(fire):
+				if is_instance_valid(fire) and global_position.distance_to(fire.global_position) < 24.0:
 					fire.lay_on()
 				fire = null
 				st = St.TO_BLOCK

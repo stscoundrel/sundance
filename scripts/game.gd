@@ -896,10 +896,10 @@ func _build_world() -> void:
 		var og := Vector2(o["x"], o["y"])
 		if level.get("weather", "") == "snow" and meta["objects"][o["type"]].get("doors", []).size() > 0:
 			_add_house(o["type"], og, spr)
-		if o["type"] == "campfire":   # a fire laid by the posts, burning (each at its own stage, so they don't all go out at once)
+		if o["type"] == "campfire":   # a fire laid by the posts, burning (each at its own stage: the map's "fuel")
 			var fire := Campfire.new()
 			var ffp: Array = meta["objects"]["campfire"]["footprint"]
-			fire.setup(self, Iso.to_screen(og + Vector2(ffp[0], ffp[1]) * 0.5), o.get("end", ""), [1.0, 0.7, 0.85, 0.55][fires.size() % 4])
+			fire.setup(self, Iso.to_screen(og + Vector2(ffp[0], ffp[1]) * 0.5), o.get("end", ""), float(o.get("fuel", 1.0)))
 			world.add_child(fire)
 			fires.append(fire)
 		if o.has("worn"):   # shot up before the stranger ever got here

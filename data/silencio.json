@@ -767,25 +767,29 @@
    "type": "campfire",
    "x": 15.6,
    "y": 31.9,
-   "end": "outlaws"
+   "end": "outlaws",
+   "fuel": 1.0
   },
   {
    "type": "campfire",
    "x": 8.6,
    "y": 44.8,
-   "end": "outlaws"
+   "end": "outlaws",
+   "fuel": 0.7
   },
   {
    "type": "campfire",
    "x": 48.2,
    "y": 32.6,
-   "end": "hunters"
+   "end": "hunters",
+   "fuel": 0.85
   },
   {
    "type": "campfire",
    "x": 48.6,
    "y": 42.6,
-   "end": "hunters"
+   "end": "hunters",
+   "fuel": 0.55
   }
  ],
  "player": {

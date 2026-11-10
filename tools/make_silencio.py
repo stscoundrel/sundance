@@ -195,8 +195,9 @@ CAMPS = {"outlaws": {"name": "the camp behind the lake", "x": 6.0, "y": 0.6, "co
          "hunters": {"name": "the camp down the valley", "x": 63.3, "y": 47.5, "count": 5}}
 # Campfires by the busiest posts, two at each gang's end (Campfire), and the woodcutter
 # at each end who keeps them fed from his chopping stump (Civilian "woodcutter").
-FIRES = [("outlaws", 15.6, 31.9), ("outlaws", 8.6, 44.8),    # on the street by the hideout; by the trappers south-west
-         ("hunters", 48.2, 32.6), ("hunters", 48.6, 42.6)]   # before the jail; by the manhunter's post south
+# Each starts at its own stage (fuel: a full stack is 1), so they don't all go out at once.
+FIRES = [("outlaws", 15.6, 31.9, 1.0), ("outlaws", 8.6, 44.8, 0.7),    # on the street by the hideout; by the trappers south-west
+         ("hunters", 48.2, 32.6, 0.85), ("hunters", 48.6, 42.6, 0.55)]  # before the jail; by the manhunter's post south
 HORSE = ("horse", 34.0, 61.6)
 HORSE_AT = [35.15, 62.1]
 
@@ -205,7 +206,7 @@ BUILDING_KINDS = {k for k, *_ in BUILDINGS_AT}
 
 def main():
     objects = [{"type": k, "x": x, "y": y} for k, x, y in BUILDINGS_AT + PROPS + PINES + [HORSE]]
-    objects += [{"type": "campfire", "x": x, "y": y, "end": end} for end, x, y in FIRES]
+    objects += [{"type": "campfire", "x": x, "y": y, "end": end, "fuel": fuel} for end, x, y, fuel in FIRES]
     solid = layout.check(N, objects, ENEMIES + TOWNSFOLK + ENTRIES + HOLDOUTS + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")])
     posts = layout.make_posts(N, STREETS, solid, ENEMIES, PLAYER, BUILDING_KINDS)
     layout.write("silencio.json", {

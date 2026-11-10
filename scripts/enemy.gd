@@ -583,7 +583,7 @@ func eyes() -> Vector2:
 		return Vector2(0.3, 0.45)
 	if smoke_t >= 0.0 and st == St.GUARD:
 		return Vector2(0.35, 0.5)
-	if st == St.ERRAND and errand in ["nature", "warm"] and errand_t > 0.0:
+	if st == St.ERRAND and (errand == "nature" or errand == "warm") and errand_t > 0.0:
 		return Vector2(0.3, 0.45)
 	return Vector2.ONE
 
@@ -1304,8 +1304,8 @@ func _physics_process(delta: float) -> void:
 		give_way_t -= delta
 		velocity = give_way
 	var own_velocity := velocity
-	if st != St.GUARD:
-		_separate()
+	if st != St.GUARD and not (st == St.ERRAND and errand_t > 0.0 and (errand == "warm" or errand == "nature")):
+		_separate()   # (one at a fire or a wall holds his place: the one coming up finds his own)
 	var fleeing := (reaction in ["dash", "hide"] and not hiding) or (reaction == "flee" and path_i < path.size())
 	if own_velocity.length() > 1.0 and (fleeing or not (aiming or (st == St.COMBAT and sees_player))):
 		desired = own_velocity.normalized()
@@ -1770,14 +1770,17 @@ func _draw_ember() -> void:
 
 # ------------------------------------------------------------------ in from the squall
 
-## A squall coming down: does he go in out of it? Once a squall, his own mind.
+## A squall coming down: does he go in out of it? Once a squall, his own mind, made
+## up as soon as he's free to (one busy at a fire or a smoke as it comes down thinks
+## about it when he's done, if it's still blowing).
 func _think_shelter() -> void:
 	var i: int = game.snowfall.squall_at(game.clock)
 	if i < 0 or i == shelter_rolled or game.snowfall.storm < 0.3:
 		return
+	if not can_be_lured() or game.war or suspicion > 0.3 or alarm_role != "" or smoke_t >= 0.0:
+		return
 	shelter_rolled = i
-	if not can_be_lured() or game.war or suspicion > 0.3 or alarm_role != "" \
-			or shelter_rng.randf() >= (SHELTER_COLD if _cold_post() else SHELTER):
+	if shelter_rng.randf() >= shelter_chance():
 		return
 	var best := SHELTER_REACH
 	for h in game.houses:
@@ -1834,6 +1837,11 @@ func _indoors() -> void:
 		_come_out()
 
 
+## How likely he is to go in out of a squall: the quicker, his post's fire out.
+func shelter_chance() -> float:
+	return SHELTER_COLD if _cold_post() else SHELTER
+
+
 ## A post with a fire by it that's gone out: a cold one.
 func _cold_post() -> bool:
 	var f := _post_fire()
@@ -1865,15 +1873,21 @@ func _think_warm() -> bool:
 			at_it += 1
 	if at_it >= 2:
 		return false
+	var side := (home - f.global_position).normalized().rotated(warm_rng.randf_range(-0.9, 0.9))
+	var spot := f.global_position + side * 20.0
+	var way: PackedVector2Array = game.find_path(global_position, spot)
+	if way.is_empty() or way[way.size() - 1].distance_to(spot) > 8.0:
+		return false   # (no getting to that side of it: another time)
 	warm_fire = f
 	st = St.ERRAND
 	errand = "warm"
 	errand_t = 0.0
 	errand_len = warm_rng.randf_range(WARM_T.x, WARM_T.y)
-	var side := (home - f.global_position).normalized().rotated(warm_rng.randf_range(-0.9, 0.9))
-	errand_at = f.global_position + side * 20.0
+	errand_at = spot
 	errand_face = -side
-	path_to(errand_at)
+	path = way
+	path_i = 0
+	repath_t = 0.6
 	game.stats["warmings"] = game.stats.get("warmings", 0) + 1
 	return true
 

@@ -26,7 +26,7 @@ func setup(g: Node, at: Vector2, side: String, start: float) -> void:
 	fuel = start
 	# (sorted with everyone by its place on the ground, and after the stones and ash of
 	# the prop it sits in, which it was added after)
-	if game._streams.has("crackle") or game.meta["sfx"].has("crackle"):
+	if game.meta["sfx"].has("crackle"):
 		hiss = AudioStreamPlayer2D.new()
 		hiss.stream = load(game.meta["sfx"]["crackle"])
 		hiss.volume_db = -14.0

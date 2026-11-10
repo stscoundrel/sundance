@@ -7,7 +7,9 @@ extends SceneTree
 ##   cutter  - a woodcutter splits logs at his stump, the axe heard; carries an armful
 ##             to his end's lowest fire and lays it on (it's higher after), and the
 ##             stranger walking right by doesn't put him off it.
-##   cold    - a fire let go out: nobody warms at it, and its post is a cold one.
+##   cold    - a fire let go out: nobody warms at it, and its post is a cold one, its
+##             men the quicker to go in out of a squall (and not once it's lit again).
+##   untended- the woodcutter shot: his end's fires burn down and nobody feeds them.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_fires.gd
 
 var game: Node
@@ -91,7 +93,7 @@ func _process(delta: float) -> bool:
 					cut = minf(cut, man.view_range() / Enemy.VIEW)
 					if man.pose == "warm":
 						posed = "warm"
-					check(man.global_position.distance_to(man.warm_fire.global_position) < 28.0, "not by the fire")
+					check(man.global_position.distance_to(man.warm_fire.global_position) < 30.0, "not by the fire (%.0f px)" % man.global_position.distance_to(man.warm_fire.global_position))
 					check(man.facing.dot((man.warm_fire.global_position - man.global_position).normalized()) > 0.7, "not facing the fire")
 			elif went and man.st == Enemy.St.GUARD and man.global_position.distance_to(man.home) < 8.0:
 				check(cut < 0.35, "his sight was %.2f of itself at the fire" % cut)
@@ -147,16 +149,32 @@ func _process(delta: float) -> bool:
 				_done()
 		"cold":
 			if t > 0.2 and t - delta <= 0.2:
+				# a guard staged at a post by the dead fire (whoever was there may be off on his rounds)
 				var near: Enemy = null
 				for e in game.enemies:
-					if e.alive and e._post_fire() == low and e.st == Enemy.St.GUARD:
+					if e.alive and e.revealed and e.st == Enemy.St.GUARD and e != man:
 						near = e
-				if near:
-					check(near._cold_post(), "a post by a dead fire isn't cold")
-					near.warm_at = game.clock
-					man = near
-			if t > 2.0:
-				if man and man._post_fire() == low:
-					check(not (man.st == Enemy.St.ERRAND and man.errand == "warm"), "warming at a dead fire")
+						break
+				near.home = low.global_position + Vector2(-60, 20)
+				near.global_position = near.home
+				near.path = PackedVector2Array()
+				check(near._post_fire() == low, "the staged post isn't by the fire")
+				check(near._cold_post(), "a post by a dead fire isn't cold")
+				check(near.shelter_chance() == Enemy.SHELTER_COLD, "a cold post's men no quicker to go in (%.2f)" % near.shelter_chance())
+				near.warm_at = game.clock
+				check(not near._think_warm() and near.st != Enemy.St.ERRAND, "off to warm at a dead fire")
+				low.fuel = 0.5
+				check(not near._cold_post() and near.shelter_chance() == Enemy.SHELTER, "a lit fire's post counted cold")
+				man = near
+				# the woodcutter shot: nobody tends his end's fires any more
+				cutter.die(Vector2.RIGHT, game.player)
+				fuel0 = low.fuel
+				low_fuel = float(game.stats.get("fires fed", 0))
+				step = "untended"
+				t = 0.0
+		"untended":
+			if t > 20.0:
+				check(float(game.stats.get("fires fed", 0)) == low_fuel, "a fire fed with its woodcutter dead")
+				check(low.fuel < fuel0 - 0.05, "his end's fire isn't burning down (%.2f from %.2f)" % [low.fuel, fuel0])
 				_done()
 	return false

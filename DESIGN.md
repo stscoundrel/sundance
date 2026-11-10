@@ -589,8 +589,9 @@ horse, and a quiet spell.
 
 **In from the squall** (`Enemy._think_shelter`, `scripts/hearth.gd`; `tests/test_shelter.gd`).
 As a squall comes down, each man at his post or on his rounds who's calm (not in a
-war, not on the alarm, not passing as townsfolk) makes up his own mind: four times in
-ten he's had enough ("Too damn cold.") and goes in at the nearest door within ~360
+war, not on the alarm, not passing as townsfolk) makes up his own mind, as soon as
+he's free to (one busy at a fire or a smoke as it comes down thinks about it when he's
+done, if it's still blowing): four times in ten he's had enough ("Too damn cold.") and goes in at the nearest door within ~360
 px, any building with one (`game.houses`). Inside he's gone from the street: unseen,
 seeing nothing, leaving no prints, out of reach of any round. He stays through the
 squall and 20-60 s more by the stove, then goes back to his post or his rounds.
@@ -611,11 +612,12 @@ smoke and a crackle are the game's). Each burns down on its own, about three and
 half minutes from a full stack to cold, flames shrinking as it goes; they start at
 different stages. Now and then (every 1-3 min) a man whose post is within ~150 px of a
 fire that's going walks over and holds his hands out to it for 15-25 s, the gun slung
-("warm" pose), his sight a short narrow wedge on the flames; two at a fire at most;
-then back to his post. A woodcutter works each end (the winter townsman with an axe:
+("warm" pose), his sight a short narrow wedge on the flames; two at a fire at most,
+each at a side of it he can walk to, holding his place there; then back to his post. A woodcutter works each end (the winter townsman with an axe:
 the "woodcut" set, chopping, an armful of split logs, bent to lay it on): 12-18 s
 splitting logs at his chopping stump (the axe heard), then an armful out to whichever
-of his end's fires is lowest (under 0.85), laid on (half a stack), and back. Between
+of his end's fires is lowest (under 0.85) and that he can get to, laid on (half a
+stack), and back. Each fire's starting stack is the map's (`fuel`). Between
 them the fires mostly stay lit. The stranger's no business of his, walk right by and
 he keeps at it; only shooting close by sends him in, and he's soon back. Stop him (he's
 an innocent) and his end's fires die one by one: nobody warms at a dead fire, and its
