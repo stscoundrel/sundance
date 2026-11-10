@@ -138,7 +138,7 @@ func rope_shot(by: Actor) -> void:
 	if not state in ["waiting", "lever", "hanging"]:
 		return
 	game.stats["rope shot"] = by.is_player
-	game.sfx("tear", trap, -2.0, 0.1)
+	game.sfx("tear", trap, -2.0, 0.1, rng)
 	game.impact(trap, 40.0, Vector2.RIGHT, true, false)
 	_free(by.global_position)
 
@@ -182,8 +182,8 @@ func _physics_process(delta: float) -> void:
 func _drop() -> void:
 	state = "hanging"
 	kick_t = KICK_T
-	game.sfx("wood_break", trap, 0.0, 0.0)
-	game.sfx("bell", null, -6.0, 0.0)
+	game.sfx("wood_break", trap, 0.0, 0.0, rng)
+	game.sfx("bell", null, -6.0, 0.0, rng)
 	game.hud.banner("The trap's gone! Shoot the rope!")
 	man.hurtbox.set_deferred("collision_layer", 0)   # (the rope takes the rounds now)
 	man.lift = Vector2(0, -(PLATFORM - DROP) * Actor.PZ)

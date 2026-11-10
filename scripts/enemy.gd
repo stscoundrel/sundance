@@ -523,6 +523,8 @@ func carries_flag() -> bool:
 ## flying.
 func raise_flag(at: Vector2) -> void:
 	flag_at = at
+	if reaction == "rescue":
+		_end_rescue()   # (the man he was going for waits for someone else)
 	reaction = ""
 	pending = ""
 	path_to(at)

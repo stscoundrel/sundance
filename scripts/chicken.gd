@@ -15,6 +15,7 @@ const LOOK_EVERY := 0.35
 const FRAMES := {"stand": 0, "walk": [1, 2], "peck": 3, "flap": [4, 5]}
 
 static var rng := RandomNumberGenerator.new()   # her own dice, so the town's stay as seeded
+static var voice := RandomNumberGenerator.new()   # (and her squawks', apart: a sound doesn't move her)
 
 var game: Node
 var sprite: Sprite2D
@@ -78,7 +79,7 @@ func scare(from: Vector2, hard := true) -> void:
 		return   # the woman behind her with the broom: she knows where she's going
 	threat = from
 	if st != S.BOLT and hard and rng.randf() < 0.35:
-		game.sfx("squawk", position, -10.0, 0.15)
+		game.sfx("squawk", position, -10.0, 0.15, voice)
 	if st != S.BOLT and hard and rng.randf() < 0.5:
 		game.feathers(position, 3)
 	st = S.BOLT
@@ -105,7 +106,7 @@ func _physics_process(delta: float) -> void:
 				var to_home := home - position
 				facing = (to_home.normalized() if to_home.length() > 40.0 else Vector2.from_angle(rng.randf() * TAU))
 			elif rng.randf() < delta * 0.05:
-				game.sfx("cluck", position, -16.0, 0.15)
+				game.sfx("cluck", position, -16.0, 0.15, voice)
 		S.WALK:
 			vel = facing * WALK
 			if wait <= 0.0:

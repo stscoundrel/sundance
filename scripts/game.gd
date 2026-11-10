@@ -263,6 +263,8 @@ func _ready() -> void:
 		Civilian.wood_rng.randomize()
 		Enemy.warm_rng.randomize()
 		Charge.rng.randomize()
+		Chicken.voice.randomize()
+		Shutter.voice.randomize()
 		litter_rng.randomize()
 		rise_rng.randomize()
 		Hanging.rng.randomize()
@@ -291,6 +293,8 @@ func _ready() -> void:
 		Civilian.wood_rng.seed = 139
 		Enemy.warm_rng.seed = 149
 		Charge.rng.seed = 151
+		Chicken.voice.seed = 157
+		Shutter.voice.seed = 163
 		litter_rng.seed = 47
 		rise_rng.seed = 61
 		Hanging.rng.seed = 53
@@ -1363,6 +1367,7 @@ func _process(delta: float) -> void:
 		if now - end_time > 1500:
 			Engine.time_scale = 1.0
 
+	Puff.view = view_rect(160.0)   # (bursts reach out ~150 px from where they start)
 	_update_fades(delta)
 	_opening_line()
 	if state == "play":

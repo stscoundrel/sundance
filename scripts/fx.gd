@@ -11,6 +11,7 @@ const FIELDS := 10
 # Each particle: [pos, vel, life, max_life, size, color, grow, gravity, drift, kind]
 var parts: Array = []
 static var disc: Texture2D   # a white disc, soft at the very edge
+static var view := Rect2(-1e6, -1e6, 2e6, 2e6)   # the world on screen, grown by a burst's spread (set by the game)
 var keep: Brass   # where its cases go once they've come to rest (K.CASE)
 
 
@@ -69,7 +70,8 @@ func _process(delta: float) -> void:
 		i -= 1
 	if parts.is_empty():
 		queue_free()
-	queue_redraw()
+	elif view.has_point(position):   # (off screen, nobody's watching it drift)
+		queue_redraw()
 
 
 func _draw() -> void:

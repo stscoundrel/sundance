@@ -25,6 +25,8 @@ var shot_at := -1.0
 var dropped: Enemy
 var scared: Civilian
 var stages := {}   # what happened, and when
+var fell := {}     # each dead man: where he fell
+var pooled := {}   # and whether his blood was there when they hauled him off it
 
 
 func _initialize() -> void:
@@ -87,6 +89,9 @@ func _process(delta: float) -> bool:
 		stages["hid"] = clock
 	if stages.has("hid") and scared.st != Civilian.St.GONE and not stages.has("back"):
 		stages["back"] = clock
+	for e in dead:   # the blood stays where he fell (looked at as he's hauled off: the sweepers get to it later)
+		if fell.has(e) and not pooled.has(e) and e.global_position.distance_to(fell[e]) > 60.0:
+			pooled[e] = game.decals.get_children().any(func(s): return s is Sprite2D and s.position.distance_to(fell[e]) < 24.0)
 	var buried := 0
 	for e in dead:
 		buried += 1 if e.has_meta("buried") else 0
@@ -102,10 +107,7 @@ func _process(delta: float) -> bool:
 	check(_crosses("mound") == buried, "every new grave should have a fresh mound")
 	# the blood stays where each man fell, not under him on boot hill
 	for e in dead:
-		var pooled := false
-		for s in game.decals.get_children():
-			pooled = pooled or (s is Sprite2D and s.position.distance_to(e.global_position) > 60.0)
-		check(pooled, "no blood pool left behind where the %s fell" % e.kind)
+		check(pooled.get(e, false), "no blood pool left behind where the %s fell" % e.kind)
 	check(stages.has("measure") and stages["measure"] >= QUIET, "the undertakers went to work before the town was quiet")
 	check(stages.has("back"), "the undertaker never came back out after the shot")
 	check(townsman.has_meta("blessed"), "the padre never blessed the dead townsman")
@@ -174,6 +176,7 @@ func _kill_three() -> void:
 			c.home = c.global_position   # (his day starts here, not across town)
 	for e in dead:
 		e.die(Vector2.RIGHT)
+		fell[e] = e.global_position
 	# and a townsman, down by the church (the padre's nearest)
 	var best := INF
 	for c in game.civilians:

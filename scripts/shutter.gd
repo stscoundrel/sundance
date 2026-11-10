@@ -20,6 +20,7 @@ var look_t := 0.0
 var _f := 0.0             # animation position: 0 open .. last frame shut
 var _last := 3
 static var rng := RandomNumberGenerator.new()   # their own dice, so the town's stay as seeded
+static var voice := RandomNumberGenerator.new()   # (and the slam's sound, apart: a sound doesn't time them)
 var glass: Sprite2D       # the pane behind them, once it's shot out (hidden as they close over it)
 
 
@@ -83,7 +84,7 @@ func _animate(delta: float) -> void:
 	if shut and _f < _last:
 		_f = minf(_f + delta * SLAM_FPS, _last)
 		if int(_f) == _last and was != _last:
-			game.sfx("shutter", at, -4.0, 0.12)
+			game.sfx("shutter", at, -4.0, 0.12, voice)
 	elif not shut and _f > 0.0:
 		_f = maxf(_f - delta * OPEN_FPS, 0.0)
 	frame = int(_f)
