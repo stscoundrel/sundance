@@ -3407,6 +3407,11 @@ func desert() -> void:
 ## nothing stops him but a bullet.
 func run_to_camp(at: Vector2) -> void:
 	camp_to = at
+	if stick:
+		_fumble_stick()   # (no time to throw it: it falls where he was)
+	if fetching:
+		let_go_of_box()
+	_end_rescue()      # (the man he was going for waits for someone else)
 	reaction = ""
 	pending = ""
 	foe = null
@@ -3586,8 +3591,11 @@ func on_hurt_alert(shooter: Actor) -> void:
 
 
 func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
-	if shooter != null and is_instance_valid(shooter) and shooter.weapon != null:
-		killed_with = shooter.weapon.kind   # (if this is the one that does it)
+	if blasted:
+		killed_with = "dynamite"   # (not the gun in the thrower's other hand)
+	elif shooter != null and is_instance_valid(shooter) and shooter.weapon != null:
+		killed_with = shooter.weapon.kind   # (if this is the one that does it: set before
+		                                    # he dies, as whoever sees it weighs it there and then)
 	if downed:
 		finish(shooter)   # in the dirt already: this one's for good
 		return

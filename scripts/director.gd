@@ -254,7 +254,7 @@ func _send_runner(g: String, c: Dictionary) -> void:
 	c["state"] = "running"
 	r.run_to_camp(c["at"])
 	game.hud.banner("One of the %s breaks for %s!  Stop him, or %d more are coming!" % [g, c["name"], c["count"]])
-	game.sfx("sting", null, -10.0, 0.0)
+	game.sfx("sting", null, -10.0, 0.0, rng)
 	game.stats["runners"] = game.stats.get("runners", 0) + 1
 
 
@@ -266,7 +266,7 @@ func runner_home(r: Enemy) -> void:
 			c["state"] = "fetching"
 			c["due"] = clock + c["after"]
 			game.hud.banner("The %s' runner made it to %s!  %d more are on their way." % [g, c["name"], c["count"]])
-			game.sfx("sting", null, -8.0, 0.0)
+			game.sfx("sting", null, -8.0, 0.0, rng)
 			game.stats["runners home"] = game.stats.get("runners home", 0) + 1
 	game.gone_off(r)
 
@@ -287,7 +287,7 @@ func _send_camp(g: String, c: Dictionary) -> void:
 	gs["dug_in"] = false   # (new blood: they push again, and dig in again only after losing a third of the lot)
 	gs["fallen"] = 0
 	game.hud.banner("%d %s come in from %s!" % [c["count"], g, c["name"]])
-	game.sfx("sting", null, -6.0, 0.0)
+	game.sfx("sting", null, -6.0, 0.0, rng)
 	game.stats["camp men"] = game.stats.get("camp men", 0) + c["count"]
 
 

@@ -433,7 +433,7 @@ func _lift() -> void:
 	lift_t = 0.0
 	anim_gun = "strongbox"
 	pose = "pick"
-	game.sfx("step", null, -10.0, 0.1)
+	game.sfx("step", null, -10.0, 0.1, Strongbox.rng)
 
 
 func _lifted() -> void:
@@ -667,6 +667,7 @@ func _strike(e: Enemy) -> void:
 	if e.downed:
 		# a wounded man in the dirt: quickly, quietly
 		e.silent_death = true
+		e.killed_with = "knife"   # (before he's dead: whoever sees it weighs it there and then)
 		e.finish(self)
 		game.make_noise(global_position, 40.0, "struggle", self)
 		_knife_done(KNIFE_CD)
@@ -674,8 +675,8 @@ func _strike(e: Enemy) -> void:
 	if knife_quiet and e.unaware():
 		# a hand over his mouth, the blade, and he's let down quietly
 		e.silent_death = true
-		e.die(dir, self, "death_slump")
 		e.killed_with = "knife"
+		e.die(dir, self, "death_slump")
 		game.sfx("hit", global_position, -14.0)
 		game.make_noise(global_position, 40.0, "struggle", self)
 		game.stats["takedowns"] = game.stats.get("takedowns", 0) + 1
@@ -690,8 +691,8 @@ func _strike(e: Enemy) -> void:
 	game.sfx("hit", global_position, -4.0)
 	game.make_noise(global_position, 160.0, "struggle", self)   # he yells as it goes in
 	if e.hp <= RUSH_DMG:
-		e.die(dir, self, "death_knees")
 		e.killed_with = "knife"
+		e.die(dir, self, "death_knees")
 	else:
 		e.take_hit(RUSH_DMG, dir, self)   # a hard man: he takes it and reels
 		e.stagger_t = 0.8

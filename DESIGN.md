@@ -499,7 +499,12 @@ cloud (the faces turned from the sky not so dark, those towards it not so bright
 their shadows faint). The flakes (`scripts/snowfall.gd`) are in the world, so they
 pan with the town, wrapped round the view: three depths, the far ones fine, slow
 and faint, the near ones bigger and quicker with a grey underside so they show
-against the snow on the ground; all drifting east on the wind and swaying.
+against the snow on the ground; all drifting east on the wind and swaying. Up to
+2600 of them are too many to move one by one in a script every frame (it was most of
+what Silencio cost over the other towns): each keeps only where it started, and a
+shader (`shaders/snowfall.gdshader`, one MultiMesh drawn twice, the undersides then
+the flakes) works out where it is now from how far the wind and the fall have carried
+everything since, which `Snowfall` sums up as the squalls come and go.
 
 Most of the time it falls steady; every minute or so a squall comes down off the
 mountain (the snowstorm of *The Hateful Eight*): the first 40-70 s in, each building
@@ -554,7 +559,8 @@ enemy, and only his own kills count for him.
 map: the outlaws' up behind the frozen pond, the hunters' down the valley at the far
 south-east corner. A gang down to its last three (`Director.RUNNER_AT`, whoever or
 whatever did it) sends the man nearest the camp running for it, the boss last of
-all, everything else forgotten. A banner says so ("One of the outlaws breaks for
+all, everything else forgotten (a lit stick falls from his hand, the gold from his
+arms, and a downed man he was going for waits for someone else). A banner says so ("One of the outlaws breaks for
 the camp behind the lake!  Stop him, or 10 more are coming!"): the stranger, or the
 other gang at war, can shoot him on the way, and then no help comes. Off the map,
 he's there; 25 s later the men walk in by the same way: ten outlaws, five hunters
@@ -627,7 +633,9 @@ Their own dice (`Enemy.warm_rng`, `Civilian.wood_rng`).
 **Breath** (`scripts/breath.gd`). Everyone in Silencio, the stranger and the gangs and
 the townsfolk, puffs a little cloud at the mouth every few seconds, drifting off on
 the wind, quicker and bigger after running. It's drawn as part of him, so a wall that
-hides him hides it too. Only a look: it gives nobody away.
+hides him hides it too. Only a look: it gives nobody away, and it's only drawn
+while a puff's in the air and he's on screen (the chimney smoke and the campfires
+likewise only redraw on screen: `game.view_rect`).
 
 **Drifts** (`scripts/drifts.gd`; `tests/test_snowcover.gd`). A body left lying out in
 the snow slowly goes under: patches of white settling on him (the lit parts first),

@@ -11,6 +11,7 @@ const LAST := 1.3        # s a puff hangs in the air
 var actor: Actor
 var phase := 0.0
 var _hard := 0.0         # how hard he's breathing (from running), 0..1
+var _shown := false      # a puff drawn last time: one more redraw clears it
 
 
 func setup(a: Actor) -> void:
@@ -20,11 +21,22 @@ func setup(a: Actor) -> void:
 
 func _process(delta: float) -> void:
 	_hard = clampf(_hard + (delta * 0.5 if actor.velocity.length() > 40.0 else -delta * 0.12), 0.0, 1.0)
-	queue_redraw()
+	var up := _puffing()
+	if up or _shown:   # (between breaths there's nothing to draw: no redrawing nothing)
+		queue_redraw()
+	_shown = up
+
+
+## Is there a puff in the air now (and anyone to see it)?
+func _puffing() -> bool:
+	if not actor.alive or not actor.visible or (actor is Enemy and actor.downed) \
+			or not actor.game.view_rect(40.0).has_point(actor.global_position):
+		return false
+	return fposmod(float(actor.game.clock) + phase, lerpf(EVERY, EVERY * 0.45, _hard)) <= LAST
 
 
 func _draw() -> void:
-	if not actor.alive or not actor.visible or (actor is Enemy and actor.downed):
+	if not _puffing():
 		return
 	var game := actor.game
 	var every := lerpf(EVERY, EVERY * 0.45, _hard)

@@ -65,6 +65,9 @@ func _physics_process(delta: float) -> void:
 		p["depth"] -= dt * (1.0 / FILL_T + blow)
 	if not prints.is_empty() and prints.any(func(p): return p["depth"] <= 0.0):
 		prints = prints.filter(func(p): return p["depth"] > 0.0)   # (the oldest mostly, but a squall's fast on the old)
+	for a in _last.keys():
+		if not is_instance_valid(a) or not a.alive:
+			_last.erase(a)   # (the dead, and the gone off the map, walk no further)
 	queue_redraw()
 
 
@@ -107,11 +110,7 @@ func fresh_near(at: Vector2, r: float) -> int:
 
 
 func _draw() -> void:
-	var cam := get_viewport().get_camera_2d()
-	var view := Rect2(Vector2.ZERO, get_viewport_rect().size)
-	if cam:
-		var size := get_viewport_rect().size / cam.zoom
-		view = Rect2(cam.get_screen_center_position() - size * 0.5, size).grow(8.0)
+	var view: Rect2 = game.view_rect(8.0)
 	for p in prints:
 		var at: Vector2 = p["at"]
 		if not view.has_point(at):

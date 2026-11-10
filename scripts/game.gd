@@ -1297,6 +1297,16 @@ func fit_view() -> void:
 	(post.material as ShaderMaterial).set_shader_parameter("grain", hud.page)
 
 
+## The world the camera shows this frame, grown by `margin` px: for looks only (what's
+## worth redrawing: the snow, the prints, a man's breath, smoke off a chimney).
+func view_rect(margin := 0.0) -> Rect2:
+	var size := get_viewport_rect().size
+	if camera == null:
+		return Rect2(Vector2.ZERO, size).grow(margin)
+	size /= camera.zoom
+	return Rect2(camera.get_screen_center_position() - size * 0.5, size).grow(margin)
+
+
 # ------------------------------------------------------------------ frame
 
 func _process(delta: float) -> void:
@@ -1646,7 +1656,7 @@ func start_war(why: String) -> void:
 	stats["war"] = 1
 	hud.banner(why)
 	hud.toast("The truce is broken: the street war is on!")
-	sfx("sting", null, -6.0, 0.0)
+	sfx("sting", null, -6.0, 0.0, Enemy.feud_rng)
 	for g in gangs:
 		gangs[g]["push_cd"] = 2.0
 	var named: Array = level.get("gangs", [])
@@ -2487,9 +2497,9 @@ func _on_enemy_died(e: Actor) -> void:
 	# who has him in view at the time knows it's happened; the rest find out from
 	# the body
 	var silent: bool = e is Enemy and e.silent_death
-	var saw := func(o: Enemy) -> bool:
-		return o.global_position.distance_to(e.global_position) < 180.0 and \
-			(o.visibility_of(e.global_position, false, false) > 0.0 if silent else true)
+	var witnesses: Array = enemies.filter(func(o: Enemy) -> bool:   # (looked over the once: a ray each)
+		return o.alive and o != e and o.global_position.distance_to(e.global_position) < 180.0 and \
+			(o.visibility_of(e.global_position, false, false) > 0.0 if silent else true))
 	if e.killer == player:
 		stats["his kills"] = stats.get("his kills", 0) + 1
 		if player.down:   # from the dirt: and a man coming to finish him, or an officer, is a blow to them
@@ -2499,7 +2509,7 @@ func _on_enemy_died(e: Actor) -> void:
 				for o in enemies:
 					if o.alive and o.global_position.distance_to(e.global_position) < 200.0:
 						o.shaken = minf(1.0, o.shaken + 0.4)
-	if not silent or enemies.any(func(o): return o.alive and o != e and saw.call(o)):
+	if not silent or not witnesses.is_empty():
 		raise_alarm(5.0, e.global_position, side)
 	if e is Enemy and e.tdata.get("coordinator", false):
 		lose_the_head(e)
@@ -2514,12 +2524,12 @@ func _on_enemy_died(e: Actor) -> void:
 		stats["scouts lost"] = stats.get("scouts lost", 0) + 1
 	if e.killer == player and not spot_at(player.global_position).is_empty():
 		spot_at(player.global_position)["kills"] += 1
-	for o in enemies:
-		if o.alive and o != e and saw.call(o):
+	for o in witnesses:
+		if o.alive:
 			o.witness_death(e.global_position, e.killer.global_position if is_instance_valid(e.killer) and e.killer is Enemy else player.global_position, e)
 	if e is Enemy and level.has("turf") and not war:   # one of theirs saw him go down: whose doing?
-		for o in enemies:
-			if o.alive and o.gang == e.gang and saw.call(o) and line_of_sight(o.global_position, e.global_position, false):
+		for o in witnesses:
+			if o.alive and o.gang == e.gang and line_of_sight(o.global_position, e.global_position, false):
 				weigh_death(o, e)
 				break
 	for c in civilians:
@@ -3076,8 +3086,6 @@ func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE, mine 
 		a.blasted = true
 		a.take_hit(dmg, dir, by)
 		a.blasted = false
-		if a is Enemy:
-			a.killed_with = "dynamite"   # (not the gun in the thrower's other hand)
 		if a.alive:
 			a.stagger_t = maxf(a.stagger_t, 0.6)
 		elif a != player:

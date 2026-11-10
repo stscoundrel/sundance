@@ -29,7 +29,7 @@ func _process(delta: float) -> void:
 	var lit: bool = house["in"] > 0
 	warm = clampf(warm + delta / UP * (1.0 if lit else -1.0), 0.0, 1.0)
 	visible = warm > 0.0
-	if visible:
+	if visible and game.view_rect(160.0).has_point(_at):   # (the house and the smoke over it, on screen)
 		queue_redraw()
 
 

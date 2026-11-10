@@ -21,7 +21,7 @@ var frame := 0
 var failures := 0
 var step := ""
 var t := 0.0
-var _flake0 := Vector4.ZERO
+var _flake0 := Vector2.ZERO
 
 
 func _initialize() -> void:
@@ -140,10 +140,10 @@ func _process(delta: float) -> bool:
 	t += delta
 	if t < 12.0:
 		if t > 2.0 and t < 2.05:
-			_flake0 = game.snowfall.flakes[0]
+			_flake0 = game.snowfall.flake_at(0)
 		return false
 	step = "snow"
-	var f: Vector4 = game.snowfall.flakes[0]
+	var f: Vector2 = game.snowfall.flake_at(0)
 	check(f.y != _flake0.y, "the snow's stopped falling")
 	step = "quiet"
 	check(game.state == "play", "it ended by itself: %s" % game.state)

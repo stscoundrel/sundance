@@ -12,8 +12,14 @@ extends Node2D
 ## howls. It steers the game, so it runs on game time (`game.clock`) and its own
 ## dice: how far everyone sees (`game.sight`: the steady snow trims it, a squall cuts
 ## it to half and a bit), and how fast footprints fill (Footprints).
+##
+## Thousands of flakes are too many to move one by one in a script every frame: each
+## keeps where it started, and the shader (`shaders/snowfall.gdshader`) works out
+## where it is now from how far the wind and the fall have carried everything since
+## (`drift`, `fall`, summed up here as the squalls come and go).
 
 static var rng := RandomNumberGenerator.new()   # (when the squalls come, and how long they blow)
+const SHADER := preload("res://shaders/snowfall.gdshader")
 
 const COUNT := 900          # flakes in the steady snow
 const STORM_COUNT := 2600   # and in a squall
@@ -27,11 +33,15 @@ const BLOW := Vector2(20.0, 35.0)   # s a squall blows at its worst
 const RISE := 8.0           # s for one to build (and as long to die away)
 
 var game: Node
-var flakes: Array[Vector4] = []   # x, y, depth (0 far .. 1 near), sway phase
+var flakes: Array[Vector4] = []   # where each started: x, y, depth (0 far .. 1 near), sway phase
 var squalls: Array[Vector2] = []  # [start, end of the worst] in game seconds
 var storm := 0.0            # 0 steady snow .. 1 the worst of a squall
 var t := 0.0
+var drift := 0.0            # px the wind's carried a flake of depth 0.5, all told
+var fall := 0.0             # s of falling (a squall's counting for more)
 var _was_up := false
+var _mm := MultiMesh.new()
+var _mats: Array[ShaderMaterial] = []
 
 
 func setup(g: Node) -> void:
@@ -45,6 +55,29 @@ func setup(g: Node) -> void:
 	look.seed = 97
 	for i in STORM_COUNT:
 		flakes.append(Vector4(look.randf_range(0.0, 4000.0), look.randf_range(0.0, 4000.0), look.randf(), look.randf() * TAU))
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	_mm.transform_format = MultiMesh.TRANSFORM_2D
+	_mm.use_custom_data = true
+	_mm.mesh = quad
+	_mm.instance_count = STORM_COUNT
+	for i in STORM_COUNT:
+		var f := flakes[i]
+		_mm.set_instance_transform_2d(i, Transform2D.IDENTITY)
+		_mm.set_instance_custom_data(i, Color(f.x, f.y, f.z, f.w))
+	for under in [true, false]:   # the grey undersides, then the flakes over them
+		var mmi := MultiMeshInstance2D.new()
+		mmi.multimesh = _mm
+		var mat := ShaderMaterial.new()
+		mat.shader = SHADER
+		mat.set_shader_parameter("underside", under)
+		mat.set_shader_parameter("fall_px", FALL)
+		mmi.material = mat
+		_mats.append(mat)
+		add_child(mmi)
+		# (the shader puts every flake somewhere round the view, nowhere near where
+		# the mesh says: never cull it)
+		RenderingServer.canvas_item_set_custom_rect(mmi.get_canvas_item(), true, Rect2(-1e6, -1e6, 2e6, 2e6))
 
 
 func _ready() -> void:
@@ -82,11 +115,7 @@ func squall_over(i: int) -> float:
 
 ## The world the camera shows, and a margin round it.
 func _view() -> Rect2:
-	var cam := get_viewport().get_camera_2d()
-	var zoom := cam.zoom if cam else Vector2.ONE
-	var size := get_viewport_rect().size / zoom
-	var c := cam.get_screen_center_position() if cam else size * 0.5
-	return Rect2(c - size * 0.5 - Vector2.ONE * MARGIN, size + Vector2.ONE * MARGIN * 2.0)
+	return game.view_rect(MARGIN)
 
 
 func _physics_process(_delta: float) -> void:
@@ -99,29 +128,22 @@ func _physics_process(_delta: float) -> void:
 
 func _process(delta: float) -> void:
 	t += delta
+	drift += lerpf(WIND.x, WIND.y, storm) * delta
+	fall += (1.0 + storm * 0.8) * delta
 	var v := _view()
-	var wind := lerpf(WIND.x, WIND.y, storm)
-	for i in flakes.size():
-		var f := flakes[i]
-		f.x += (wind * (0.5 + f.z) + sin(t * 1.3 + f.w) * 6.0) * delta
-		f.y += lerpf(FALL.x, FALL.y, f.z) * (1.0 + storm * 0.8) * delta
-		f.x = v.position.x + fposmod(f.x - v.position.x, v.size.x)
-		f.y = v.position.y + fposmod(f.y - v.position.y, v.size.y)
-		flakes[i] = f
-	queue_redraw()
+	_mm.visible_instance_count = int(lerpf(COUNT, STORM_COUNT, storm))
+	for mat in _mats:
+		mat.set_shader_parameter("view", Vector4(v.position.x, v.position.y, v.size.x, v.size.y))
+		mat.set_shader_parameter("drift", drift)
+		mat.set_shader_parameter("fall", fall)
+		mat.set_shader_parameter("t", t)
+		mat.set_shader_parameter("streak", 1.0 + storm * 3.0)
 
 
-## White on white is nothing: the nearer flakes carry a grey underside, so they show
-## against the snow on the ground as well as against a wall or a man. In a squall
-## they're driven near flat, streaks more than flakes.
-func _draw() -> void:
-	var n := int(lerpf(COUNT, STORM_COUNT, storm))
-	var streak := 1.0 + storm * 3.0
-	for i in n:
-		var f := flakes[i]
-		var at := Vector2(f.x, f.y).floor()
-		var s := 2.0 if f.z > 0.6 else 1.0
-		var w := (s * streak) if f.z > 0.35 else s
-		if f.z > 0.35:
-			draw_rect(Rect2(at + Vector2(0, s), Vector2(w, 1)), Color(0.42, 0.46, 0.56, 0.45 * f.z))
-		draw_rect(Rect2(at, Vector2(w, s)), Color(0.94, 0.96, 1.0, lerpf(0.4, 1.0, f.z)))
+## Where flake `i` is now (the shader's sum, for the tests): drifting east on the
+## wind, swaying, falling at its depth's pace, wrapped round the view.
+func flake_at(i: int) -> Vector2:
+	var f := flakes[i]
+	var v := _view()
+	var at := Vector2(f.x + drift * (0.5 + f.z) - cos(t * 1.3 + f.w) * 6.0 / 1.3, f.y + fall * lerpf(FALL.x, FALL.y, f.z))
+	return Vector2(v.position.x + fposmod(at.x - v.position.x, v.size.x), v.position.y + fposmod(at.y - v.position.y, v.size.y)).floor()

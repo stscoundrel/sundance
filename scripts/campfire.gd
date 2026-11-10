@@ -53,7 +53,8 @@ func _physics_process(delta: float) -> void:
 		elif fuel <= 0.0 and hiss.playing:
 			hiss.stop()
 		hiss.volume_db = -22.0 + 10.0 * minf(1.0, fuel * 2.0)
-	queue_redraw()
+	if game.view_rect(60.0).has_point(global_position):   # (the flicker's only worth drawing where it's seen)
+		queue_redraw()
 
 
 func _draw() -> void:
