@@ -74,7 +74,10 @@ unless there's shooting going on they can hear (within the last 8 s, not too far
 from where they come in): then they go straight to it. Those passing as townsfolk
 and El Jefe never come marching in; otherwise each is one of the sort already in
 town. The town isn't won till the last wave is in and down. The director
-(`scripts/director.gd`) runs it apart from the game. "San Miguel (waves)" in the
+(`scripts/director.gd`) runs it apart from the game. Every sort of man who may walk in
+later (and the den's squad) has his body's pictures loaded with the town
+(`game.warm_type`): left to the first of them arriving, a body's atlas cost a frame of
+0.1-0.3 s in the middle of the fight. "San Miguel (waves)" in the
 picker is for trying it: 20 bandits, then 7 or 8 more every 90 s, from two
 roads at a time. `tests/test_waves.gd` runs a quick version in the test yard.
 
@@ -1648,7 +1651,9 @@ throw themselves into the nearest cover, some give ground (a regular, 0.2, 0.4 i
 he was right by the man; a leva turns and runs back a way, 0.4, 0.6 close), and in
 2.5 to 4 s they're up and coming on again. For 8 s after that the gun doesn't
 frighten them (`GUN_NERVE`), so they don't lie there for good under it: they come
-on in rushes, and go to ground in clumps where it finds them. Men off down the line
+on in rushes, and go to ground in clumps where it finds them. A man winding up to
+throw a stick isn't frightened off it; one going for a downed comrade is, and the
+downed man waits for someone else (the same when the mines rout them). Men off down the line
 where he can't see don't hear of it: no rout starts out of his sight. "His sight" is
 the 1280x720 window's view round the middle of the screen, whatever the real window
 (see Tech), or within 300 px and in his line of sight.

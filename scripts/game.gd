@@ -954,6 +954,8 @@ func _build_world() -> void:
 		den.merge({"door": dp if is_free(dp) else free_point_near(dp, 20.0), "squad": level["reserve"]["squad"],
 			"heat": 0.0, "rallied": false, "cause": "", "spawn_t": -1.0, "runner": null, "runner_cd": 0.0,
 			"fight_t": 0.0, "alarm": dp})
+		for k in den["squad"]:
+			warm_type(k)
 
 	# keep only cover points that are reachable and off obstacles
 	var good := PackedVector2Array()
@@ -2140,6 +2142,18 @@ func refuge_for(from: Vector2, threat: Vector2) -> Vector2:
 
 
 const SANCTUARY := 300.0   # px: townsfolk this near the chapel run to the sister's door
+
+
+## A sort of man who may only turn up later (in a wave, out of the den, from a camp):
+## his body's pictures loaded now, while the town's being built. Left to the first of
+## them walking in, a body's atlas is a tenth of a second off the middle of a fight.
+func warm_type(kind: String) -> void:
+	if not enemy_data["types"].has(kind):
+		return
+	var c: Dictionary = meta["chars"].get(enemy_type(kind)["template"], {})
+	for k in ["atlas", "slots"]:
+		if c.has(k):
+			tex(c[k])
 
 
 ## A bandit type: the defaults, then the type, then any per-placement overrides.

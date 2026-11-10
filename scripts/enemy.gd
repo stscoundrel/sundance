@@ -1070,6 +1070,8 @@ func _weighted(w: Dictionary) -> String:
 
 
 func start_reaction(r: String) -> void:
+	if reaction == "rescue" and r != "rescue":
+		_end_rescue()   # (cut short: the man he was going for waits for someone else)
 	reaction = r
 	suppress_t = 0.0
 	hold_t = 0.0
@@ -3240,8 +3242,8 @@ func assault_to(spot: Vector2) -> void:
 ## that the gun doesn't frighten him: they come on in rushes, and go to ground in
 ## clumps where it finds them.
 func gun_fright(at: Vector2) -> void:
-	if game.clock < gun_nerve or reaction in ["flee", "hide", "backoff", "dash"]:
-		return
+	if game.clock < gun_nerve or reaction in ["flee", "hide", "backoff", "dash", "throw"]:
+		return   # (a lit stick in his hand: he's got that to see to)
 	threat = game.player.global_position
 	pending = ""
 	var close := global_position.distance_to(at) < 45.0
@@ -3266,6 +3268,8 @@ func mine_rout(from: Vector2, dice: RandomNumberGenerator) -> void:
 		return   # (a lit stick in his hand: he's got that to see to)
 	threat = from
 	pending = ""
+	if reaction == "rescue":
+		_end_rescue()
 	if assault and tdata.get("deserts", false) and dice.randf() < Minefield.ROUT_DESERTS:
 		desert()
 		return
@@ -3378,9 +3382,12 @@ func _order_volley() -> void:
 		e.bound_hold = maxf(e.bound_hold, VOLLEY_WAIT + 0.5)
 		e.bounding = false
 	game.stats["volleys"] = game.stats.get("volleys", 0) + 1
-	get_tree().create_timer(VOLLEY_WAIT, false).timeout.connect(func():
-		if alive:
-			_say("¡Fuego!"))
+	get_tree().create_timer(VOLLEY_WAIT, false).timeout.connect(_give_the_word)   # (a method: gone with him if he goes)
+
+
+func _give_the_word() -> void:
+	if alive:
+		_say("¡Fuego!")
 
 
 ## He's had enough: off back down the road he came, and gone.

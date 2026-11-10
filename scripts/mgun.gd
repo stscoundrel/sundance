@@ -90,7 +90,7 @@ func drive(delta: float, want: Vector2, firing: bool) -> void:
 	if not firing or cd > 0.0:
 		return
 	if belt <= 0:
-		game.sfx("dry", global_position, -4.0, 0.0)
+		game.sfx("dry", global_position, -4.0, 0.0, rng)
 		cd = 0.5
 		return
 	cd += 1.0 / RATE
@@ -106,7 +106,7 @@ func _fire() -> void:
 	game.spawn_bullet(origin, aim.rotated(a) * SPEED, RANGE, DAMAGE, gunner, Iso.GUN_H_CROUCH, false, PIERCE, OWN_COVER)
 	_flash(origin)
 	_eject()
-	game.sfx("mg", global_position, -2.0, 0.08)
+	game.sfx("mg", global_position, -2.0, 0.08, rng)
 	game.make_noise(global_position, 700.0, "shot", gunner)
 	gunner.on_fired(1.2)
 	game.stats["mg rounds"] = game.stats.get("mg rounds", 0) + 1

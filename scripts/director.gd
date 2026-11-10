@@ -83,6 +83,14 @@ func setup(g: Node, wave_list: Array, from_first_shot := false) -> void:
 		var c: Dictionary = g.level["camps"][gang]
 		camps[gang] = {"name": c["name"], "at": Iso.to_screen(Vector2(c["x"], c["y"])), "count": int(c["count"]),
 			"after": float(c.get("after", CAMP_T)), "state": "", "runner": null, "due": 0.0}
+	var coming: Array = g.level.get("wave_kinds", {}).keys()   # (whoever may walk in: their bodies loaded now)
+	coming.append_array(g.level.get("enemies", []).map(func(e): return e["kind"]))
+	coming.append_array(sleepers.map(func(sl): return sl["kind"]))
+	for w in waves:
+		for gr in w["groups"]:
+			coming.append_array(gr.get("kinds", []))
+	for k in coming:
+		g.warm_type(k)
 	var mid := _center()
 	for e in g.level.get("entries", []):
 		var at := Iso.to_screen(Vector2(e["x"], e["y"]))
