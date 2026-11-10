@@ -66,6 +66,20 @@ func storm_at(s: float) -> float:
 	return 0.0
 
 
+## Which squall is blowing at game time `s` (building, at its worst or dying away),
+## by its place in the list; -1 between them.
+func squall_at(s: float) -> int:
+	for i in squalls.size():
+		if s >= squalls[i].x and s < squalls[i].y + RISE:
+			return i
+	return -1
+
+
+## When squall `i` has blown itself out.
+func squall_over(i: int) -> float:
+	return squalls[i].y + RISE
+
+
 ## The world the camera shows, and a margin round it.
 func _view() -> Rect2:
 	var cam := get_viewport().get_camera_2d()

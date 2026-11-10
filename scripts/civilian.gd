@@ -1809,7 +1809,7 @@ func _nearest_bandit() -> Enemy:
 	var best := 420.0
 	var out: Enemy = null
 	for e in game.enemies:
-		if e.alive and e.st != Enemy.St.COMBAT:
+		if e.alive and e.st != Enemy.St.COMBAT and not e.indoors:
 			var d := global_position.distance_to(e.global_position)
 			if d < best:
 				best = d

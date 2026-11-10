@@ -113,6 +113,7 @@ def solid(col):
 # Doorways at street level, recorded as buildings are modelled so townsfolk know
 # where they can run indoors: (face, centre along the face in metres, W, D).
 DOORS = []
+CHIMNEY = []   # (a cabin's: the top of its stack, x and y in tiles from the corner, z in metres)
 # Glazed windows, for shutters and broken glass: (face, (u0, u1), (z0, z1), W, D).
 WINDOWS = []
 GLAZED = []
@@ -2214,6 +2215,7 @@ def cabin(w, h, seed, along_y=True):
     stone = lambda P, N: np.tile([132.0, 126, 118], (len(P), 1)) * (0.75 + 0.35 * hash01(np.floor(P[:, 0] * 5 + P[:, 1] * 5), np.floor(P[:, 2] * 4), seed))[:, None]
     cx, cy = (0.25, D * 0.35) if along_y else (W * 0.35, 0.25)
     m += box((cx, cy, 0), (cx + 0.8, cy + 0.8, Hh + rise + 0.6), stone, BSP)
+    CHIMNEY[:] = [round((cx + 0.4) / T, 3), round((cy + 0.4) / T, 3), round(Hh + rise + 0.6, 2)]
     return m
 
 

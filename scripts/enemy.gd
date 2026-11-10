@@ -368,6 +368,26 @@ var errand_len := 0.0        # s he'll be at it
 var waiting_on: Enemy = null # a mate gone off on a call of nature, and him keeping count
 var ember: Node2D            # the match, the cigar's glow and its smoke
 
+# In from the squall (Silencio's: see Snowfall). As one comes down, each man at his
+# post or on his rounds makes up his own mind whether to go in out of it: off to the
+# nearest door, and inside, the fire lit (Hearth). He stays through it and a while
+# after by the stove, then back to his post. Shooting he can hear brings him out, but
+# not at once: it takes him 5-10 s, by how cozy he'd got, and then he goes to it.
+# Inside he sees nothing and nobody sees him. Their own dice.
+const SHELTER := 0.4                        # chance he goes in, each squall
+const SHELTER_REACH := 360.0                # px: a door further off than this, and he sticks it out
+const SHELTER_LINGER := Vector2(20.0, 60.0) # s by the stove after the squall's blown out
+const SHELTER_OUT := Vector2(5.0, 10.0)     # s from hearing the shooting to coming out of the door
+const SHELTER_LINES := ["Too damn cold.", "To hell with this, I'm going in.", "I can't feel my feet.", "Back when it lets up."]
+static var shelter_rng := RandomNumberGenerator.new()
+var indoors := false
+var shelter_house: Dictionary = {}
+var shelter_door := Vector2.ZERO
+var shelter_rolled := -1     # the last squall he made up his mind about
+var shelter_until := INF     # game.clock: out again (the squall over, a while by the stove)
+var out_at := INF            # game.clock: out to the shooting
+var called_to := Vector2.INF # where the shooting was
+
 
 ## Everything that makes this bandit who he is comes from his type in
 ## data/enemies.json (merged over the defaults, then any per-placement overrides).
@@ -635,6 +655,10 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 	var d := global_position.distance_to(pos)
 	if d > radius:
 		return
+	if indoors:
+		if k in ["shot", "enemy_shot", "blast", "struggle", "scream"]:
+			call_out(pos)
+		return
 	match k:
 		"shot", "struggle":   # gunfire, or a man yelling as the knife goes in
 			if st == St.COMBAT:
@@ -687,11 +711,17 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 
 
 func alert_to(pos: Vector2) -> void:
+	if indoors:
+		call_out(pos)
+		return
 	if alive and st != St.COMBAT:
 		enter_combat(pos, false, false)
 
 
 func enter_combat(pos: Vector2, spotted: bool, propagate: bool) -> void:
+	if indoors:
+		call_out(pos)
+		return
 	reveal()
 	smoke_t = -1.0
 	var was := st
@@ -720,6 +750,9 @@ func enter_combat(pos: Vector2, spotted: bool, propagate: bool) -> void:
 
 
 func start_investigate(pos: Vector2, run: bool) -> void:
+	if indoors:
+		call_out(pos)
+		return
 	reveal()
 	if st == St.COMBAT:
 		return
@@ -1196,6 +1229,11 @@ func _physics_process(delta: float) -> void:
 		update_anim(delta)
 		cone.refresh()
 		return
+	if indoors:
+		_indoors()
+		return
+	if game.snowfall and game.state == "play":
+		_think_shelter()
 	weapon.update(delta)
 	fear_cd = max(0.0, fear_cd - delta)
 	since_shot += delta
@@ -1521,6 +1559,8 @@ func _errand(delta: float) -> void:
 			_peso_errand(delta)
 		"nature":
 			_nature_errand(delta)
+		"shelter":
+			_shelter_errand()
 		_:
 			_go_back()
 
@@ -1709,6 +1749,102 @@ func _draw_ember() -> void:
 		var f := fposmod(t * 0.35 + i * 0.25, 1.0)
 		var at := mouth + Vector2(facing.x * 3.0 + sin(t * 1.7 + i) * 2.0 + f * 5.0, -f * 16.0)
 		ember.draw_circle(at, 1.0 + f * 2.2, Color(0.85, 0.85, 0.82, 0.3 * (1.0 - f)))
+
+
+# ------------------------------------------------------------------ in from the squall
+
+## A squall coming down: does he go in out of it? Once a squall, his own mind.
+func _think_shelter() -> void:
+	var i: int = game.snowfall.squall_at(game.clock)
+	if i < 0 or i == shelter_rolled or game.snowfall.storm < 0.3:
+		return
+	shelter_rolled = i
+	if not can_be_lured() or game.war or suspicion > 0.3 or alarm_role != "" or shelter_rng.randf() >= SHELTER:
+		return
+	var best := SHELTER_REACH
+	for h in game.houses:
+		for d in h["doors"]:
+			var dist := global_position.distance_to(d)
+			if dist < best:
+				best = dist
+				shelter_house = h
+				shelter_door = d
+	if best >= SHELTER_REACH:
+		return
+	smoke_t = -1.0
+	st = St.ERRAND
+	errand = "shelter"
+	errand_t = 0.0
+	shelter_until = game.snowfall.squall_over(i) + shelter_rng.randf_range(SHELTER_LINGER.x, SHELTER_LINGER.y)
+	out_at = INF
+	called_to = Vector2.INF
+	path_to(shelter_door)
+	if shelter_rng.randf() < 0.5:
+		_say(_line("shelter", SHELTER_LINES, shelter_rng))
+	_log("shelters")
+
+
+func _shelter_errand() -> void:
+	if global_position.distance_to(shelter_door) > 8.0 and not follow_path(walk * 1.3):   # (hurrying, head down)
+		return
+	_go_in()
+
+
+## In at the door: gone from the street, the fire lit.
+func _go_in() -> void:
+	indoors = true
+	shelter_house["in"] += 1
+	velocity = Vector2.ZERO
+	visible = false
+	cone.visible = false
+	occluded = false
+	_sync_ghost()
+	collision_layer = 0
+	collision_mask = 0
+	hurtbox.collision_layer = 0
+	global_position = shelter_house["inside"]   # (in among the walls: nobody's sight or round gets to him)
+
+
+## Inside: out again when the shooting's brought him (in his own time), the squall's
+## done and he's warm, or anything else has called him (the posse, the alarm, a war).
+func _indoors() -> void:
+	velocity = Vector2.ZERO
+	if st != St.ERRAND or errand != "shelter":
+		_come_out()
+		return
+	if game.clock >= out_at or (out_at == INF and game.clock >= shelter_until):
+		_come_out()
+
+
+## Heard something from in by the stove: he'll be out to it, once he's got his coat on.
+func call_out(pos: Vector2) -> void:
+	called_to = pos
+	if out_at == INF:
+		out_at = game.clock + shelter_rng.randf_range(SHELTER_OUT.x, SHELTER_OUT.y)
+
+
+func _come_out() -> void:
+	indoors = false
+	shelter_house["in"] = maxi(0, shelter_house["in"] - 1)
+	global_position = shelter_door
+	visible = true
+	cone.visible = true
+	collision_layer = Iso.LAYER_ACTOR
+	collision_mask = Iso.LAYER_WALL | Iso.LAYER_COVER | Iso.LAYER_POST | Iso.LAYER_ACTOR
+	hurtbox.collision_layer = Iso.LAYER_HURT
+	path = PackedVector2Array()
+	if st != St.ERRAND or errand != "shelter":
+		return   # (called off by something else: on with that)
+	errand = ""
+	if called_to != Vector2.INF:   # out to the shooting
+		var to := called_to
+		called_to = Vector2.INF
+		wary = true
+		suspicion = maxf(suspicion, 0.6)
+		start_investigate(to, true)
+		_log("out to the shooting")
+	else:
+		_go_back()
 
 
 ## Done looking: back to his post, or back in with the posse.

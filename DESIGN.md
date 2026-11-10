@@ -587,6 +587,27 @@ it under the gang) waits on the user. `tests/test_silencio.gd` checks the snow
 on everything, the pond at the edge, the gangs and their alarms, the ways from the
 horse, and a quiet spell.
 
+**In from the squall** (`Enemy._think_shelter`, `scripts/hearth.gd`; `tests/test_shelter.gd`).
+As a squall comes down, each man at his post or on his rounds who's calm (not in a
+war, not on the alarm, not passing as townsfolk) makes up his own mind: four times in
+ten he's had enough ("Too damn cold.") and goes in at the nearest door within ~360
+px, any building with one (`game.houses`). Inside he's gone from the street: unseen,
+seeing nothing, leaving no prints, out of reach of any round. He stays through the
+squall and 20-60 s more by the stove, then goes back to his post or his rounds.
+Shooting he can hear brings him out, but not at once: 5-10 s, by how cozy he'd got,
+and then he goes to it, wary. Anything else that calls on him (a comrade's shout,
+the posse, the war) has him out at once. So a squall can thin a post out, or empty
+it, for a minute or more. A house with men in it has a fire lit: smoke goes up out of
+a cabin's stone chimney (its top recorded when the cabin is baked: `chimney` in its
+meta) and lamplight shows in the windows, not behind shut shutters, coming up as the
+first man goes in and dying away a while after the last comes out. That's the tell:
+smoke and light, and that post's empty. Their own dice (`Enemy.shelter_rng`).
+
+**Breath** (`scripts/breath.gd`). Everyone in Silencio, the stranger and the gangs and
+the townsfolk, puffs a little cloud at the mouth every few seconds, drifting off on
+the wind, quicker and bigger after running. It's drawn as part of him, so a wall that
+hides him hides it too. Only a look: it gives nobody away.
+
 **Drifts** (`scripts/drifts.gd`; `tests/test_snowcover.gd`). A body left lying out in
 the snow slowly goes under: patches of white settling on him (the lit parts first),
 then all of him, a drift his own shape (the palette shader's `snow`). About four

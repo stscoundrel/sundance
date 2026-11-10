@@ -90,6 +90,10 @@ func setup_body(g: Node, pos: Vector2) -> void:
 			legs_spr = s
 		else:
 			upper_spr = s
+	if g.level.get("weather", "") == "snow":   # (breath in the cold: after his sprites, drawn over them)
+		var br := Breath.new()
+		br.setup(self)
+		add_child(br)
 
 
 ## A silhouette copy of him on a layer above the buildings, shown while he's hidden.

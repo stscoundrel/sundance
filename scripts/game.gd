@@ -50,6 +50,7 @@ var player: Player
 var enemies: Array[Enemy] = []
 var civilians: Array[Civilian] = []
 var doors := PackedVector2Array()   # doorsteps townsfolk can run inside from
+var houses: Array[Dictionary] = []   # a snowbound town's buildings with doors: {type, corner, doors, inside, in, chimney, windows}
 var innocents := 0                  # townsfolk the hero has shot
 var quiet_after := 45.0             # seconds without gunfire or a fight before the town stirs again
 var last_gunfire := -1e9
@@ -265,6 +266,7 @@ func _ready() -> void:
 		Brass.rng.randomize()
 		Enemy.peso_rng.randomize()
 		Enemy.habit_rng.randomize()
+		Enemy.shelter_rng.randomize()
 		peso_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
@@ -297,6 +299,7 @@ func _ready() -> void:
 		Enemy.feud_rng.seed = 107
 		Enemy.peso_rng.seed = 109
 		Enemy.habit_rng.seed = 131
+		Enemy.shelter_rng.seed = 137
 		peso_rng.seed = 113
 	_parse_args()
 	_setup_input()
@@ -886,6 +889,8 @@ func _build_world() -> void:
 	for o in level["objects"]:
 		var spr := _place_object(o["type"], Vector2(o["x"], o["y"]))
 		var og := Vector2(o["x"], o["y"])
+		if level.get("weather", "") == "snow" and meta["objects"][o["type"]].get("doors", []).size() > 0:
+			_add_house(o["type"], og, spr)
 		if o.has("worn"):   # shot up before the stranger ever got here
 			for prop in props:
 				if prop["sprite"] == spr:
@@ -921,10 +926,16 @@ func _build_world() -> void:
 	statics.add_child(edge)
 
 	# doorsteps, nudged onto open ground
+	var hi := 0   # (the houses were added in the same order: theirs are these same doorsteps)
 	for o in level["objects"]:
-		for d in meta["objects"][o["type"]].get("doors", []):
-			var p := Iso.to_screen(Vector2(o["x"] + d[0], o["y"] + d[1]))
+		var ds: Array = meta["objects"][o["type"]].get("doors", [])
+		for i in ds.size():
+			var p := Iso.to_screen(Vector2(o["x"] + ds[i][0], o["y"] + ds[i][1]))
 			doors.append(p if is_free(p) else free_point_near(p, 20.0))
+			if hi < houses.size():
+				houses[hi]["doors"][i] = doors[doors.size() - 1]
+		if not ds.is_empty() and hi < houses.size():
+			hi += 1
 
 	if den.has("sprite"):
 		var d0: Array = meta["objects"][level["reserve"]["den"]]["doors"][0]
@@ -966,6 +977,28 @@ func _add_enemy(kind: String, pos: Vector2, patrol: PackedVector2Array, facing_d
 	en.died.connect(_on_enemy_died)
 	enemies.append(en)
 	return en
+
+
+## A building with a door, in a snowbound town: somewhere to get in out of a squall
+## (Enemy._shelter), with a fire to light (Hearth).
+func _add_house(type: String, g: Vector2, spr: Sprite2D) -> void:
+	var m: Dictionary = meta["objects"][type]
+	var fp := Vector2(m["footprint"][0], m["footprint"][1])
+	var own: Array = shutters.slice(shutters.size() - m.get("shutters", []).size())
+	var windows: Array = []
+	for gl in m.get("glass", []):
+		var i := int(gl.get("shutter", -1))
+		windows.append({"span": gl["span"], "z": gl["z"], "shutter": own[i] if i >= 0 and i < own.size() else null})
+	var doorsteps: Array = []
+	for d in m["doors"]:
+		doorsteps.append(Iso.to_screen(g + Vector2(d[0], d[1])))
+	var c: Array = m.get("chimney", [])
+	var h := {"type": type, "corner": g, "footprint": fp, "doors": doorsteps, "inside": Iso.to_screen(g + fp * 0.5), "in": 0,
+		"chimney": Vector3(c[0], c[1], c[2]) if c.size() == 3 else Vector3.INF, "windows": windows}
+	houses.append(h)
+	var hearth := Hearth.new()
+	hearth.setup(self, h, spr)
+	spr.add_child(hearth)
 
 
 func _place_object(type: String, g: Vector2) -> Sprite2D:

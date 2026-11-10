@@ -105,6 +105,7 @@ def gen_world(meta):
             continue   # (a piece of a chunked model: baked with the whole)
         print("  object", name)
         world.DOORS.clear()
+        world.CHIMNEY.clear()
         world.WINDOWS.clear()
         world.GLAZED.clear()
         world.LANTERNS.clear()
@@ -120,6 +121,8 @@ def gen_world(meta):
                                  "collide": collide, "fade": fade,
                                  "colliders": colliders or [[0, 0, fp[0], fp[1]]],
                                  "doors": _doorsteps(world.DOORS)}
+        if world.CHIMNEY:   # (where the smoke comes out, when there's a fire lit: Hearth)
+            meta["objects"][name]["chimney"] = list(world.CHIMNEY)
         if collide == "wall":   # what a round or a blast lays bare: raw planks, or mud brick
             meta["objects"][name]["paint"] = "adobe" if name in ADOBE else "wood"
         if name in world.FRAGILE:   # each hit a step further gone

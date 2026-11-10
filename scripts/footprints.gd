@@ -63,14 +63,14 @@ func _physics_process(delta: float) -> void:
 	for p in prints:
 		var blow: float = storm / STORM_FILL * (1.0 + (game.clock - float(p["t"])) / STORM_AGE)
 		p["depth"] -= dt * (1.0 / FILL_T + blow)
-	while not prints.is_empty() and prints[0]["depth"] <= 0.0:
-		prints.pop_front()   # (oldest first: and the oldest fill first)
+	if not prints.is_empty() and prints.any(func(p): return p["depth"] <= 0.0):
+		prints = prints.filter(func(p): return p["depth"] > 0.0)   # (the oldest mostly, but a squall's fast on the old)
 	queue_redraw()
 
 
 ## A man on his feet and moving leaves a print every stride.
 func _step(a: Actor) -> void:
-	if a == null or not a.alive or (a is Enemy and (a.downed or not a.revealed)) or (a is Player and a.down):
+	if a == null or not a.alive or (a is Enemy and (a.downed or not a.revealed or a.indoors)) or (a is Player and a.down):
 		return
 	var at := a.global_position
 	if not _last.has(a):
