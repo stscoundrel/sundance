@@ -211,7 +211,7 @@ func _wake() -> void:
 		sleepers.remove_at(i)
 		var at: Vector2 = sl["at"]
 		if not game.is_free(at):
-			at = game.free_point_near(at, 20.0)
+			at = game.free_point_near(at, 20.0, rng)
 		# out in a hurry with a pistol, the rifles left in the rack (all but the boss: his
 		# own gun goes where he goes)
 		var hurry := {} if game.enemy_type(sl["kind"]).get("boss", false) else {"pistols_only": true}

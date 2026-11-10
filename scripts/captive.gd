@@ -191,7 +191,7 @@ func _execute(by: Enemy) -> void:
 	by.desired = dir
 	by.play_action("fire")
 	game.muzzle_flash(by, dir)
-	game.sfx(by.weapon.d["sfx"], by.global_position, 0.0, 0.1)
+	game.sfx(by.weapon.d["sfx"], by.global_position, 0.0, 0.1, rng)
 	game.make_noise(by.global_position, by.weapon.d["noise"], "enemy_shot", by)
 	man.take_hit(5, dir, by)
 	game.stats["captive executed by"] = by.kind

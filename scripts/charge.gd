@@ -7,6 +7,8 @@ extends Node2D
 ## one after another). Once it's going, nothing stops it; nobody gets the blame but
 ## whoever hit it. A ring on the ground shows how far it'll reach.
 
+static var rng := RandomNumberGenerator.new()   # (the sparks and smoke: only looks, but its own dice)
+
 # fuse: s from the hit to the bang; r: the blast's reach; core: nobody lives through it
 const KINDS := {
 	"keg": {"fuse": 1.0, "r": 110.0, "core": 45.0, "top": 11.0},
@@ -73,16 +75,16 @@ func _spit() -> void:
 	puff.position = global_position + Vector2(0, -top)
 	if prop["kind"] == "keg":
 		for i in 4:
-			puff.add(Vector2.ZERO, Vector2(randf_range(-40, 40), -randf_range(30, 90)), randf_range(0.2, 0.4),
-				randf_range(0.6, 1.1), Color(1.0, randf_range(0.7, 0.95), 0.4, 1.0), 0.0, 260.0)
-		puff.smoke(Vector2.ZERO, Vector2(randf_range(-6, 6), -randf_range(10, 25)), randf_range(0.6, 1.0),
-			randf_range(1.5, 2.5), Color(0.82, 0.8, 0.76, 0.35), 2.0, game.WIND)
+			puff.add(Vector2.ZERO, Vector2(rng.randf_range(-40, 40), -rng.randf_range(30, 90)), rng.randf_range(0.2, 0.4),
+				rng.randf_range(0.6, 1.1), Color(1.0, rng.randf_range(0.7, 0.95), 0.4, 1.0), 0.0, 260.0)
+		puff.smoke(Vector2.ZERO, Vector2(rng.randf_range(-6, 6), -rng.randf_range(10, 25)), rng.randf_range(0.6, 1.0),
+			rng.randf_range(1.5, 2.5), Color(0.82, 0.8, 0.76, 0.35), 2.0, game.WIND)
 	else:
 		for i in 3:
-			puff.add(Vector2(randf_range(-10, 10), randf_range(-3, 3)), Vector2(randf_range(-8, 8), -randf_range(25, 55)),
-				randf_range(0.25, 0.5), randf_range(2.0, 3.5), Color(1.0, randf_range(0.45, 0.75), 0.15, 0.9), -3.0)
-		puff.smoke(Vector2(randf_range(-8, 8), -6), Vector2(randf_range(-6, 6), -randf_range(25, 45)),
-			randf_range(1.5, 2.5), randf_range(3.0, 4.5), Color(0.2, 0.18, 0.16, 0.45), 4.0, game.WIND)
+			puff.add(Vector2(rng.randf_range(-10, 10), rng.randf_range(-3, 3)), Vector2(rng.randf_range(-8, 8), -rng.randf_range(25, 55)),
+				rng.randf_range(0.25, 0.5), rng.randf_range(2.0, 3.5), Color(1.0, rng.randf_range(0.45, 0.75), 0.15, 0.9), -3.0)
+		puff.smoke(Vector2(rng.randf_range(-8, 8), -6), Vector2(rng.randf_range(-6, 6), -rng.randf_range(25, 45)),
+			rng.randf_range(1.5, 2.5), rng.randf_range(3.0, 4.5), Color(0.2, 0.18, 0.16, 0.45), 4.0, game.WIND)
 	game.world.add_child(puff)
 
 

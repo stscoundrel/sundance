@@ -871,7 +871,7 @@ func _to_a_grave() -> void:
 	mourning = g
 	# beside the mound, a little apart from whoever else is there
 	var spot: Vector2 = g["at"] + Vector2(_rr(-16.0, 16.0), _rr(10.0, 16.0))
-	path = game.find_path(global_position, game.free_point_near(spot, 10.0))
+	path = game.find_path(global_position, game.free_point_near(spot, 10.0, dice))
 	path_i = 0
 	st = St.TO_GRAVE
 

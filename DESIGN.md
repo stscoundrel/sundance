@@ -679,7 +679,7 @@ profile (see Stealth).
 
 **Bandages** (B). He rides in with one, and can pick more up: a dead bandit now and
 then leaves the one he never used (one in five), lying by him; walk over it to take it.
-One at a time: with a bandage on him, the next stays lying there till he's used his. Down on one knee, gun set aside, winding it round: ten seconds, and only
+One at a time: with a bandage on him, the next stays lying there till he's used his (standing on it when he does, he takes it up then). Down on one knee, gun set aside, winding it round: ten seconds, and only
 crouched and still. Moving, firing, reloading, the knife or a hit breaks it off
 (he keeps the bandage, not the time). Done, it gives back two bars (never more than
 he started with), ends a limp and stops the bleeding. The long wait is the point:
@@ -1280,7 +1280,8 @@ carried, which you collect by walking over them.
   the good it does him); officers (rank 2 and up: the coronel, El General) know what
   it means and run clear of its reach. Townsfolk flee. A round stops in a keg; it
   isn't worn down like other cover, and hiding behind one is a poor idea, since the
-  gang shoots the cover he's behind. Kegs aren't mended.
+  gang shoots the cover he's behind. Kegs aren't mended. The sparks and smoke are on their
+  own dice (`Charge.rng`), so a keg burning doesn't move the fight a test replays.
 - **Corner watching**: the gang remembers where the stranger shoots from. Each shot
   is filed under a *spot*, a loose cluster: within ~90 px of its centre or ~50 px of
   any place he's fired from there, so the two corners of a small house, or turning

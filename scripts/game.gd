@@ -262,6 +262,7 @@ func _ready() -> void:
 		Civilian.flirt_rng.randomize()
 		Civilian.wood_rng.randomize()
 		Enemy.warm_rng.randomize()
+		Charge.rng.randomize()
 		litter_rng.randomize()
 		rise_rng.randomize()
 		Hanging.rng.randomize()
@@ -289,6 +290,7 @@ func _ready() -> void:
 		Civilian.flirt_rng.seed = 127
 		Civilian.wood_rng.seed = 139
 		Enemy.warm_rng.seed = 149
+		Charge.rng.seed = 151
 		litter_rng.seed = 47
 		rise_rng.seed = 61
 		Hanging.rng.seed = 53

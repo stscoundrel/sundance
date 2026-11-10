@@ -1437,6 +1437,11 @@ func _at_gallows(delta: float) -> void:
 ## General come out to do it himself): he goes straight there, whatever's flying,
 ## and stays, his gun on nobody but the man. (Captive does the counting.)
 func _at_pole(delta: float) -> void:
+	if reaction == "throw" and stick:
+		_do_reaction(delta)   # (a lit stick in his hand: that first)
+		return
+	if reaction == "rescue":
+		_end_rescue()   # (the man he was going for waits for someone else)
 	reaction = ""
 	pending = ""
 	hiding = false

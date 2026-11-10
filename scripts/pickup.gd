@@ -11,6 +11,7 @@ const CARRY := {"bandage": 1, "dynamite": 1, "peso": 5}   # one of each on him a
 var game: Node
 var kind := "colt"
 var t := 0.0
+var _again := 0.0
 
 
 func setup(g: Node, pos: Vector2, k: String) -> void:
@@ -51,13 +52,20 @@ func _on_body(b: Node) -> void:
 				b.belt[kind] = b.belt.get(kind, 0) + AMOUNT[kind]
 		if kind in CARRY:
 			game.stats[kind + " picked up"] = game.stats.get(kind + " picked up", 0) + 1
-		game.sfx("pickup", null, 0.0, 0.06, game.peso_rng if kind == "peso" else null)   # (the peso's own dice)
+		game.sfx("pickup", null, 0.0, 0.06, game.peso_rng if kind == "peso" else (game.loot_rng if kind in CARRY else null))   # (the peso's own dice; the kit's, the loot's)
 		queue_free()
 
 
 func _process(delta: float) -> void:
 	t += delta
-	queue_redraw()
+	if game.view_rect(12.0).has_point(global_position):   # (the glint's only worth drawing where it's seen)
+		queue_redraw()
+	if kind in CARRY:
+		_again -= delta
+		if _again <= 0.0:
+			_again = 0.25
+			if game.player and overlaps_body(game.player):
+				_on_body(game.player)   # (his hands full when he stepped on it: free again now?)
 
 
 func _draw() -> void:
