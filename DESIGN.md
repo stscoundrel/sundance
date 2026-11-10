@@ -603,6 +603,25 @@ meta) and lamplight shows in the windows, not behind shut shutters, coming up as
 first man goes in and dying away a while after the last comes out. That's the tell:
 smoke and light, and that post's empty. Their own dice (`Enemy.shelter_rng`).
 
+**Campfires and woodcutters** (`scripts/campfire.gd`, Civilian `woodcutter`, Enemy
+"warm"; `tests/test_fires.gd`). Four fires are laid in the snow by the busiest posts,
+two at each gang's end (the map's `campfire` objects: a ring of stones round the ash
+and charred logs, the snow melted back; the flames, the warm glow on the snow, sparks,
+smoke and a crackle are the game's). Each burns down on its own, about three and a
+half minutes from a full stack to cold, flames shrinking as it goes; they start at
+different stages. Now and then (every 1-3 min) a man whose post is within ~150 px of a
+fire that's going walks over and holds his hands out to it for 15-25 s, the gun slung
+("warm" pose), his sight a short narrow wedge on the flames; two at a fire at most;
+then back to his post. A woodcutter works each end (the winter townsman with an axe:
+the "woodcut" set, chopping, an armful of split logs, bent to lay it on): 12-18 s
+splitting logs at his chopping stump (the axe heard), then an armful out to whichever
+of his end's fires is lowest (under 0.85), laid on (half a stack), and back. Between
+them the fires mostly stay lit. The stranger's no business of his, walk right by and
+he keeps at it; only shooting close by sends him in, and he's soon back. Stop him (he's
+an innocent) and his end's fires die one by one: nobody warms at a dead fire, and its
+post is a cold one, its men the quicker to go in out of a squall (0.65, against 0.4).
+Their own dice (`Enemy.warm_rng`, `Civilian.wood_rng`).
+
 **Breath** (`scripts/breath.gd`). Everyone in Silencio, the stranger and the gangs and
 the townsfolk, puffs a little cloud at the mouth every few seconds, drifting off on
 the wind, quicker and bigger after running. It's drawn as part of him, so a wall that

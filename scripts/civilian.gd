@@ -66,7 +66,7 @@ extends Actor
 enum St { IDLE, WALK, FLEE, COWER, SNITCH, GONE, TO_BODY, MEASURE, DRAG, TO_BLESS, BLESS, TO_GRAVE, MOURN,
 	TO_GUN, PICK, HAUL, TO_STUMP, ORATE, TO_SCAR, SURVEY, TO_FIX, FIX, TO_SWEEP, SWEEP, HERD,
 	SHELTER, TO_PADRE, CARRY_IN, TO_PATIENT, TREAT, TO_DOWNED, TEND, TO_PIT, DIG,
-	TO_LOAD, LOAD, TO_WAGON, STOW, BOARD, TO_BEAU, FLIRT }
+	TO_LOAD, LOAD, TO_WAGON, STOW, BOARD, TO_BEAU, FLIRT, CHOP, TO_FIRE, FEED, TO_BLOCK }
 
 const WALK := 18.0
 const RUN := 52.0
@@ -85,7 +85,7 @@ const MURDER_LINES := ["Murderer!", "¡Asesino!", "He shot him down!", "¡Dios m
 const WORK := [St.TO_BODY, St.MEASURE, St.DRAG, St.TO_BLESS, St.BLESS, St.TO_GRAVE, St.MOURN, St.TO_GUN,
 	St.PICK, St.HAUL, St.TO_STUMP, St.ORATE, St.TO_SCAR, St.SURVEY, St.TO_FIX, St.FIX, St.TO_SWEEP, St.SWEEP,
 	St.HERD, St.SHELTER, St.TO_PADRE, St.CARRY_IN, St.TO_PATIENT, St.TREAT, St.TO_DOWNED, St.TEND, St.TO_PIT, St.DIG,
-	St.TO_BEAU, St.FLIRT]
+	St.TO_BEAU, St.FLIRT, St.CHOP, St.TO_FIRE, St.FEED, St.TO_BLOCK]
 const MEASURE_T := 3.5
 const BLESS_T := 4.0
 const MOURN_T := Vector2(20.0, 32.0)
@@ -143,6 +143,16 @@ const BEAU_LINES := ["¡Ay, chula!", "Later, darling. I'm on watch.", "Well, now
 	"Jefe'd skin me.", "Maybe later, sweetheart."]
 const SNUB_LINES := ["Hmph!", "Suit yourself.", "Men."]
 static var flirt_rng := RandomNumberGenerator.new()
+# Silencio's woodcutters ("role": "woodcutter", one at each gang's end): at his stump
+# splitting logs a while, then an armful of them out to whichever of his end's fires
+# is lowest, bent to lay it on, and back. The stranger's no business of his: winter's
+# worry enough. Only shooting close by sends him in (he's "local"), and he's back at
+# it soon after. Their own dice.
+const CHOP_T := Vector2(12.0, 18.0)   # s splitting at the stump
+const SWING := 1.5                    # s a swing of the axe (the "chop" animation)
+const FEED_T := 2.5                   # s bent to the fire laying it on
+const FEED_BELOW := 0.85              # a fire lower than this is worth a trip
+static var wood_rng := RandomNumberGenerator.new()
 
 static var rng := RandomNumberGenerator.new()   # the sister's and the barber's dice (the town's stay as seeded)
 
@@ -230,6 +240,10 @@ var bound := false           # noosed and tied: going nowhere, whatever happens
 var last_words := false      # shot in the middle of a line: what he got out stays over him a moment
 var still := false           # hanged: he's done moving
 var refuge := Vector2.INF    # where he runs once he's loose, if not just the nearest door
+var woodcutter := false
+var end := ""                # (a woodcutter's) whose end of town's fires he keeps
+var block := Vector2.ZERO    # his chopping stump
+var fire: Campfire           # the fire he's taking an armful to
 var flirts := false          # a saloon girl who goes out to the men on guard
 var beau: Enemy              # the man she's sweet-talking (or on her way to)
 var flirt_cd := 0.0
@@ -254,8 +268,11 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		wards.append(Iso.to_screen(Vector2(tdata["ward"][0], tdata["ward"][1])))
 	shy = tdata.get("shy", false)
 	flirts = tdata.get("flirts", false)
+	woodcutter = tdata.get("role", "") == "woodcutter"
 	flirt_cd = flirt_rng.randf_range(FLIRT_FIRST.x, FLIRT_FIRST.y) if flirts else 0.0
-	if sister or barber or local or shy:
+	if tdata.get("role", "") == "woodcutter":
+		dice = wood_rng
+	elif sister or barber or local or shy:
 		dice = rng
 	elif condemned:
 		dice = Hanging.rng
@@ -304,6 +321,11 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		anim_gun = "grief"
 	elif digger:
 		anim_gun = "spade"
+	elif woodcutter:
+		anim_gun = "woodcut"   # the axe; an armful of split logs
+		end = tdata.get("end", "")
+		var b: Array = tdata.get("block", [])
+		block = Iso.to_screen(Vector2(b[0], b[1])) if b.size() == 2 else pos
 	elif condemned:
 		anim_gun = "bound"       # hands tied behind his back
 	elif carrier:
@@ -583,6 +605,8 @@ func _physics_process(delta: float) -> void:
 			_carry(delta)
 		St.TO_BEAU, St.FLIRT:
 			_flirt(delta)
+		St.CHOP, St.TO_FIRE, St.FEED, St.TO_BLOCK:
+			_woodcut(delta)
 	if (carried or load_kind != "") and pose == "":
 		pose = "carry"
 	if velocity.length() > 1.0 and not watching:
@@ -644,6 +668,11 @@ func _idle(delta: float) -> void:
 			_next_grave()
 		return
 	if digger and _next_pit():
+		return
+	if woodcutter:
+		st = St.TO_BLOCK
+		path = game.find_path(global_position, home)
+		path_i = 0
 		return
 	if carrier:
 		if wait <= 0.0:
@@ -1623,6 +1652,66 @@ func _let_go_of_patient() -> void:
 ## those who only mind what's close, nothing near them for a few seconds.
 func _calm() -> bool:
 	return game.clock - near_shot > RETURN_T if local else game.quiet_for() >= game.quiet_after
+
+
+# ------------------------------------------------------------------ the woodcutters
+
+func _woodcut(delta: float) -> void:
+	match st:
+		St.TO_BLOCK:
+			if _follow(walk):
+				st = St.CHOP
+				work_t = 0.0
+				wait = _rr(CHOP_T.x, CHOP_T.y)
+		St.CHOP:
+			velocity = Vector2.ZERO
+			desired = (block - global_position).normalized()
+			pose = "chop"
+			var was := work_t
+			work_t += delta
+			if int((work_t + SWING * 0.5) / SWING) != int((was + SWING * 0.5) / SWING):   # (halfway through a swing it bites)
+				game.sfx("chop", global_position, -6.0, 0.08, dice)   # (the blade going in)
+			if work_t >= wait:
+				fire = _lowest_fire()
+				if fire == null:
+					work_t = 0.0   # (they're all well stacked: split some more)
+					wait = _rr(CHOP_T.x, CHOP_T.y)
+				else:
+					st = St.TO_FIRE
+					path = game.find_path(global_position, _by_the_fire())
+					path_i = 0
+		St.TO_FIRE:
+			pose = "carry"
+			if _follow(walk * 0.85):
+				st = St.FEED
+				work_t = 0.0
+		St.FEED:
+			velocity = Vector2.ZERO
+			pose = "feed"
+			if is_instance_valid(fire):
+				desired = (fire.global_position - global_position).normalized()
+			work_t += delta
+			if work_t >= FEED_T:
+				if is_instance_valid(fire):
+					fire.lay_on()
+				fire = null
+				st = St.TO_BLOCK
+				path = game.find_path(global_position, home)
+				path_i = 0
+
+
+## The fire of his end burning lowest, if any's low enough to be worth the walk.
+func _lowest_fire() -> Campfire:
+	var best: Campfire = null
+	for f in game.fires:
+		if f.end == end and f.fuel < FEED_BELOW and (best == null or f.fuel < best.fuel):
+			best = f
+	return best
+
+
+## Where he stands to lay it on: at the fire's side nearest him.
+func _by_the_fire() -> Vector2:
+	return fire.global_position + (global_position - fire.global_position).normalized() * 13.0
 
 
 # ------------------------------------------------------------------ the saloon girls

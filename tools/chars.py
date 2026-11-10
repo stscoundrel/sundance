@@ -83,7 +83,7 @@ def template_guns():
         need(t["template"], {"undertaker": "tools", "priest": "prayer", "mourner": "grief", "gunsmith": "smith",
                                   "mayor": "mayor", "carpenter": "carpentry", "sweeper": "broom",
                                   "henwife": "broom", "keeper": "keeper", "sister": "nun",
-                                  "barber": "barber", "visitor": "grief", "digger": "spade",
+                                  "barber": "barber", "visitor": "grief", "digger": "spade", "woodcutter": "woodcut",
                                   "condemned": "bound", "leader": "mayor"}.get(t.get("role", ""), "unarmed"))
         if t.get("role") == "condemned":
             need(t["template"], "unarmed")   # (and cut loose, running for it)
@@ -1105,6 +1105,25 @@ def build_upper(look, weapon, up, H=H_REF, with_gun=True, extra=None):
         m += beam(blade + d * 1.3, blade + d * 1.38, 0.03, (150, 112, 70))   # the D grip
         if up.get("dirt"):
             m += ellipsoid(blade + d * 0.06, (0.07, 0.07, 0.04), (92, 64, 42))
+    if up.get("axe") is not None:   # a felling axe: the head at `axe`, the haft down through his hands and past
+        head = np.array(up["axe"], float)
+        grip = np.array(up["hR"], float)
+        d = (grip - head) / np.linalg.norm(grip - head)
+        side = np.cross(d, [0, 0, 1.0])
+        side = side / (np.linalg.norm(side) + 1e-6) if np.linalg.norm(side) > 0.1 else np.array([1.0, 0, 0])
+        bit = np.cross(d, side)
+        m += box(tuple(head - 0.025), tuple(head + 0.025), (96, 94, 92))   # the poll
+        m += frustum(head, head + bit * 0.13, 0.03, 0.05, (128, 126, 124))   # the bit, flaring to the edge
+        m += beam(head - d * 0.03, grip + d * 0.16, 0.016, (150, 112, 70))
+    if up.get("logs"):   # split logs for the fire, an armful across his chest
+        c = (np.array(up["hL"], float) + np.array(up["hR"], float)) / 2 + [0.04, 0, 0.04]
+        for i, (dx, dz, tw) in enumerate(((0.0, 0.0, 0.0), (0.06, 0.05, 0.15), (-0.02, 0.09, -0.1), (0.05, 0.13, 0.05))):
+            ax = np.array([math.sin(tw), 1.0, 0.0])
+            ax /= np.linalg.norm(ax)
+            p0 = c + [dx, 0, dz] - ax * 0.2
+            m += frustum(p0, p0 + ax * 0.4, 0.045, 0.045, (104, 76, 54), caps=False)
+            m += ellipsoid(p0, (0.012, 0.044, 0.044), (196, 160, 112))
+            m += ellipsoid(p0 + ax * 0.4, (0.012, 0.044, 0.044), (196, 160, 112))
     if up.get("towel"):   # a bar towel over his arm
         h = np.array(up["hL"], float)
         m += box(tuple(h + [-0.05, -0.04, -0.12]), tuple(h + [0.04, 0.04, 0.02]), (232, 228, 214))
@@ -1398,6 +1417,21 @@ def _key_poses(w):
         k["dig_c"] = dict(eL=V(0.1, 0.28, 0.34), hL=V(0.18, 0.22, 0.48), eR=V(0.06, -0.12, 0.3),
                           hR=V(0.12, 0.06, 0.3), spade=V(0.3, 0.62, 0.62), lean=0.05, nod=0.1, twist=0.35)
         return k
+    if w == "woodcut":
+        # Silencio's woodcutters: the axe on his shoulder; swung up over his head and
+        # down into a log on the block; an armful of the split wood carried off to the
+        # fire, and bent to lay it on
+        k = _key_poses("unarmed")
+        k["aim"] = P(k["aim"], eR=V(0.02, -0.26, 0.3), hR=V(0.1, -0.22, 0.44), axe=V(-0.08, -0.3, 0.86))
+        k["chop_a"] = dict(eL=V(0.06, 0.2, 0.62), hL=V(0.1, 0.04, 0.96), eR=V(0.06, -0.2, 0.6),
+                           hR=V(0.08, -0.04, 0.9), axe=V(-0.26, 0.0, 1.16), lean=-0.1)
+        k["chop_b"] = dict(eL=V(0.2, 0.18, 0.3), hL=V(0.4, 0.03, 0.12), eR=V(0.2, -0.18, 0.28),
+                           hR=V(0.34, -0.03, 0.08), axe=V(0.72, 0.0, -0.36), lean=0.35, nod=0.3)
+        k["carry"] = dict(eL=V(0.1, 0.24, 0.2), hL=V(0.3, 0.16, 0.22), eR=V(0.1, -0.24, 0.2),
+                          hR=V(0.3, -0.16, 0.22), logs=True)
+        k["feed"] = P(k["carry"], hL=V(0.42, 0.16, -0.08), hR=V(0.42, -0.16, -0.08), eL=V(0.2, 0.24, 0.06),
+                      eR=V(0.2, -0.24, 0.06), lean=0.45, nod=0.35)
+        return k
     if w == "barber":
         # the barber-surgeon: his bag in hand; binding a man up where he stands, and
         # down on one knee over one lying in the dirt
@@ -1582,6 +1616,10 @@ def _shared_poses(k):
     # a call of nature: the gun put by, both hands low in front, head bowed (Enemy.NATURE)
     k["relieve"] = dict(eL=V(0.08, 0.22, 0.28), hL=V(0.2, 0.05, 0.04), eR=V(0.08, -0.22, 0.28),
                         hR=V(0.2, -0.05, 0.04), gun=None, nod=0.35)
+    # at a campfire: the gun slung, both hands held out low to the flames, rubbed (Enemy, "warm")
+    k["warm"] = dict(eL=V(0.14, 0.22, 0.26), hL=V(0.38, 0.09, 0.22), eR=V(0.14, -0.22, 0.26),
+                     hR=V(0.38, -0.09, 0.22), gun=None, nod=0.3, lean=0.1)
+    k["warm_b"] = P(k["warm"], hL=V(0.36, 0.04, 0.24), hR=V(0.36, -0.04, 0.24))
     if "gun2" in low:   # a man with two guns flinches and cowers with both
         for name in ("point_half", "point", "flinch_half", "hit_l", "hit_gut", "smoke", "smoke_b"):
             k[name].pop("gun2", None)
@@ -1666,7 +1704,7 @@ def upper_anims(w):
     def add(name, poses, fps, loop=False, events=None):
         a[name] = {"poses": poses, "fps": fps, "loop": loop, "events": events or {}}
     add("aim", [k["aim"]], 1, True)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case", "strongbox", "mgun", "mgcarry"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "woodcut", "bound", "rifles", "case", "strongbox", "mgun", "mgcarry"):
         add("fire", [k["kick"], lerp_pose(k["kick"], k["aim"], 0.4), k["aim"]], 12)
     if w == "unarmed":
         pass
@@ -1702,6 +1740,11 @@ def upper_anims(w):
                        k["beckon_b"], lerp_pose(k["beckon_a"], k["beckon_b"], 0.5)], 5, True)
         add("drag", [k["drag"]], 1, True)
         add("bless", [k["bless_a"], k["bless_b"], k["bless_c"], k["bless_d"]], 2.5, True)
+    elif w == "woodcut":
+        a_, b_ = k["chop_a"], k["chop_b"]
+        add("chop", [a_, a_, lerp_pose(a_, b_, 0.6), b_, b_, lerp_pose(b_, a_, 0.5)], 4, True)
+        add("carry", [k["carry"]], 1, True)
+        add("feed", [k["feed"]], 1, True)
     elif w == "spade":
         a_, b_, c_ = k["dig_a"], k["dig_b"], k["dig_c"]
         add("dig", [a_, a_, lerp_pose(a_, b_, 0.5), b_, b_, lerp_pose(b_, c_, 0.5), c_, lerp_pose(c_, a_, 0.5)], 4, True)
@@ -1823,12 +1866,13 @@ def upper_anims(w):
         kick = P(sky, hR=V(0.06, -0.2, 1.06), gun=G((0.02, -0.2, 1.02), (-0.15, 0.0, 1.0)))
         add("salute", [lerp_pose(k["aim"], sky, 0.5), sky, sky, kick, kick, sky, sky, lerp_pose(sky, k["aim"], 0.5)], 6)
     add("stab", [k["stab_a"], k["stab_b"], k["stab_b"], lerp_pose(k["stab_b"], k["aim"], 0.5)], 12)
-    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "bound", "rifles", "case", "strongbox", "mgun", "mgcarry"):
+    if w not in ("unarmed", "tools", "prayer", "grief", "smith", "mayor", "carpentry", "broom", "keeper", "nun", "barber", "spade", "woodcut", "bound", "rifles", "case", "strongbox", "mgun", "mgcarry"):
         add("bandage", [k["band_a"], k["band_a"], lerp_pose(k["band_a"], k["band_b"], 0.5), k["band_b"], k["band_b"],
                         lerp_pose(k["band_b"], k["band_a"], 0.5)], 4, True)
         add("haul", [k["haul"]], 1, True)
         add("smoke", [k["smoke"], k["smoke"], k["smoke"], k["smoke_b"]], 1.5, True)
         add("relieve", [k["relieve"]], 1, True)
+        add("warm", [k["warm"], k["warm_b"]], 1.2, True)
         # 7 fps: it leaves his hand on frame 4, Enemy.WINDUP (0.57 s) after lighting
         add("throw", [k["light"], k["light"], lerp_pose(k["light"], k["wind"], 0.6), k["wind"], k["lob"],
                       lerp_pose(k["lob"], k["aim"], 0.4), lerp_pose(k["lob"], k["aim"], 0.8)], 7)

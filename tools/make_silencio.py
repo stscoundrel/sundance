@@ -164,6 +164,8 @@ TOWNSFOLK = [
     {"kind": "snowbound_woman", "x": 31.2, "y": 16.2, "facing": NORTH, "palette": 0}, # at the church door
     {"kind": "snowbound_woman", "x": 26.4, "y": 50.6, "facing": NORTH, "palette": 1}, # by her woodpile
     {"kind": "snowbound_woman", "x": 15.6, "y": 51.0, "facing": E, "palette": 0},     # at her cabin, the outlaws' end
+    {"kind": "woodcutter", "x": 5.3, "y": 43.3, "facing": NORTH, "palette": 0, "end": "outlaws", "block": [5.3, 42.5]},   # at his stump
+    {"kind": "woodcutter", "x": 50.9, "y": 45.1, "facing": NORTH, "palette": 1, "end": "hunters", "block": [50.9, 44.3]},  # (each feeds his own end's fires)
     {"kind": "winter_girl", "x": 25.2, "y": 29.9, "facing": S, "palette": 0},         # on the saloon's porch, in furs
     {"kind": "winter_girl", "x": 27.8, "y": 29.9, "facing": S, "palette": 2},         # (both gangs drink there)
 ]
@@ -191,6 +193,10 @@ LINES = {"outlaws": [[25.0, 31.5], [37.0, 18.5], [37.0, 47.5]],
 # the bounty hunters' down the valley at the far corner: fewer of them, better armed.
 CAMPS = {"outlaws": {"name": "the camp behind the lake", "x": 6.0, "y": 0.6, "count": 10},
          "hunters": {"name": "the camp down the valley", "x": 63.3, "y": 47.5, "count": 5}}
+# Campfires by the busiest posts, two at each gang's end (Campfire), and the woodcutter
+# at each end who keeps them fed from his chopping stump (Civilian "woodcutter").
+FIRES = [("outlaws", 15.6, 31.9), ("outlaws", 8.6, 44.8),    # on the street by the hideout; by the trappers south-west
+         ("hunters", 48.2, 32.6), ("hunters", 48.6, 42.6)]   # before the jail; by the manhunter's post south
 HORSE = ("horse", 34.0, 61.6)
 HORSE_AT = [35.15, 62.1]
 
@@ -199,6 +205,7 @@ BUILDING_KINDS = {k for k, *_ in BUILDINGS_AT}
 
 def main():
     objects = [{"type": k, "x": x, "y": y} for k, x, y in BUILDINGS_AT + PROPS + PINES + [HORSE]]
+    objects += [{"type": "campfire", "x": x, "y": y, "end": end} for end, x, y in FIRES]
     solid = layout.check(N, objects, ENEMIES + TOWNSFOLK + ENTRIES + HOLDOUTS + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")])
     posts = layout.make_posts(N, STREETS, solid, ENEMIES, PLAYER, BUILDING_KINDS)
     layout.write("silencio.json", {

@@ -81,7 +81,7 @@ func _plan() -> void:
 			check(game.player.shout == "...", "his line should be '...', was '%s'" % game.player.shout)
 			game.player.process_mode = Node.PROCESS_MODE_DISABLED   # (out of it from here)
 			step = "still"
-			check(game.civilians.size() == 9, "9 townsfolk (two of them the saloon girls), got %d" % game.civilians.size())
+			check(game.civilians.size() == 11, "11 townsfolk (two saloon girls, two woodcutters), got %d" % game.civilians.size())
 			woman = _folk_at(31.2, 16.2)
 			check(woman.shy and woman.kind == "snowbound_woman", "the woman at the church door should be shy")
 			var by := woman.global_position + woman.facing * 60.0

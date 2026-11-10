@@ -590,6 +590,12 @@
         "palettes": [
           {"coat": [64, 58, 52], "vest": [86, 74, 60], "shirt": [190, 182, 166], "accent": [120, 44, 38], "trousers": [58, 54, 50], "boots": [44, 34, 28], "hat": [70, 62, 52], "band": [40, 36, 32], "skin": [206, 156, 124], "hair": [110, 80, 50]},
           {"coat": [44, 48, 56], "vest": [70, 64, 58], "shirt": [176, 170, 160], "accent": [150, 140, 120], "trousers": [50, 48, 50], "boots": [36, 28, 24], "hat": [50, 46, 44], "band": [30, 28, 26], "skin": [196, 140, 108], "hair": [60, 44, 32]}]},
+      "woodcutter": {"name": "Woodcutter", "template": "townsman_winter", "role": "woodcutter", "local": true,
+        "nerve": [0.3, 0.8], "snitch": 0.0, "wander": 0,
+        "shouts": {"flee": ["Not now, not now!", "Lord!"], "chop": ["...", "Cold enough for you?", "Hah!"]},
+        "palettes": [
+          {"coat": [64, 58, 52], "vest": [86, 74, 60], "shirt": [190, 182, 166], "accent": [120, 44, 38], "trousers": [58, 54, 50], "boots": [44, 34, 28], "hat": [70, 62, 52], "band": [40, 36, 32], "skin": [206, 156, 124], "hair": [110, 80, 50]},
+          {"coat": [44, 48, 56], "vest": [70, 64, 58], "shirt": [176, 170, 160], "accent": [150, 140, 120], "trousers": [50, 48, 50], "boots": [36, 28, 24], "hat": [50, 46, 44], "band": [30, 28, 26], "skin": [196, 140, 108], "hair": [60, 44, 32]}]},
       "snowbound_woman": {"name": "Townswoman", "template": "widow", "shy": true, "nerve": [0.0, 0.4], "snitch": 0.0, "wander": 20,
         "shouts": {"flee": ["Oh, my Lord!", "My children!", "Help!"], "shy": ["...", "Lord keep us."]},
         "palettes": [

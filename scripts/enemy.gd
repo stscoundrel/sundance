@@ -388,6 +388,19 @@ var shelter_until := INF     # game.clock: out again (the squall over, a while b
 var out_at := INF            # game.clock: out to the shooting
 var called_to := Vector2.INF # where the shooting was
 
+# Warming up (Silencio's campfires: see Campfire): now and then a man whose post is
+# near a fire that's going walks over and holds his hands out to it a while, the gun
+# slung and his eyes on the flames, then back to his post. Two at a fire at most. A
+# post whose fire has gone out is a cold one: come a squall, its men are the quicker
+# to go in out of it. Their own dice.
+const WARM_NEAR := 150.0                 # px from his post: the fire he'll go to
+const WARM_EVERY := Vector2(60.0, 180.0) # s between warmings
+const WARM_T := Vector2(15.0, 25.0)      # s at it
+const SHELTER_COLD := 0.65               # chance he goes in out of a squall, his fire out
+static var warm_rng := RandomNumberGenerator.new()
+var warm_at := INF           # game.clock of his next warming
+var warm_fire: Campfire = null
+
 
 ## Everything that makes this bandit who he is comes from his type in
 ## data/enemies.json (merged over the defaults, then any per-placement overrides).
@@ -562,7 +575,7 @@ func half_fov() -> float:
 
 ## How much his mind's on watching: (reach, width) of his eyes, cut down while he's
 ## busy with something else (stooped for a peso, a saloon girl at his elbow,
-## lighting up, or at the wall).
+## lighting up, at the wall, or his hands out to a fire).
 func eyes() -> Vector2:
 	if st == St.ERRAND and errand == "peso" and errand_t > 0.0:
 		return Vector2(0.45, 0.6)
@@ -570,7 +583,7 @@ func eyes() -> Vector2:
 		return Vector2(0.3, 0.45)
 	if smoke_t >= 0.0 and st == St.GUARD:
 		return Vector2(0.35, 0.5)
-	if st == St.ERRAND and errand == "nature" and errand_t > 0.0:
+	if st == St.ERRAND and errand in ["nature", "warm"] and errand_t > 0.0:
 		return Vector2(0.3, 0.45)
 	return Vector2.ONE
 
@@ -1561,6 +1574,8 @@ func _errand(delta: float) -> void:
 			_nature_errand(delta)
 		"shelter":
 			_shelter_errand()
+		"warm":
+			_warm_errand(delta)
 		_:
 			_go_back()
 
@@ -1624,6 +1639,8 @@ func _habits(delta: float) -> bool:
 		nature_at = game.clock + habit_rng.randf_range(NATURE_EVERY.x, NATURE_EVERY.y)
 		if _go_off_for_nature():
 			return true
+	if not game.fires.is_empty() and _think_warm():
+		return true
 	if game.clock >= smoke_at and game.clock > puff_until and has_anim(_upper_key("smoke")):
 		smoke_t = 0.0
 		game.stats["smokes"] = game.stats.get("smokes", 0) + 1
@@ -1759,7 +1776,8 @@ func _think_shelter() -> void:
 	if i < 0 or i == shelter_rolled or game.snowfall.storm < 0.3:
 		return
 	shelter_rolled = i
-	if not can_be_lured() or game.war or suspicion > 0.3 or alarm_role != "" or shelter_rng.randf() >= SHELTER:
+	if not can_be_lured() or game.war or suspicion > 0.3 or alarm_role != "" \
+			or shelter_rng.randf() >= (SHELTER_COLD if _cold_post() else SHELTER):
 		return
 	var best := SHELTER_REACH
 	for h in game.houses:
@@ -1814,6 +1832,67 @@ func _indoors() -> void:
 		return
 	if game.clock >= out_at or (out_at == INF and game.clock >= shelter_until):
 		_come_out()
+
+
+## A post with a fire by it that's gone out: a cold one.
+func _cold_post() -> bool:
+	var f := _post_fire()
+	return f != null and not f.lit()
+
+
+## The fire near his post, if there is one.
+func _post_fire() -> Campfire:
+	for f in game.fires:
+		if f.global_position.distance_to(home) < WARM_NEAR:
+			return f
+	return null
+
+
+## Time to warm his hands, if there's a fire going by his post with room at it.
+func _think_warm() -> bool:
+	var f := _post_fire()
+	if f == null or not has_anim(_upper_key("warm")):
+		return false
+	if warm_at == INF:
+		warm_at = game.clock + warm_rng.randf_range(WARM_EVERY.x * 0.3, WARM_EVERY.y)
+		return false
+	if game.clock < warm_at or not f.lit():
+		return false
+	warm_at = game.clock + warm_rng.randf_range(WARM_EVERY.x, WARM_EVERY.y)
+	var at_it := 0
+	for e in game.enemies:
+		if e.alive and e.st == St.ERRAND and e.errand == "warm" and e.warm_fire == f:
+			at_it += 1
+	if at_it >= 2:
+		return false
+	warm_fire = f
+	st = St.ERRAND
+	errand = "warm"
+	errand_t = 0.0
+	errand_len = warm_rng.randf_range(WARM_T.x, WARM_T.y)
+	var side := (home - f.global_position).normalized().rotated(warm_rng.randf_range(-0.9, 0.9))
+	errand_at = f.global_position + side * 20.0
+	errand_face = -side
+	path_to(errand_at)
+	game.stats["warmings"] = game.stats.get("warmings", 0) + 1
+	return true
+
+
+func _warm_errand(delta: float) -> void:
+	if not is_instance_valid(warm_fire) or not warm_fire.lit():
+		errand = ""   # (gone out on him)
+		_go_back()
+		return
+	if errand_t <= 0.0 and global_position.distance_to(errand_at) > 5.0 and not follow_path(walk):
+		return
+	velocity = Vector2.ZERO
+	desired = (warm_fire.global_position - global_position).normalized()
+	pose = "warm"
+	errand_t += delta
+	if errand_t >= errand_len:
+		errand = ""
+		errand_t = 0.0
+		_go_back()
 
 
 ## Heard something from in by the stove: he'll be out to it, once he's got his coat on.

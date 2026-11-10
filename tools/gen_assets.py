@@ -1293,6 +1293,26 @@ def gen_sfx(meta):
         pops = [(sd + frng.uniform(0.0, 0.08), highpass(frng.normal(0, 1, int(SR * 0.006)), 2500) * frng.uniform(0.3, 0.7))
                 for _ in range(4)]
         write(take, room(place(0.9, [(0.0, scratch * 0.8), (sd, flare * 1.4)] + pops), frng, 0.03, 0.15), meta, 0.45)
+    # An axe biting into a log on the block: the dull thock of the blade going in, a
+    # crack as the wood splits, the halves knocking down. Three takes.
+    arng2 = np.random.default_rng(101)
+    for take in ("chop", "chop_2", "chop_3"):
+        hit = place(0.15, [(0.0, thunk(arng2.uniform(160, 220), 0.03) * 1.6),
+                           (0.0, knock(arng2, arng2.uniform(500, 700), 0.02) * 1.2)])
+        tt = t_of(0.05)
+        crack = highpass(arng2.normal(0, 1, len(tt)), 1800) * np.exp(-tt / 0.01)
+        drop = knock(arng2, arng2.uniform(350, 450), 0.03) * 0.5
+        write(take, room(place(0.6, [(0.0, hit), (0.02, crack * 0.7), (arng2.uniform(0.22, 0.3), drop)]), arng2, 0.05, 0.25),
+              meta, 0.6, 1.3)
+    # A campfire going: a low breathy roar and the snap of the wood, a couple of
+    # seconds of it, played over and over (Campfire).
+    krng = np.random.default_rng(102)
+    ft = t_of(2.4)
+    roar = lowpass(krng.normal(0, 1, len(ft)), 380) * (0.7 + 0.3 * np.sin(2 * np.pi * 0.7 * ft))
+    snaps = [(krng.uniform(0.0, 2.3), highpass(krng.normal(0, 1, int(SR * 0.004)), 2200) * krng.uniform(0.4, 1.0))
+             for _ in range(14)]
+    fade = np.minimum(1.0, np.minimum(ft / 0.15, (2.4 - ft) / 0.15))
+    write("crackle", place(2.4, [(0.0, roar * fade * 0.5)] + snaps), meta, 0.4)
 
 
 def main():

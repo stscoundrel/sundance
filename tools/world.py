@@ -2274,6 +2274,27 @@ def stump(seed=0):
     return m
 
 
+def campfire():
+    """A fire laid in the snow by a guard post (Silencio's): a ring of stones round
+    black ash and the charred ends of split logs leant together. The flames are the
+    game's (Campfire); this is what's left when they're out. Not in SNOWY: the snow's
+    melted back off it."""
+    m = Cloud()
+    c = np.array([0.45, 0.45, 0.0])
+    m += ellipsoid(c + [0, 0, 0.0], (0.4, 0.4, 0.03), (52, 46, 42))   # ash and wet earth
+    for i in range(9):
+        a = i / 9 * 2 * math.pi + 0.2
+        r = 0.4 + 0.03 * math.sin(i * 2.3)
+        g = 110 + 20 * math.sin(i * 1.7)
+        m += ellipsoid(c + [math.cos(a) * r, math.sin(a) * r, 0.05], (0.09, 0.08, 0.07), (g, g - 4, g - 10))
+    for i in range(4):   # the logs, leant in to a point over the middle, their ends burnt black
+        a = i / 4 * 2 * math.pi + 0.5
+        foot = c + [math.cos(a) * 0.3, math.sin(a) * 0.3, 0.03]
+        m += beam(foot, c + [0, 0, 0.26], 0.035, (64, 46, 34))
+        m += beam(c + [math.cos(a) * 0.08, math.sin(a) * 0.08, 0.2], c + [0, 0, 0.27], 0.036, (26, 22, 20))
+    return m
+
+
 def strongbox():
     """The outlaws' gold: a strongbox of dark oak bound in iron, a brass padlock on
     the hasp. Heavy: a man carries it in both arms."""
@@ -2486,6 +2507,7 @@ BUILDINGS = {
     "reeds": (lambda: reeds(0), (0.75, 0.75), "none", False, None),
     "reeds_b": (lambda: reeds(1), (0.75, 0.75), "none", False, None),
     "stump": (lambda: stump(0), (0.6, 0.6), "cover", False, None),
+    "campfire": (campfire, (0.9, 0.9), "none", False, None),
     "strongbox": (strongbox, (0.65, 0.45), "none", False, None),
     "horse": (horse, (2.3, 1.0), "cover", False, [[0.0, 0.3, 2.3, 0.75]]),
 }

@@ -50,6 +50,7 @@ var player: Player
 var enemies: Array[Enemy] = []
 var civilians: Array[Civilian] = []
 var doors := PackedVector2Array()   # doorsteps townsfolk can run inside from
+var fires: Array[Campfire] = []   # a snowbound town's campfires (see Campfire)
 var houses: Array[Dictionary] = []   # a snowbound town's buildings with doors: {type, corner, doors, inside, in, chimney, windows}
 var innocents := 0                  # townsfolk the hero has shot
 var quiet_after := 45.0             # seconds without gunfire or a fight before the town stirs again
@@ -259,6 +260,8 @@ func _ready() -> void:
 		Wounds.rng.randomize()
 		Civilian.rng.randomize()
 		Civilian.flirt_rng.randomize()
+		Civilian.wood_rng.randomize()
+		Enemy.warm_rng.randomize()
 		litter_rng.randomize()
 		rise_rng.randomize()
 		Hanging.rng.randomize()
@@ -284,6 +287,8 @@ func _ready() -> void:
 		Wounds.rng.seed = 41
 		Civilian.rng.seed = 43
 		Civilian.flirt_rng.seed = 127
+		Civilian.wood_rng.seed = 139
+		Enemy.warm_rng.seed = 149
 		litter_rng.seed = 47
 		rise_rng.seed = 61
 		Hanging.rng.seed = 53
@@ -891,6 +896,12 @@ func _build_world() -> void:
 		var og := Vector2(o["x"], o["y"])
 		if level.get("weather", "") == "snow" and meta["objects"][o["type"]].get("doors", []).size() > 0:
 			_add_house(o["type"], og, spr)
+		if o["type"] == "campfire":   # a fire laid by the posts, burning (each at its own stage, so they don't all go out at once)
+			var fire := Campfire.new()
+			var ffp: Array = meta["objects"]["campfire"]["footprint"]
+			fire.setup(self, Iso.to_screen(og + Vector2(ffp[0], ffp[1]) * 0.5), o.get("end", ""), [1.0, 0.7, 0.85, 0.55][fires.size() % 4])
+			world.add_child(fire)
+			fires.append(fire)
 		if o.has("worn"):   # shot up before the stranger ever got here
 			for prop in props:
 				if prop["sprite"] == spr:
