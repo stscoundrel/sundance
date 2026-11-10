@@ -93,6 +93,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_drag.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_peso.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_flirt.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_habits.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_snowcover.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_menu.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_hanging.gd

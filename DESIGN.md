@@ -570,8 +570,10 @@ in, and each reason for blame on its own.
 **Footprints** (`scripts/footprints.gd`). Everyone walking the snow leaves boot
 prints, a stride (8 px) apart, left and right: the stranger, both gangs. Not on the
 trodden streets (one more set is nothing among the rest) and not on the ice. They
-fill in as it snows, in a minute of the steady snow and three times as fast in a
-squall, fading as they go (drawn five times a second, only those on screen). The
+fill in as it snows, in half a minute of the steady snow, fading as they go (and
+are a lead for half of that: a man tracking him has to keep up, or lose him). A
+squall blows them over fast, the oldest first (the steady snow's had longer at
+those): at its worst a fresh print's gone in about 10 s, and the older ones sooner (drawn five times a second, only those on screen). The
 stranger's are a trail, as his blood is: each goes on `game.trails` (marked
 "print", the same dictionary, filling there as it fills here), and a guard who sees
 fresh ones follows them ("Tracks. Fresh ones."); half filled in, they're no lead.
@@ -584,6 +586,18 @@ ice is ground like any other; anything it does (going through it, a blast breaki
 it under the gang) waits on the user. `tests/test_silencio.gd` checks the snow
 on everything, the pond at the edge, the gangs and their alarms, the ways from the
 horse, and a quiet spell.
+
+**Drifts** (`scripts/drifts.gd`; `tests/test_snowcover.gd`). A body left lying out in
+the snow slowly goes under: patches of white settling on him (the lit parts first),
+then all of him, a drift his own shape (the palette shader's `snow`). About four
+minutes in the steady snow, six times as fast in the worst of a squall (40 s). Once
+he's under he's as good as buried: nobody finds him (the undertaker's `buried`), and
+the stranger can't haul him out. The blood under him fills in at the same pace (a
+pool left where he was dragged from as well, and with it the empty-pool lead the
+gang would follow), and the gun he dropped goes under with him, cartridges and all.
+Hauling a body shakes the snow off it; let it lie again and it starts over. So in
+Silencio a body dragged off the street and left through a squall is gone. On game
+time; no dice.
 
 ## Controls
 

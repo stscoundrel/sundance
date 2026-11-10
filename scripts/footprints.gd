@@ -3,8 +3,8 @@ extends Node2D
 ## Boot prints in the snow (Silencio's, with its weather: see Snowfall). Everyone
 ## leaves them: the stranger, both gangs. Not on the trodden streets, where one
 ## more set is nothing among the rest, and not on the ice. They fill in as the snow
-## comes down, in a minute or so of the steady snow and three times as fast in a
-## squall, fading as they go.
+## comes down, in half a minute of the steady snow, fading as they go. A squall
+## blows them over fast, the oldest first (the steady snow's had longer at those).
 ##
 ## The stranger's are a trail the gang can follow, as they follow his blood: each
 ## of his prints goes into `game.trails` too (marked "print", the same dictionary,
@@ -12,8 +12,11 @@ extends Node2D
 ## more. Theirs are only to look at.
 
 const STRIDE := 8.0       # px between one boot's print and the other's
-const FILL_T := 60.0      # s for a print to fill in the steady snow
-const STORM_FILL := 3.0   # as many times faster in the worst of a squall
+const FILL_T := 30.0      # s for a print to fill in the steady snow (a lead for half of it: a man
+                          # tracking him has to keep up, or lose him)
+const STORM_FILL := 15.0  # s: the worst of a squall alone blows a fresh print over in this
+                          # (10 s with the steady snow on top)...
+const STORM_AGE := 30.0   # ...and every this many seconds older it is, it fills as fast again over
 const LEAD := 0.5         # a print filled further than this is no lead to follow
 const TICK := 0.2         # s between fillings (and redraws)
 const MAX := 6000         # prints kept, the oldest filling first anyway
@@ -54,10 +57,12 @@ func _physics_process(delta: float) -> void:
 	_tick -= delta
 	if _tick > 0.0:
 		return
-	var fill: float = (TICK - _tick) / FILL_T * (1.0 + (STORM_FILL - 1.0) * (game.snowfall.storm if game.snowfall else 0.0))
+	var dt := TICK - _tick
+	var storm: float = game.snowfall.storm if game.snowfall else 0.0
 	_tick = TICK
 	for p in prints:
-		p["depth"] -= fill
+		var blow: float = storm / STORM_FILL * (1.0 + (game.clock - float(p["t"])) / STORM_AGE)
+		p["depth"] -= dt * (1.0 / FILL_T + blow)
 	while not prints.is_empty() and prints[0]["depth"] <= 0.0:
 		prints.pop_front()   # (oldest first: and the oldest fill first)
 	queue_redraw()

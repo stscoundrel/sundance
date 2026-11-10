@@ -56,6 +56,7 @@ var last_gunfire := -1e9
 var last_gunfire_at := Vector2.INF
 var director: Director = null   # a level's waves, if it has any
 var snowfall: Snowfall = null   # a snowy map's weather (see Snowfall), if it has any
+var drifts: Drifts = null       # and the snow covering the dead (see Drifts)
 var footprints: Footprints = null   # and the tracks everyone leaves in its snow
 var sight := 1.0                # of a man's sight the weather leaves him (Snowfall: snow, a squall)
 var wind_player: AudioStreamPlayer
@@ -1213,6 +1214,9 @@ func _build_overlay() -> void:
 		footprints = Footprints.new()
 		footprints.setup(self)
 		add_child(footprints)
+		drifts = Drifts.new()
+		drifts.setup(self)
+		add_child(drifts)
 
 	hud_layer = CanvasLayer.new()
 	hud_layer.layer = 10
@@ -2305,7 +2309,7 @@ func lay_pool(a: Actor) -> void:
 	s.modulate.a = 0.0
 	decals.add_child(s)
 	if a is Enemy:
-		blood_pools.append({"at": a.global_position, "body": a, "known": []})
+		blood_pools.append({"at": a.global_position, "body": a, "known": [], "sprite": s})
 	var land := a.anim("full/" + a._death)
 	var t: float = land["frames"][0].size() / float(land["fps"]) * 0.8
 	var tw := create_tween()
