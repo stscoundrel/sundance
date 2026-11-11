@@ -52,7 +52,8 @@ godot --headless --path . --fixed-fps 60 -s tests/test_pickups.gd   # one, outpu
   (every Cruz Verde test sets it, but test_captive), `no_waves` (the Paso Esperanza tests of
   the place and the cargo set it; test_federales doesn't), and at the funeral `no_coffin`
   (he starts walking about), `no_sermon` (in the coffin, the lid open to blows at once),
-  `nails`, `record` (a `Funeral.RECORDS` name, or a dictionary).
+  `nails`, `record` (a `Funeral.RECORDS` name, or a dictionary), `record_file` (where his kept
+  record goes; under `fixed_seed` nothing is kept without it, so tests never touch the player's).
 - A test that passes alone but fails in the suite is almost always the wall clock
   leaking into the game (see above), not luck: find it. test_perf is left out of the
   suite; it needs a quiet machine.

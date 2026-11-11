@@ -119,10 +119,12 @@ func _esc() -> void:
 	game._unhandled_input(_key(KEY_ESCAPE))
 	check(game.state == "levels", "Esc on the title should go to the picker (%s)" % game.state)
 	game._unhandled_input(_key(KEY_ESCAPE))
-	check(game.state == "levels" and game.level_pick == game.levels.size(),
+	check(game.state == "levels" and game.level_pick == game.way_out(),
 		"Esc on the picker should go to its way out (%d)" % game.level_pick)
-	var out: Rect2 = game.hud._row(game.levels.size())
-	check(game.hud.level_hit(out.get_center() + game.hud.menu_at()) == game.levels.size(), "the way out should take a click")
+	var out: Rect2 = game.hud._pick_rect(game.way_out())
+	check(game.hud.level_hit(out.get_center() + game.hud.menu_at()) == game.way_out(), "the way out should take a click")
+	var forget: Rect2 = game.hud._pick_rect(game.levels.size())
+	check(game.hud.level_hit(forget.get_center() + game.hud.menu_at()) == game.levels.size(), "forgetting his record should take a click")
 	game.pick_level(0)   # (the town already loaded: on to the guns)
 	check(game.state == "loadout", "picking San Miguel should go on to the guns (%s)" % game.state)
 	game._unhandled_input(_key(KEY_ESCAPE))

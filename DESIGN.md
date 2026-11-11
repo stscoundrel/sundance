@@ -660,7 +660,7 @@ see him buried, and the padre reads his life over the coffin. When it's done, th
 sermon will be his record from those towns: a nail in the lid for every sin named,
 and a good enough man breaks out on them. A bad one is buried (he lived by the gun,
 he died by the gun). Built in phases. Phase 1, the place, phase 2, out of the
-coffin, and phase 3, the burial, are done; his record kept for real is to come.
+coffin, phase 3, the burial, and phase 4, his record, are done.
 
 - **The burial ground.** A wide valley under a grey sky, after the rain (Sad Hill's
   great round cemetery, Django's mud). Eight rings of graves, crosses mostly,
@@ -747,17 +747,34 @@ coffin, and phase 3, the burial, are done; his record kept for real is to come.
   that's his time to hammer his way out, and if he does he climbs up out of the
   hole. With 8 nails or more the lid won't give at all ("THE LID WON'T GIVE"). The
   earth in, he's buried: a fresh grave with its cross, and the level's lost, "HE
-  LIVED BY THE GUN, and by the gun he died." Until phase 4 keeps his record for
-  real it's one of `Funeral.RECORDS` (good, middling, bad, worst: `--record=NAME`,
-  the level's `"record"`, else good).
+  LIVED BY THE GUN, and by the gun he died."
+- **His record** (`scripts/record.gd`; `tests/test_record.gd`). What he did in each
+  town, kept in `user://record.json` across sittings. Only a win counts: each town
+  won writes over what it said before (a loss, or a town left halfway, leaves the
+  last win standing). A town keeps what it asked of him (San Miguel the condemned
+  man saved or hanged, Cruz Verde the captive, Paso Esperanza the carriers dead,
+  Silencio whether both its gangs died to the last man) and what any town does: the
+  innocents he shot, the wounded he finished in the dirt while they weren't shooting
+  back, the men he shot as they dragged or bound up their wounded, and the priests
+  who died, however they died. The towns add up for the padre; one never won he says
+  nothing of. Finishing a wounded man and shooting a man helping his own flash on
+  screen as they happen ("A MAN IN THE DIRT", "HE WAS HELPING HIS OWN": "the padre
+  will hear of it"), as shooting a townsman always has ("AN INNOCENT"). The level
+  picker's last row has "FORGET WHAT HE DID" beside the way out: asked twice, it
+  wipes the lot. `--record=NAME` (good, middling, bad, worst) still tries the
+  funeral on a made-up one; the tests never touch the player's record (nothing is
+  kept under `fixed_seed`, unless a test names its own file, `record_file`).
 - **The wake** (the map's `"wake"`). Everyone came to see him buried and to eat and
-  drink after, so nobody's on his guard. Every guest's reflex is 1.6 times slower.
+  drink after, so nobody's on his guard. Every guest's reflex is twice as slow. The
+  seven at the grave listen to the padre while the stranger's in the box: eyes on
+  the grave, no looking about and no wandering off (`Enemy.listening`), their view
+  cones put away till he's out.
   Gunfire, a comrade's shout or the crash of the lid doesn't send a man into the
   fight (unless it's right beside him, within 90 px: then it's his fight too): it
-  puzzles him ("?", "Somebody celebrating?"), and 3 to 5 s later he walks
+  puzzles him ("?", "Somebody celebrating?"), and 4 to 6.5 s later he walks
   over, unhurried, to see what it was. Seeing the stranger, or being shot at, still
-  starts the fight, but the first sight of a dead man walking stops a man for 1 to
-  2 s, staring, before he goes for his gun. Its own dice (`Enemy.wake_rng`, `Coffin.rng`).
+  starts the fight, but the first sight of a dead man walking stops a man for 2 to
+  3.5 s, struck dumb in his own way as the mourners are, before he goes for his gun. Its own dice (`Enemy.wake_rng`, `Coffin.rng`).
 - **Their long guns** (`scripts/arms.gd`; the map's `"arms"`; `tests/test_arms.gd`).
   Nobody wears a rifle to a burial: every guest has only his pistol on him
   (`"pistols_only"`; a type with none has a Navy, baked for it by `template_guns`),

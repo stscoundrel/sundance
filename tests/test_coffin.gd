@@ -1,7 +1,8 @@
 extends SceneTree
 ## Out of the coffin (A Good Man Never Dies, phase 2):
 ##   inside  - he starts in his coffin by the grave: unseen (nobody spots him, however
-##             long they look), and going nowhere.
+##             long they look), and going nowhere; the mourners listening, eyes on
+##             the grave, their cones put away till he's out.
 ##   blows   - two nails: the lid takes 2 x 2 blows, a nail giving every second;
 ##             some of the guests by the grave hear the knocking, each turning to
 ##             it once, puzzled, and nobody draws.
@@ -67,6 +68,7 @@ func _process(delta: float) -> bool:
 			check(c.inside and p.in_coffin and not p.visible, "not in the coffin")
 			check(p.global_position.distance_to(at_start) < 1.0, "he moved in the box")
 			check(game.enemies.all(func(e): return not e.sees_player and e.st != Enemy.St.COMBAT), "seen in his coffin")
+			check(_mourners().all(func(e): return e.listening() and not e.cone.visible), "a mourner looking about, not listening")
 			step = "blows"
 			check(c.blows_left() == 4 and c.nails_left() == 2, "two nails: %d blows, %d nails" % [c.blows_left(), c.nails_left()])
 			for i in 2:
@@ -85,6 +87,7 @@ func _process(delta: float) -> bool:
 			check(c.lid != null and c.sprite.texture.resource_path.contains("his_coffin_open"), "the lid's still on the box")
 			check(int(game.stats.get("struck dumb", 0)) >= 6, "struck dumb: %s" % game.stats.get("struck dumb", 0))
 			check(_mourners().all(func(e): return e.reaction == "agape"), "a mourner who wasn't struck dumb")
+			check(_mourners().all(func(e): return not e.listening()), "still listening with him out of the box")
 			t0 = t
 			phase = 1
 		1:
@@ -98,6 +101,7 @@ func _process(delta: float) -> bool:
 			check(stares.size() >= 3, "they all take it the same way: %s" % stares.keys())
 			step = "struck dumb"
 			check(_mourners().all(func(e): return e.reaction == "agape"), "a mourner came to too soon")
+			check(_mourners().all(func(e): return e.cone.visible), "a mourner's cone never came back")
 			check(game.enemies.all(func(e): return e.since_shot > 1.4), "somebody fired in the first second and a half")
 			check(game.enemies.all(func(e): return e.st != Enemy.St.COMBAT or e.reaction == "agape"), "somebody's fighting already: %s" % [
 				game.enemies.filter(func(e): return e.st == Enemy.St.COMBAT and e.reaction != "agape").map(func(e): return e.kind)])

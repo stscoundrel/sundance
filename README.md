@@ -123,6 +123,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_coffin.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arms.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_sermon.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_buried.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_record.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_general.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arsenal.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_champion.gd
@@ -154,7 +155,7 @@ godot --path . -s tests/profile.gd                        # where a big fight's 
 ```
 
 Flags go after `--`: `--skip-title` (no title or loadout screen; rides in with Colt, coach gun and Winchester, or `--guns=navy,spencer`, one a slot), `--level=ID` (a level from `data/levels.json`, e.g. `san_miguel_35`), `--at=GX,GY` (start tile), `--bot` (autopilot that shoots
-and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--alert` (trigger the close-up), `--rattle` (near-miss every bandit once), `--freeze` (no title, bandits stand still), `--nails=N` (nails in his coffin lid at the funeral before the sermon adds any; `--at` starts him out of it), `--record=good|middling|bad|worst` (the record the funeral's sermon reads), `--shot=PATH --shot-time=SECONDS` (save a
+and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--alert` (trigger the close-up), `--rattle` (near-miss every bandit once), `--freeze` (no title, bandits stand still), `--nails=N` (nails in his coffin lid at the funeral before the sermon adds any; `--at` starts him out of it), `--record=good|middling|bad|worst` (a made-up record for the funeral's sermon, in place of the one his wins have kept), `--shot=PATH --shot-time=SECONDS` (save a
 screenshot and quit). The window opens maximized; a screenshot at a set size needs a small
 script that calls `DisplayServer.window_set_mode(WINDOW_MODE_WINDOWED)` and
 `window_set_size` before loading the scene (headless runs always play at 1280x720).

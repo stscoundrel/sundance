@@ -13,7 +13,8 @@ var menu: Array[String] = []    # Esc's menu, while it's up (the town stands sti
 var menu_pick := 0
 var levels: Array = []          # the ones the picker shows
 var level_entry: Dictionary = {}
-var level_pick := 0             # the picker's cursor
+var level_pick := 0             # the picker's cursor (past the towns: forgetting his record, then the way out)
+var forget_armed := false       # "FORGET WHAT HE DID" taken once: again, and it's gone
 var posse_size := Posse.SIZE    # how few left before they band together (fewer, in a smaller gang)
 const META_PATH := "res://assets/meta.json"
 const ENEMIES_PATH := "res://data/enemies.json"
@@ -195,7 +196,9 @@ var hens: Array[Chicken] = []
 var fragile: Array[Dictionary] = []   # {kind, at, state, last, sprite, body, (glass: a, b, z, shutter)}
 var props: Array[Dictionary] = []   # {kind, sprite, body, g, fp, hp, state, cells, covers}
 var _solid := {}                    # cell -> how many things block it   # {centre, points (newest first), peeks, kills, last_t}                # {door, sprite, squad, heat, rallied, cause, spawn_t, runner, runner_cd, fight_t, alarm}   # fresh graves: {at, mourners, done}
-var innocent_t := 0.0               # the town's disapproval, on screen for a moment
+var verdict_t := 0.0                # a sin of his on screen for a moment ("AN INNOCENT"...)
+var verdict_title := ""
+var verdict_sub := ""
 const GHOST_THREAT := Color(1.0, 0.36, 0.26, 0.5)   # a known bandit behind a building
 const GHOST_TOWN := Color(0.86, 0.82, 0.72, 0.5)    # anyone else: townsfolk, or so they seem
 var buildings: Array[Dictionary] = []
@@ -616,10 +619,12 @@ func _levels_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		match event.keycode:
 			KEY_UP, KEY_W:
-				level_pick = posmod(level_pick - 1, levels.size() + 1)
+				level_pick = posmod(level_pick - 1, way_out() + 1)
+				forget_armed = false
 				sfx("close", null, -14.0)
 			KEY_DOWN, KEY_S:
-				level_pick = posmod(level_pick + 1, levels.size() + 1)
+				level_pick = posmod(level_pick + 1, way_out() + 1)
+				forget_armed = false
 				sfx("close", null, -14.0)
 			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 				pick_level(level_pick)
@@ -633,10 +638,19 @@ func _levels_input(event: InputEvent) -> void:
 			pick_level(i)
 
 
+## The picker's last row: after the towns, forgetting his record, then the way out.
+func way_out() -> int:
+	return levels.size() + 1
+
+
 ## This one: on to the guns if it's the town already loaded, else load it (the
-## scene comes back up at the loadout). The row under the towns leaves the game.
+## scene comes back up at the loadout). Under the towns, forgetting what he did (it
+## asks again first), and leaving the game.
 func pick_level(i: int) -> void:
-	if i >= levels.size():
+	if i == levels.size():
+		forget_record()
+		return
+	if i >= way_out():
 		get_tree().quit()
 		return
 	var l: Dictionary = levels[i]
@@ -669,7 +683,8 @@ func _escape() -> void:
 		"title":
 			_to_levels()
 		"levels":
-			level_pick = levels.size()
+			level_pick = way_out()
+			forget_armed = false
 			sfx("close", null, -14.0)
 		"loadout":
 			_to_levels()
@@ -2101,7 +2116,7 @@ func _physics_process(delta: float) -> void:
 		if finish_cd <= 0.0:
 			finish_cd = 3.0
 			call_finishers()
-	innocent_t = maxf(0.0, innocent_t - delta)
+	verdict_t = maxf(0.0, verdict_t - delta)
 	dyn_cd = maxf(0.0, dyn_cd - delta)
 	_pick_up_guns()
 	_update_den(delta)
@@ -2548,11 +2563,53 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 		sfx("twang", null, -6.0, 0.0)
 
 
-## His record from the other towns, for the sermon (see Funeral): for now one of the
-## made-up ones, the tests' meta or --record=NAME, else the level's (or "good").
+## His record from the other towns, for the sermon (see Funeral): what he did in the
+## towns he's won (see Record), or one of the made-up ones (the tests' meta, or
+## --record=NAME).
 func _record() -> Dictionary:
-	var r = Engine.get_meta("record", _args.get("record", level.get("record", "good")))
-	return r if r is Dictionary else Funeral.RECORDS.get(r, Funeral.RECORDS["good"])
+	var r = Engine.get_meta("record", _args.get("record", ""))
+	if r is Dictionary:
+		return r
+	return Funeral.RECORDS.get(r, {}) if r != "" else Record.merged(Record.towns())
+
+
+## "FORGET WHAT HE DID": once to ask, twice to wipe every town's record (see Record).
+func forget_record() -> void:
+	level_pick = levels.size()
+	if not forget_armed:
+		forget_armed = true
+		sfx("close", null, -8.0)
+		return
+	forget_armed = false
+	Record.forget()
+	hud.toast("Forgotten. He rides in with a clean name.")
+	sfx("bell", null, -8.0, 0.0)
+
+
+## A town won: what he did in it, kept for his funeral (see Record). Not the funeral
+## itself, nor the towns kept for the tests.
+func _keep_record() -> void:
+	if level.has("coffin") or level_entry.get("hidden", false):
+		return
+	var rec := {"innocents": innocents, "downed_shot": int(stats.get("wounded men shot", 0)),
+		"rescuers_shot": int(stats.get("rescuers shot", 0)), "priests_dead": int(stats.get("priests dead", 0))}
+	if hanging:
+		rec["condemned"] = "hanged" if hanging.state in ["hanged", "shot"] else "saved"
+	if captive:
+		rec["captive"] = "dead" if captive.state == "dead" else "saved"
+	if cargo:
+		rec["carriers_dead"] = cargo.lost_carriers
+	var named: Array = level.get("gangs", [])
+	if named.size() == 2:
+		rec["silencio_wiped"] = alive_in(named[0]) == 0 and alive_in(named[1]) == 0
+	Record.keep(level_entry["id"], rec)
+
+
+## One of his sins, on screen a moment: what it was, and who'll hear of it.
+func verdict(title: String, sub: String) -> void:
+	verdict_title = title
+	verdict_sub = sub
+	verdict_t = 3.5
 
 
 ## At the funeral: enough of them dead (Enemy.BATTLE) that it's plainly a battle.
@@ -2573,6 +2630,9 @@ func _on_enemy_died(e: Actor) -> void:
 	var side := gang_of(e)
 	gangs[side]["fallen"] += 1
 	deaths.append(clock)
+	if e is Enemy and e.died_helping and e.killer is Player:
+		stats["rescuers shot"] = stats.get("rescuers shot", 0) + 1   # (on his record: see Record)
+		verdict("HE WAS HELPING HIS OWN", "the padre will hear of it")
 	if battle():
 		for o in enemies:   # (it's a battle now, not a funeral: the rest think of their long guns)
 			if o.alive and o.st == Enemy.St.COMBAT:
@@ -2641,6 +2701,7 @@ func _on_enemy_died(e: Actor) -> void:
 	if alive_enemies() == 0 and state == "play" and not coming and cargo == null:   # (the cargo's won at the wagon)
 		state = "won"
 		ridden[level_entry["id"]] = true
+		_keep_record()
 		end_time = Time.get_ticks_msec()
 		hud.show_message("THE TOWN IS QUIET" if not player.down else "FROM THE DIRT", _tally().trim_suffix("   -   "), onward())
 		sfx("win", null, -2.0, 0.0)
@@ -2676,8 +2737,10 @@ func _on_civilian_died(c: Actor) -> void:
 	var murder: bool = c.killer != null and c.killer.is_player
 	if murder:
 		innocents += 1
-		innocent_t = 3.5
 		stats["innocents"] = innocents
+		verdict("AN INNOCENT", "the town will remember")
+	if c is Civilian and c.priest:   # (however it came about: on his record, see Record)
+		stats["priests dead"] = stats.get("priests dead", 0) + 1
 	for o in civilians:
 		if o != c:
 			if murder:
@@ -2695,6 +2758,7 @@ func end_level(won: bool, title: String, sub := "") -> void:
 	end_time = Time.get_ticks_msec()
 	if won:
 		ridden[level_entry["id"]] = true
+		_keep_record()
 	else:
 		Engine.time_scale = 0.35
 	hud.show_message(title, sub if sub != "" else _tally().trim_suffix("   -   "), onward())

@@ -207,7 +207,7 @@ func _snitch() -> bool:
 		if c.alive and not c.gone():
 			victim = c
 	victim.take_hit(5, Vector2.RIGHT, game.player)
-	check(game.innocents == 1 and game.innocent_t > 0.0, "shooting a townsman should count as an innocent")
+	check(game.innocents == 1 and game.verdict_t > 0.0 and game.verdict_title == "AN INNOCENT", "shooting a townsman should count as an innocent")
 	scene = 2
 	_new_town()
 	return false

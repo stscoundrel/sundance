@@ -219,6 +219,7 @@ var groan_t := 0.0
 var rescuer: Enemy = null    # who's come for him
 var medic: Civilian = null   # the barber-surgeon, if he's come for him instead
 var rescuing: Enemy = null   # (as the rescuer) who he's come for
+var died_helping := false    # shot down as he dragged or bound up a wounded man (on the stranger's record)
 var rescue_phase := ""       # "go", "drag", "treat"
 var fetching: Strongbox = null   # (Silencio's trappers) the strongbox he's taking home
 var fetch_phase := ""            # "go", "carry"
@@ -262,7 +263,7 @@ static var henry_rng := RandomNumberGenerator.new()
 # front of his eyes: FLEE_ARM, the more the more frightened he is), or once it's
 # plainly a battle (BATTLE of them dead: ARM_CHANCE, once a man), and comes back
 # with it.
-const WAKE_SLOW := 1.6
+const WAKE_SLOW := 2.0
 const BATTLE := 3
 const ARM_CHANCE := 0.5
 const FLEE_ARM := 0.5
@@ -271,9 +272,9 @@ const ARM_T := 1.2           # s at the saddle, getting it out
 const ARM_LIMIT := 20.0      # s he'll keep at it before he gives it up (no way through, say)
 const WAKE_NEAR := 90.0      # px: gunfire this close is a fight beside him, not a puzzle
 const ARM_LINES := ["¡Mi rifle!", "Get the rifles!", "¡A los caballos!", "I need my long gun!", "¡Las armas!"]
-const PUZZLE_T := Vector2(3.0, 5.0)
+const PUZZLE_T := Vector2(4.0, 6.5)
 const FUMBLE := Vector2(0.8, 1.6)
-const FIRST_SIGHT := Vector2(1.0, 2.0)
+const FIRST_SIGHT := Vector2(2.0, 3.5)
 # How a man takes it, struck dumb: pointing at the dead man risen, cowering, a flinch,
 # stumbling back a step or two, or simply frozen where he stands.
 const STARES := {"point": 0.3, "cower": 0.2, "flinch": 0.15, "back": 0.2, "": 0.15}
@@ -294,6 +295,7 @@ var arm_after := false       # struck dumb on the way to it: he goes on for it w
 var stare := ""              # how he stands there struck dumb (STARES)
 var stare_t := 0.0
 var heard_knock := false
+var _was_listening := false  # (his cone put away while he listens at the grave: see listening)
 # A man who can afford it may have the new Spencer pump gun for his coach gun (data
 # "pump": the chance; El Jefe's). Nobody's does unless his type says. Its own dice.
 static var pump_rng := RandomNumberGenerator.new()
@@ -1016,6 +1018,12 @@ func _mark(s: String) -> void:
 	marker_t = 2.0
 
 
+## At the grave while the stranger's in his coffin: a mourner listening to the padre,
+## his eyes on the grave, not looking about (no cone to show for it).
+func listening() -> bool:
+	return tdata.get("mourning", false) and game.coffin != null and game.coffin.inside and st == St.GUARD
+
+
 ## Puzzled at the funeral: a "?", and in a while he goes over to see (the latest
 ## thing he heard, if there's more by then).
 func puzzled(pos: Vector2) -> void:
@@ -1475,6 +1483,10 @@ func _physics_process(delta: float) -> void:
 	if indoors:
 		_indoors()
 		return
+	var l := listening()
+	if l != _was_listening:   # (his cone away while he listens, back the moment it's over)
+		_was_listening = l
+		cone.visible = not l and revealed
 	if game.snowfall and game.state == "play":
 		_think_shelter()
 	weapon.update(delta)
@@ -1622,6 +1634,9 @@ func _guard(delta: float) -> void:
 		follow_path(walk)
 		return
 	velocity = Vector2.ZERO
+	if listening():
+		desired = home_facing   # (at the grave, head bowed: no looking about, no wandering off)
+		return
 	desired = home_facing.rotated(sin(t * 0.5) * 0.7)
 	if _habits(delta):
 		return
@@ -2564,6 +2579,7 @@ func _fumble_stick() -> void:
 func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
 	var s := stick
 	stick = null
+	died_helping = reaction == "rescue" and rescuing != null
 	_end_rescue()
 	super(from_dir, shooter, how)
 	if s:
@@ -2802,7 +2818,8 @@ func finish(by: Actor) -> void:
 	if by and by.is_player and gasping:
 		_log("shot with his gun up")   # (fair: he was shooting back)
 	elif by and by.is_player:
-		game.stats["wounded men shot"] = game.stats.get("wounded men shot", 0) + 1   # (hidden, for now)
+		game.stats["wounded men shot"] = game.stats.get("wounded men shot", 0) + 1   # (on his record: see Record)
+		game.verdict("A MAN IN THE DIRT", "the padre will hear of it")
 	_log("finished")
 
 

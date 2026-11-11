@@ -112,8 +112,8 @@ func _draw() -> void:
 		_draw_status(p)
 		_draw_weapon(p)
 		_draw_crosshair(p)
-	if game.innocent_t > 0.0:
-		_draw_innocent()
+	if game.verdict_t > 0.0:
+		_draw_verdict()
 	if eyes_on:
 		_draw_eyes()
 	if message != "":
@@ -565,11 +565,12 @@ func _draw_coffin() -> void:
 		draw_rect(Rect2(r.position, Vector2(w * f.filled(), 4)), Color(0.45, 0.32, 0.22, 0.95))
 
 
-## The town's verdict when the hero shoots one of its own.
-func _draw_innocent() -> void:
-	var a: float = clamp(game.innocent_t, 0.0, 1.0)
-	_text(Vector2(0, 52), "AN INNOCENT", 14, Color(0.9, 0.3, 0.22, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	_text(Vector2(0, 64), "the town will remember", 8, Color(INK, a * 0.9), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+## A sin of his, the moment it's done: a townsman shot ("AN INNOCENT"), a wounded man
+## finished in the dirt, a man shot dragging his wounded (see game.verdict).
+func _draw_verdict() -> void:
+	var a: float = clamp(game.verdict_t, 0.0, 1.0)
+	_text(Vector2(0, 52), game.verdict_title, 14, Color(0.9, 0.3, 0.22, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	_text(Vector2(0, 64), game.verdict_sub, 8, Color(INK, a * 0.9), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 func _draw_message() -> void:
@@ -597,13 +598,23 @@ func _row(i: int) -> Rect2:
 	return Rect2(ROW.position + Vector2(0, i * (ROW.size.y + 6)), ROW.size)
 
 
-## Which level row is under the cursor on the picker, or -1 (the row past the
-## towns is the way out of the game).
+## Which level row is under the cursor on the picker, or -1 (past the towns,
+## forgetting his record and the way out, side by side on the last row).
 func level_hit(pos: Vector2) -> int:
-	for i in game.levels.size() + 1:
-		if _row(i).has_point(pos - menu_at()):
+	for i in game.way_out() + 1:
+		if _pick_rect(i).has_point(pos - menu_at()):
 			return i
 	return -1
+
+
+## Picker row `i`: a town's, or one of the two half-rows under them.
+func _pick_rect(i: int) -> Rect2:
+	var n: int = game.levels.size()
+	if i < n:
+		return _row(i)
+	var r := _row(n)
+	var w := (r.size.x - 30) / 2
+	return Rect2(r.position + Vector2(10 + (i - n) * (w + 10), 4), Vector2(w, 20))
 
 
 func _draw_levels() -> void:
@@ -622,17 +633,21 @@ func _draw_levels() -> void:
 		draw_rect(r, BRASS if on else Color(0.3, 0.22, 0.15), false, 2.0 if i == game.level_pick else 1.0)
 		_text(r.position + Vector2(10, 13), "[%d]  %s" % [i + 1, l["name"]], 12, Color(0.95, 0.75, 0.35) if on else INK, font)
 		_text(r.position + Vector2(36, 25), l.get("note", ""), 8, Color(INK, 0.85 if on else 0.55))
-		_text(r.position + Vector2(0, 13), "%d POINTS" % int(l.get("budget", game.BUDGET)), 8,
+		var price := "HIS COLTS" if l.has("guns") else "%d POINTS" % int(l.get("budget", game.BUDGET))   # (no choosing: see game.begin)
+		_text(r.position + Vector2(0, 13), price, 8,
 			Color(0.95, 0.75, 0.35) if on else Color(INK, 0.6), font, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 10)
 		if game.ridden.has(l["id"]):
 			_text(r.position + Vector2(0, 13), "quiet now", 8, Color(0.6, 0.78, 0.5, 0.9 if on else 0.6), null, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 70)
-	var q := _row(game.levels.size())
-	q = Rect2(q.position + Vector2(90, 4), Vector2(q.size.x - 180, 20))
-	var qon: bool = game.level_pick == game.levels.size() or over == game.levels.size()
-	draw_rect(q, Color(0.16, 0.1, 0.07, 0.95) if qon else PANEL)
-	draw_rect(q, BRASS if qon else Color(0.3, 0.22, 0.15), false, 2.0 if game.level_pick == game.levels.size() else 1.0)
-	_text(Vector2(q.position.x, q.position.y + 14), "LEAVE THE TERRITORY", 10, Color(0.95, 0.75, 0.35) if qon else Color(INK, 0.6),
-		font, HORIZONTAL_ALIGNMENT_CENTER, q.size.x)
+	for i in [game.levels.size(), game.way_out()]:
+		var q := _pick_rect(i)
+		var qon: bool = game.level_pick == i or over == i
+		var label := "LEAVE THE TERRITORY"
+		if i == game.levels.size():
+			label = "SURE? ENTER AGAIN" if game.forget_armed else "FORGET WHAT HE DID"
+		draw_rect(q, Color(0.16, 0.1, 0.07, 0.95) if qon else PANEL)
+		draw_rect(q, BRASS if qon else Color(0.3, 0.22, 0.15), false, 2.0 if game.level_pick == i else 1.0)
+		_text(Vector2(q.position.x, q.position.y + 14), label, 10, Color(0.95, 0.75, 0.35) if qon else Color(INK, 0.6),
+			font, HORIZONTAL_ALIGNMENT_CENTER, q.size.x)
 	_text(Vector2(0, 340), "up / down and Enter, a number, or a click      Esc: the way out", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	draw_colored_polygon(PackedVector2Array([mouse, mouse + Vector2(0, 11), mouse + Vector2(3, 8), mouse + Vector2(7, 8)]), BRASS)
 	draw_set_transform(Vector2.ZERO)

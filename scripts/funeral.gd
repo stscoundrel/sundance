@@ -14,8 +14,8 @@ extends Node
 ## does. Filled in, he's buried, and that's the end of him: he lived by the gun, and
 ## by the gun he died.
 ##
-## Until his record is kept for real (phase 4), it's one of the made-up RECORDS: the
-## level's "record", or --record=NAME, or the tests' meta.
+## His record is what he did in the towns he's won (see Record), or one of the
+## made-up RECORDS (--record=NAME, or the tests' meta).
 
 const SERMON_AT := 3.0            # s after he rides in: the padre begins
 const LINE_T := Vector2(2.6, 5.0) # s a line is said for, by its length
@@ -38,7 +38,7 @@ const WEIGHTS := {
 	"rescuers_shot": [2, 1, 2],   # men shot dragging or binding up their wounded
 	"priests_dead": [1, 2, 4],
 }
-# Made-up records, until the real one is kept (phase 4).
+# Made-up records, for trying the funeral out (--record=NAME) and for the tests.
 const RECORDS := {
 	"good": {"condemned": "saved", "captive": "saved", "carriers_dead": 2, "silencio_wiped": false,
 		"innocents": 0, "downed_shot": 1, "rescuers_shot": 0, "priests_dead": 0},
@@ -117,15 +117,19 @@ static func sermon(rec: Dictionary) -> Array[Dictionary]:
 	say.call("We are gathered to bury a stranger.")
 	say.call("None here knew his name.")
 	say.call("Every one of you knew his gun.")
-	say.call("In San Miguel he cut a man down from the rope." if rec.get("condemned") == "saved"
-		else "In San Miguel he let them hang a man.", "condemned")
-	say.call("At Cruz Verde he brought the captive out alive." if rec.get("captive") == "saved"
-		else "At Cruz Verde he left the captive to die.", "captive")
-	var carriers := int(rec.get("carriers_dead", 0))
-	say.call("At Paso Esperanza the carriers all lived." if carriers == 0
-		else "At Paso Esperanza, %d who carried the rifles died." % carriers, "carriers_dead")
-	say.call("At Silencio he left no man standing. For gold." if rec.get("silencio_wiped", false)
-		else "At Silencio he let men live, gold or no gold.", "silencio_wiped")
+	if rec.has("condemned"):   # (a town he's never won: the padre has nothing to say of it)
+		say.call("In San Miguel he cut a man down from the rope." if rec["condemned"] == "saved"
+			else "In San Miguel he let them hang a man.", "condemned")
+	if rec.has("captive"):
+		say.call("At Cruz Verde he brought the captive out alive." if rec["captive"] == "saved"
+			else "At Cruz Verde he left the captive to die.", "captive")
+	if rec.has("carriers_dead"):
+		var carriers := int(rec["carriers_dead"])
+		say.call("At Paso Esperanza the carriers all lived." if carriers == 0
+			else "At Paso Esperanza, %d who carried the rifles died." % carriers, "carriers_dead")
+	if rec.has("silencio_wiped"):
+		say.call("At Silencio he left no man standing. For gold." if rec["silencio_wiped"]
+			else "At Silencio he let men live, gold or no gold.", "silencio_wiped")
 	var inn := int(rec.get("innocents", 0))
 	if inn > 0:
 		say.call("He shot a man who never wore a gun." if inn == 1 else "He shot %d who never wore a gun." % inn, "innocents")
