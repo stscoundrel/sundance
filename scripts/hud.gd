@@ -541,12 +541,28 @@ func _draw_eyes() -> void:
 
 ## Inside his coffin: the nails still holding the lid, and what to do about them
 ## (the world's in plain view: a dark box over it only lost the player his bearings).
+## At the funeral the padre's still speaking until the Amen (E hurries him), the nails
+## going in as he names each sin; then the lid, or the lid that won't give, and the
+## earth going in over him.
 func _draw_coffin() -> void:
-	var n: int = game.coffin.nails_left()
+	var c: Coffin = game.coffin
+	var f: Funeral = game.funeral
+	var n: int = c.nails if (f and not c.can_hammer) or c.locked() else c.nails_left()
 	var row := "NAILS  " + " ".join(PackedStringArray(Array(range(n)).map(func(_i): return "|"))) if n > 0 else "THE LID"
+	var hint := "In your coffin.  E: hammer at the lid"
+	if not c.can_hammer:
+		hint = "The padre is speaking.  E: hurry him on"
+	elif c.locked():
+		row = "THE LID WON'T GIVE"
+		hint = "%d nails in it" % c.nails
 	var y := page.y - 64
 	_text(Vector2(0, y), row, 10, Color(0.85, 0.75, 0.55, 0.9), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	_text(Vector2(0, y + 14), "In your coffin.  E: hammer at the lid", 8, Color(INK, 0.8), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	_text(Vector2(0, y + 14), hint, 8, Color(INK, 0.8), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	if f and f.phase == "fill":   # (the earth going in: how long he has)
+		var w := 120.0
+		var r := Rect2(floorf((page.x - w) / 2), y + 22, w, 4)
+		draw_rect(r, Color(0, 0, 0, 0.5))
+		draw_rect(Rect2(r.position, Vector2(w * f.filled(), 4)), Color(0.45, 0.32, 0.22, 0.95))
 
 
 ## The town's verdict when the hero shoots one of its own.

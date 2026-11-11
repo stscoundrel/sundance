@@ -17,6 +17,13 @@ extends Node2D
 ## out of sight at the horses and the drink, only hear the crash (see the wake in
 ## Enemy). There's no stand-off close-up: the surprise is his, not theirs, and the
 ## seconds are the player's to use.
+##
+## At the funeral proper (see Funeral) the lid can't be tried until the padre's said
+## his Amen (can_hammer), and with Funeral.LOCKED nails in it, it won't give at all.
+## After the Amen it's let down into the grave (lower_to), him in it, and if he
+## breaks out down there he climbs up out of the hole.
+
+signal burst_out
 
 static var rng := RandomNumberGenerator.new()   # (how long each man stares, what he mutters: its own dice)
 
@@ -37,6 +44,12 @@ var sprite: Sprite2D
 var lid: Sprite2D = null
 var _corner := Vector2.ZERO         # the box's corner (tiles)
 var _shake_t := 0.0
+var can_hammer := true              # (at the funeral: not till the Amen)
+var sunk := false                   # let down into the grave
+var _lower_from := Vector2.ZERO
+var _lower_to := Vector2.ZERO
+var _lower_t := -1.0
+var _lower_for := 1.0
 
 
 func setup(g: Node, corner: Vector2, n: int) -> void:
@@ -75,6 +88,19 @@ func shut_in(p: Player) -> void:
 	p.global_position = global_position
 
 
+## Too many nails in it to give, ever (see Funeral).
+func locked() -> bool:
+	return nails >= Funeral.LOCKED
+
+
+## Let down into the grave at `hole` over `secs`, him in it.
+func lower_to(hole: Vector2, secs: float) -> void:
+	_lower_from = global_position
+	_lower_to = hole
+	_lower_for = secs
+	_lower_t = 0.0
+
+
 ## Blows still to come before the lid gives: BLOWS_PER_NAIL a nail, or one kick
 ## for a lid that isn't nailed.
 func blows_left() -> int:
@@ -90,6 +116,16 @@ func _process(delta: float) -> void:
 	if _shake_t > 0.0:   # (the box jumping: a wobble, no dice, the frame rate being what it is)
 		_shake_t -= delta
 		sprite.position = Vector2(sin(_shake_t * 90.0), -absf(sin(_shake_t * 60.0))) * game.tex_scale if _shake_t > 0.0 else Vector2.ZERO
+	if _lower_t >= 0.0 and not sunk:
+		_lower_t += delta
+		var k := clampf(_lower_t / _lower_for, 0.0, 1.0)
+		global_position = _lower_from.lerp(_lower_to, k)
+		sprite.modulate = Color(1, 1, 1, 1.0 - k * k)   # (going down into the dark)
+		if k >= 1.0:
+			sunk = true
+			sprite.visible = false
+	if inside:
+		game.player.global_position = global_position   # (where the box goes, he goes)
 	if inside and game.state == "play" and Input.is_action_just_pressed("knife"):
 		blow()
 
@@ -97,11 +133,15 @@ func _process(delta: float) -> void:
 ## A blow on the lid from inside: the box jumps, a guest close by may hear it, and
 ## every BLOWS_PER_NAIL a nail screeches out. The last one and it's off.
 func blow() -> void:
-	if not inside:
+	if not inside or not can_hammer:
+		return
+	_shake_t = 0.12
+	if locked():   # (it won't give: a dull knock, and the nails hold)
+		game.sfx("wood_hit", global_position, -12.0, 0.15)
+		game.stats["blows on a lid that won't give"] = game.stats.get("blows on a lid that won't give", 0) + 1
 		return
 	var held := nails_left()
 	blows += 1
-	_shake_t = 0.12
 	game.sfx("wood_hit", global_position, -4.0, 0.15)
 	if nails_left() < held:
 		game.sfx("twang", global_position, -10.0, 0.2)   # a nail drawn
@@ -117,6 +157,8 @@ func blow() -> void:
 func burst() -> void:
 	inside = false
 	var p: Player = game.player
+	_lower_t = -1.0
+	sprite.modulate = Color.WHITE
 	sprite.texture = game.tex(game.meta["objects"]["his_coffin_open"]["file"])
 	var lc := _corner + Vector2(-1.8, 0.05)   # (the lid, thrown off past the head of the box)
 	lid = _sprite("coffin_lid", lc)
@@ -137,3 +179,4 @@ func burst() -> void:
 	game.stats["struck dumb"] = stunned
 	game.alerted_once = true   # (the stand-off's spent: no close-up when the first of them comes to)
 	game.make_noise(global_position, 420.0, "crash", p)   # (heard about the valley: not a shot, but something)
+	burst_out.emit()

@@ -3950,9 +3950,24 @@
  "civilians": [
   {
    "kind": "priest",
-   "x": 35.4,
-   "y": 37.6,
-   "facing": 234
+   "x": 32.0,
+   "y": 34.3,
+   "facing": 154,
+   "funeral": "sermon"
+  },
+  {
+   "kind": "carpenter",
+   "x": 33.5,
+   "y": 37.4,
+   "facing": 206,
+   "funeral": "nails"
+  },
+  {
+   "kind": "digger",
+   "x": 30.2,
+   "y": 36.3,
+   "facing": 26,
+   "funeral": "spade"
   },
   {
    "kind": "undertaker",
@@ -4519,7 +4534,11 @@
   31.2,
   37.05
  ],
- "nails": 1,
+ "grave": [
+  30.9,
+  35.0
+ ],
+ "nails": 0,
  "wake": true,
  "arms": [
   {

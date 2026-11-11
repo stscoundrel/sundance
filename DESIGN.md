@@ -659,8 +659,8 @@ The stranger's own funeral. Everyone he crossed in the other four towns has come
 see him buried, and the padre reads his life over the coffin. When it's done, the
 sermon will be his record from those towns: a nail in the lid for every sin named,
 and a good enough man breaks out on them. A bad one is buried (he lived by the gun,
-he died by the gun). Built in phases. Phase 1, the place, and phase 2, out of the
-coffin, are done; the sermon and his record are to come.
+he died by the gun). Built in phases. Phase 1, the place, phase 2, out of the
+coffin, and phase 3, the burial, are done; his record kept for real is to come.
 
 - **The burial ground.** A wide valley under a grey sky, after the rain (Sad Hill's
   great round cemetery, Django's mud). Eight rings of graves, crosses mostly,
@@ -729,6 +729,27 @@ coffin, are done; the sermon and his record are to come.
   fumbles for his gun, 0.8 to 1.6 s more before he can shoot. There's no stand-off
   close-up, then or when they come to (the surprise is his, and those seconds are the
   player's to use). The crash of the lid carries about the valley.
+- **The burial** (`scripts/funeral.gd`; the map's `"grave"`; `tests/test_sermon.gd`,
+  `tests/test_buried.gd`). The padre stands at the head of the grave, the carpenter
+  who made the box kneels at it with his hammer, and a second digger waits with his
+  spade (townsfolk placed with a `"funeral"` part, held to it, `bound`, until it's
+  over or he's out). A few seconds in, the padre reads his life over the coffin, a
+  line at a time in a bubble over his head: who he was, then what he did in each
+  town (his record), then the end of it ("A good man never dies", "May God weigh
+  him kindly", or "He lived by the gun... and by the gun he died"), and "Amen." For
+  each sin named the carpenter drives nails into the lid (`Funeral.WEIGHTS`: the
+  condemned man hanged 1, the captive dead 1, a nail for every four carriers dead
+  up to 3, Silencio's two gangs wiped out 2, each innocent 1 up to 3, downed men
+  finished and men shot helping the wounded a nail a pair up to 2 each, a priest
+  dead 2); a good deed he lets lie. Lying in the box the stranger can only listen
+  (E hurries the padre on). At the Amen the coffin is let down into the grave, him
+  in it, and the digger shovels the earth back in (14 s, a bar under the nails):
+  that's his time to hammer his way out, and if he does he climbs up out of the
+  hole. With 8 nails or more the lid won't give at all ("THE LID WON'T GIVE"). The
+  earth in, he's buried: a fresh grave with its cross, and the level's lost, "HE
+  LIVED BY THE GUN, and by the gun he died." Until phase 4 keeps his record for
+  real it's one of `Funeral.RECORDS` (good, middling, bad, worst: `--record=NAME`,
+  the level's `"record"`, else good).
 - **The wake** (the map's `"wake"`). Everyone came to see him buried and to eat and
   drink after, so nobody's on his guard. Every guest's reflex is 1.6 times slower.
   Gunfire, a comrade's shout or the crash of the lid doesn't send a man into the

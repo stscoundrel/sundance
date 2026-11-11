@@ -232,7 +232,11 @@ ENEMIES = GRAVESIDE + ABOUT
 # Who else came: the padre to say the words, the undertaker and his digger, and a
 # few who came to weep (or to make sure).
 TOWNSFOLK = [
-    {"kind": "priest", "x": 35.4, "y": 31.6, "facing": toward(35.4, 31.6, *C)},
+    # at the grave for the burial: the padre at its head, the carpenter who made the
+    # box kneeling at it with his hammer and nails, a digger with his spade (Funeral)
+    {"kind": "priest", "x": 32.0, "y": 28.3, "facing": S, "funeral": "sermon"},
+    {"kind": "carpenter", "x": 33.5, "y": 31.4, "facing": W, "funeral": "nails"},
+    {"kind": "digger", "x": 30.2, "y": 30.3, "facing": E, "funeral": "spade"},
     {"kind": "undertaker", "x": 9.2, "y": 31.4, "facing": E},
     {"kind": "digger", "x": 14.0, "y": 37.6, "facing": S},
     {"kind": "visitor", "x": 28.2, "y": 23.6, "facing": 90, "palette": 0},
@@ -332,7 +336,8 @@ def main():
         "center": CENTER,
         "posse": False,
         "coffin": [COFFIN[0], round(COFFIN[1] + OY, 2)],
-        "nails": 1,       # (for now: phase 3 drives them in from his record)
+        "grave": [GRAVE[0], round(GRAVE[1] + OY, 2)],   # (its corner: where the coffin goes down, see Funeral)
+        "nails": 0,       # (the sermon drives them in, one for each of his sins: see Funeral)
         "wake": True,     # everyone's here for the funeral and the party after: slow to take alarm
         "arms": arms,     # where their long guns are: every guest has only his pistol on him
     })

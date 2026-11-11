@@ -76,6 +76,7 @@ var mgun: MGun = null           # a machine gun for him, if the map has one
 var minefield: Minefield = null # ground mined round his breastwork, and the plunger, if the map has them
 var strongbox: Strongbox = null # the outlaws' gold to ride off with, if the map has it (Silencio)
 var coffin: Coffin = null       # his own, at his funeral, with him in it (the map's "coffin")
+var funeral: Funeral = null     # the burial as it runs, the sermon and the shovels (the map's "grave")
 var arms: Arms = null           # where the funeral guests left their long guns (the map's "arms")
 var deaths: PackedFloat32Array = []   # game.clock at each of the gang's dead, for "how fast are they falling"
 # A big battle's smoke and chaos (the map's "haze": [range, spread]): the army's guns
@@ -1261,6 +1262,10 @@ func _spawn_actors() -> void:
 		coffin.setup(self, Vector2(level["coffin"][0], level["coffin"][1]), nails)
 		if not _args.has("at") and not Engine.has_meta("no_coffin"):   # (--at, or a test of the place: he's walking about)
 			coffin.shut_in(player)
+			if level.has("grave") and not Engine.has_meta("no_sermon"):   # (a test of the coffin alone: he can try the lid at once)
+				funeral = Funeral.new()
+				add_child(funeral)
+				funeral.setup(self, coffin, Vector2(level["grave"][0], level["grave"][1]), _record())
 	if level.has("strongbox"):
 		strongbox = Strongbox.new()
 		world.add_child(strongbox)
@@ -2432,7 +2437,7 @@ func bury(body: Actor, at: Vector2) -> void:
 	body.set_meta("buried", true)
 	body.remove_meta("claimed_by")
 	stats["burials"] = stats.get("burials", 0) + 1
-	_fresh_grave(at)
+	fresh_grave(at)
 
 
 ## Last night's broken bottles (the level's "litter"), lying where they were dropped:
@@ -2459,7 +2464,7 @@ func fill_grave(gr: Dictionary) -> void:
 	gr["done"] = true
 	gr["sprite"].visible = false
 	stats["graves dug"] = stats.get("graves dug", 0) + 1
-	_fresh_grave(gr["at"])
+	fresh_grave(gr["at"])
 
 
 ## The coffin let down into the hole: the pit now shows its lid.
@@ -2473,7 +2478,7 @@ func lower_coffin(gr: Dictionary) -> void:
 
 ## A heap of fresh earth with the cross at its head, unlike the old graves, and one
 ## for the mourners to come to.
-func _fresh_grave(at: Vector2) -> void:
+func fresh_grave(at: Vector2) -> void:
 	var g := Iso.to_grid(at)
 	var mf: Array = meta["objects"]["mound"]["footprint"]
 	_place_object("mound", g - Vector2(mf[0], mf[1]) * 0.5)
@@ -2541,6 +2546,13 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 	elif now - last_twang > 7.0:
 		last_twang = now
 		sfx("twang", null, -6.0, 0.0)
+
+
+## His record from the other towns, for the sermon (see Funeral): for now one of the
+## made-up ones, the tests' meta or --record=NAME, else the level's (or "good").
+func _record() -> Dictionary:
+	var r = Engine.get_meta("record", _args.get("record", level.get("record", "good")))
+	return r if r is Dictionary else Funeral.RECORDS.get(r, Funeral.RECORDS["good"])
 
 
 ## At the funeral: enough of them dead (Enemy.BATTLE) that it's plainly a battle.
@@ -2676,7 +2688,7 @@ func _on_civilian_died(c: Actor) -> void:
 
 ## A level won or lost by something other than the gang or the stranger dying (the
 ## cargo away, or nobody left to carry it).
-func end_level(won: bool, title: String) -> void:
+func end_level(won: bool, title: String, sub := "") -> void:
 	if state != "play":
 		return
 	state = "won" if won else "lost"
@@ -2685,7 +2697,7 @@ func end_level(won: bool, title: String) -> void:
 		ridden[level_entry["id"]] = true
 	else:
 		Engine.time_scale = 0.35
-	hud.show_message(title, _tally().trim_suffix("   -   "), onward())
+	hud.show_message(title, sub if sub != "" else _tally().trim_suffix("   -   "), onward())
 	sfx("win" if won else "lose", null, -2.0, 0.0)
 
 

@@ -32,6 +32,7 @@ func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
 	Engine.set_meta("level", "funeral")
 	Engine.set_meta("nails", 2)
+	Engine.set_meta("no_sermon", true)   # (the lid alone: see test_sermon for the burial)
 	seed(5)
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)

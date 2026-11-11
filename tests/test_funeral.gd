@@ -11,7 +11,7 @@ extends SceneTree
 ##            federales, Silencio's hunters and outlaws), every one on the same side;
 ##            seven round the grave looking in at it; the padre, the undertaker, his
 ##            digger, three mourners, the two women who cooked the wake and a man of
-##            the town besides.
+##            the town besides, and at the grave the carpenter and a second digger.
 ##   dead   - the digger keeps to his own row (the stranger's grave isn't his to
 ##            fill), and the undertaker buries the day's dead in his own plot, clear
 ##            of the old graves.
@@ -109,7 +109,7 @@ func _guests() -> void:
 	for e in at_grave:
 		var to_grave: Vector2 = Iso.to_screen(C) - e.global_position
 		check(e.facing.dot(to_grave.normalized()) > 0.7, "%s looks away from the grave" % e.kind)
-	check(game.civilians.size() == 9, "townsfolk: %d" % game.civilians.size())
+	check(game.civilians.size() == 11, "townsfolk: %d" % game.civilians.size())
 	check(game.civilians.any(func(c): return c.priest) and game.civilians.any(func(c): return c.undertaker), "no padre or no undertaker")
 
 
