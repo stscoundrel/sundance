@@ -354,8 +354,9 @@ static func choices(slot: String) -> Array:
 	return out
 
 
-## The guns he rides in with (at least one, one a slot), each with its cartridges.
-func arm(guns: Array) -> void:
+## The guns he rides in with (at least one, one a slot), each with its cartridges
+## (none spare, without `spares`: only what's loaded).
+func arm(guns: Array, spares := true) -> void:
 	owned.clear()
 	belt.clear()
 	for slot in ORDER:
@@ -363,7 +364,8 @@ func arm(guns: Array) -> void:
 		weapons[slot] = Weapon.new(slot if mine.is_empty() else mine[0], self)
 		if not mine.is_empty():
 			owned.append(slot)
-			weapons[slot].reserve += RESERVE[mine[0]]
+			if spares:
+				weapons[slot].reserve += RESERVE[mine[0]]
 	current = owned[0]
 	weapon = weapons[current]
 

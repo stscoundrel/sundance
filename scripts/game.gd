@@ -18,6 +18,13 @@ var posse_size := Posse.SIZE    # how few left before they band together (fewer,
 const META_PATH := "res://assets/meta.json"
 const ENEMIES_PATH := "res://data/enemies.json"
 const POST_SHADER := preload("res://shaders/post.gdshader")
+# The grade over the world, by the map's weather (post.gdshader's own defaults are the
+# desert sun): Silencio's snow, cloud, cold and flat; the burial ground's low grey sky
+# after the rain, the colour washed out of it.
+const GRADES := {
+	"snow": {"tint": Vector3(0.97, 1.0, 1.05), "sat": 0.62, "contrast": 0.94, "lift": 0.05},
+	"grey": {"tint": Vector3(0.98, 0.99, 1.02), "sat": 0.6, "contrast": 1.02, "lift": 0.03},
+}
 const LOUD := ["colt", "coach", "rifle", "sharps", "howdah", "spencer", "musket", "bell", "boom"]
 const WIND := Vector2(7, -2)   # px/s drift for smoke and dust
 # How much of the town the screen shows. The art is drawn in whole screen pixels to a
@@ -131,9 +138,9 @@ var dyn_cd := 0.0
 # hit them, look shot up past half, and fall to a heap of boards (no longer cover,
 # nor in anyone's way). A damaged trough leaks. Toughness decides which rounds go
 # straight through (a Winchester through a crate, a Sharps through a barrel too).
-const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33, "wagon_over": 33, "nest_x": 120, "nest_y": 120, "crate_stack": 16,
+const PROP_HP := {"crate": 9, "coffin": 8, "barrel": 12, "trough": 21, "wagon": 33, "wagon_over": 33, "covered_wagon": 33, "nest_x": 120, "nest_y": 120, "crate_stack": 16,
 	"upturned_n": 7, "upturned_s": 7, "upturned_e": 7, "upturned_w": 7, "keg": 1, "dyn_crate": 1}
-const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3, "wagon_over": 3, "nest_x": 3, "nest_y": 3, "crate_stack": 2,
+const PROP_TOUGH := {"crate": 1, "coffin": 1, "barrel": 2, "trough": 3, "wagon": 3, "wagon_over": 3, "covered_wagon": 3, "nest_x": 3, "nest_y": 3, "crate_stack": 2,
 	"upturned_n": 1, "upturned_s": 1, "upturned_e": 1, "upturned_w": 1, "keg": 9, "dyn_crate": 9}
 # Props that go up when hit (see Charge): anyone's round, or a blast close by.
 const EXPLOSIVE := ["keg", "dyn_crate"]
@@ -573,8 +580,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func begin() -> void:
 	if state != "title" and state != "loadout" and state != "levels":
 		return
+	if level_entry.has("guns") and not _args.has("guns") and start_guns == Player.ORDER:   # (his guns are the town's to give, unless a test gave him others)
+		start_guns = level_entry["guns"].duplicate()
+		start_kit = []
+		kit_chosen = true
 	if not start_guns.is_empty():
-		player.arm(start_guns)
+		player.arm(start_guns, level_entry.get("spares", true))
 	if kit_chosen:
 		player.bandages = 1 if "bandage" in start_kit else 0
 		player.sticks = 1 if "dynamite" in start_kit else 0
@@ -724,8 +735,13 @@ func onward() -> String:
 
 
 ## The title card (or the level picker) gives way to choosing his guns.
+## A town that hands him his guns (the burial ground: what's in the coffin with him)
+## skips the choosing and rides straight in.
 func _to_loadout() -> void:
 	state = "loadout"
+	if level_entry.has("guns"):
+		begin()
+		return
 	_fit_budget()
 	hud.hide_title()
 
@@ -917,7 +933,7 @@ func _build_world() -> void:
 			for prop in props:
 				if prop["sprite"] == spr:
 					prop["ours"] = true
-		if o["type"] == "open_grave":
+		if o["type"] == "open_grave" and not o.get("his", false):   # (the stranger's own, at the funeral: not the digger's to fill)
 			open_graves.append({"g": og, "sprite": spr, "at": Iso.to_screen(og + Vector2(1.1, 1.55)),
 				"dug": 0.0, "filled": 0.0, "in": false, "done": false, "digger": null})
 		elif o["type"] in GRAVES and _on_boot_hill(og):
@@ -971,7 +987,7 @@ func _build_world() -> void:
 			good.append(p)
 	cover_points = good
 
-	for i in (0 if level.get("weather", "") == "snow" else 5):   # (no tumbleweed blows through the snow)
+	for i in (0 if level.get("weather", "") in ["snow", "grey"] else 5):   # (no tumbleweed blows through the snow, or the mud)
 		var tw := Tumbleweed.new()
 		tw.setup(self, Iso.to_screen(Vector2(randf_range(0, size), randf_range(0, size))))
 		world.add_child(tw)
@@ -1255,11 +1271,9 @@ func _build_overlay() -> void:
 	mat.shader = POST_SHADER
 	post.material = mat
 	post_layer.add_child(post)
-	if level.get("weather", "") == "snow":   # Silencio: cloud, cold and flat, and the snow coming down out of it
-		mat.set_shader_parameter("tint", Vector3(0.97, 1.0, 1.05))
-		mat.set_shader_parameter("sat", 0.62)
-		mat.set_shader_parameter("contrast", 0.94)
-		mat.set_shader_parameter("lift", 0.05)
+	for k in GRADES.get(level.get("weather", ""), {}):
+		mat.set_shader_parameter(k, GRADES[level["weather"]][k])
+	if level.get("weather", "") == "snow":
 		snowfall = Snowfall.new()
 		snowfall.setup(self)
 		add_child(snowfall)
@@ -3844,7 +3858,7 @@ func trail_lead(e: Enemy, newer: float) -> Dictionary:
 
 # ------------------------------------------------------------------ the town tidies up
 
-const WOOD := ["crate", "barrel", "coffin", "trough", "wagon", "chair", "table", "coop", "hencrate", "sign",
+const WOOD := ["crate", "barrel", "coffin", "trough", "wagon", "covered_wagon", "chair", "table", "coop", "hencrate", "sign",
 	"crate_stack", "upturned_n", "upturned_s", "upturned_e", "upturned_w"]
 const KEEPS := 160.0   # px round the saloon keeper's door: his tables and chairs, not the carpenter's
 const SWEEP_R := 26.0  # px a sweeper's broom clears at a go

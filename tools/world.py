@@ -798,6 +798,35 @@ def wagon():
     return m
 
 
+def covered_wagon():
+    """A wagon under its canvas, the way a family or a gang comes a long way: the
+    bed and wheels of the town's wagon, hoops over it and the cover drawn down."""
+    L, Wd = 3.0, 1.5
+    m = wagon()
+    def canvas(P, N):
+        c = np.tile([206.0, 196, 172], (len(P), 1)) * (0.88 + 0.12 * hash01(np.floor(P[:, 0] * 3)))[:, None]
+        c[P[:, 2] < 1.4] *= 0.9   # (mud splashed up the sides)
+        return c
+    cx, r = Wd / 2, 0.72
+    for k in range(13):   # the hoops' arch, in strips along the bed
+        a0, a1 = math.pi * k / 13, math.pi * (k + 1) / 13
+        p0 = (cx + r * math.cos(a0), 1.15 + 0.85 * math.sin(a0))
+        p1 = (cx + r * math.cos(a1), 1.15 + 0.85 * math.sin(a1))
+        q = quad((0.3, p0[0], p0[1]), (L - 0.6, 0, 0), (0, p1[0] - p0[0], p1[1] - p0[1]), canvas, BSP)
+        q.N = np.where(q.N[:, 2:3] < 0, -q.N, q.N)
+        m += q
+    for x in (0.3, L - 0.3):   # its ends, drawn in round the puckered openings
+        t = Cloud()
+        for k in range(13):
+            a0, a1 = math.pi * k / 13, math.pi * (k + 1) / 13
+            t += tri((x, cx, 1.15), (x, cx + r * math.cos(a0), 1.15 + 0.85 * math.sin(a0)),
+                     (x, cx + r * math.cos(a1), 1.15 + 0.85 * math.sin(a1)), canvas, BSP)
+        t.N[:] = (1 if x > 1 else -1, 0, 0)
+        m += t
+    m += ellipsoid((L - 0.3, cx, 1.55), (0.02, 0.22, 0.28), solid((40, 34, 30)))   # the opening at the back
+    return m
+
+
 def crate_fn(col):
     return planks(col, board=0.2, mud=0)
 
@@ -1063,7 +1092,7 @@ FRAGILE = {
 # ---------------------------------------------------------------- broken props
 
 # Props that shooting wears down: each gets a damaged and a wrecked look.
-BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon", "crate_stack", "wagon_over", "nest_x", "nest_y",
+BREAKABLE = ("crate", "barrel", "coffin", "trough", "wagon", "covered_wagon", "crate_stack", "wagon_over", "nest_x", "nest_y",
              "upturned_n", "upturned_s", "upturned_e", "upturned_w", "keg", "dyn_crate")
 RAW_WOOD = np.array([214, 178, 128], float)   # fresh splinters
 
@@ -1098,7 +1127,7 @@ def wrecked(m, kind, seed):
     """Shot to pieces: a low heap of broken boards where it stood, in its own wood."""
     rng = np.random.default_rng(seed)
     lo, hi = m.P.min(0), m.P.max(0)
-    col = np.array({"trough": (116, 88, 60)}.get(kind, np.median(m.C, axis=0)), float)   # (not the water)
+    col = np.array({"trough": (116, 88, 60), "covered_wagon": (128, 96, 64)}.get(kind, np.median(m.C, axis=0)), float)   # (not the water, not the canvas)
     out = Cloud()
     area = (hi[0] - lo[0]) * (hi[1] - lo[1])
     for _ in range(int(6 + 9 * area)):
@@ -1120,7 +1149,7 @@ def wrecked(m, kind, seed):
                 p1 = (cx + 0.3 * math.cos(t1) + k * 0.12, cy + 0.26 * math.sin(t1), 0.03 + k * 0.03)
                 ring += beam(p0, p1, 0.015, (60, 54, 50))
             out += ring
-    elif kind == "wagon":
+    elif kind in ("wagon", "covered_wagon"):
         out += wheel((lo[0] + 0.7, hi[1] + 0.05, 0.5), 0.52)             # one still standing
         flat = wheel((0, 0, 0), 0.52)
         flat.transform(np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float))   # one lying flat
@@ -1544,6 +1573,157 @@ def stone_circle():
         r = 3.3 + rng.uniform(-0.1, 0.1)
         x, y = c + r * math.cos(a), c + r * math.sin(a)
         m += box((x - 0.18, y - 0.18, 0.0), (x + 0.18, y + 0.18, 0.05), solid((168 - k % 3 * 8, 160 - k % 3 * 8, 146)), 0.03)
+    return m
+
+
+# ---------------------------------------------------------------- the burial ground
+
+GRAVE_STONE = (150, 146, 138)
+
+
+def _grave_stone(base, seed):
+    """Cut stone gone grey and streaked with the rain: courses of blocks, darker
+    where the wet runs down them."""
+    base = np.array(base, float)
+
+    def f(P, N):
+        row = np.floor(P[:, 2] / 0.42)
+        u = P[:, 0] + P[:, 1]
+        block = np.floor(u / 0.7 + (row % 2) * 0.5)
+        c = base * (0.82 + 0.2 * hash01(block, row, seed))[:, None]
+        c[(P[:, 2] % 0.42) < 0.035] *= 0.7                           # the joints
+        streak = hash01(np.floor(u * 9), seed) > 0.82
+        c[streak] *= 0.88 - 0.1 * np.clip(1.0 - P[:, 2][streak] / 3.0, 0, 1)[:, None]
+        return c
+    return f
+
+
+def crypt(w=3, d=2.4, seed=0):
+    """A family's tomb among the crosses: a stone house for the dead on a plinth, an
+    iron door, a pitched stone roof with a cross on its gable. Thick enough to stop
+    anything, and the only walls out among the graves."""
+    W, D, Hh = w * T, d * T, 2.6
+    stone = _grave_stone(GRAVE_STONE, 211 + seed)
+    ops = [dict(face="+y", u=(W / 2 - 0.45, W / 2 + 0.45), z=(0.3, 2.1), kind="arch", color=(46, 48, 50))]
+    m = box((-0.1, -0.1, 0), (W + 0.1, D + 0.1, 0.3), _grave_stone((128, 124, 118), 223 + seed), BSP, skip=("-z",))
+    m += box((0, 0, 0.3), (W, D, Hh), decorate(stone, W, D, ops), BSP, skip=("-z", "+z"))
+    m += box((-0.08, -0.08, Hh), (W + 0.08, D + 0.08, Hh + 0.18), solid((128, 124, 118)), BSP)   # the cornice
+    rise = 0.9
+    m += gable_roof(W, D, Hh + 0.18, rise, _grave_stone((116, 112, 108), 227 + seed), along_y=True, overhang=0.12)
+    m += gable_ends(W, D, Hh + 0.18, rise, stone, along_y=True)
+    iron = solid((52, 52, 56))
+    m += box((W / 2 - 0.05, D - 0.05, Hh + 0.18 + rise), (W / 2 + 0.05, D + 0.05, Hh + rise + 0.9), iron, 0.02)
+    m += box((W / 2 - 0.25, D - 0.05, Hh + rise + 0.55), (W / 2 + 0.25, D + 0.05, Hh + rise + 0.65), iron, 0.02)
+    return m
+
+
+def obelisk(seed=0):
+    """A rich man's marker: a stone needle on a stepped base, taller than a man."""
+    stone = _grave_stone((158, 152, 144), 241 + seed)
+    c = 0.4 * T
+    m = box((c - 0.42, c - 0.42, 0), (c + 0.42, c + 0.42, 0.3), _grave_stone((128, 124, 118), 243 + seed), 0.025)
+    m += box((c - 0.3, c - 0.3, 0.3), (c + 0.3, c + 0.3, 0.75), stone, 0.025)
+    m += frustum((c, c, 0.75), (c, c, 2.9), 0.2, 0.12, stone, su=1.0, sw=1.0)
+    m += frustum((c, c, 2.9), (c, c, 3.15), 0.12, 0.01, stone)
+    return m
+
+
+def dead_tree(seed=0, s=1.0):
+    """A tree killed by the drought, grey and bare, its limbs gone crooked: a trunk to
+    hide behind and nothing more."""
+    rng = np.random.default_rng(251 + seed)
+    bark = lambda P, N: np.tile([112.0, 104, 96], (len(P), 1)) * (0.75 + 0.3 * hash01(np.floor(P[:, 2] * 8), np.floor(P[:, 0] * 8), seed))[:, None]
+    c = 0.6 * T
+    top = (c + rng.uniform(-0.2, 0.2), c + rng.uniform(-0.2, 0.2), 2.4 * s)
+    m = frustum((c, c, 0), top, 0.22 * s, 0.1 * s, bark)
+    for i in range(5 + seed % 2):
+        z = (1.2 + i * 0.32) * s
+        a = rng.uniform(0, 2 * math.pi)
+        r = rng.uniform(0.6, 1.3) * s
+        base = (c + (top[0] - c) * z / top[2], c + (top[1] - c) * z / top[2], z)
+        mid = (base[0] + math.cos(a) * r * 0.55, base[1] + math.sin(a) * r * 0.55, z + r * 0.45)
+        tip = (base[0] + math.cos(a + rng.uniform(-0.5, 0.5)) * r, base[1] + math.sin(a + rng.uniform(-0.5, 0.5)) * r,
+               z + r * rng.uniform(0.5, 1.0))
+        m += beam(base, mid, 0.07 * s, (110, 102, 94))
+        m += beam(mid, tip, 0.04 * s, (118, 110, 100))
+    return m
+
+
+def _along(m, along_x, D):
+    """A model built long along X, turned to run along Y instead when asked."""
+    if not along_x:
+        m.transform(rot_z(math.pi / 2))
+        m.translate((D, 0, 0))
+    return m
+
+
+def feast_table(along_x=True, seed=0):
+    """The wake's long table, set for the guests to come back to: trestles under a
+    white cloth, plates and cups down both sides, bottles, bread, candles, a dish of
+    meat. Heavy enough to crouch behind."""
+    L, D = 3 * T, 0.9 * T
+    rng = np.random.default_rng(261 + seed)
+    m = Cloud()
+    for x in (0.35, L / 2, L - 0.35):   # the trestles
+        m += box((x - 0.05, 0.12, 0), (x + 0.05, D - 0.12, 0.74), solid((96, 66, 44)), 0.02)
+    def cloth(P, N):
+        c = np.tile([214.0, 208, 194], (len(P), 1)) * (0.92 + 0.08 * hash01(np.floor(P[:, 0] * 4), seed))[:, None]
+        c[P[:, 2] < 0.6] *= 0.86   # (the overhang, in its own shade)
+        return c
+    m += box((0, 0, 0.74), (L, D, 0.78), cloth, 0.02)
+    m += box((0, -0.01, 0.48), (L, 0.01, 0.78), cloth, 0.02, skip=("-z", "+z"))
+    m += box((0, D - 0.01, 0.48), (L, D + 0.01, 0.78), cloth, 0.02, skip=("-z", "+z"))
+    top = 0.78
+    for x in np.arange(0.35, L - 0.2, 0.55):   # a place down each side: plate and cup
+        for y in (0.2, D - 0.2):
+            m += box((x - 0.1, y - 0.1, top), (x + 0.1, y + 0.1, top + 0.012), solid((176, 170, 156)), 0.01)
+            cx = x + 0.17
+            m += frustum((cx, y, top), (cx, y, top + 0.08), 0.03, 0.035, solid((150, 118, 80)), caps=False)
+    for x in rng.uniform(0.4, L - 0.4, 4):   # bottles
+        col = ((60, 96, 50), (110, 66, 30), (70, 40, 46))[int(rng.integers(0, 3))]
+        m += frustum((x, D / 2, top), (x, D / 2, top + 0.2), 0.045, 0.045, solid(col))
+        m += frustum((x, D / 2, top + 0.2), (x, D / 2, top + 0.3), 0.03, 0.014, solid(col))
+    for x in (L * 0.3, L * 0.7):   # candles, unlit
+        m += frustum((x, D / 2 + 0.12, top), (x, D / 2 + 0.12, top + 0.22), 0.025, 0.025, solid((226, 220, 196)))
+    m += ellipsoid((L / 2, D / 2, top + 0.05), (0.26, 0.16, 0.06), solid((140, 130, 116)))     # the dish
+    m += ellipsoid((L / 2, D / 2, top + 0.1), (0.18, 0.1, 0.08), solid((120, 64, 40)))         # the roast on it
+    for x in (L * 0.15, L * 0.85):
+        m += ellipsoid((x, D / 2 - 0.1, top + 0.05), (0.14, 0.08, 0.06), solid((176, 128, 72)))   # a loaf
+    return _along(m, along_x, D)
+
+
+def bench(along_x=True):
+    """A plank bench to sit the guests along the table."""
+    L, D = 3 * T, 0.35 * T
+    wood = (112, 80, 54)
+    m = box((0, 0.05, 0.4), (L, D - 0.05, 0.46), planks(wood, board=0.14, mud=0.1), 0.02)
+    for x in (0.3, L / 2, L - 0.3):
+        m += box((x - 0.05, 0.1, 0), (x + 0.05, D - 0.1, 0.4), solid((90, 64, 44)), 0.02)
+    return _along(m, along_x, D)
+
+
+def cookfire():
+    """Where the wake's food was cooked: a ring of stones round the embers, a pot on a
+    tripod over them and a kid goat on the spit beside."""
+    c = 0.6 * T
+    m = Cloud()
+    for k in range(10):
+        a = k / 10 * 2 * math.pi
+        m += ellipsoid((c + 0.45 * math.cos(a), c + 0.45 * math.sin(a), 0), (0.12, 0.1, 0.09), solid((120, 114, 106)), zmin=0)
+    m += ellipsoid((c, c, 0), (0.34, 0.34, 0.05), solid((48, 36, 30)), zmin=0)
+    for (x, y) in ((c - 0.1, c), (c + 0.12, c + 0.08), (c, c - 0.12)):
+        m += ellipsoid((x, y, 0.04), (0.07, 0.06, 0.04), solid((210, 96, 40)))   # the coals
+    iron = (46, 44, 44)
+    for k in range(3):   # the tripod and its pot
+        a = k / 3 * 2 * math.pi + 0.4
+        m += beam((c + 0.55 * math.cos(a), c + 0.55 * math.sin(a), 0), (c, c, 1.05), 0.025, iron)
+    m += beam((c, c, 1.05), (c, c, 0.6), 0.01, iron)
+    m += ellipsoid((c, c, 0.48), (0.22, 0.22, 0.17), solid((40, 38, 38)))
+    for x in (c - 0.7, c + 0.7):   # the spit's forks
+        m += beam((x, c + 0.55, 0), (x, c + 0.55, 0.6), 0.03, (100, 74, 52))
+    m += beam((c - 0.75, c + 0.55, 0.58), (c + 0.75, c + 0.55, 0.58), 0.02, iron)
+    m += ellipsoid((c, c + 0.55, 0.58), (0.4, 0.13, 0.13), solid((118, 76, 50)))
+    m += ellipsoid((c + 0.42, c + 0.55, 0.6), (0.1, 0.07, 0.07), solid((104, 66, 44)))   # (its head)
     return m
 
 
@@ -2319,12 +2499,13 @@ def _limb(pts, rs, col, sq=1.0):
     return m
 
 
-def horse():
+def horse(col=(92, 58, 38), dark=(44, 30, 24), blanket=(120, 40, 34)):
     """The stranger's horse, tied to a post at the foot of the trail, facing -x: a
     dark bay, saddled, a blanket under the saddle and the bags behind it, waiting
-    head down with a hind hoof cocked against the cold."""
+    head down with a hind hoof cocked against the cold. (The funeral guests' horses
+    are the same beast in other coats.)"""
     m = Cloud()
-    col, dark, hoof = (92, 58, 38), (44, 30, 24), (34, 28, 24)
+    hoof = (34, 28, 24)
     x, y = 1.85, 0.62
     m += ellipsoid((x, y, 1.13), (0.6, 0.29, 0.33), col)                                 # barrel
     m += ellipsoid((x - 0.52, y, 1.17), (0.3, 0.26, 0.34), col)                          # chest
@@ -2360,7 +2541,7 @@ def horse():
     m += _limb([(x + 0.84, y, 1.36), (x + 0.96, y, 1.15), (x + 1.0, y, 0.85), (x + 0.98, y, 0.58)],
                [0.06, 0.08, 0.07, 0.04], dark, 0.7)                                       # tail
     # the blanket over his back, the saddle on it, the bags behind and the stirrups down
-    m += ellipsoid((x - 0.1, y, 1.13), (0.38, 0.325, 0.36), (120, 40, 34), zmin=1.24)
+    m += ellipsoid((x - 0.1, y, 1.13), (0.38, 0.325, 0.36), blanket, zmin=1.24)
     m += ellipsoid((x - 0.12, y, 1.5), (0.25, 0.2, 0.07), (70, 46, 30))                   # saddle
     m += frustum((x - 0.34, y, 1.5), (x - 0.36, y, 1.64), 0.04, 0.03, (70, 46, 30))       # horn
     m += ellipsoid((x + 0.12, y, 1.55), (0.06, 0.18, 0.06), (70, 46, 30))                 # cantle
@@ -2510,6 +2691,21 @@ BUILDINGS = {
     "campfire": (campfire, (0.9, 0.9), "none", False, None),
     "strongbox": (strongbox, (0.65, 0.45), "none", False, None),
     "horse": (horse, (2.3, 1.0), "cover", False, [[0.0, 0.3, 2.3, 0.75]]),
+    "horse_grey": (lambda: horse((150, 146, 140), (70, 66, 64), (52, 70, 104)), (2.3, 1.0), "cover", False, [[0.0, 0.3, 2.3, 0.75]]),
+    "horse_sorrel": (lambda: horse((132, 74, 42), (96, 54, 30), (190, 160, 96)), (2.3, 1.0), "cover", False, [[0.0, 0.3, 2.3, 0.75]]),
+    "horse_black": (lambda: horse((40, 36, 36), (24, 22, 22), (130, 120, 104)), (2.3, 1.0), "cover", False, [[0.0, 0.3, 2.3, 0.75]]),
+    # the burial ground
+    "crypt": (lambda: crypt(3, 2.4, 0), (3, 2.4), "wall", True, None),
+    "crypt_b": (lambda: crypt(2.4, 2.0, 1), (2.4, 2.0), "wall", True, None),
+    "obelisk": (obelisk, (0.8, 0.8), "post", False, [[0.1, 0.1, 0.7, 0.7]]),
+    "dead_tree": (lambda: dead_tree(0), (1.2, 1.2), "post", False, [[0.45, 0.45, 0.75, 0.75]]),
+    "dead_tree_b": (lambda: dead_tree(1, 0.8), (1.2, 1.2), "post", False, [[0.47, 0.47, 0.73, 0.73]]),
+    "feast_x": (lambda: feast_table(True, 0), (3, 0.9), "cover", False, None),
+    "covered_wagon": (covered_wagon, (2.4, 1.2), "cover", False, [[0.2, 0.15, 2.2, 1.05]]),
+    "feast_y": (lambda: feast_table(False, 1), (0.9, 3), "cover", False, None),
+    "bench_x": (lambda: bench(True), (3, 0.35), "none", False, None),
+    "bench_y": (lambda: bench(False), (0.35, 3), "none", False, None),
+    "cookfire": (cookfire, (1.2, 1.2), "none", False, None),
 }
 
 # What Silencio wears snowed over (see `snowed`): the town's buildings, and the props

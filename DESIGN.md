@@ -25,7 +25,8 @@ the stranger failed him.
 
 ## Levels
 
-After the title card comes the level picker (San Miguel, Cruz Verde, Paso Esperanza and Silencio; the shuffled
+After the title card comes the level picker (San Miguel, Cruz Verde, Paso Esperanza, Silencio and A Good
+Man Never Dies; the shuffled
 San Miguels and the wave test are hidden, kept for the tests) ("Where to, stranger?"; up/down and
 Enter, a number or a click), then the loadout. The levels are listed in
 `data/levels.json`, each a map (a town file) and, optionally, a **count**: with one,
@@ -651,6 +652,64 @@ gang would follow), and the gun he dropped goes under with him, cartridges and a
 Hauling a body shakes the snow off it; let it lie again and it starts over. So in
 Silencio a body dragged off the street and left through a squall is gone. On game
 time; no dice.
+
+**A Good Man Never Dies** (the fifth and last level, in the making; level id
+`funeral`, `tools/make_funeral.py`, `data/funeral.json`; `tests/test_funeral.gd`).
+The stranger's own funeral. Everyone he crossed in the other four towns has come to
+see him buried, and the padre reads his life over the coffin. When it's done, the
+sermon will be his record from those towns: a nail in the lid for every sin named,
+and a good enough man breaks out on them. A bad one is buried (he lived by the gun,
+he died by the gun). Built in phases. Phase 1, the place, is done: he walks in from
+the south for now, and there's no coffin yet.
+
+- **The burial ground.** A wide valley under a grey sky, after the rain (Sad Hill's
+  great round cemetery, Django's mud). Eight rings of graves, crosses mostly,
+  surround a circle of paving stones with his open grave at its heart, the coffin
+  waiting beside it. Paths run in from the four sides. The crosses hide nobody, so
+  the cover is in what stands round them. Among the graves are five stone crypts
+  (`crypt`, `crypt_b`: walls, the only ones out there), five obelisks and dead
+  trees (posts: a trunk or a needle to stand behind), and the headstones. Out past
+  the last ring: the mission to the north (its chapel standing, the walls fallen to
+  rubble), the undertaker's yard to the west (coffins stood ready, a hearse, a row
+  of fresh graves dug), the way-station cantina to the east (its porch, horses at the
+  hitches, troughs, a wagon), and rocks all up the valley sides. North of the rings
+  the older graves go on in rows, round the mission and up to the dinner tables,
+  with three more crypts and obelisks among them and the rocks left where they lay
+  (`old_graves`). Along the valley road to the south, both sides, stand the
+  carriages and horses the guests came in on from every town he crossed: wagons,
+  covered wagons (`covered_wagon`), the revolution's cart, and horses tied to their
+  posts in four coats (`horse`, `horse_grey`, `horse_sorrel`, `horse_black`), all
+  cover. The map is 76 tiles across, more than the other towns' 64, with about 720
+  things on it (520 of them graves; it still renders at well over 60 fps).
+- **The wake's dinner.** Laid out ready in the two northern corners for the guests
+  to come back to once he's in the ground: two rows of three long tables under white
+  cloths, set with plates, cups, bottles, bread and a roast (`feast_x`: cover, heavy
+  enough to crouch behind), a bench down each side (`bench_x`: no cover), and at one
+  end the cook fire, a pot on a tripod and a kid on the spit (`cookfire`), with the
+  drink. A woman who cooked it minds each fire; one guest is at each dinner already.
+- **The town's edge.** East past the cantina the town begins: a street north off the
+  valley road with a few houses, the store and the livery along it, a water tower,
+  a well, and a man of the town in the street. The town itself is off the map (an
+  entry, "town", where its street leaves the top edge).
+- **The sky.** `"weather": "grey"`: the ground baked as wet grey-brown earth, the
+  mud dark, puddles in it (`GROUND_PALETTES` in `gen_assets.py`); the grade washed out
+  and cool (`GRADES` in `game.gd`, by weather, as Silencio's snow is); no tumbleweed
+  blows through the wet. The covered wagons wear and break like the plain ones.
+- **The guests.** Twenty, a few from each town: San Miguel's gang, the revolution,
+  the federales, Silencio's hunters and outlaws. They're all on one side (each of
+  Silencio's men is placed with `"gang": ""`). Seven stand round the grave looking in
+  at it; the rest are on the cantina's porch and at its horses, on the chapel steps
+  and the mission wall, up the rocks, by the wagons, and walking the road and the
+  outer graves. With them are the padre, the undertaker and his digger at the fresh
+  row (the stranger's own grave, marked `"his"` in the map, isn't the digger's to
+  fill; the day's dead go in the undertaker's own plot below the row, the map's first
+  boot hill, the old rings being the second, for the mourners), three mourners going from grave to grave, the two cooks and the townsman. The
+  ordinary alarm for now.
+- **His guns.** In a town that names them (the level's `"guns"`) there's no
+  loadout screen: he starts with the pair of Colts, 12 rounds loaded, and nothing
+  spare (`"spares": false`, `Player.arm`), with no bandage or dynamite (a test that
+  sets `start_guns` itself, or `--guns`, keeps its own). Anything
+  else he takes off the dead.
 
 ## Controls
 

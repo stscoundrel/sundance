@@ -144,7 +144,7 @@ func _picker() -> void:
 	check(game.state == "title", "starts at %s" % game.state)
 	game._to_levels()
 	check(game.state == "levels", "the title didn't give way to the picker")
-	check(game.levels.map(func(l): return l["id"]) == ["san_miguel", "cruz_verde", "train", "silencio"],
+	check(game.levels.map(func(l): return l["id"]) == ["san_miguel", "cruz_verde", "train", "silencio", "funeral"],
 		"the picker offers %s" % [game.levels.map(func(l): return l["id"])])
 	for l in game.levels:   # (each note on one line in its row: a short one)
 		var w: float = game.hud.small.get_string_size(l.get("note", ""), HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x

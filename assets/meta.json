@@ -1000602,6 +1000602,342 @@
     ]
    ],
    "doors": []
+  },
+  "crypt": {
+   "file": "res://assets/sprites/world/crypt.png",
+   "anchor": [
+    131,
+    146
+   ],
+   "footprint": [
+    3,
+    2.4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     3,
+     2.4
+    ]
+   ],
+   "doors": [
+    [
+     1.5,
+     2.8
+    ]
+   ],
+   "paint": "wood"
+  },
+  "crypt_b": {
+   "file": "res://assets/sprites/world/crypt_b.png",
+   "anchor": [
+    112,
+    153
+   ],
+   "footprint": [
+    2.4,
+    2.0
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     2.4,
+     2.0
+    ]
+   ],
+   "doors": [
+    [
+     1.2,
+     2.4
+    ]
+   ],
+   "paint": "wood"
+  },
+  "obelisk": {
+   "file": "res://assets/sprites/world/obelisk.png",
+   "anchor": [
+    39,
+    136
+   ],
+   "footprint": [
+    0.8,
+    0.8
+   ],
+   "collide": "post",
+   "fade": false,
+   "colliders": [
+    [
+     0.1,
+     0.1,
+     0.7,
+     0.7
+    ]
+   ],
+   "doors": []
+  },
+  "dead_tree": {
+   "file": "res://assets/sprites/world/dead_tree.png",
+   "anchor": [
+    46,
+    109
+   ],
+   "footprint": [
+    1.2,
+    1.2
+   ],
+   "collide": "post",
+   "fade": false,
+   "colliders": [
+    [
+     0.45,
+     0.45,
+     0.75,
+     0.75
+    ]
+   ],
+   "doors": []
+  },
+  "dead_tree_b": {
+   "file": "res://assets/sprites/world/dead_tree_b.png",
+   "anchor": [
+    32,
+    124
+   ],
+   "footprint": [
+    1.2,
+    1.2
+   ],
+   "collide": "post",
+   "fade": false,
+   "colliders": [
+    [
+     0.47,
+     0.47,
+     0.73,
+     0.73
+    ]
+   ],
+   "doors": []
+  },
+  "feast_x": {
+   "file": "res://assets/sprites/world/feast_x.png",
+   "anchor": [
+    50,
+    43
+   ],
+   "footprint": [
+    3,
+    0.9
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     3,
+     0.9
+    ]
+   ],
+   "doors": []
+  },
+  "feast_y": {
+   "file": "res://assets/sprites/world/feast_y.png",
+   "anchor": [
+    151,
+    43
+   ],
+   "footprint": [
+    0.9,
+    3
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.9,
+     3
+    ]
+   ],
+   "doors": []
+  },
+  "bench_x": {
+   "file": "res://assets/sprites/world/bench_x.png",
+   "anchor": [
+    21,
+    27
+   ],
+   "footprint": [
+    3,
+    0.35
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     3,
+     0.35
+    ]
+   ],
+   "doors": []
+  },
+  "bench_y": {
+   "file": "res://assets/sprites/world/bench_y.png",
+   "anchor": [
+    149,
+    27
+   ],
+   "footprint": [
+    0.35,
+    3
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.35,
+     3
+    ]
+   ],
+   "doors": []
+  },
+  "cookfire": {
+   "file": "res://assets/sprites/world/cookfire.png",
+   "anchor": [
+    57,
+    28
+   ],
+   "footprint": [
+    1.2,
+    1.2
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.2,
+     1.2
+    ]
+   ],
+   "doors": []
+  },
+  "horse_grey": {
+   "file": "res://assets/sprites/world/horse_grey.png",
+   "anchor": [
+    29,
+    73
+   ],
+   "footprint": [
+    2.3,
+    1.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.0,
+     0.3,
+     2.3,
+     0.75
+    ]
+   ],
+   "doors": []
+  },
+  "horse_sorrel": {
+   "file": "res://assets/sprites/world/horse_sorrel.png",
+   "anchor": [
+    29,
+    73
+   ],
+   "footprint": [
+    2.3,
+    1.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.0,
+     0.3,
+     2.3,
+     0.75
+    ]
+   ],
+   "doors": []
+  },
+  "horse_black": {
+   "file": "res://assets/sprites/world/horse_black.png",
+   "anchor": [
+    29,
+    73
+   ],
+   "footprint": [
+    2.3,
+    1.0
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.0,
+     0.3,
+     2.3,
+     0.75
+    ]
+   ],
+   "doors": []
+  },
+  "covered_wagon": {
+   "file": "res://assets/sprites/world/covered_wagon.png",
+   "anchor": [
+    51,
+    83
+   ],
+   "footprint": [
+    2.4,
+    1.2
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0.2,
+     0.15,
+     2.2,
+     1.05
+    ]
+   ],
+   "doors": [],
+   "states": [
+    {
+     "file": "res://assets/sprites/world/covered_wagon_1.png",
+     "anchor": [
+      51,
+      83
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/covered_wagon_2.png",
+     "anchor": [
+      48,
+      9
+     ]
+    }
+   ]
   }
  },
  "tumbleweed": {
@@ -1002222,6 +1002558,13 @@
   "file": "res://assets/sprites/ground_silencio.png",
   "origin": [
    -1280,
+   -128
+  ]
+ },
+ "ground_funeral": {
+  "file": "res://assets/sprites/ground_funeral.png",
+  "origin": [
+   -1472,
    -128
   ]
  }

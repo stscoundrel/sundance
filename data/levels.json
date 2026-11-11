@@ -42,6 +42,8 @@
              {"loads": 40, "groups": [{"from": "east road", "count": 8}, {"from": "south-east", "count": 5}, {"from": "east scrub", "count": 9}]}]},
   {"id": "silencio", "stranger": {"coat": [30, 30, 36], "shirt": [44, 42, 46], "trousers": [34, 32, 36], "boots": [24, 20, 20], "hat": [28, 26, 30], "band": [16, 16, 18], "skin": [206, 156, 126], "hair": [40, 30, 24]}, "name": "Silencio", "map": "res://data/silencio.json", "note": "Snowed in. Bounty hunters at one end, outlaws at the other.", "budget": 8,
    "line": {"who": "stranger", "at": 2.5, "text": "..."}},
+  {"id": "funeral", "name": "A Good Man Never Dies", "map": "res://data/funeral.json", "note": "His own funeral. Everyone he crossed came to see him buried.",
+   "guns": ["colts"], "spares": false},
   {"id": "test_yard", "name": "Test yard", "map": "res://data/test_yard.json", "hidden": true, "note": "A bare yard: no streets, townsfolk, reserve, boot hill or holdouts."},
   {"id": "test_yard_5", "name": "Test yard", "map": "res://data/test_yard.json", "count": 5, "hidden": true},
   {"id": "test_yard_waves", "name": "Test yard", "map": "res://data/test_yard.json", "count": 4, "hidden": true,

@@ -352,6 +352,23 @@ def lnoise(xs, ys, scale, seed):
     return (top + (bot - top) * ty[:, None]).astype(np.float32)
 
 
+# The ground's colours, by the map's weather (or its snow): sand, the streets' dirt,
+# the mud, and the haze it fades to past the map's edge. The desert sun by default;
+# Silencio's snow for sand, the streets trodden grey, slush for mud, a white haze; the
+# burial ground's wet earth under cloud, the mud deep and dark.
+GROUND_PALETTES = {
+    "sun": {"sand": [[166, 124, 84], [182, 140, 96], [196, 156, 108], [210, 172, 122]],
+            "dirt": [[132, 96, 66], [146, 108, 74], [158, 118, 82], [170, 130, 90]],
+            "mud": [[74, 52, 38], [88, 62, 44], [102, 74, 52]], "haze": [150, 112, 80]},
+    "snow": {"sand": [[204, 212, 226], [216, 223, 235], [227, 233, 242], [238, 242, 248]],
+             "dirt": [[164, 160, 160], [178, 175, 174], [192, 190, 190], [206, 205, 206]],
+             "mud": [[112, 100, 92], [128, 116, 106], [144, 134, 124]], "haze": [200, 208, 222]},
+    "grey": {"sand": [[118, 104, 90], [128, 114, 98], [138, 122, 104], [148, 132, 112]],
+             "dirt": [[96, 82, 68], [106, 90, 74], [114, 98, 80], [124, 106, 86]],
+             "mud": [[56, 44, 36], [66, 52, 42], [76, 60, 48]], "haze": [120, 116, 112]},
+}
+
+
 def gen_ground(meta, level, key="ground"):
     """The ground: sand, streets with wheel ruts, mud and puddles, boot hill, scrub,
     fading to haze beyond town. Built in horizontal strips to keep memory flat. Each
@@ -363,16 +380,10 @@ def gen_ground(meta, level, key="ground"):
     W, H = span * 32 * K, span * 16 * K
     ox, oy = span * 16, 2 * M * 8          # world position of the image's top-left corner (negated)
     out = np.zeros((H, W, 3), np.uint8)
-    sand = np.array([[166, 124, 84], [182, 140, 96], [196, 156, 108], [210, 172, 122]], np.float32)
-    dirt = np.array([[132, 96, 66], [146, 108, 74], [158, 118, 82], [170, 130, 90]], np.float32)
-    mud = np.array([[74, 52, 38], [88, 62, 44], [102, 74, 52]], np.float32)
-    haze = np.array([150, 112, 80])
     snow = level.get("snow", False)
-    if snow:   # Silencio: snow for sand, the streets trodden grey, slush for mud, a white haze
-        sand = np.array([[204, 212, 226], [216, 223, 235], [227, 233, 242], [238, 242, 248]], np.float32)
-        dirt = np.array([[164, 160, 160], [178, 175, 174], [192, 190, 190], [206, 205, 206]], np.float32)
-        mud = np.array([[112, 100, 92], [128, 116, 106], [144, 134, 124]], np.float32)
-        haze = np.array([200, 208, 222])
+    pal = GROUND_PALETTES["snow" if snow else level.get("weather", "sun")]
+    sand, dirt, mud = (np.array(pal[k], np.float32) for k in ("sand", "dirt", "mud"))
+    haze = np.array(pal["haze"])
     ice = np.array([[132, 160, 178], [146, 172, 190], [160, 186, 202]], np.float32)
     xs = np.arange(W, dtype=np.float32)
     band = 256
