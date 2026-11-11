@@ -104,7 +104,7 @@ func _guests() -> void:
 	for town in [["pistolero", "bandido", "redscarf", "cowboy"], ["revolucionario", "sargento", "soldadera", "tirador"],
 			["soldado", "cabo", "rural", "teniente"], ["manhunter", "trapper", "sharpshooter", "mountainman"]]:
 		check(town.any(func(k): return k in kinds), "nobody from %s" % [town])
-	var at_grave: Array = game.enemies.filter(func(e): return Iso.to_grid(e.global_position).distance_to(C) < 3.0)
+	var at_grave: Array = game.enemies.filter(func(e): return Iso.to_grid(e.global_position).distance_to(C) < 4.2)
 	check(at_grave.size() == 7, "%d round the grave" % at_grave.size())
 	for e in at_grave:
 		var to_grave: Vector2 = Iso.to_screen(C) - e.global_position

@@ -659,8 +659,8 @@ The stranger's own funeral. Everyone he crossed in the other four towns has come
 see him buried, and the padre reads his life over the coffin. When it's done, the
 sermon will be his record from those towns: a nail in the lid for every sin named,
 and a good enough man breaks out on them. A bad one is buried (he lived by the gun,
-he died by the gun). Built in phases. Phase 1, the place, is done: he walks in from
-the south for now, and there's no coffin yet.
+he died by the gun). Built in phases. Phase 1, the place, and phase 2, out of the
+coffin, are done; the sermon and his record are to come.
 
 - **The burial ground.** A wide valley under a grey sky, after the rain (Sad Hill's
   great round cemetery, Django's mud). Eight rings of graves, crosses mostly,
@@ -700,11 +700,60 @@ the south for now, and there's no coffin yet.
   Silencio's men is placed with `"gang": ""`). Seven stand round the grave looking in
   at it; the rest are on the cantina's porch and at its horses, on the chapel steps
   and the mission wall, up the rocks, by the wagons, and walking the road and the
-  outer graves. With them are the padre, the undertaker and his digger at the fresh
+  outer graves (the seven at the grave stand a couple of steps back from it, outside
+  the ring of paving stones, so the player can see what's going on). With them are the padre, the undertaker and his digger at the fresh
   row (the stranger's own grave, marked `"his"` in the map, isn't the digger's to
   fill; the day's dead go in the undertaker's own plot below the row, the map's first
   boot hill, the old rings being the second, for the mourners), three mourners going from grave to grave, the two cooks and the townsman. The
   ordinary alarm for now.
+- **In the coffin** (`scripts/coffin.gd`; `tests/test_coffin.gd`). He starts laid
+  out in his own coffin before his empty grave (the map's `"coffin"`), the lid
+  nailed down: nobody can see him and he can't move. The player sees the graveside
+  as ever (a dark box with only a crack to see through was tried, and only lost the
+  player his bearings); the nails still holding and "E" are shown at the foot of the
+  screen (`Hud._draw_coffin`). Each press of E is a blow on the lid: an unnailed lid
+  gives on the first, a nailed one takes two blows a nail (`"nails"` on the map, 1 for
+  now, or `--nails=N`; phase 3 drives them in from his record). A guest by the grave
+  may hear a blow (about one in three, each: they've the padre to listen to); the
+  first he hears, he turns to the coffin with a "?" and maybe a mutter ("¿Qué fue
+  eso?", "Santa María..."), and after that he lets it be. Nobody draws on a dead man
+  knocking. The last blow and the lid flies off past the head of the box, and he
+  gets up out of it (`Player.rise_from_coffin`): a moment flat on his back, sitting
+  up (the rise from the dirt, quickened), a crouch as he steps over the side, and
+  up beside it with the pair of Colts, under a second in all. Any key, a step or a
+  shot, and he's simply up: it never costs the player a moment. Everyone who sees it, near or far (and anyone
+  within 230 px with a clear line, whichever way he's facing), is struck dumb
+  ("agape", each his own way: pointing at him, cowering, a flinch, stumbling back a
+  step or two, or simply frozen; a round in him snaps him out of it, and whatever he was at, a rescue
+  or a run for his rifle, is let go or taken up again after), each for 2 to 4 s on his own dice ("¡No puede ser!", "That ain't possible."); then he
+  fumbles for his gun, 0.8 to 1.6 s more before he can shoot. There's no stand-off
+  close-up, then or when they come to (the surprise is his, and those seconds are the
+  player's to use). The crash of the lid carries about the valley.
+- **The wake** (the map's `"wake"`). Everyone came to see him buried and to eat and
+  drink after, so nobody's on his guard. Every guest's reflex is 1.6 times slower.
+  Gunfire, a comrade's shout or the crash of the lid doesn't send a man into the
+  fight (unless it's right beside him, within 90 px: then it's his fight too): it
+  puzzles him ("?", "Somebody celebrating?"), and 3 to 5 s later he walks
+  over, unhurried, to see what it was. Seeing the stranger, or being shot at, still
+  starts the fight, but the first sight of a dead man walking stops a man for 1 to
+  2 s, staring, before he goes for his gun. Its own dice (`Enemy.wake_rng`, `Coffin.rng`).
+- **Their long guns** (`scripts/arms.gd`; the map's `"arms"`; `tests/test_arms.gd`).
+  Nobody wears a rifle to a burial: every guest has only his pistol on him
+  (`"pistols_only"`; a type with none has a Navy, baked for it by `template_guns`),
+  and his own long gun is where he left it: in the scabbard on every saddle, in
+  every wagon along the road, and in the rack inside the cantina's door (36
+  places, written by `make_funeral.py`). A guest runs for his ("arm": "¡Mi rifle!",
+  "Get the rifles!") when two of his own go down within 5 s in front of him (a
+  chance, the more frightened the likelier), or once three of them are dead and
+  it's plainly a battle (half of those in the fight, once each, and anyone who
+  joins it after). He makes for the nearest place not right by the stranger,
+  shooting back as he runs, spends a moment getting it out, and comes back to the
+  fight with his type's own long gun, his pistol behind it (at the range its own
+  loadout gives him). Struck dumb on the way, he goes on for it when he comes to;
+  with no way through to it, or 20 s gone, he gives it up. The stranger can take
+  one too: by a saddle, wagon or the rack he's offered its gun (F), loaded and
+  nothing spare, one to a place (each drawn when the town's built: rifles and
+  carbines in the saddles, shotguns and rifles in the wagons).
 - **His guns.** In a town that names them (the level's `"guns"`) there's no
   loadout screen: he starts with the pair of Colts, 12 rounds loaded, and nothing
   spare (`"spares": false`, `Player.arm`), with no bandage or dynamite (a test that

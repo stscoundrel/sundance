@@ -88,6 +88,16 @@ var knife_quiet := false
 var knife_t := -1.0            # time into the lunge; < 0 when not lunging
 var knife_cd := 0.0
 var dragging: Enemy = null
+var in_coffin := false          # laid out in his own coffin, the lid on (see Coffin): unseen, and going nowhere
+# Up out of it, the lid gone: lying in the box a moment, sitting up (the rise from
+# the dirt, quickened), a crouch as he steps out over the side, and up. Any key, a
+# step or a shot, and he's simply up: it never costs the player a moment.
+const COFFIN_LIE := 0.15       # s still lying there
+const COFFIN_SIT := 0.42       # s sitting up
+const COFFIN_STEP := 0.23      # s stepping out, crouched
+var rising_t := -1.0           # time into it; < 0 when not
+var _rise_from := Vector2.ZERO
+var _rise_to := Vector2.ZERO
 var box: Strongbox = null      # the outlaws' gold in his arms
 var lift_t := -1.0             # time bent to it, taking it up; < 0 when not
 var grab_t := 0.0
@@ -137,6 +147,12 @@ func _physics_process(delta: float) -> void:
 		return
 	if down:
 		_down_tick(delta)
+		update_anim(delta)
+		return
+	if in_coffin:
+		velocity = Vector2.ZERO   # (the knocking's the coffin's: see Coffin)
+		return
+	if rising_t >= 0.0 and _coffin_rise(delta):
 		update_anim(delta)
 		return
 	var playing: bool = game.state == "play"
@@ -834,6 +850,64 @@ func _go_down(from_dir: Vector2, shooter: Actor) -> void:
 	propped = true
 	_pose_stand("gasp_rise")
 	game.on_player_down(shooter)
+
+
+## Out of the coffin: lying at `from` (in the box), up and out beside it at `to`.
+func rise_from_coffin(from: Vector2, to: Vector2) -> void:
+	_rise_from = from
+	_rise_to = to
+	global_position = from
+	if not has_anim("full/" + weapon.kind + "/gasp_rise"):
+		_risen()
+		return
+	rising_t = 0.0
+	velocity = Vector2.ZERO
+	facing = (to - from).orthogonal().normalized()   # (lying along the box)
+	propped = true
+	crouched = true
+	_pose_stand("gasp_rise")
+
+
+## A frame of it; false once he's up (or the player wants him up: any key does it).
+func _coffin_rise(delta: float) -> bool:
+	if game.state == "play" and (Input.get_vector("move_left", "move_right", "move_up", "move_down") != Vector2.ZERO
+			or ["fire", "alt", "knife", "crouch", "reload"].any(func(a): return Input.is_action_pressed(a))):
+		_risen()
+		return false
+	rising_t += delta
+	velocity = Vector2.ZERO
+	var key := "full/" + _death
+	if rising_t < COFFIN_LIE:
+		_layers["full"] = [key, _clock, 0]   # (flat on his back: the first frame, held)
+	elif rising_t < COFFIN_LIE + COFFIN_SIT:   # (the rise, sped up to fit)
+		var n: int = anim(key)["frames"][0].size()
+		var into := (rising_t - COFFIN_LIE) / COFFIN_SIT * n / float(anim(key)["fps"])
+		_layers["full"] = [key, _clock - into, _layers.get("full", [key, 0.0, 0])[2]]
+	elif rising_t < COFFIN_LIE + COFFIN_SIT + COFFIN_STEP:
+		if propped:   # (sat up: now over the side, crouched)
+			propped = false
+			_death = ""
+			_layers.erase("full")
+			legs_spr.visible = true
+			_stand_hurtbox()
+		var k := (rising_t - COFFIN_LIE - COFFIN_SIT) / COFFIN_STEP
+		global_position = _rise_from.lerp(_rise_to, k)
+		facing = (_rise_to - _rise_from).normalized()
+	else:
+		_risen()
+		return false
+	return true
+
+
+func _risen() -> void:
+	rising_t = -1.0
+	propped = false
+	crouched = false
+	_death = ""
+	_layers.erase("full")
+	legs_spr.visible = true
+	_stand_hurtbox()
+	global_position = _rise_to
 
 
 func _pose_stand(anim_name: String) -> void:

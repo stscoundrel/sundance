@@ -104,6 +104,8 @@ func _draw() -> void:
 	var p: Player = game.player
 	if p == null:
 		return
+	if game.coffin and game.coffin.inside:
+		_draw_coffin()
 	if title_alpha < 1.0:
 		_draw_enemy_marks()
 		_draw_his_line()
@@ -535,6 +537,16 @@ func _draw_eyes() -> void:
 	var band := Rect2(floorf((page.x - PAGE.x) / 2) + slide, page.y / 2 - 64, PAGE.x, 128)   # (the strip as drawn, black either side)
 	draw_rect(Rect2(slide, band.position.y, page.x, band.size.y), Color(0, 0, 0, a))
 	draw_texture_rect(game.tex(game.meta["ui"]["eyes"]), band, false, Color(1, 1, 1, a))
+
+
+## Inside his coffin: the nails still holding the lid, and what to do about them
+## (the world's in plain view: a dark box over it only lost the player his bearings).
+func _draw_coffin() -> void:
+	var n: int = game.coffin.nails_left()
+	var row := "NAILS  " + " ".join(PackedStringArray(Array(range(n)).map(func(_i): return "|"))) if n > 0 else "THE LID"
+	var y := page.y - 64
+	_text(Vector2(0, y), row, 10, Color(0.85, 0.75, 0.55, 0.9), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	_text(Vector2(0, y + 14), "In your coffin.  E: hammer at the lid", 8, Color(INK, 0.8), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 ## The town's verdict when the hero shoots one of its own.

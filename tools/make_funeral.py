@@ -49,7 +49,8 @@ MUD = [[32.0, 51.5, 2.2], [20.0, 51.6, 1.8], [45.0, 51.4, 2.0], [8.0, 51.8, 1.5]
        [67.0, 51.6, 1.8], [67.0, 40.0, 1.4], [67.0, 26.0, 1.2], [32.0, -3.0, 1.2], [13.0, -1.5, 0.9], [53.5, -1.5, 0.9]]
 
 CIRCLE = (C[0] - 3, C[1] - 3)            # the stone circle's corner (6 tiles across)
-GRAVE = (C[0] - 1.1, C[1] - 1.0)         # his open grave, the coffin waiting beside it
+GRAVE = (C[0] - 1.1, C[1] - 1.0)         # his open grave, waiting empty
+COFFIN = (GRAVE[0] + 0.3, GRAVE[1] + 2.05)   # his coffin before it, with him in it (Coffin; its corner)
 GRAVE_KINDS = ("cross", "headstone", "headstone_b", "mound")   # (game.GRAVES)
 CRYPTS = [("crypt", 23.4, 20.6), ("crypt_b", 39.0, 21.0), ("crypt", 37.8, 37.0), ("crypt_b", 23.0, 37.4),
           ("crypt_b", 43.2, 31.6)]
@@ -64,7 +65,7 @@ def cemetery():
     big = [layout.footprint(k, x, y) for k, x, y in CRYPTS] \
         + [layout.footprint("obelisk", x, y) for x, y in OBELISKS] \
         + [layout.footprint(k, x, y) for k, x, y in TREES_IN]
-    out = [("stone_circle", *CIRCLE), ("open_grave", *GRAVE)]
+    out = [("stone_circle", *CIRCLE), ("open_grave_empty", *GRAVE)]
     k = 0
     for r in (4.8, 6.1, 7.4, 8.7, 10.0, 11.3, 12.6, 13.9):
         n = int(2 * math.pi * r / 1.4)
@@ -195,10 +196,10 @@ def toward(x, y, tx, ty):
     return layout.screen_deg(tx - x, ty - y)
 
 
-def mourning(kind, a, r=2.4):
+def mourning(kind, a, r=3.6):
     """A guest at the graveside, round the stone circle, looking in at the grave."""
     x, y = C[0] + r * math.cos(a), C[1] + r * math.sin(a)
-    return {"kind": kind, "x": round(x, 2), "y": round(y, 2), "facing": toward(x, y, *C)}
+    return {"kind": kind, "x": round(x, 2), "y": round(y, 2), "facing": toward(x, y, *C), "mourning": True}
 
 
 GRAVESIDE = [
@@ -231,7 +232,7 @@ ENEMIES = GRAVESIDE + ABOUT
 # Who else came: the padre to say the words, the undertaker and his digger, and a
 # few who came to weep (or to make sure).
 TOWNSFOLK = [
-    {"kind": "priest", "x": 34.0, "y": 31.2, "facing": toward(34.0, 31.2, *C)},
+    {"kind": "priest", "x": 35.4, "y": 31.6, "facing": toward(35.4, 31.6, *C)},
     {"kind": "undertaker", "x": 9.2, "y": 31.4, "facing": E},
     {"kind": "digger", "x": 14.0, "y": 37.6, "facing": S},
     {"kind": "visitor", "x": 28.2, "y": 23.6, "facing": 90, "palette": 0},
@@ -256,6 +257,30 @@ BOOTHILLS = [[9.5, 41.2, 22.0, 46.0], [17, 15, 47, 45]]
 BUILDING_KINDS = {k for k, *_ in BUILDINGS_AT} | {"crypt", "crypt_b"}
 
 
+# Where the guests' long guns are, left behind for the funeral: in the scabbard on
+# every saddle, in every wagon, and in the rack inside the cantina's door. A man
+# who goes for his runs to the near side of one of these (see Arms).
+SADDLES = ("horse", "horse_grey", "horse_sorrel", "horse_black")
+WAGONS = ("wagon", "covered_wagon", "carreta_0")
+RACK = {"x": 55.0, "y": 27.6 + OY, "kind": "rack"}   # (the cantina's door)
+
+
+def arms_points(objects, solid):
+    """A walkable point beside each saddle and wagon: below it, else above, else to a side."""
+    out = []
+    for o in objects:
+        if o["type"] not in SADDLES + WAGONS:
+            continue
+        x0, y0, x1, y1 = layout.footprint(o["type"], o["x"], o["y"])
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        for px, py in ((cx, y1 + 0.55), (cx, y0 - 0.55), (x1 + 0.55, cy), (x0 - 0.55, cy)):
+            pt = (px - 0.35, py - 0.35, px + 0.35, py + 0.35)
+            if 1.0 < px < N - 1.0 and 1.0 < py < N - 1.0 and not any(layout.overlaps(pt, r) for _, r in solid):
+                out.append({"x": round(px, 2), "y": round(py, 2), "kind": "saddle" if o["type"] in SADDLES else "wagon"})
+                break
+    return out + [RACK]
+
+
 def _down(p):
     """Someone, or a place, moved from the valley's frame onto the map."""
     q = dict(p, y=round(p["y"] + OY, 2))
@@ -277,9 +302,6 @@ def main():
     global STREETS, MUD, BOOTHILLS, ENEMIES, TOWNSFOLK, HOLDOUTS, ENTRIES, CENTER, PLAYER
     placed = [q for k, x, y in BUILDINGS_AT + PROPS + DINNERS + cemetery() for q in place(k, x, y)]
     objects = [{"type": k, "x": x, "y": round(y + OY, 2)} for k, x, y in placed]
-    for o in objects:   # his grave is nobody's work today: the digger keeps to his own row
-        if o["type"] == "open_grave" and (o["x"], o["y"]) == (GRAVE[0], round(GRAVE[1] + OY, 2)):
-            o["his"] = True
     graves = sum(o["type"] in GRAVE_KINDS for o in objects)
     STREETS = [[x0, y0 + OY, x1, y1 + OY] for x0, y0, x1, y1 in STREETS]
     MUD = [[x, y + OY, r] for x, y, r in MUD]
@@ -290,6 +312,8 @@ def main():
                          + [dict(CENTER, kind="centre"), dict(PLAYER, kind="stranger")],
                          joined=("wall_x4", "wall_y4", "carreta_0", "carreta_1"))
     posts = layout.make_posts(N, STREETS, solid, ENEMIES, PLAYER, BUILDING_KINDS)
+    arms = arms_points(objects, solid)
+    layout.check(N, objects, arms, joined=("wall_x4", "wall_y4", "carreta_0", "carreta_1"))
     layout.write("funeral.json", {
         "name": "A Good Man Never Dies",
         "size": N,
@@ -307,9 +331,13 @@ def main():
         "entries": ENTRIES,
         "center": CENTER,
         "posse": False,
+        "coffin": [COFFIN[0], round(COFFIN[1] + OY, 2)],
+        "nails": 1,       # (for now: phase 3 drives them in from his record)
+        "wake": True,     # everyone's here for the funeral and the party after: slow to take alarm
+        "arms": arms,     # where their long guns are: every guest has only his pistol on him
     })
-    print("burial ground: %d objects (%d graves), %d guests, %d townsfolk, %d guard posts" % (
-        len(objects), graves, len(ENEMIES), len(TOWNSFOLK), len(posts)))
+    print("burial ground: %d objects (%d graves), %d guests, %d townsfolk, %d guard posts, %d places their long guns are" % (
+        len(objects), graves, len(ENEMIES), len(TOWNSFOLK), len(posts), len(arms)))
 
 
 if __name__ == "__main__":

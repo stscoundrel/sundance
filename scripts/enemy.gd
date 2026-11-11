@@ -245,6 +245,55 @@ static var schofield_rng := RandomNumberGenerator.new()
 # type): fifteen rounds, but a slow, awkward gun to keep fed. Its own dice too.
 const HENRY := 0.3
 static var henry_rng := RandomNumberGenerator.new()
+# At the stranger's funeral ("wake" on the map) the guests have come to see him
+# buried and to eat and drink after: nobody's on his guard. Every man is slower to
+# react (WAKE_SLOW on his reflex), and gunfire, or a comrade's shout, puzzles him
+# rather than sends him to the fight: a "?", and some seconds later (PUZZLE_T) he
+# wanders over to see what it was. Only seeing the stranger, or being shot at, does
+# more, and even then the first sight of a dead man walking stops him a moment
+# ("agape", FIRST_SIGHT) before he goes for his gun. The ones by the grave may hear
+# him knocking in his coffin (knocked: once each) and, when he comes out of it,
+# stand struck dumb a while (see Coffin) before they fumble for their guns (FUMBLE).
+# Their own dice, seeded with the rest.
+#
+# Nobody came to the burial armed for a fight: a guest has only his pistol on him
+# ("pistols_only"), his long gun in his saddle or his wagon (see Arms). He runs for
+# it ("arm") when it goes badly near him (two of his own down in a few seconds, in
+# front of his eyes: FLEE_ARM, the more the more frightened he is), or once it's
+# plainly a battle (BATTLE of them dead: ARM_CHANCE, once a man), and comes back
+# with it.
+const WAKE_SLOW := 1.6
+const BATTLE := 3
+const ARM_CHANCE := 0.5
+const FLEE_ARM := 0.5
+const RAPID := 5.0           # s: two dead in this long is "falling fast"
+const ARM_T := 1.2           # s at the saddle, getting it out
+const ARM_LIMIT := 20.0      # s he'll keep at it before he gives it up (no way through, say)
+const WAKE_NEAR := 90.0      # px: gunfire this close is a fight beside him, not a puzzle
+const ARM_LINES := ["¡Mi rifle!", "Get the rifles!", "¡A los caballos!", "I need my long gun!", "¡Las armas!"]
+const PUZZLE_T := Vector2(3.0, 5.0)
+const FUMBLE := Vector2(0.8, 1.6)
+const FIRST_SIGHT := Vector2(1.0, 2.0)
+# How a man takes it, struck dumb: pointing at the dead man risen, cowering, a flinch,
+# stumbling back a step or two, or simply frozen where he stands.
+const STARES := {"point": 0.3, "cower": 0.2, "flinch": 0.15, "back": 0.2, "": 0.15}
+const STUMBLE_T := 0.8       # s of stumbling back (the "back" stare), at a fraction of his walk
+const KNOCK_LINES := ["¿Qué fue eso?", "Did you hear that?", "¿Oyeron?", "...the box?", "Santa María..."]
+const AGAPE_LINES := ["¡Madre de Dios!", "He's... alive?", "¡No puede ser!", "¡Es un fantasma!", "That ain't possible."]
+const PUZZLE_LINES := ["¿Qué pasa?", "What was that?", "¿Tiros?", "Somebody celebrating?", "¿Quién dispara?"]
+static var wake_rng := RandomNumberGenerator.new()
+var puzzle_t := INF          # game.clock when he goes to see what that was, if he's puzzled
+var puzzle_at := Vector2.ZERO
+var saw_him_risen := false   # (at the funeral: the first sight of him stops a man, after that it doesn't)
+var stowed := ""             # (at the funeral) his long gun, left in his saddle or wagon; "" if he never had one
+var stowed_range: Array = []
+var arm_rolled := false      # he's thought about it once already
+var arm_at := Vector2.INF    # where he's running for it
+var arm_t := 0.0             # s left getting it out of the saddle
+var arm_after := false       # struck dumb on the way to it: he goes on for it when he comes to
+var stare := ""              # how he stands there struck dumb (STARES)
+var stare_t := 0.0
+var heard_knock := false
 # A man who can afford it may have the new Spencer pump gun for his coach gun (data
 # "pump": the chance; El Jefe's). Nobody's does unless his type says. Its own dice.
 static var pump_rng := RandomNumberGenerator.new()
@@ -409,6 +458,18 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	kind = k
 	tdata = g.enemy_type(k, overrides)
 	gang = tdata.get("gang", "")
+	if g.level.has("arms"):   # (the funeral: his long gun's left with his horse; see Arms)
+		var all: Array = tdata["loadout"].duplicate()
+		for o in tdata.get("loadouts", []):
+			all.append_array(o["guns"])
+		var longs := all.filter(func(gun): return not gun in PISTOLS)
+		stowed = longs[0] if not longs.is_empty() else ""
+		stowed_range = tdata["range"].duplicate()
+		for o in tdata.get("loadouts", []):   # (the range his long gun's own loadout gives him, if it says)
+			if stowed in o["guns"] and o.has("range"):
+				stowed_range = o["range"].duplicate()
+				break
+		tdata["pistols_only"] = true
 	loadout = _pick_loadout()
 	var single: float = tdata.get("champion", 0.0)
 	if single > 0.0 and loadout.size() == 1 and loadout[0] in PISTOLS and not tdata.get("pistols_only", false) \
@@ -450,6 +511,8 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 		desired = facing
 	t = randf() * 10.0
 	reflex = randf_range(tdata["reflex"][0], tdata["reflex"][1])
+	if g.level.get("wake", false):
+		reflex *= WAKE_SLOW
 	nerve = randf_range(tdata["nerve"][0], tdata["nerve"][1])
 	rank = int(tdata["rank"])
 	bold = float(tdata["bold"])
@@ -611,7 +674,7 @@ func visibility_of(pos: Vector2, low: bool, check_near := true) -> float:
 func _perceive(delta: float) -> void:
 	var p: Player = game.player
 	var vis := 0.0
-	if p.alive:
+	if p.alive and not p.in_coffin:
 		vis = visibility_of(p.global_position, p.low_profile())
 	sees_player = vis > 0.0
 	if sees_player:
@@ -674,6 +737,10 @@ func hear(pos: Vector2, radius: float, k: String, source: Node) -> void:
 		if k in ["shot", "enemy_shot", "blast", "struggle", "scream"]:
 			call_out(pos)
 		return
+	if game.level.get("wake", false) and k in ["shot", "enemy_shot", "struggle", "crash"] and st != St.COMBAT \
+			and (d > WAKE_NEAR or k == "crash"):
+		puzzled(pos)   # (the funeral: whatever that was, he'll go and see in a while)
+		return
 	match k:
 		"shot", "struggle":   # gunfire, or a man yelling as the knife goes in
 			if st == St.COMBAT:
@@ -729,6 +796,9 @@ func alert_to(pos: Vector2) -> void:
 	if indoors:
 		call_out(pos)
 		return
+	if game.level.get("wake", false) and st != St.COMBAT:
+		puzzled(pos)   # (a shout across the funeral: he'll come and see)
+		return
 	if alive and st != St.COMBAT:
 		enter_combat(pos, false, false)
 
@@ -736,6 +806,10 @@ func alert_to(pos: Vector2) -> void:
 func enter_combat(pos: Vector2, spotted: bool, propagate: bool) -> void:
 	if indoors:
 		call_out(pos)
+		return
+	if spotted and game.level.get("wake", false) and not saw_him_risen and st != St.COMBAT and reaction != "agape" \
+			and not game.player.in_coffin:
+		agape(pos, wake_rng.randf_range(FIRST_SIGHT.x, FIRST_SIGHT.y), wake_rng)   # (a dead man, walking: he stares first)
 		return
 	reveal()
 	smoke_t = -1.0
@@ -756,12 +830,14 @@ func enter_combat(pos: Vector2, spotted: bool, propagate: bool) -> void:
 		flank_dir = from_target.normalized().rotated(flank)
 		_mark("!")
 		# Sometimes he stops to point the stranger out to the others, film-style.
-		if spotted and propagate and randf() < 0.55:
+		if spotted and propagate and reaction != "agape" and randf() < 0.55:
 			threat = pos
 			start_reaction("point")
 		game.on_enemy_alert(self, spotted)
 		if propagate:
 			game.alert_allies(self, 280.0, pos)
+	if game.battle():
+		consider_arming()   # (he's come into a battle, not a funeral)
 
 
 func start_investigate(pos: Vector2, run: bool) -> void:
@@ -940,6 +1016,126 @@ func _mark(s: String) -> void:
 	marker_t = 2.0
 
 
+## Puzzled at the funeral: a "?", and in a while he goes over to see (the latest
+## thing he heard, if there's more by then).
+func puzzled(pos: Vector2) -> void:
+	if not alive or reaction == "agape" or st == St.COMBAT:
+		return
+	puzzle_at = pos
+	if puzzle_t == INF:
+		puzzle_t = game.clock + wake_rng.randf_range(PUZZLE_T.x, PUZZLE_T.y)
+		_mark("?")
+		desired = (pos - global_position).normalized()
+		if shout_t <= 0.0 and wake_rng.randf() < 0.5:
+			_say(_line("puzzle", PUZZLE_LINES, wake_rng))
+		_log("puzzled")
+
+
+## Once it's a battle (or after he's run for his life): a man with a long gun in his
+## saddle may go and get it. Once a man.
+func consider_arming() -> void:
+	if arm_rolled or stowed == "" or not alive or reaction in ["agape", "arm"]:
+		return
+	arm_rolled = true
+	if wake_rng.randf() < ARM_CHANCE:
+		go_arm("goes for his long gun")
+
+
+## Off to the nearest saddle or wagon for his long gun (see Arms), at a run.
+func go_arm(why: String) -> void:
+	if stowed == "" or not alive or reaction == "agape" or game.arms == null:
+		return
+	arm_at = game.arms.nearest_for(global_position)
+	if arm_at == Vector2.INF:
+		return
+	arm_rolled = true
+	threat = game.player.global_position
+	pending = ""
+	start_reaction("arm")
+	_log(why)
+
+
+## To it, a moment at it getting the gun out, and back to the fight with it in his
+## hands: loaded, his sidearm behind it.
+func _arm(delta: float) -> void:
+	var d := global_position.distance_to(arm_at)
+	if d > 10.0:
+		if follow_path(run * 1.1):   # (the path's done: the last step or two straight at it, if it's that close)
+			if d > 40.0:
+				reaction_t = 0.0   # (no way through to it: he gives it up)
+				_log("can't reach his long gun")
+				return
+			velocity = (arm_at - global_position).normalized() * walk
+		return
+	velocity = Vector2.ZERO
+	arm_t -= delta
+	if arm_t > 0.0:
+		return
+	loadout = [stowed] + loadout.filter(func(gun): return gun in PISTOLS)
+	weapon = Weapon.new(stowed, self)
+	weapon.reserve = 999
+	tdata["range"] = stowed_range
+	stats["keep"] = _v2(stowed_range) * game.haze.x
+	tdata["pistols_only"] = false
+	stowed = ""
+	reaction = ""
+	_log("armed")
+	enter_combat(game.seen_pos if game.staleness() < 15.0 else game.player.global_position, false, false)
+
+
+## Knocking from inside the coffin at his own funeral. He turns to it and mutters,
+## the first time he hears it; after that it's the padre he listens to. Nobody draws
+## on a dead man knocking.
+func knocked(pos: Vector2) -> void:
+	if not alive or st == St.COMBAT or reaction != "" or heard_knock:
+		return
+	heard_knock = true
+	desired = (pos - global_position).normalized()
+	facing = desired
+	if marker_t <= 0.0:
+		_mark("?")
+	if shout_t <= 0.0 and wake_rng.randf() < 0.3:
+		_say(_line("knock", KNOCK_LINES, wake_rng))
+	_log("hears knocking")
+
+
+func _stare(dice: RandomNumberGenerator) -> String:
+	var total := 0.0
+	for k in STARES:
+		total += STARES[k]
+	var r := dice.randf() * total
+	for k in STARES:
+		r -= STARES[k]
+		if r <= 0.0:
+			return k
+	return ""
+
+
+## The dead man stood up out of his coffin before his eyes: he stands there, mouth
+## open, for `t` seconds, and only then fumbles for his gun (see _do_reaction).
+func agape(at: Vector2, t: float, dice: RandomNumberGenerator) -> void:
+	if not alive:
+		return
+	saw_him_risen = true
+	arm_after = reaction == "arm"
+	if fetching:
+		let_go_of_box()
+	start_reaction("agape")   # (whatever he was at, a rescue included, is let go)
+	reaction_t = t
+	stare = _stare(dice)
+	stare_t = 0.0
+	threat = at
+	pending = ""
+	puzzle_t = INF
+	velocity = Vector2.ZERO
+	desired = (at - global_position).normalized()
+	_mark("!")
+	if dice.randf() < 0.6:
+		_say(_line("agape", AGAPE_LINES, dice))
+		shout_t = t
+	_log("struck dumb")
+
+
 func _say(s: String) -> void:
 	shout = s
 	shout_t = 1.8
@@ -989,6 +1185,10 @@ func witness_death(at: Vector2, killer: Vector2, dead: Enemy = null) -> void:
 		_engage(killer)
 		return
 	shaken = min(1.0, shaken + 0.35 * (1.0 - nerve * 0.5))
+	if stowed != "" and reaction != "arm" and game.recent_deaths(RAPID) >= 2 \
+			and wake_rng.randf() < FLEE_ARM * (0.5 + fear()):
+		go_arm("flees")   # (two down in a breath, in front of him: he runs for his rifle)
+		return
 	if assault and tdata.get("deserts", false) and assault_rng.randf() < DESERT_ON_DEATH * (0.5 + shaken):
 		desert()
 		return
@@ -1113,6 +1313,12 @@ func start_reaction(r: String) -> void:
 			_say(_line("dynamite", THROW_LINES))
 		"rescue", "fetch":
 			reaction_t = 30.0
+		"arm":
+			reaction_t = ARM_LIMIT   # (given up after this: no way through to it)
+			arm_t = ARM_T
+			path_to(arm_at)
+			if shout_t <= 0.0:
+				_say(_line("arm", ARM_LINES, wake_rng))
 		"patch":
 			cover_pos = game.find_cover(global_position, threat)
 			patching = cover_pos == Vector2.INF   # nowhere to go: he does it where he is
@@ -1154,6 +1360,24 @@ func _do_reaction(delta: float) -> void:
 		"point":
 			pose = "point"
 			desired = (threat - global_position).normalized()
+		"agape":
+			desired = (game.player.global_position - global_position).normalized()
+			stare_t += delta
+			if stare == "back":
+				if stare_t < STUMBLE_T:
+					velocity = -desired * walk * 0.35   # (backing off a step or two, staring)
+			else:
+				pose = stare
+			if reaction_t <= 0.0:
+				reaction = ""
+				_log("comes to")
+				if arm_after:   # (he was running for his long gun: he still is)
+					arm_after = false
+					go_arm("goes on for his long gun")
+					return
+				enter_combat(game.player.global_position, true, true)
+				react = wake_rng.randf_range(FUMBLE.x, FUMBLE.y) * reflex   # (fumbling for his gun)
+				return
 		"flinch":
 			pose = "flinch"
 			if reaction_t <= 0.0 and randf() < 0.3 + fear() * 0.5:
@@ -1178,6 +1402,8 @@ func _do_reaction(delta: float) -> void:
 			_rescue(delta)
 		"fetch":
 			_fetch()
+		"arm":
+			_arm(delta)
 		"clear":
 			if follow_path(run * 1.2):
 				crouched = true
@@ -1270,6 +1496,10 @@ func _physics_process(delta: float) -> void:
 	aiming = false
 	if not revealed and st in [St.INVESTIGATE, St.COMBAT, St.SEARCH]:
 		reveal()   # something's up: the act is over
+	if puzzle_t != INF and game.clock >= puzzle_t:
+		puzzle_t = INF
+		if st != St.COMBAT and reaction == "":
+			start_investigate(puzzle_at, false)   # (unhurried: walking over to see)
 	if pending != "":
 		pending_t -= delta
 		if pending_t <= 0.0:
@@ -2021,7 +2251,7 @@ func unaware() -> bool:
 func can_fire_at(p: Actor) -> bool:
 	if not alive or not revealed or is_staggered() or weapon.is_reloading() or not weapon.can_fire():
 		return false
-	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear", "patch", "rescue", "fetch"]:
+	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear", "patch", "rescue", "fetch", "arm"]:
 		return false
 	return absf(facing.angle_to(p.global_position - global_position)) < 1.1
 
@@ -3504,7 +3734,7 @@ func _hunt_carrier(delta: float) -> bool:
 
 ## Running for it, he may still loose off a wild shot over his shoulder.
 func _panic_fire() -> void:
-	if panic_cd > 0.0 or not (reaction in ["flee", "dash", "backoff"] or (reaction == "hide" and not hiding)):
+	if panic_cd > 0.0 or not (reaction in ["flee", "dash", "backoff", "arm"] or (reaction == "hide" and not hiding)):
 		return
 	panic_cd = randf_range(0.8, 1.8)
 	if randf() > 0.55 or not weapon.can_fire() or game.player == null or not game.player.alive:
@@ -3620,6 +3850,8 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 		go_down(from_dir, shooter)
 		return
 	super(dmg, from_dir, shooter)
+	if alive and reaction == "agape":
+		reaction_t = 0.0   # (a round in him snaps him out of it)
 	if alive and stick:
 		_fumble_stick()
 	if alive and blasted:

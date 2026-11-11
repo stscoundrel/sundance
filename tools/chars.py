@@ -108,7 +108,18 @@ def template_guns():
                         for g in option["guns"]:
                             need(_DATA["types"][k]["template"], g, _DATA["types"][k])
                         champion(_DATA["types"][k]["template"], option.get("champion", 0), option["guns"])
+        # a town where they've left their long guns with the horses ("arms": the
+        # funeral): a man with no pistol of his own has a Navy on him (Enemy._pick_loadout)
+        if mp.get("arms"):
+            for e in mp["enemies"]:
+                t = _DATA["types"][e["kind"]]
+                guns = list(t["loadout"]) + [g for o in t.get("loadouts", []) for g in o["guns"]]
+                if not any(g in PISTOLS for g in guns):
+                    need(t["template"], "navy")
     return out
+
+
+PISTOLS = ("colt", "colts", "schofield", "buntline", "navy", "derringer", "howdah", "pistola")   # (Enemy.PISTOLS)
 
 
 CARRY_SET = {"mg": "mgcarry"}   # a carrier's load, by the pose set he carries it in

@@ -75,6 +75,9 @@ var cargo: Cargo = null         # the arms to be carried off, if the level has t
 var mgun: MGun = null           # a machine gun for him, if the map has one
 var minefield: Minefield = null # ground mined round his breastwork, and the plunger, if the map has them
 var strongbox: Strongbox = null # the outlaws' gold to ride off with, if the map has it (Silencio)
+var coffin: Coffin = null       # his own, at his funeral, with him in it (the map's "coffin")
+var arms: Arms = null           # where the funeral guests left their long guns (the map's "arms")
+var deaths: PackedFloat32Array = []   # game.clock at each of the gang's dead, for "how fast are they falling"
 # A big battle's smoke and chaos (the map's "haze": [range, spread]): the army's guns
 # reach so far and throw so wide of what they would (the stranger's don't: he's seen
 # it all before).
@@ -280,6 +283,9 @@ func _ready() -> void:
 		Enemy.peso_rng.randomize()
 		Enemy.habit_rng.randomize()
 		Enemy.shelter_rng.randomize()
+		Enemy.wake_rng.randomize()
+		Coffin.rng.randomize()
+		Arms.rng.randomize()
 		peso_rng.randomize()
 	else:
 		Shutter.rng.seed = 7
@@ -318,6 +324,9 @@ func _ready() -> void:
 		Enemy.peso_rng.seed = 109
 		Enemy.habit_rng.seed = 131
 		Enemy.shelter_rng.seed = 137
+		Enemy.wake_rng.seed = 149
+		Coffin.rng.seed = 151
+		Arms.rng.seed = 157
 		peso_rng.seed = 113
 	_parse_args()
 	_setup_input()
@@ -933,7 +942,7 @@ func _build_world() -> void:
 			for prop in props:
 				if prop["sprite"] == spr:
 					prop["ours"] = true
-		if o["type"] == "open_grave" and not o.get("his", false):   # (the stranger's own, at the funeral: not the digger's to fill)
+		if o["type"] == "open_grave":
 			open_graves.append({"g": og, "sprite": spr, "at": Iso.to_screen(og + Vector2(1.1, 1.55)),
 				"dug": 0.0, "filled": 0.0, "in": false, "done": false, "digger": null})
 		elif o["type"] in GRAVES and _on_boot_hill(og):
@@ -1243,6 +1252,15 @@ func _spawn_actors() -> void:
 		minefield = Minefield.new()
 		minefield.setup(self, level)
 		world.add_child(minefield)
+	if level.has("arms"):
+		arms = Arms.new(self, level["arms"])
+	if level.has("coffin"):
+		coffin = Coffin.new()
+		world.add_child(coffin)
+		var nails := int(Engine.get_meta("nails", _args.get("nails", level.get("nails", Coffin.NAILS))))
+		coffin.setup(self, Vector2(level["coffin"][0], level["coffin"][1]), nails)
+		if not _args.has("at") and not Engine.has_meta("no_coffin"):   # (--at, or a test of the place: he's walking about)
+			coffin.shut_in(player)
 	if level.has("strongbox"):
 		strongbox = Strongbox.new()
 		world.add_child(strongbox)
@@ -2525,9 +2543,28 @@ func on_enemy_alert(_e: Enemy, spotted: bool) -> void:
 		sfx("twang", null, -6.0, 0.0)
 
 
+## At the funeral: enough of them dead (Enemy.BATTLE) that it's plainly a battle.
+func battle() -> bool:
+	return level.has("arms") and deaths.size() >= Enemy.BATTLE
+
+
+## How many of the gang have died in the last `secs` seconds.
+func recent_deaths(secs: float) -> int:
+	var n := 0
+	for t in deaths:
+		if clock - t <= secs:
+			n += 1
+	return n
+
+
 func _on_enemy_died(e: Actor) -> void:
 	var side := gang_of(e)
 	gangs[side]["fallen"] += 1
+	deaths.append(clock)
+	if battle():
+		for o in enemies:   # (it's a battle now, not a funeral: the rest think of their long guns)
+			if o.alive and o.st == Enemy.St.COMBAT:
+				o.consider_arming()
 	# a knife in the dark (Enemy.silent_death): nobody hears a thing, and only a man
 	# who has him in view at the time knows it's happened; the rest find out from
 	# the body
@@ -2794,8 +2831,9 @@ func drop_gun(a: Actor) -> void:
 			g["weapon"] = w
 
 
-func _place_gun(kind: String, at: Vector2, fall: float) -> Dictionary:
-	var g: Dictionary = meta["guns"][kind].pick_random()
+func _place_gun(kind: String, at: Vector2, fall: float, dice: RandomNumberGenerator = null) -> Dictionary:
+	var looks: Array = meta["guns"][kind]
+	var g: Dictionary = looks[dice.randi() % looks.size()] if dice else looks.pick_random()
 	var s := Sprite2D.new()
 	s.texture = tex(g["file"])
 	s.centered = false
@@ -4078,11 +4116,13 @@ func _leak(at: Vector2, r: float) -> void:
 ## HUD names it. The cartridges lying by it are his to pick up as usual.
 func _pick_up_guns() -> void:
 	var g: Dictionary = player.gun_at_feet() if player.alive and not player.down else {}
+	if g.is_empty() and arms and player.alive and not player.down:
+		g = arms.offer(player.global_position)   # (a long gun in a saddle or a wagon: his to take, F)
 	if g != at_feet:
 		if not at_feet.is_empty() and is_instance_valid(at_feet["sprite"]):
 			at_feet["sprite"].modulate = Color.WHITE
 		at_feet = g
-	if g.is_empty():
+	if g.is_empty() or g.has("place"):
 		return
 	if not Player.SLOT[g["kind"]] in player.owned and not g.get("his", false):
 		_take_up(g)
@@ -4092,7 +4132,12 @@ func _pick_up_guns() -> void:
 
 ## F: the gun at his feet into his hand, and his own in that slot left lying there.
 func swap_gun() -> void:
-	if not at_feet.is_empty() and player.alive and not player.down and loose_guns.has(at_feet):
+	if at_feet.is_empty() or not player.alive or player.down:
+		return
+	if at_feet.has("place"):
+		arms.hand_over(at_feet)
+		at_feet = {}
+	elif loose_guns.has(at_feet):
 		_take_up(at_feet)
 
 
@@ -4107,21 +4152,29 @@ func _take_up(g: Dictionary) -> void:
 	loose_guns.erase(g)
 	g["sprite"].queue_free()
 	at_feet = {}
-	var old: Weapon = player.take_up(k, g.get("weapon"))
-	var w: Weapon = player.weapons[Player.SLOT[k]]
-	var says := "%s  picked up  [%d]" % [w.d["name"], Player.ORDER.find(Player.SLOT[k]) + 1]
-	if old:   # down in the dirt where the other lay, as loaded as it was
-		var left := _place_gun(old.kind, g["at"], 6.0)
-		var keep := Weapon.new(old.kind, null)
-		keep.copy_load(old)
-		left["weapon"] = keep
-		left["his"] = true
-		says = "%s  for the %s" % [w.d["name"], old.d["name"]]
-		stats["guns swapped"] = stats.get("guns swapped", 0) + 1
+	var says := receive_gun(k, g.get("weapon"), g["at"], "picked up")
 	if bandolier > 0:
 		says += "  +%d" % bandolier
 	hud.toast(says)
 	stats["guns picked up"] = stats.get("guns picked up", 0) + 1
+
+
+## Gun `k` into his hand, loaded as `w` (null: a dead man's, part fired), and his own
+## in that slot down in the dirt at `at`, as loaded as it was; the line to toast.
+## `how` he came by it; `dice` for which way the old one lies, if not the town's own.
+func receive_gun(k: String, w: Weapon, at: Vector2, how: String, dice: RandomNumberGenerator = null) -> String:
+	var old: Weapon = player.take_up(k, w)
+	var nw: Weapon = player.weapons[Player.SLOT[k]]
+	var says := "%s  %s  [%d]" % [nw.d["name"], how, Player.ORDER.find(Player.SLOT[k]) + 1]
+	if old:
+		var left := _place_gun(old.kind, at, 6.0, dice)
+		var keep := Weapon.new(old.kind, null)
+		keep.copy_load(old)
+		left["weapon"] = keep
+		left["his"] = true
+		says = "%s  for the %s" % [nw.d["name"], old.d["name"]]
+		stats["guns swapped"] = stats.get("guns swapped", 0) + 1
+	return says
 
 
 ## Picked up: off the ground, and the cartridges lying with it go too.

@@ -854,6 +854,34 @@ def coffin():
     return m
 
 
+def coffin_open():
+    """His coffin with the lid gone: the box, its rough boards, the dark inside where
+    he lay, a shroud of white cloth thrown back."""
+    L, Wd = 2.0, 0.7
+    wood = planks((80, 54, 38), board=0.12, vertical=True, mud=0)
+    m = box((0, 0.05, 0), (L, 0.1, 0.42), wood)
+    m += box((0, Wd - 0.1, 0), (L, Wd - 0.05, 0.42), wood)
+    m += box((0, 0.1, 0), (0.05, Wd - 0.1, 0.42), wood)
+    m += box((L - 0.05, 0.1, 0), (L, Wd - 0.1, 0.42), wood)
+    m += box((0.05, 0.1, 0.0), (L - 0.05, Wd - 0.1, 0.06), solid((34, 26, 22)), skip=("-z",))   # the dark inside
+    m += ellipsoid((0.45, Wd / 2, 0.1), (0.28, 0.2, 0.06), solid((214, 208, 194)))           # the pillow
+    m += ellipsoid((L - 0.5, Wd / 2 - 0.05, 0.12), (0.4, 0.22, 0.08), solid((200, 194, 180)))  # the shroud, thrown back
+    return m
+
+
+def coffin_lid():
+    """The lid he put his boots through, lying where it fell: the cross on it, the
+    nails bent out of the boards."""
+    L, Wd = 2.0, 0.6
+    m = box((0, 0, 0), (L, Wd, 0.05), planks((98, 68, 46), board=0.12, vertical=True, mud=0), 0.02)
+    m += box((0.35, Wd / 2 - 0.03, 0.05), (0.95, Wd / 2 + 0.03, 0.06), solid((150, 130, 96)))
+    m += box((0.55, Wd / 2 - 0.2, 0.05), (0.61, Wd / 2 + 0.2, 0.06), solid((150, 130, 96)))
+    for x in (0.2, 1.0, 1.8):   # the nails, bent
+        for y in (0.06, Wd - 0.06):
+            m += beam((x, y, 0.05), (x + 0.04, y, 0.13), 0.008, (70, 66, 64))
+    return m
+
+
 def olla():
     """A big clay water jar (an olla) by an adobe door, a painted band round it."""
     def clay(P, N):
@@ -1213,9 +1241,10 @@ def mound():
     return m
 
 
-def open_grave(coffin_beside=True):
+def open_grave(coffin_beside=True, filled=True):
     """A grave being dug: the spoil heaped up at the back, the coffin waiting before it, and the dark hole in front where it can be seen into; or (coffin_beside
-    False) the coffin down in the hole, its lid showing, for the earth to go back over."""
+    False) the coffin down in the hole, its lid showing, for the earth to go back over;
+    or (neither) the hole waiting empty, its coffin elsewhere (the stranger's, with him in it)."""
     def earth(P, N):
         c = np.tile(np.array([96.0, 68, 44]), (len(P), 1))
         clod = hash01(np.floor(P[:, 0] * 14), np.floor(P[:, 1] * 14)) > 0.78
@@ -1228,7 +1257,7 @@ def open_grave(coffin_beside=True):
         c = coffin()
         c.translate((0.1, 0.4, 0))
         m += c
-    else:
+    elif filled:
         m += box((0.42, 1.36, 0.016), (1.78, 1.74, 0.02), solid((120, 90, 60)), skip=("-z",))  # the lid, below
     return m
 
@@ -2637,6 +2666,10 @@ BUILDINGS = {
     "mound": (mound, (1.0, 0.56), "none", False, None),
     "open_grave": (lambda: open_grave(True), (2.2, 2.0), "none", False, None),
     "open_grave_in": (lambda: open_grave(False), (2.2, 2.0), "none", False, None),
+    "open_grave_empty": (lambda: open_grave(False, False), (2.2, 2.0), "none", False, None),
+    "his_coffin": (coffin, (1.6, 0.56), "none", False, None),
+    "his_coffin_open": (coffin_open, (1.6, 0.56), "none", False, None),
+    "coffin_lid": (coffin_lid, (1.6, 0.48), "none", False, None),
     "olla": (olla, (0.4, 0.4), "none", False, None),
     "chair": (chair, (0.4, 0.4), "none", False, None),
     "table": (table, (0.56, 0.56), "none", False, None),

@@ -1169,10 +1169,9 @@
    "y": 33.0
   },
   {
-   "type": "open_grave",
+   "type": "open_grave_empty",
    "x": 30.9,
-   "y": 35.0,
-   "his": true
+   "y": 35.0
   },
   {
    "type": "cross",
@@ -3792,47 +3791,54 @@
  "enemies": [
   {
    "kind": "bandido",
-   "x": 34.21,
-   "y": 36.93,
-   "facing": 231
+   "x": 35.32,
+   "y": 37.4,
+   "facing": 231,
+   "mourning": true
   },
   {
    "kind": "revolucionario",
-   "x": 32.87,
-   "y": 38.24,
-   "facing": 311
+   "x": 33.3,
+   "y": 39.36,
+   "facing": 311,
+   "mourning": true
   },
   {
    "kind": "manhunter",
-   "x": 31.0,
-   "y": 38.18,
+   "x": 30.5,
+   "y": 39.27,
    "facing": 349,
+   "mourning": true,
    "gang": ""
   },
   {
    "kind": "soldado",
-   "x": 29.67,
-   "y": 36.57,
-   "facing": 17
+   "x": 28.5,
+   "y": 36.86,
+   "facing": 17,
+   "mourning": true
   },
   {
    "kind": "sargento",
-   "x": 29.96,
-   "y": 34.73,
-   "facing": 65
+   "x": 28.95,
+   "y": 34.09,
+   "facing": 65,
+   "mourning": true
   },
   {
    "kind": "trapper",
-   "x": 31.73,
-   "y": 33.62,
+   "x": 31.6,
+   "y": 32.42,
    "facing": 148,
+   "mourning": true,
    "gang": ""
   },
   {
    "kind": "pistolero",
-   "x": 33.52,
-   "y": 34.15,
-   "facing": 177
+   "x": 34.28,
+   "y": 33.22,
+   "facing": 177,
+   "mourning": true
   },
   {
    "kind": "cowboy",
@@ -3944,9 +3950,9 @@
  "civilians": [
   {
    "kind": "priest",
-   "x": 34.0,
-   "y": 37.2,
-   "facing": 243
+   "x": 35.4,
+   "y": 37.6,
+   "facing": 234
   },
   {
    "kind": "undertaker",
@@ -4018,44 +4024,44 @@
  ],
  "posts": [
   {
-   "x": 34.21,
-   "y": 36.93,
+   "x": 35.32,
+   "y": 37.4,
    "tag": "yard",
    "facing": 231
   },
   {
-   "x": 32.87,
-   "y": 38.24,
+   "x": 33.3,
+   "y": 39.36,
    "tag": "yard",
    "facing": 311
   },
   {
-   "x": 31.0,
-   "y": 38.18,
+   "x": 30.5,
+   "y": 39.27,
    "tag": "yard",
    "facing": 349
   },
   {
-   "x": 29.67,
-   "y": 36.57,
+   "x": 28.5,
+   "y": 36.86,
    "tag": "yard",
    "facing": 17
   },
   {
-   "x": 29.96,
-   "y": 34.73,
+   "x": 28.95,
+   "y": 34.09,
    "tag": "yard",
    "facing": 65
   },
   {
-   "x": 31.73,
-   "y": 33.62,
+   "x": 31.6,
+   "y": 32.42,
    "tag": "yard",
    "facing": 148
   },
   {
-   "x": 33.52,
-   "y": 34.15,
+   "x": 34.28,
+   "y": 33.22,
    "tag": "yard",
    "facing": 177
   },
@@ -4508,5 +4514,193 @@
   "x": 32.0,
   "y": 40.0
  },
- "posse": false
+ "posse": false,
+ "coffin": [
+  31.2,
+  37.05
+ ],
+ "nails": 1,
+ "wake": true,
+ "arms": [
+  {
+   "x": 13.8,
+   "y": 41.55,
+   "kind": "wagon"
+  },
+  {
+   "x": 53.15,
+   "y": 40.25,
+   "kind": "saddle"
+  },
+  {
+   "x": 56.75,
+   "y": 40.25,
+   "kind": "saddle"
+  },
+  {
+   "x": 52.95,
+   "y": 45.05,
+   "kind": "saddle"
+  },
+  {
+   "x": 58.6,
+   "y": 44.75,
+   "kind": "wagon"
+  },
+  {
+   "x": 23.2,
+   "y": 55.15,
+   "kind": "wagon"
+  },
+  {
+   "x": 19.8,
+   "y": 53.75,
+   "kind": "wagon"
+  },
+  {
+   "x": 37.2,
+   "y": 53.75,
+   "kind": "wagon"
+  },
+  {
+   "x": 28.0,
+   "y": 51.95,
+   "kind": "wagon"
+  },
+  {
+   "x": 18.15,
+   "y": 55.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 45.15,
+   "y": 61.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 5.2,
+   "y": 55.35,
+   "kind": "wagon"
+  },
+  {
+   "x": 8.35,
+   "y": 55.35,
+   "kind": "saddle"
+  },
+  {
+   "x": 11.55,
+   "y": 55.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 47.25,
+   "y": 55.25,
+   "kind": "wagon"
+  },
+  {
+   "x": 53.15,
+   "y": 55.75,
+   "kind": "saddle"
+  },
+  {
+   "x": 56.6,
+   "y": 55.15,
+   "kind": "wagon"
+  },
+  {
+   "x": 14.75,
+   "y": 55.75,
+   "kind": "saddle"
+  },
+  {
+   "x": 7.2,
+   "y": 61.55,
+   "kind": "wagon"
+  },
+  {
+   "x": 10.65,
+   "y": 61.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 14.2,
+   "y": 61.55,
+   "kind": "wagon"
+  },
+  {
+   "x": 17.65,
+   "y": 61.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 23.2,
+   "y": 61.55,
+   "kind": "wagon"
+  },
+  {
+   "x": 26.55,
+   "y": 61.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 36.7,
+   "y": 61.55,
+   "kind": "wagon"
+  },
+  {
+   "x": 40.15,
+   "y": 61.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 49.2,
+   "y": 61.55,
+   "kind": "wagon"
+  },
+  {
+   "x": 52.75,
+   "y": 61.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 57.2,
+   "y": 61.55,
+   "kind": "wagon"
+  },
+  {
+   "x": 60.75,
+   "y": 61.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 64.55,
+   "y": 61.15,
+   "kind": "saddle"
+  },
+  {
+   "x": 59.95,
+   "y": 55.95,
+   "kind": "saddle"
+  },
+  {
+   "x": 2.15,
+   "y": 61.55,
+   "kind": "saddle"
+  },
+  {
+   "x": 20.15,
+   "y": 61.75,
+   "kind": "saddle"
+  },
+  {
+   "x": 67.0,
+   "y": 39.35,
+   "kind": "wagon"
+  },
+  {
+   "x": 55.0,
+   "y": 33.6,
+   "kind": "rack"
+  }
+ ]
 }
