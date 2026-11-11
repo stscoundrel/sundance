@@ -1548,7 +1548,9 @@ carried, which you collect by walking over them.
   those), painted by the palette shader, so it costs no re-bake. Cruz Verde has him
   in the tan suit of the Swedish gun-seller in *Vamos a matar, compañeros*, Paso
   Esperanza in Corbett's slate grey and black hat from *The Big Gundown*, Silencio
-  in Silence's black from *The Great Silence*, dark against the snow. The `ui`
+  in Silence's black from *The Great Silence*, dark against the snow, and his own
+  funeral in the black suit and white shirt he was laid out in, a little grey in
+  the face. The `ui`
   step paints a portrait for each dressed level (`portrait_<id>.png`), and the
   HUD shows the one for where he is.
 - Sound: gunshots are loud and echoing, like the films: a hard crack, a saturated

@@ -2,14 +2,15 @@ extends SceneTree
 ## The stranger dresses for the place: each level that names his clothes in
 ## levels.json ("stranger") paints them on him with the palette shader, no re-bake,
 ## and the HUD's corner shows him in them; any slot it leaves out, and any level that
-## names none, keeps his usual dust-brown duster and the usual portrait.
+## names none, keeps his usual dust-brown duster and the usual portrait. At his
+## own funeral, the black suit and white shirt he was laid out in.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_dress.gd
 
 var game: Node
 var frame := 0
 var failures := 0
 var step := ""
-var todo := ["silencio", "cruz_verde", "test_yard"]
+var todo := ["silencio", "funeral", "cruz_verde", "test_yard"]
 
 
 func _initialize() -> void:
@@ -58,6 +59,8 @@ func _process(_delta: float) -> bool:
 		check(ResourceLoader.exists(faces[step]), "the portrait's missing: %s" % faces[step])
 	if step == "silencio":
 		check(_worn("coat").v < 0.2, "not in black in the snow: %s" % _worn("coat"))
+	if step == "funeral":   # (laid out in his black suit and a white shirt)
+		check(_worn("coat").v < 0.2 and _worn("shirt").v > 0.8, "not dressed for his burial: %s, %s" % [_worn("coat"), _worn("shirt")])
 	game.queue_free()
 	if todo.is_empty():
 		print("dress test: %s" % ("OK" if failures == 0 else "FAILED (%d)" % failures))

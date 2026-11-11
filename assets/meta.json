@@ -1018434,7 +1018434,8 @@
   "portraits": {
    "cruz_verde": "res://assets/sprites/ui/portrait_cruz_verde.png",
    "train": "res://assets/sprites/ui/portrait_train.png",
-   "silencio": "res://assets/sprites/ui/portrait_silencio.png"
+   "silencio": "res://assets/sprites/ui/portrait_silencio.png",
+   "funeral": "res://assets/sprites/ui/portrait_funeral.png"
   },
   "guns": {
    "colts": "res://assets/sprites/ui/gun_colts.png",
