@@ -17,6 +17,13 @@ extends Node2D
 ## keeps where it started, and the shader (`shaders/snowfall.gdshader`) works out
 ## where it is now from how far the wind and the fall have carried everything since
 ## (`drift`, `fall`, summed up here as the squalls come and go).
+##
+## At the stranger's funeral it is rain (the map's "rain"): long grey streaks
+## slanting down fast instead of flakes, falling steady, and every so often a
+## downpour that hammers down, greys out the edges of the screen and drowns the
+## world in its noise. The same squalls, the same cut to everyone's sight; nothing
+## else of the snow (no prints, no drifts, nobody goes in out of it: they came to
+## bury him and they'll stand there wet).
 
 static var rng := RandomNumberGenerator.new()   # (when the squalls come, and how long they blow)
 const SHADER := preload("res://shaders/snowfall.gdshader")
@@ -31,8 +38,16 @@ const FIRST := Vector2(40.0, 70.0)  # s before the first squall
 const GAP := Vector2(45.0, 80.0)    # s of steady snow between squalls
 const BLOW := Vector2(20.0, 35.0)   # s a squall blows at its worst
 const RISE := 8.0           # s for one to build (and as long to die away)
+# The rain's own (see above): far more drops falling far faster, a little slant on
+# the steady rain, a hard one in a downpour, and as far to see through as the snow.
+const RAIN_COUNT := 700
+const RAIN_STORM_COUNT := 2200
+const RAIN_WIND := Vector2(40.0, 150.0)
+const RAIN_FALL := Vector2(420.0, 760.0)
+const RAIN_SIGHT := Vector2(0.88, 0.6)
 
 var game: Node
+var rain := false           # the funeral's rain, not the snow (setup's `wet`)
 var flakes: Array[Vector4] = []   # where each started: x, y, depth (0 far .. 1 near), sway phase
 var squalls: Array[Vector2] = []  # [start, end of the worst] in game seconds
 var storm := 0.0            # 0 steady snow .. 1 the worst of a squall
@@ -44,8 +59,9 @@ var _mm := MultiMesh.new()
 var _mats: Array[ShaderMaterial] = []
 
 
-func setup(g: Node) -> void:
+func setup(g: Node, wet := false) -> void:
 	game = g
+	rain = wet
 	var at := rng.randf_range(FIRST.x, FIRST.y)
 	while at < 3600.0:
 		var blow := rng.randf_range(BLOW.x, BLOW.y)
@@ -65,13 +81,14 @@ func setup(g: Node) -> void:
 		var f := flakes[i]
 		_mm.set_instance_transform_2d(i, Transform2D.IDENTITY)
 		_mm.set_instance_custom_data(i, Color(f.x, f.y, f.z, f.w))
-	for under in [true, false]:   # the grey undersides, then the flakes over them
+	for under in ([false] if rain else [true, false]):   # the grey undersides, then the flakes over them (a raindrop needs none)
 		var mmi := MultiMeshInstance2D.new()
 		mmi.multimesh = _mm
 		var mat := ShaderMaterial.new()
 		mat.shader = SHADER
 		mat.set_shader_parameter("underside", under)
-		mat.set_shader_parameter("fall_px", FALL)
+		mat.set_shader_parameter("fall_px", RAIN_FALL if rain else FALL)
+		mat.set_shader_parameter("rain", rain)
 		mmi.material = mat
 		_mats.append(mat)
 		add_child(mmi)
@@ -120,24 +137,28 @@ func _view() -> Rect2:
 
 func _physics_process(_delta: float) -> void:
 	storm = storm_at(game.clock)
-	game.sight = lerpf(SIGHT.x, SIGHT.y, storm)
+	var sight := RAIN_SIGHT if rain else SIGHT
+	game.sight = lerpf(sight.x, sight.y, storm)
 	if storm > 0.5 and not _was_up and game.state == "play":
-		game.hud.toast("A squall comes down off the mountain")
+		game.hud.toast("The heavens open" if rain else "A squall comes down off the mountain")
 	_was_up = storm > 0.5
 
 
 func _process(delta: float) -> void:
 	t += delta
-	drift += lerpf(WIND.x, WIND.y, storm) * delta
-	fall += (1.0 + storm * 0.8) * delta
+	var wind := RAIN_WIND if rain else WIND
+	drift += lerpf(wind.x, wind.y, storm) * delta
+	fall += (1.0 + storm * (0.4 if rain else 0.8)) * delta
 	var v := _view()
-	_mm.visible_instance_count = int(lerpf(COUNT, STORM_COUNT, storm))
+	_mm.visible_instance_count = int(lerpf(RAIN_COUNT, RAIN_STORM_COUNT, storm)) if rain else int(lerpf(COUNT, STORM_COUNT, storm))
 	for mat in _mats:
 		mat.set_shader_parameter("view", Vector4(v.position.x, v.position.y, v.size.x, v.size.y))
 		mat.set_shader_parameter("drift", drift)
 		mat.set_shader_parameter("fall", fall)
 		mat.set_shader_parameter("t", t)
 		mat.set_shader_parameter("streak", 1.0 + storm * 3.0)
+		if rain:   # (the slant of the drops: how far the wind carries one for each px it falls)
+			mat.set_shader_parameter("slant", lerpf(wind.x, wind.y, storm) / lerpf(RAIN_FALL.x, RAIN_FALL.y, 0.5))
 
 
 ## Where flake `i` is now (the shader's sum, for the tests): drifting east on the
@@ -145,5 +166,7 @@ func _process(delta: float) -> void:
 func flake_at(i: int) -> Vector2:
 	var f := flakes[i]
 	var v := _view()
-	var at := Vector2(f.x + drift * (0.5 + f.z) - cos(t * 1.3 + f.w) * 6.0 / 1.3, f.y + fall * lerpf(FALL.x, FALL.y, f.z))
+	var fp := RAIN_FALL if rain else FALL
+	var sway := 0.0 if rain else cos(t * 1.3 + f.w) * 6.0 / 1.3
+	var at := Vector2(f.x + drift * (0.5 + f.z) - sway, f.y + fall * lerpf(fp.x, fp.y, f.z))
 	return Vector2(v.position.x + fposmod(at.x - v.position.x, v.size.x), v.position.y + fposmod(at.y - v.position.y, v.size.y)).floor()

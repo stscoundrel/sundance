@@ -662,7 +662,7 @@ and a good enough man breaks out on them. A bad one is buried (he lived by the g
 he died by the gun). Built in phases. Phase 1, the place, phase 2, out of the
 coffin, phase 3, the burial, and phase 4, his record, are done.
 
-- **The burial ground.** A wide valley under a grey sky, after the rain (Sad Hill's
+- **The burial ground.** A wide valley under a grey sky, in the rain (Sad Hill's
   great round cemetery, Django's mud). Eight rings of graves, crosses mostly,
   surround a circle of paving stones with his open grave at its heart, the coffin
   waiting beside it. Paths run in from the four sides. The crosses hide nobody, so
@@ -709,6 +709,18 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   mud dark, puddles in it (`GROUND_PALETTES` in `gen_assets.py`); the grade washed out
   and cool (`GRADES` in `game.gd`, by weather, as Silencio's snow is); no tumbleweed
   blows through the wet. The covered wagons wear and break like the plain ones.
+- **The rain** (the map's `"rain": true`; `Snowfall` in its rain, `tests/test_rain.gd`).
+  It rains on his funeral: Silencio's snowfall with streaks for flakes (long, thin,
+  slanting with the wind, no sway, no undersides; `rain` in `snowfall.gdshader`) and
+  its own numbers (`RAIN_*`): 700 drops in the steady rain, falling 420-760 px/s, and
+  its squalls on the same schedule as downpours ("The heavens open"), up to 2200 drops
+  driving at a hard slant, the edges greying in (the post shader's `fog` at 0.6 with
+  a dark `fog_col`). It's what everyone sees by, as the snow is: `game.sight` 0.88 in
+  the steady rain, 0.6 in a downpour's worst. The wind's loop is the rain's (`rain`
+  in the sfx bake: a hiss, a low wash and the patter of near drops), louder in a
+  downpour. None of the snow's other workings: no prints or drifts, and nobody goes
+  in out of it (they came to bury him). Not yet: puddles that come and go, the noise
+  of it covering shots, the blood trail washing out.
 - **The guests.** Fifteen, in four factions, one from each town: San Miguel's
   bandidos, the revolutionaries, the federales, and the northerners from Silencio
   (its hunters and outlaws together; each faction a `"gang"` of its own). Seven stand

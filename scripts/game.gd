@@ -359,7 +359,7 @@ func _ready() -> void:
 	if DisplayServer.get_name() != "headless":
 		_preload(meta)   # every sprite too, for the same reason (a crate's wreck, a pool of blood...)
 	var wind := AudioStreamPlayer.new()
-	wind.stream = load(meta["sfx"]["wind"])
+	wind.stream = load(meta["sfx"]["rain" if snowfall and snowfall.rain else "wind"])   # (the funeral's rain takes the wind's place)
 	wind.volume_db = -12.0
 	add_child(wind)
 	wind.finished.connect(wind.play)
@@ -1321,6 +1321,11 @@ func _build_overlay() -> void:
 		drifts = Drifts.new()
 		drifts.setup(self)
 		add_child(drifts)
+	elif level.get("rain", false):   # the funeral's rain: the squalls and the sight, none of the snow's
+		snowfall = Snowfall.new()
+		snowfall.setup(self, true)
+		add_child(snowfall)
+		mat.set_shader_parameter("fog_col", Vector3(0.36, 0.38, 0.42))
 
 	hud_layer = CanvasLayer.new()
 	hud_layer.layer = 10
@@ -1399,8 +1404,8 @@ func _process(delta: float) -> void:
 	var mat := post.material as ShaderMaterial
 	mat.set_shader_parameter("time_s", now / 1000.0)
 	if snowfall:   # a squall: the white closing in, and the wind howling
-		mat.set_shader_parameter("fog", snowfall.storm)
-		wind_player.volume_db = -12.0 + 9.0 * snowfall.storm
+		mat.set_shader_parameter("fog", snowfall.storm * (0.6 if snowfall.rain else 1.0))
+		wind_player.volume_db = (-14.0 + 10.0 * snowfall.storm) if snowfall.rain else (-12.0 + 9.0 * snowfall.storm)
 	mat.set_shader_parameter("hurt", hurt_fx)
 	if player and player.down:
 		# the colour going out of it as he bleeds, and his heart, slowing

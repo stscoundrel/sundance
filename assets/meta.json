@@ -1042043,7 +1042043,8 @@
   "chop": "res://assets/sfx/chop.wav",
   "chop_2": "res://assets/sfx/chop_2.wav",
   "chop_3": "res://assets/sfx/chop_3.wav",
-  "crackle": "res://assets/sfx/crackle.wav"
+  "crackle": "res://assets/sfx/crackle.wav",
+  "rain": "res://assets/sfx/rain.wav"
  },
  "ground": {
   "file": "res://assets/sprites/ground.png",

@@ -453,7 +453,8 @@ def main():
         "name": "A Good Man Never Dies",
         "size": N,
         "ground": "ground_funeral",
-        "weather": "grey",   # under cloud, after the rain (the grade in game.gd, the ground in gen_assets)
+        "weather": "grey",   # under cloud, and wet (the grade in game.gd, the ground in gen_assets)
+        "rain": True,        # and it rains on them (Snowfall, in its rain)
         "streets": STREETS,
         "mud": MUD,
         "boothills": BOOTHILLS,

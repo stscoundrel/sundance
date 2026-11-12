@@ -3,6 +3,7 @@
  "size": 100,
  "ground": "ground_funeral",
  "weather": "grey",
+ "rain": true,
  "streets": [
   [
    0.0,

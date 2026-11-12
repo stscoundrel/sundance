@@ -1501,7 +1501,7 @@ func _physics_process(delta: float) -> void:
 		if l and has_anim("upper/unarmed/aim"):
 			anim_gun = "unarmed"   # (no gun in his hand at a burial; he goes for it when he comes to)
 			_hands_empty = true
-	if game.snowfall and game.state == "play":
+	if game.snowfall and not game.snowfall.rain and game.state == "play":
 		_think_shelter()
 	weapon.update(delta)
 	fear_cd = max(0.0, fear_cd - delta)

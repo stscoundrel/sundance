@@ -1324,6 +1324,21 @@ def gen_sfx(meta):
              for _ in range(14)]
     fade = np.minimum(1.0, np.minimum(ft / 0.15, (2.4 - ft) / 0.15))
     write("crackle", place(2.4, [(0.0, roar * fade * 0.5)] + snaps), meta, 0.4)
+    # Rain on the burial ground (the funeral's, Snowfall in its rain): a hiss over a
+    # low wash, and the patter of near drops on hats, wood and puddles; looped, it
+    # takes the wind's place and swells in a downpour.
+    qrng = np.random.default_rng(103)
+    dur = 6.0
+    rt = t_of(dur + 1.0)
+    hiss = highpass(lowpass(qrng.normal(0, 1, len(rt)), 6000), 900) * 0.5
+    wash = lowpass(qrng.normal(0, 1, len(rt)), 500) * (0.8 + 0.2 * np.sin(2 * np.pi * rt / (dur + 1.0)))
+    pat = [(qrng.uniform(0.0, dur + 0.9), highpass(qrng.normal(0, 1, int(SR * 0.003)), 2500) * qrng.uniform(0.15, 0.6))
+           for _ in range(900)]
+    r = place(dur + 1.0, [(0.0, hiss + wash * 0.6)] + pat)
+    k = int(SR * 1.0)
+    fade = np.linspace(0, 1, k)
+    r[:k] = r[:k] * fade + r[-k:] * (1 - fade)
+    write("rain", r[:-k], meta, 0.35)
 
 
 def main():

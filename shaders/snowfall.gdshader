@@ -14,18 +14,27 @@ uniform float t = 0.0;        // s: the sway
 uniform float streak = 1.0;   // how far a squall draws the near ones out flat
 uniform vec2 fall_px = vec2(12.0, 32.0);   // px/s, far to near
 uniform bool underside = false;
+// The funeral's rain: thin streaks slanting down with the wind, long and pale near,
+// short and faint far off; no sway, no undersides.
+uniform bool rain = false;
+uniform float slant = 0.1;   // px east per px down
 
 varying vec4 col;
 
 void vertex() {
 	vec4 f = INSTANCE_CUSTOM;
-	vec2 at = vec2(f.x + drift * (0.5 + f.z) - cos(t * 1.3 + f.w) * 6.0 / 1.3,
+	float sway = rain ? 0.0 : cos(t * 1.3 + f.w) * 6.0 / 1.3;
+	vec2 at = vec2(f.x + drift * (0.5 + f.z) - sway,
 		f.y + fall * mix(fall_px.x, fall_px.y, f.z));
 	at = floor(view.xy + mod(at - view.xy, view.zw));
 	float s = f.z > 0.6 ? 2.0 : 1.0;
 	float w = f.z > 0.35 ? s * streak : s;
 	vec2 corner = VERTEX + 0.5;   // (the quad's 0..1)
-	if (underside) {
+	if (rain) {
+		float len = mix(5.0, 16.0, f.z);
+		VERTEX = at + vec2(corner.x * (f.z > 0.7 ? 1.0 : 0.6) - (1.0 - corner.y) * len * slant, -(1.0 - corner.y) * len);
+		col = vec4(0.72, 0.76, 0.82, mix(0.16, 0.5, f.z));
+	} else if (underside) {
 		VERTEX = f.z > 0.35 ? at + vec2(0.0, s) + corner * vec2(w, 1.0) : vec2(0.0);
 		col = vec4(0.42, 0.46, 0.56, 0.45 * f.z);
 	} else {
