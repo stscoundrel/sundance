@@ -793,7 +793,12 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   drink after, so nobody's on his guard. Every guest's reflex is twice as slow. The
   seven at the grave listen to the padre while the stranger's in the box: eyes on
   the grave, no looking about and no wandering off (`Enemy.listening`), their view
-  cones put away till he's out.
+  cones put away and their hands empty (the "unarmed" look, baked for their bodies
+  by `template_guns`) till he's out; each goes for his gun when he comes to. The
+  rest are at their ease: a smoke and a call of nature come round about three times
+  as often as in any town (`Enemy.WAKE_EASE`), and three girls from the cantina are
+  out among them, one on its porch and one at each dinner, talking to whoever's
+  standing about (real townsfolk: shoot one and she's an innocent).
   Gunfire, a comrade's shout or the crash of the lid doesn't send a man into the
   fight (unless it's right beside him, within 90 px: then it's his fight too): it
   puzzles him ("?", "Somebody celebrating?"), and 4 to 6.5 s later he walks

@@ -69,6 +69,7 @@ func _process(delta: float) -> bool:
 			check(p.global_position.distance_to(at_start) < 1.0, "he moved in the box")
 			check(game.enemies.all(func(e): return not e.sees_player and e.st != Enemy.St.COMBAT), "seen in his coffin")
 			check(_mourners().all(func(e): return e.listening() and not e.cone.visible), "a mourner looking about, not listening")
+			check(_mourners().all(func(e): return e.anim_gun == "unarmed"), "a gun in hand at the graveside: %s" % [_mourners().map(func(e): return e.anim_gun)])
 			step = "blows"
 			check(c.blows_left() == 4 and c.nails_left() == 2, "two nails: %d blows, %d nails" % [c.blows_left(), c.nails_left()])
 			for i in 2:
@@ -112,6 +113,7 @@ func _process(delta: float) -> bool:
 			step = "fumbling"
 			check(_mourners().all(func(e): return not e.alive or e.st == Enemy.St.COMBAT), "still standing there: %s" % [_mourners().map(func(e): return e.reaction)])
 			check(game.stats.get("comes to", 0) >= 6, "came to: %s" % game.stats.get("comes to", 0))
+			check(_mourners().all(func(e): return not e.alive or e.anim_gun == ""), "came to, and still no gun out")
 			check(not game.hud.eyes_on and Engine.time_scale == 1.0, "the stand-off close-up took the player's seconds")
 			step = "wake"
 			for e in game.enemies:   # the cowboy on the cantina's porch, far from it all

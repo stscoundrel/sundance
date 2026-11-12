@@ -116,6 +116,8 @@ def template_guns():
                 guns = list(t["loadout"]) + [g for o in t.get("loadouts", []) for g in o["guns"]]
                 if not any(g in PISTOLS for g in guns):
                     need(t["template"], "navy")
+                if e.get("mourning"):   # (at the grave, listening, his hands empty: see Enemy.listening)
+                    need(t["template"], "unarmed")
     return out
 
 

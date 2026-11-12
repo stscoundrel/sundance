@@ -12,7 +12,9 @@ extends SceneTree
 ##            road home and more men down it; the rest well apart about the valley;
 ##            seven round the grave looking in at it; the padre, the undertaker, his
 ##            digger, three mourners, the two women who cooked the wake and a man of
-##            the town besides, and at the grave the carpenter and a second digger.
+##            the town besides, at the grave the carpenter and a second digger, and
+##            three girls from the cantina; the rest of the guests at their ease (a
+##            smoke, a call of nature, sooner than anywhere).
 ##   dead   - the digger keeps to his own row (the stranger's grave isn't his to
 ##            fill), and the undertaker buries the day's dead in his own plot, clear
 ##            of the old graves.
@@ -125,7 +127,13 @@ func _guests() -> void:
 	for e in at_grave:
 		var to_grave: Vector2 = Iso.to_screen(C) - e.global_position
 		check(e.facing.dot(to_grave.normalized()) > 0.7, "%s looks away from the grave" % e.kind)
-	check(game.civilians.size() == 11, "townsfolk: %d" % game.civilians.size())
+	check(game.civilians.size() == 14, "townsfolk: %d" % game.civilians.size())
+	check(game.civilians.filter(func(c): return c.flirts).size() == 3, "girls from the cantina: %d" % game.civilians.filter(func(c): return c.flirts).size())
+	# at their ease: a smoke and a call of nature come round sooner than in any town
+	for e in game.enemies:
+		if not e.tdata.get("mourning", false):
+			check(e.smoke_at - game.clock <= Enemy.SMOKE_EVERY.y * Enemy.WAKE_EASE + 0.1 and e.nature_at - game.clock <= Enemy.NATURE_EVERY.y * Enemy.WAKE_EASE + 0.1,
+				"%s is in no hurry for a smoke: %.0f s" % [e.kind, e.smoke_at - game.clock])
 	check(game.civilians.any(func(c): return c.priest) and game.civilians.any(func(c): return c.undertaker), "no padre or no undertaker")
 
 

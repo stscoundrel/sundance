@@ -264,6 +264,7 @@ static var henry_rng := RandomNumberGenerator.new()
 # plainly a battle (BATTLE of them dead: ARM_CHANCE, once a man), and comes back
 # with it.
 const WAKE_SLOW := 2.0
+const WAKE_EASE := 0.35      # his smokes and calls of nature come round this much sooner at the wake
 const BATTLE := 3
 const ARM_CHANCE := 0.5
 const FLEE_ARM := 0.5
@@ -296,6 +297,7 @@ var stare := ""              # how he stands there struck dumb (STARES)
 var stare_t := 0.0
 var heard_knock := false
 var _was_listening := false  # (his cone put away while he listens at the grave: see listening)
+var _hands_empty := false    # (and his gun: hands folded, till he comes to and goes for it)
 # A man who can afford it may have the new Spencer pump gun for his coach gun (data
 # "pump": the chance; El Jefe's). Nobody's does unless his type says. Its own dice.
 static var pump_rng := RandomNumberGenerator.new()
@@ -814,6 +816,9 @@ func enter_combat(pos: Vector2, spotted: bool, propagate: bool) -> void:
 			and not game.player.in_coffin:
 		agape(pos, wake_rng.randf_range(FIRST_SIGHT.x, FIRST_SIGHT.y), wake_rng)   # (a dead man, walking: he stares first)
 		return
+	if _hands_empty and reaction != "agape":
+		_hands_empty = false
+		anim_gun = ""   # (the gun out at last)
 	reveal()
 	smoke_t = -1.0
 	var was := st
@@ -1379,6 +1384,9 @@ func _do_reaction(delta: float) -> void:
 				pose = stare
 			if reaction_t <= 0.0:
 				reaction = ""
+				if _hands_empty:
+					_hands_empty = false
+					anim_gun = ""   # (the gun out at last)
 				_log("comes to")
 				if arm_after:   # (he was running for his long gun: he still is)
 					arm_after = false
@@ -1488,6 +1496,9 @@ func _physics_process(delta: float) -> void:
 	if l != _was_listening:   # (his cone away while he listens, back the moment it's over)
 		_was_listening = l
 		cone.visible = not l and revealed
+		if l and has_anim("upper/unarmed/aim"):
+			anim_gun = "unarmed"   # (no gun in his hand at a burial; he goes for it when he comes to)
+			_hands_empty = true
 	if game.snowfall and game.state == "play":
 		_think_shelter()
 	weapon.update(delta)
@@ -1868,8 +1879,14 @@ func _peso_errand(delta: float) -> void:
 
 ## His first smoke and call of nature, some way into the level (game._spawn_actors).
 func roll_habits() -> void:
-	smoke_at = game.clock + habit_rng.randf_range(SMOKE_EVERY.x * 0.3, SMOKE_EVERY.y)
-	nature_at = game.clock + habit_rng.randf_range(NATURE_EVERY.x * 0.3, NATURE_EVERY.y)
+	smoke_at = game.clock + habit_rng.randf_range(SMOKE_EVERY.x * 0.3, SMOKE_EVERY.y) * _ease()
+	nature_at = game.clock + habit_rng.randf_range(NATURE_EVERY.x * 0.3, NATURE_EVERY.y) * _ease()
+
+
+## How much sooner his habits come round: at the funeral's wake (all of them at their
+## ease, the drink coming) WAKE_EASE of the usual; else as usual.
+func _ease() -> float:
+	return WAKE_EASE if game.level.get("wake", false) else 1.0
 
 
 ## At his post with nothing going on: a smoke, or a call of nature. True while he's
@@ -1886,12 +1903,12 @@ func _habits(delta: float) -> bool:
 		if smoke_t >= SMOKE_LIGHT:
 			smoke_t = -1.0
 			puff_until = game.clock + habit_rng.randf_range(SMOKE_PUFF.x, SMOKE_PUFF.y)
-			smoke_at = puff_until + habit_rng.randf_range(SMOKE_EVERY.x, SMOKE_EVERY.y)
+			smoke_at = puff_until + habit_rng.randf_range(SMOKE_EVERY.x, SMOKE_EVERY.y) * _ease()
 		return true
 	if not _at_ease():
 		return false
 	if game.clock >= nature_at and game.flirting_ok() and has_anim(_upper_key("relieve")):
-		nature_at = game.clock + habit_rng.randf_range(NATURE_EVERY.x, NATURE_EVERY.y)
+		nature_at = game.clock + habit_rng.randf_range(NATURE_EVERY.x, NATURE_EVERY.y) * _ease()
 		if _go_off_for_nature():
 			return true
 	if not game.fires.is_empty() and _think_warm():

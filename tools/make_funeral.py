@@ -320,6 +320,11 @@ TOWNSFOLK = [
     {"kind": "townswoman", "x": 18.6, "y": -3.0, "facing": W},
     {"kind": "townswoman", "x": 58.6, "y": -3.0, "facing": W},
     {"kind": "townsman", "x": 67.6, "y": 30.0, "facing": W},
+    # girls from the cantina, out among the guests (the real thing: townsfolk, see
+    # Civilian "flirts"): one on its porch, one at each of the dinners
+    {"kind": "saloon_girl", "x": 56.2, "y": 28.8, "facing": S, "palette": 0},
+    {"kind": "saloon_girl", "x": 13.0, "y": -3.0, "facing": S, "palette": 1},
+    {"kind": "saloon_girl", "x": 53.0, "y": -3.0, "facing": S, "palette": 2},
 ]
 
 HOLDOUTS = [{"name": "chapel", "x": 32.0, "y": 8.9}, {"name": "cantina", "x": 55.0, "y": 27.4},

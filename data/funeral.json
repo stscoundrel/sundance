@@ -6286,6 +6286,27 @@
    "x": 79.6,
    "y": 48.0,
    "facing": 206
+  },
+  {
+   "kind": "saloon_girl",
+   "x": 68.2,
+   "y": 46.8,
+   "facing": 154,
+   "palette": 0
+  },
+  {
+   "kind": "saloon_girl",
+   "x": 25.0,
+   "y": 15.0,
+   "facing": 154,
+   "palette": 1
+  },
+  {
+   "kind": "saloon_girl",
+   "x": 65.0,
+   "y": 15.0,
+   "facing": 154,
+   "palette": 2
   }
  ],
  "holdouts": [
