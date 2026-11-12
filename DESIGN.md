@@ -679,8 +679,21 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   carriages and horses the guests came in on from every town he crossed: wagons,
   covered wagons (`covered_wagon`), the revolution's cart, and horses tied to their
   posts in four coats (`horse`, `horse_grey`, `horse_sorrel`, `horse_black`), all
-  cover. The map is 76 tiles across, more than the other towns' 64, with about 720
-  things on it (520 of them graves; it still renders at well over 60 fps).
+  cover. Round it all, the map grew a second time, to 100 tiles across: the whole of
+  the mission to the north (the mission house and the brothers' dormitory inside a
+  cloister wall, a well, the workers' huts outside it), the town proper to the east
+  on its main street (saloon, hotel, sheriff, gunsmith, barber, bank, store), the
+  older graves going on south past the road round a mortuary chapel and more crypts,
+  and to the west the carpenter who makes the coffins and the mason who cuts the
+  stones, with their yards. About 1,170 things on it (880 of them graves); it renders
+  at about 140 fps.
+- **The gate and the cartridges.** The path up to the graves from the road goes
+  through a wooden gateway (`cem_gate`), and beside it is the rack where the guests
+  stood their long guns before they went up (`gun_rack`): four in it for the
+  stranger, one after another (and the guests run there for theirs too; the
+  cantina's rack holds two). Boxes of cartridges lie about the dinners, the
+  cantina, the wagons and the rack (the map's `"pickups"`: Colt's mostly, some rifle
+  and shotgun).
 - **The wake's dinner.** Laid out ready in the two northern corners for the guests
   to come back to once he's in the ground: two rows of three long tables under white
   cloths, set with plates, cups, bottles, bread and a roast (`feast_x`: cover, heavy
@@ -695,17 +708,29 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   mud dark, puddles in it (`GROUND_PALETTES` in `gen_assets.py`); the grade washed out
   and cool (`GRADES` in `game.gd`, by weather, as Silencio's snow is); no tumbleweed
   blows through the wet. The covered wagons wear and break like the plain ones.
-- **The guests.** Twenty, a few from each town: San Miguel's gang, the revolution,
-  the federales, Silencio's hunters and outlaws. They're all on one side (each of
-  Silencio's men is placed with `"gang": ""`). Seven stand round the grave looking in
-  at it; the rest are on the cantina's porch and at its horses, on the chapel steps
-  and the mission wall, up the rocks, by the wagons, and walking the road and the
-  outer graves (the seven at the grave stand a couple of steps back from it, outside
-  the ring of paving stones, so the player can see what's going on). With them are the padre, the undertaker and his digger at the fresh
-  row (the stranger's own grave, marked `"his"` in the map, isn't the digger's to
-  fill; the day's dead go in the undertaker's own plot below the row, the map's first
-  boot hill, the old rings being the second, for the mourners), three mourners going from grave to grave, the two cooks and the townsman. The
-  ordinary alarm for now.
+- **The guests.** Fifteen, in four factions, one from each town: San Miguel's
+  bandidos, the revolutionaries, the federales, and the northerners from Silencio
+  (its hunters and outlaws together; each faction a `"gang"` of its own). Seven stand
+  round the grave looking in at it, a couple of steps back, outside the ring of
+  paving stones, so the player can see what's going on; the other eight are well
+  apart about the valley (the cantina's porch, both dinners, the mission wall, the
+  chapel steps, the wagons on the road, the rocks, the town's street). With them are
+  the padre, the carpenter and a digger at the grave (see the burial), the
+  undertaker and his digger at the fresh row (the stranger's grave, an
+  `open_grave_empty`, isn't the digger's to fill; the day's dead go in the
+  undertaker's own plot below the row, the map's first boot hill, the old rings
+  being the second, for the mourners), three mourners going from grave to grave,
+  the two cooks and the townsman.
+- **Runners and reinforcements** (the map's `"camps"`, `Director`; `tests/test_runners.gd`).
+  Each faction has its own road home and five more of its own sorts waiting just past
+  the edge of the map down it: the bandidos the west road, the revolutionaries the
+  mission track, the federales the east road, the northerners the town. Once one of
+  a faction falls, its nearest man drops everything and runs for its road, a banner
+  saying so; within shouting distance of the map's edge (the level's `"shout"`, 3.5
+  tiles) he's heard, and 30 s on (saddling up, riding over) its five come down that
+  road all at once. They rode
+  in for a fight: armed with their long guns, quick to it, and not struck dumb (they
+  were told). Shoot the runner on the way and that faction gets no help.
 - **In the coffin** (`scripts/coffin.gd`; `tests/test_coffin.gd`). He starts laid
   out in his own coffin before his empty grave (the map's `"coffin"`), the lid
   nailed down: nobody can see him and he can't move. The player sees the graveside

@@ -1018407,6 +1018407,526 @@
     ]
    ],
    "doors": []
+  },
+  "cem_gate": {
+   "file": "res://assets/sprites/world/cem_gate.png",
+   "anchor": [
+    20,
+    145
+   ],
+   "footprint": [
+    3.6,
+    0.4
+   ],
+   "collide": "post",
+   "fade": false,
+   "colliders": [
+    [
+     0.05,
+     0.05,
+     0.35,
+     0.35
+    ],
+    [
+     3.25,
+     0.05,
+     3.55,
+     0.35
+    ]
+   ],
+   "doors": []
+  },
+  "gun_rack": {
+   "file": "res://assets/sprites/world/gun_rack.png",
+   "anchor": [
+    25,
+    57
+   ],
+   "footprint": [
+    1.6,
+    0.5
+   ],
+   "collide": "cover",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     1.6,
+     0.5
+    ]
+   ],
+   "doors": []
+  },
+  "carpentry": {
+   "file": "res://assets/sprites/world/carpentry.png",
+   "anchor": [
+    248,
+    172
+   ],
+   "footprint": [
+    5,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     5,
+     4
+    ]
+   ],
+   "doors": [
+    [
+     2.5,
+     4.4
+    ]
+   ],
+   "paint": "wood",
+   "shutters": [
+    {
+     "file": "res://assets/sprites/world/shutters/carpentry_0.png",
+     "cell": [
+      99,
+      85
+     ],
+     "frames": 4,
+     "anchor": [
+      188,
+      -29
+     ],
+     "at": [
+      1.25,
+      4.0
+     ],
+     "z": 0.9
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/carpentry_1.png",
+     "cell": [
+      99,
+      84
+     ],
+     "frames": 4,
+     "anchor": [
+      68,
+      -89
+     ],
+     "at": [
+      3.75,
+      4.0
+     ],
+     "z": 0.9
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/carpentry_2.png",
+     "cell": [
+      90,
+      102
+     ],
+     "frames": 4,
+     "anchor": [
+      -153,
+      -23
+     ],
+     "at": [
+      5.0,
+      1.0
+     ],
+     "z": 1.0
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/carpentry_3.png",
+     "cell": [
+      90,
+      102
+     ],
+     "frames": 4,
+     "anchor": [
+      -57,
+      -71
+     ],
+     "at": [
+      5.0,
+      3.0
+     ],
+     "z": 1.0
+    }
+   ],
+   "glass": [
+    {
+     "file": "res://assets/sprites/world/glass/carpentry_0.png",
+     "cell": [
+      32,
+      41
+     ],
+     "frames": 1,
+     "anchor": [
+      151,
+      -47
+     ],
+     "shutter": 0,
+     "span": [
+      [
+       0.8099999999999999,
+       4.0
+      ],
+      [
+       1.69,
+       4.0
+      ]
+     ],
+     "z": [
+      0.9,
+      2.2
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/glass/carpentry_1.png",
+     "cell": [
+      37,
+      43
+     ],
+     "frames": 1,
+     "anchor": [
+      31,
+      -107
+     ],
+     "shutter": 1,
+     "span": [
+      [
+       3.31,
+       4.0
+      ],
+      [
+       4.1899999999999995,
+       4.0
+      ]
+     ],
+     "z": [
+      0.9,
+      2.2
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/glass/carpentry_2.png",
+     "cell": [
+      34,
+      63
+     ],
+     "frames": 1,
+     "anchor": [
+      -175,
+      -40
+     ],
+     "shutter": 2,
+     "span": [
+      [
+       5.0,
+       0.6
+      ],
+      [
+       5.0,
+       1.4
+      ]
+     ],
+     "z": [
+      1.0,
+      2.1
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/glass/carpentry_3.png",
+     "cell": [
+      34,
+      63
+     ],
+     "frames": 1,
+     "anchor": [
+      -79,
+      -88
+     ],
+     "shutter": 3,
+     "span": [
+      [
+       5.0,
+       2.6
+      ],
+      [
+       5.0,
+       3.4
+      ]
+     ],
+     "z": [
+      1.0,
+      2.1
+     ]
+    }
+   ],
+   "lanterns": [
+    {
+     "file": "res://assets/sprites/world/lantern/carpentry_0.png",
+     "cell": [
+      13,
+      30
+     ],
+     "frames": 2,
+     "anchor": [
+      172,
+      -38
+     ],
+     "at": [
+      1.58,
+      5.056
+     ]
+    }
+   ],
+   "signs": [
+    {
+     "file": "res://assets/sprites/world/sign/carpentry_0.png",
+     "cell": [
+      68,
+      83
+     ],
+     "frames": 8,
+     "anchor": [
+      108,
+      -58
+     ],
+     "at": [
+      3.54,
+      5.088
+     ]
+    }
+   ]
+  },
+  "mason": {
+   "file": "res://assets/sprites/world/mason.png",
+   "anchor": [
+    248,
+    162
+   ],
+   "footprint": [
+    4,
+    4
+   ],
+   "collide": "wall",
+   "fade": true,
+   "colliders": [
+    [
+     0,
+     0,
+     4,
+     4
+    ]
+   ],
+   "doors": [
+    [
+     2.0,
+     4.4
+    ]
+   ],
+   "paint": "wood",
+   "shutters": [
+    {
+     "file": "res://assets/sprites/world/shutters/mason_0.png",
+     "cell": [
+      99,
+      83
+     ],
+     "frames": 4,
+     "anchor": [
+      200,
+      -23
+     ],
+     "at": [
+      1.0,
+      4.0
+     ],
+     "z": 0.9
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/mason_1.png",
+     "cell": [
+      99,
+      85
+     ],
+     "frames": 4,
+     "anchor": [
+      104,
+      -71
+     ],
+     "at": [
+      3.0,
+      4.0
+     ],
+     "z": 0.9
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/mason_2.png",
+     "cell": [
+      90,
+      102
+     ],
+     "frames": 4,
+     "anchor": [
+      -105,
+      1
+     ],
+     "at": [
+      4.0,
+      1.0
+     ],
+     "z": 1.0
+    },
+    {
+     "file": "res://assets/sprites/world/shutters/mason_3.png",
+     "cell": [
+      90,
+      102
+     ],
+     "frames": 4,
+     "anchor": [
+      -9,
+      -47
+     ],
+     "at": [
+      4.0,
+      3.0
+     ],
+     "z": 1.0
+    }
+   ],
+   "glass": [
+    {
+     "file": "res://assets/sprites/world/glass/mason_0.png",
+     "cell": [
+      37,
+      43
+     ],
+     "frames": 1,
+     "anchor": [
+      163,
+      -41
+     ],
+     "shutter": 0,
+     "span": [
+      [
+       0.5599999999999999,
+       4.0
+      ],
+      [
+       1.44,
+       4.0
+      ]
+     ],
+     "z": [
+      0.9,
+      2.2
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/glass/mason_1.png",
+     "cell": [
+      37,
+      50
+     ],
+     "frames": 1,
+     "anchor": [
+      67,
+      -82
+     ],
+     "shutter": 1,
+     "span": [
+      [
+       2.56,
+       4.0
+      ],
+      [
+       3.44,
+       4.0
+      ]
+     ],
+     "z": [
+      0.9,
+      2.2
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/glass/mason_2.png",
+     "cell": [
+      34,
+      63
+     ],
+     "frames": 1,
+     "anchor": [
+      -127,
+      -16
+     ],
+     "shutter": 2,
+     "span": [
+      [
+       4.0,
+       0.6
+      ],
+      [
+       4.0,
+       1.4
+      ]
+     ],
+     "z": [
+      1.0,
+      2.1
+     ]
+    },
+    {
+     "file": "res://assets/sprites/world/glass/mason_3.png",
+     "cell": [
+      34,
+      63
+     ],
+     "frames": 1,
+     "anchor": [
+      -31,
+      -64
+     ],
+     "shutter": 3,
+     "span": [
+      [
+       4.0,
+       2.6
+      ],
+      [
+       4.0,
+       3.4
+      ]
+     ],
+     "z": [
+      1.0,
+      2.1
+     ]
+    }
+   ],
+   "lanterns": [
+    {
+     "file": "res://assets/sprites/world/lantern/mason_0.png",
+     "cell": [
+      13,
+      30
+     ],
+     "frames": 2,
+     "anchor": [
+      196,
+      -26
+     ],
+     "at": [
+      1.08,
+      5.056
+     ]
+    }
+   ]
   }
  },
  "tumbleweed": {
@@ -1020034,7 +1020554,7 @@
  "ground_funeral": {
   "file": "res://assets/sprites/ground_funeral.png",
   "origin": [
-   -1472,
+   -1856,
    -128
   ]
  }

@@ -3,12 +3,14 @@ extends RefCounted
 ## The guests' long guns at the stranger's funeral (the map's "arms"). Nobody wears
 ## a rifle to a burial: every guest has only his pistol on him ("pistols_only"),
 ## and his long gun is where he left it, in the scabbard on his saddle, in his wagon
-## by the road, or in the rack inside the cantina's door. A guest who runs for his
-## goes to the nearest of these that isn't by the stranger (Enemy "arm"), takes it,
-## and comes back to the fight with it: his type's own long gun, loaded.
+## by the road, or in a rack (by the cemetery gate, inside the cantina's door). A
+## guest who runs for his goes to the nearest of these that isn't by the stranger
+## (Enemy "arm"), takes it, and comes back to the fight with it: his type's own long
+## gun, loaded.
 ##
 ## The stranger can take one too (F, standing by it): one gun to a saddle or a wagon,
-## loaded and nothing spare, drawn when the town's built from the kinds a guest would
+## a few to a rack ("count": the one by the cemetery gate holds four), loaded and
+## nothing spare, drawn when the town's built from the kinds a guest would
 ## have left there. A way out of his twelve rounds, at the risk of going where
 ## they're going.
 
@@ -30,11 +32,19 @@ var places: Array[Dictionary] = []   # each: at (screen), kind, and for the stra
 func _init(g: Node, points: Array) -> void:
 	game = g
 	for p in points:
-		var gun := _draw(KINDS[p["kind"]])
-		var w := Weapon.new(gun, null)   # (as it was left: loaded, nothing spare)
-		var place := {"at": Iso.to_screen(Vector2(p["x"], p["y"])), "kind": p["kind"]}
-		place["offer"] = {"kind": gun, "weapon": w, "sprite": null, "at": place["at"], "place": place}
+		var place := {"at": Iso.to_screen(Vector2(p["x"], p["y"])), "kind": p["kind"], "left": int(p.get("count", 1))}
+		_restock(place)
 		places.append(place)
+
+
+## The next gun in it for the stranger, as it was left: loaded, nothing spare (or none
+## left, the rack bare).
+func _restock(place: Dictionary) -> void:
+	if place["left"] <= 0:
+		place["offer"] = {}
+		return
+	var gun := _draw(KINDS[place["kind"]])
+	place["offer"] = {"kind": gun, "weapon": Weapon.new(gun, null), "sprite": null, "at": place["at"], "place": place}
 
 
 func _draw(weights: Dictionary) -> String:
@@ -77,7 +87,8 @@ func offer(at: Vector2) -> Dictionary:
 ## his feet (see game.receive_gun).
 func hand_over(o: Dictionary) -> void:
 	var place: Dictionary = o["place"]
-	place["offer"] = {}
+	place["left"] -= 1
+	_restock(place)
 	var at: Vector2 = game.player.global_position + Vector2(6, 2)
 	game.hud.toast(game.receive_gun(o["kind"], o["weapon"], at, "from the " + place["kind"], rng))
 	game.stats["guns from saddles"] = game.stats.get("guns from saddles", 0) + 1

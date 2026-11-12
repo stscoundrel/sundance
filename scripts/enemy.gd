@@ -460,7 +460,7 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 	kind = k
 	tdata = g.enemy_type(k, overrides)
 	gang = tdata.get("gang", "")
-	if g.level.has("arms"):   # (the funeral: his long gun's left with his horse; see Arms)
+	if g.level.has("arms") and not tdata.get("armed", false):   # (the funeral: his long gun's left with his horse; see Arms)
 		var all: Array = tdata["loadout"].duplicate()
 		for o in tdata.get("loadouts", []):
 			all.append_array(o["guns"])
@@ -513,8 +513,9 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 		desired = facing
 	t = randf() * 10.0
 	reflex = randf_range(tdata["reflex"][0], tdata["reflex"][1])
-	if g.level.get("wake", false):
-		reflex *= WAKE_SLOW
+	if g.level.get("wake", false) and not tdata.get("armed", false):
+		reflex *= WAKE_SLOW   # (not one who rode in for the fight: see Director, the camps)
+	saw_him_risen = tdata.get("armed", false)   # (and he's been told: the dead man's up and shooting)
 	nerve = randf_range(tdata["nerve"][0], tdata["nerve"][1])
 	rank = int(tdata["rank"])
 	bold = float(tdata["bold"])
@@ -3686,8 +3687,8 @@ func run_to_camp(at: Vector2) -> void:
 func _camp_run(_delta: float) -> void:
 	crouched = false
 	var g := Iso.to_grid(global_position)
-	var edge := minf(minf(g.x, g.y), minf(game.size - g.x, game.size - g.y)) < 1.2
-	if follow_path(run) or edge:   # (the path's end: the camp's way, or as near it as the ground allows)
+	var edge := minf(minf(g.x, g.y), minf(game.size - g.x, game.size - g.y)) < maxf(1.2, float(game.level.get("shout", 0.0)))
+	if follow_path(run) or edge:   # (the path's end: the camp's way, or as near it as the ground allows, or in shouting distance of it)
 		camp_to = Vector2.INF
 		game.director.runner_home(self)
 

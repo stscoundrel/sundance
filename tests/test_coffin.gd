@@ -119,7 +119,7 @@ func _process(delta: float) -> bool:
 					far = e
 			check(far != null and far.st != Enemy.St.COMBAT, "the cowboy's in it already")
 			if far:
-				var shot_at: Vector2 = Iso.to_screen(Vector2(47.0, 36.0))   # (out in the street before the cantina)
+				var shot_at: Vector2 = Iso.to_screen(Vector2(59.0, 48.0))   # (out in the street before the cantina)
 				game.make_noise(shot_at, 600.0, "shot", game.player)
 				check(far.puzzle_t != INF and far.marker == "?" and far.st != Enemy.St.COMBAT, "a shot sent him straight to the fight")
 			t0 = t

@@ -124,6 +124,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_arms.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_sermon.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_buried.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_record.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_runners.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_general.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arsenal.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_champion.gd

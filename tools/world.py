@@ -1678,6 +1678,37 @@ def dead_tree(seed=0, s=1.0):
     return m
 
 
+def cem_gate():
+    """The cemetery's gateway on the path up from the road: two weathered posts and a
+    beam across them, a cross nailed up over the middle. Nobody wears a gun past it."""
+    L = 3.6 * T
+    wood = (104, 92, 80)
+    m = Cloud()
+    for x in (0.2, L - 0.2):
+        m += box((x - 0.14, 0.1, 0), (x + 0.14, 0.38, 3.0), planks(wood, board=0.12, vertical=True, mud=0.3), 0.02)
+    m += box((0.0, 0.12, 2.75), (L, 0.36, 2.98), planks((96, 84, 72), board=0.16, mud=0), 0.02)
+    m += box((L / 2 - 0.05, 0.19, 2.98), (L / 2 + 0.05, 0.29, 3.75), solid((90, 80, 70)), 0.02)
+    m += box((L / 2 - 0.3, 0.19, 3.4), (L / 2 + 0.3, 0.29, 3.5), solid((90, 80, 70)), 0.02)
+    return m
+
+
+def gun_rack():
+    """A rack by the gate where the guests stood their long guns before they went up
+    to the grave: a rail on two trestles, the rifles leaning on it."""
+    L = 1.6 * T
+    m = Cloud()
+    for x in (0.12, L - 0.12):   # the trestles
+        m += beam((x, 0.1, 0), (x, 0.32, 1.0), 0.04, (100, 74, 52))
+        m += beam((x, 0.54, 0), (x, 0.32, 1.0), 0.04, (100, 74, 52))
+    m += beam((0.05, 0.32, 1.0), (L - 0.05, 0.32, 1.0), 0.035, (112, 82, 56))   # the rail
+    m += beam((0.05, 0.42, 0.15), (L - 0.05, 0.42, 0.15), 0.03, (96, 70, 48))   # the butt-board
+    for i in range(6):
+        x = 0.3 + i * (L - 0.6) / 5
+        m += beam((x, 0.46, 0.17), (x + 0.02, 0.36, 0.62), 0.06, (122, 82, 50))   # the stock
+        m += beam((x + 0.02, 0.36, 0.62), (x + 0.04, 0.27, 1.3), 0.026, (120, 122, 130))   # the barrel
+    return m
+
+
 def _along(m, along_x, D):
     """A model built long along X, turned to run along Y instead when asked."""
     if not along_x:
@@ -2739,6 +2770,12 @@ BUILDINGS = {
     "bench_x": (lambda: bench(True), (3, 0.35), "none", False, None),
     "bench_y": (lambda: bench(False), (0.35, 3), "none", False, None),
     "cookfire": (cookfire, (1.2, 1.2), "none", False, None),
+    "cem_gate": (cem_gate, (3.6, 0.4), "post", False, [[0.05, 0.05, 0.35, 0.35], [3.25, 0.05, 3.55, 0.35]]),
+    "gun_rack": (gun_rack, (1.6, 0.5), "cover", False, None),
+    "carpentry": (lambda: frontier(5, 4, 3.4, 4.6, planks((150, 118, 84), seed=43), "CARPENTER", (70, 50, 36),
+                                   hang="COFFINS"), (5, 4), "wall", True, None),
+    "mason": (lambda: frontier(4, 4, 3.2, 4.4, bricks((170, 160, 146), (206, 198, 184)), "MASON", (52, 48, 46),
+                               ink=(236, 230, 214)), (4, 4), "wall", True, None),
 }
 
 # What Silencio wears snowed over (see `snowed`): the town's buildings, and the props

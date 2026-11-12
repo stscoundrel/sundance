@@ -7,8 +7,9 @@ extends SceneTree
 ##            corners with the graves running up to them, the guests' wagons and
 ##            horses along the road, the town's first houses to the east; no
 ##            tumbleweed in the wet.
-##   guests - twenty, from all four towns (San Miguel's gang, the revolution, the
-##            federales, Silencio's hunters and outlaws), every one on the same side;
+##   guests - fifteen, from all four towns, four factions (San Miguel's bandidos, the
+##            revolutionaries, the federales, Silencio's northerners), each with its
+##            road home and more men down it; the rest well apart about the valley;
 ##            seven round the grave looking in at it; the padre, the undertaker, his
 ##            digger, three mourners, the two women who cooked the wake and a man of
 ##            the town besides, and at the grave the carpenter and a second digger.
@@ -19,7 +20,8 @@ extends SceneTree
 ##            a round spare, no bandage, no stick.
 ##   ways   - from the south he can get to the grave, the chapel, the undertaker's,
 ##            the cantina, between the dinner tables in both northern corners, up
-##            the town's street, and round every crypt.
+##            the town's streets, into the mission, past the mortuary chapel, to
+##            the carpenter's, and round every crypt.
 ##   quiet  - left alone a while, nothing ends it.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_funeral.gd
 
@@ -28,7 +30,7 @@ var frame := 0
 var failures := 0
 var step := ""
 var t := 0.0
-const C := Vector2(32.0, 36.0)   # the grave (tools/make_funeral.py, on the map)
+const C := Vector2(44.0, 48.0)   # the grave (tools/make_funeral.py, on the map)
 
 
 func _initialize() -> void:
@@ -60,11 +62,11 @@ func _map() -> void:
 		graves += count.get(k, 0)
 	check(graves > 150, "only %d graves" % graves)
 	check(count.get("stone_circle", 0) == 1 and count.get("open_grave", 0) >= 1, "no circle, no grave: %s" % count)
-	check(count.get("crypt", 0) + count.get("crypt_b", 0) == 8 and count.get("obelisk", 0) == 8, "crypts and obelisks: %s" % count)
+	check(count.get("crypt", 0) + count.get("crypt_b", 0) == 12 and count.get("obelisk", 0) == 12, "crypts and obelisks: %s" % count)
 	# the graves go on north to the dinner tables
 	var north := 0
 	for o in game.level["objects"]:
-		if o["type"] in game.GRAVES and o["y"] < 10.0:
+		if o["type"] in game.GRAVES and o["y"] < 22.0:
 			north += 1
 	check(north > 40, "only %d graves up by the tables" % north)
 	# the guests came a long way: the road's lined with their wagons and horses
@@ -72,9 +74,13 @@ func _map() -> void:
 	for k in ["horse", "horse_grey", "horse_sorrel", "horse_black"]:
 		horses += count.get(k, 0)
 	check(horses >= 18 and count.get("covered_wagon", 0) >= 5 and count.get("carreta_0", 0) == 1, "horses and carriages: %s" % count)
-	check(count.get("chapel", 0) == 1 and count.get("undertaker", 0) == 1 and count.get("cantina", 0) == 1, "the buildings round about: %s" % count)
+	check(count.get("chapel", 0) == 2 and count.get("undertaker", 0) == 1 and count.get("cantina", 0) == 1, "the buildings round about: %s" % count)
+	check(count.get("casa_grande", 0) == 1 and count.get("carpentry", 0) == 1 and count.get("mason", 0) == 1 and count.get("saloon", 0) == 1,
+		"the mission, the carpenter's, the mason's, the town: %s" % count)
+	check(count.get("cem_gate", 0) == 1 and count.get("gun_rack", 0) == 1, "no gate up to the graves, or no rack by it: %s" % count)
+	check((game.level["pickups"] as Array).size() >= 8, "cartridges lying about: %d" % (game.level["pickups"] as Array).size())
 	check(count.get("feast_x", 0) == 12 and count.get("bench_x", 0) == 24 and count.get("cookfire", 0) == 2, "the dinners: %s" % count)
-	check(count.get("stable", 0) == 1 and count.get("store", 0) == 1, "no town to the east: %s" % count)
+	check(count.get("stable", 0) == 1 and count.get("store", 0) >= 1, "no town to the east: %s" % count)
 	# a crypt stops a man: the middle of its footprint is solid ground for nobody
 	for o in game.level["objects"]:
 		if o["type"] in ["crypt", "crypt_b"]:
@@ -82,7 +88,7 @@ func _map() -> void:
 			var mid := Iso.to_screen(Vector2(o["x"] + fp[0] * 0.5, o["y"] + fp[1] * 0.5))
 			check(game.astar.is_point_solid(game._cell(mid)), "the crypt at %s,%s can be walked through" % [o["x"], o["y"]])
 	# his own grave is nobody's to fill: the digger has only his row by the undertaker's
-	check(game.open_graves.size() == 3 and game.open_graves.all(func(gr): return gr["g"].x < 20.0),
+	check(game.open_graves.size() == 3 and game.open_graves.all(func(gr): return gr["g"].x < 32.0),
 		"the digger's graves: %s" % [game.open_graves.map(func(gr): return gr["g"])])
 	# the day's dead go in the undertaker's own plot, not on top of the old graves
 	var plot: Array = game.level["boothills"][0]
@@ -98,8 +104,18 @@ func _map() -> void:
 
 func _guests() -> void:
 	step = "guests"
-	check(game.enemies.size() == 20, "guests: %d" % game.enemies.size())
-	check(game.enemies.all(func(e): return e.gang == ""), "two sides at a funeral: %s" % [game.enemies.map(func(e): return e.gang)])
+	check(game.enemies.size() == 15, "guests: %d" % game.enemies.size())
+	var sides := {}
+	for e in game.enemies:
+		sides[e.gang] = sides.get(e.gang, 0) + 1
+	check(sides.keys().size() == 4 and sides.values().all(func(n): return n >= 3), "the four factions: %s" % sides)
+	for g in sides:
+		check(game.level["camps"].has(g), "no road home for the %s" % g)
+	for e in game.enemies:   # (well apart: nobody but the mourners within four tiles of another)
+		if not e.tdata.get("mourning", false):
+			for o in game.enemies:
+				if o != e and Iso.to_grid(o.global_position).distance_to(Iso.to_grid(e.global_position)) < 4.0:
+					check(false, "%s and %s stand together" % [e.kind, o.kind])
 	var kinds: Array = game.enemies.map(func(e): return e.kind)
 	for town in [["pistolero", "bandido", "redscarf", "cowboy"], ["revolucionario", "sargento", "soldadera", "tirador"],
 			["soldado", "cabo", "rural", "teniente"], ["manhunter", "trapper", "sharpshooter", "mountainman"]]:
@@ -116,8 +132,9 @@ func _guests() -> void:
 func _ways() -> void:
 	step = "ways"
 	var start := Vector2(game.level["player"]["x"], game.level["player"]["y"])
-	for to in [C + Vector2(0, 2.0), Vector2(32.0, 15.4), Vector2(10.4, 37.6), Vector2(55.0, 33.6), Vector2(0.8, 57.5),
-			Vector2(75.0, 57.5), Vector2(13.0, 4.5), Vector2(53.5, 4.5), Vector2(67.0, 30.0), Vector2(67.0, 1.0)]:
+	for to in [C + Vector2(0, 2.0), Vector2(44.0, 27.4), Vector2(22.4, 49.6), Vector2(67.0, 45.6), Vector2(0.8, 69.5),
+			Vector2(99.0, 69.5), Vector2(25.0, 16.5), Vector2(65.5, 16.5), Vector2(79.0, 42.0), Vector2(79.0, 1.0),
+			Vector2(44.0, 7.0), Vector2(90.0, 30.0), Vector2(56.0, 90.0), Vector2(3.0, 44.0)]:
 		check(_reaches(start, to), "no way from the south to %s" % to)
 	for o in game.level["objects"]:
 		if o["type"] in ["crypt", "crypt_b"]:

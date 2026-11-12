@@ -4192,8 +4192,10 @@ func _leak(at: Vector2, r: float) -> void:
 ## HUD names it. The cartridges lying by it are his to pick up as usual.
 func _pick_up_guns() -> void:
 	var g: Dictionary = player.gun_at_feet() if player.alive and not player.down else {}
-	if g.is_empty() and arms and player.alive and not player.down:
-		g = arms.offer(player.global_position)   # (a long gun in a saddle or a wagon: his to take, F)
+	if (g.is_empty() or g.get("his", false)) and arms and player.alive and not player.down:
+		var o := arms.offer(player.global_position)   # (a long gun in a saddle, a wagon or a rack: his to take, F,
+		if not o.is_empty():                          # before the one he's just put down)
+			g = o
 	if g != at_feet:
 		if not at_feet.is_empty() and is_instance_valid(at_feet["sprite"]):
 			at_feet["sprite"].modulate = Color.WHITE

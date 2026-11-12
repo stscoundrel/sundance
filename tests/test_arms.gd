@@ -4,7 +4,9 @@ extends SceneTree
 ##              it left in a saddle or a wagon (stowed), the places to fetch it from
 ##              written on the map (a saddle on every horse, every wagon, the rack).
 ##   his      - by a saddle the stranger is offered its gun (F): it's his, loaded and
-##              nothing spare, and that saddle's empty after.
+##              nothing spare, and that saddle's empty after; the rack by the gate
+##              has four for him, one after another (his last put down at his feet
+##              doesn't stand in the way of the next).
 ##   flee     - two of them shot down in a breath, in front of the others: some run
 ##              for their long guns (never to a place by the stranger), and one comes
 ##              back with his in his hands, his pistol behind it, to fight.
@@ -92,7 +94,7 @@ func _pistols() -> void:
 	var kinds := {}
 	for p in game.arms.places:
 		kinds[p["kind"]] = kinds.get(p["kind"], 0) + 1
-	check(kinds.get("saddle", 0) >= 15 and kinds.get("wagon", 0) >= 10 and kinds.get("rack", 0) == 1, "saddles, wagons, rack: %s" % kinds)
+	check(kinds.get("saddle", 0) >= 15 and kinds.get("wagon", 0) >= 10 and kinds.get("rack", 0) == 2, "saddles, wagons, racks: %s" % kinds)
 
 
 func _his() -> void:
@@ -109,7 +111,15 @@ func _his() -> void:
 		var w: Weapon = p.weapons[Player.SLOT[k]]
 		check(w.reserve == 0 and w.loaded() > 0, "%s: %d loaded, %d spare" % [k, w.loaded(), w.reserve])
 	check(place["offer"].is_empty() and game.arms.offer(place["at"]).is_empty(), "the saddle still has a gun in it")
-	p.global_position = Iso.to_screen(Vector2(32.0, 40.0))   # (back by the grave, in sight of them all)
+	# the rack by the gate: several guns in it for him, one after another
+	var rack: Dictionary = game.arms.places.filter(func(p): return p["kind"] == "rack" and p["left"] == 4)[0]
+	p.global_position = rack["at"]
+	for i in 4:
+		game._pick_up_guns()
+		check(game.at_feet.has("place"), "the rack's bare after %d" % i)
+		game.swap_gun()
+	check(rack["left"] == 0 and rack["offer"].is_empty(), "the rack still holds guns: %d" % rack["left"])
+	p.global_position = Iso.to_screen(Vector2(44.0, 52.0))   # (back by the grave, in sight of them all)
 
 
 ## A man struck dumb and shot is out of it at once; a man running for his long gun

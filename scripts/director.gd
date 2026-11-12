@@ -33,7 +33,12 @@ extends Node
 ## the other gang) can stop him. Once he's off the map they're on their way, and
 ## "after" seconds on they walk in by the same way: at war, up to the gang's lines;
 ## else at the stranger, or to their holdout. Each gang tries it once: the runner
-## shot, and no help is coming.
+## shot, and no help is coming. A camp may say who's in it ("kinds"; else the gang's
+## own sorts as the map has them) and when the runner goes ("losses": once that many
+## of the gang have fallen; else down to RUNNER_AT). The stranger's funeral has four
+## (each faction of the guests its own road), and there a runner needs only get within
+## shouting distance of the map's edge (the level's "shout", tiles): his men are
+## waiting just past it, armed (see Enemy, "armed").
 
 const WARN := 15.0          # s of warning: which roads they're coming down
 const EVERY := 0.45         # s between men walking in off the same road (a band, not a file)
@@ -82,10 +87,13 @@ func setup(g: Node, wave_list: Array, from_first_shot := false) -> void:
 	for gang in g.level.get("camps", {}):
 		var c: Dictionary = g.level["camps"][gang]
 		camps[gang] = {"name": c["name"], "at": Iso.to_screen(Vector2(c["x"], c["y"])), "count": int(c["count"]),
-			"after": float(c.get("after", CAMP_T)), "state": "", "runner": null, "due": 0.0}
+			"after": float(c.get("after", CAMP_T)), "state": "", "runner": null, "due": 0.0,
+			"kinds": c.get("kinds", []), "losses": int(c.get("losses", 0))}
 	var coming: Array = g.level.get("wave_kinds", {}).keys()   # (whoever may walk in: their bodies loaded now)
 	coming.append_array(g.level.get("enemies", []).map(func(e): return e["kind"]))
 	coming.append_array(sleepers.map(func(sl): return sl["kind"]))
+	for gang in camps:
+		coming.append_array(camps[gang]["kinds"])
 	for w in waves:
 		for gr in w["groups"]:
 			coming.append_array(gr.get("kinds", []))
@@ -236,7 +244,8 @@ func _camps() -> void:
 		match c["state"]:
 			"":
 				var left: int = game.alive_in(g)
-				if left > 0 and left <= RUNNER_AT:
+				var low: bool = game.gangs[g]["fallen"] >= c["losses"] if c["losses"] > 0 else left <= RUNNER_AT
+				if left > 0 and low:
 					_send_runner(g, c)
 			"running":
 				var r: Enemy = c["runner"]
@@ -282,11 +291,12 @@ func runner_home(r: Enemy) -> void:
 ## The men from the camp, of the gang's own sorts as the map has them (no second boss),
 ## down the way the runner went. They come back with him.
 func _send_camp(g: String, c: Dictionary) -> void:
-	var pool: Array = []
-	for e in game.level["enemies"]:
-		var t: Dictionary = game.enemy_type(e["kind"])
-		if t.get("gang", "") == g and not e.has("gang") and not t.get("boss", false) and not t.get("coordinator", false):
-			pool.append(e["kind"])
+	var pool: Array = c["kinds"].duplicate()
+	if pool.is_empty():
+		for e in game.level["enemies"]:
+			var t: Dictionary = game.enemy_type(e["kind"])
+			if t.get("gang", "") == g and not e.has("gang") and not t.get("boss", false) and not t.get("coordinator", false):
+				pool.append(e["kind"])
 	var entry := {"name": c["name"], "at": c["at"], "into": c["at"] + (_center() - c["at"]).normalized() * 40.0, "gang": g}
 	for i in c["count"]:
 		queue.append([entry, pool[rng.randi_range(0, pool.size() - 1)] if not pool.is_empty() else "bandido", []])
@@ -356,8 +366,11 @@ func _walk_in(q: Array) -> void:
 	if not game.is_free(at):
 		at = game.free_point_near(at, 30.0)
 	var arms: Array = q[2]
-	var en: Enemy = game._add_enemy(q[1], at, PackedVector2Array(), rad_to_deg((entry["into"] - entry["at"]).angle()),
-		{} if arms.is_empty() else {"loadouts": arms})
+	var over := {} if arms.is_empty() else {"loadouts": arms}
+	if entry.has("gang"):   # (his camp's: one of the gang's own, whatever his type, and come armed for it)
+		over["gang"] = entry["gang"]
+		over["armed"] = true
+	var en: Enemy = game._add_enemy(q[1], at, PackedVector2Array(), rad_to_deg((entry["into"] - entry["at"]).angle()), over)
 	arrived += 1
 	game.stats["arrivals"] = game.stats.get("arrivals", 0) + 1
 	if game.leaderless:   # word on the road: their general's dead
