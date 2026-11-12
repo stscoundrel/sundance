@@ -95,6 +95,7 @@ var in_coffin := false          # laid out in his own coffin, the lid on (see Co
 const COFFIN_LIE := 0.15       # s still lying there
 const COFFIN_SIT := 0.42       # s sitting up
 const COFFIN_STEP := 0.23      # s stepping out, crouched
+const COFFIN_KNIFE := 0.6      # s before E is the knife again, out of the box (not the last blow on the lid)
 var rising_t := -1.0           # time into it; < 0 when not
 var _rise_from := Vector2.ZERO
 var _rise_to := Vector2.ZERO
@@ -862,16 +863,18 @@ func rise_from_coffin(from: Vector2, to: Vector2) -> void:
 		return
 	rising_t = 0.0
 	velocity = Vector2.ZERO
+	knife_cd = COFFIN_KNIFE   # (the blow that broke the lid isn't a lunge at whoever's by the box)
 	facing = (to - from).orthogonal().normalized()   # (lying along the box)
 	propped = true
 	crouched = true
 	_pose_stand("gasp_rise")
 
 
-## A frame of it; false once he's up (or the player wants him up: any key does it).
+## A frame of it; false once he's up (or the player wants him up: a step, a shot, a
+## crouch or a reload does it; not E, the lid's key, still being mashed).
 func _coffin_rise(delta: float) -> bool:
 	if game.state == "play" and (Input.get_vector("move_left", "move_right", "move_up", "move_down") != Vector2.ZERO
-			or ["fire", "alt", "knife", "crouch", "reload"].any(func(a): return Input.is_action_pressed(a))):
+			or ["fire", "alt", "crouch", "reload"].any(func(a): return Input.is_action_pressed(a))):
 		_risen()
 		return false
 	rising_t += delta

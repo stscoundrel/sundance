@@ -667,7 +667,8 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   surround a circle of paving stones with his open grave at its heart, the coffin
   waiting beside it. Paths run in from the four sides. The crosses hide nobody, so
   the cover is in what stands round them. Among the graves are five stone crypts
-  (`crypt`, `crypt_b`: walls, the only ones out there), five obelisks and dead
+  (`crypt`, `crypt_b`: walls, the only ones out there, their iron doors sealed:
+  nobody, townsfolk or gang, goes in or out of one), five obelisks and dead
   trees (posts: a trunk or a needle to stand behind), and the headstones. Out past
   the last ring: the mission to the north (its chapel standing, the walls fallen to
   rubble), the undertaker's yard to the west (coffins stood ready, a hearse, a row
@@ -746,7 +747,9 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   gets up out of it (`Player.rise_from_coffin`): a moment flat on his back, sitting
   up (the rise from the dirt, quickened), a crouch as he steps over the side, and
   up beside it with the pair of Colts, under a second in all. Any key, a step or a
-  shot, and he's simply up: it never costs the player a moment. Everyone who sees it, near or far (and anyone
+  shot, and he's simply up: it never costs the player a moment (not E, the lid's
+  key: the blow that broke it isn't a knife at whoever's by the box, and the knife's
+  his again a moment later; a man struck dumb couldn't turn a gun on a knife anyway). Everyone who sees it, near or far (and anyone
   within 230 px with a clear line, whichever way he's facing), is struck dumb
   ("agape", each his own way: pointing at him, cowering, a flinch, stumbling back a
   step or two, or simply frozen; a round in him snaps him out of it, and whatever he was at, a rescue

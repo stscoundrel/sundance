@@ -80,6 +80,8 @@ func _map() -> void:
 	check(count.get("casa_grande", 0) == 1 and count.get("carpentry", 0) == 1 and count.get("mason", 0) == 1 and count.get("saloon", 0) == 1,
 		"the mission, the carpenter's, the mason's, the town: %s" % count)
 	check(count.get("cem_gate", 0) == 1 and count.get("gun_rack", 0) == 1, "no gate up to the graves, or no rack by it: %s" % count)
+	# the crypts are sealed on their dead: no doorway for anyone to go in by
+	check(game.meta["objects"]["crypt"]["doors"].is_empty() and game.meta["objects"]["crypt_b"]["doors"].is_empty(), "a crypt with a way in")
 	check((game.level["pickups"] as Array).size() >= 8, "cartridges lying about: %d" % (game.level["pickups"] as Array).size())
 	check(count.get("feast_x", 0) == 12 and count.get("bench_x", 0) == 24 and count.get("cookfire", 0) == 2, "the dinners: %s" % count)
 	check(count.get("stable", 0) == 1 and count.get("store", 0) >= 1, "no town to the east: %s" % count)

@@ -356,7 +356,7 @@ def decorate(fn, W, D, openings):
     u=(u0,u1), z=(z0,z1), kind and optional text/color."""
     planes = {"+x": (0, W, 1), "-x": (0, 0, 1), "+y": (1, D, 0), "-y": (1, 0, 0)}
     for o in openings:
-        if o["kind"] in ("door", "batwing", "arch", "dark") and o["z"][0] < 0.5:
+        if o["kind"] in ("door", "batwing", "arch", "dark") and o["z"][0] < 0.5 and not o.get("sealed", False):
             DOORS.append((o["face"], (o["u"][0] + o["u"][1]) / 2, W, D))
         if o["kind"] == "win" or (o["kind"] == "dark" and o["z"][0] >= 0.5):
             WINDOWS.append((o["face"], tuple(o["u"]), tuple(o["z"]), W, D))
@@ -1633,7 +1633,8 @@ def crypt(w=3, d=2.4, seed=0):
     anything, and the only walls out among the graves."""
     W, D, Hh = w * T, d * T, 2.6
     stone = _grave_stone(GRAVE_STONE, 211 + seed)
-    ops = [dict(face="+y", u=(W / 2 - 0.45, W / 2 + 0.45), z=(0.3, 2.1), kind="arch", color=(46, 48, 50))]
+    ops = [dict(face="+y", u=(W / 2 - 0.45, W / 2 + 0.45), z=(0.3, 2.1), kind="arch", color=(46, 48, 50),
+                sealed=True)]   # (an iron door, locked on the dead: no way in for anyone)
     m = box((-0.1, -0.1, 0), (W + 0.1, D + 0.1, 0.3), _grave_stone((128, 124, 118), 223 + seed), BSP, skip=("-z",))
     m += box((0, 0, 0.3), (W, D, Hh), decorate(stone, W, D, ops), BSP, skip=("-z", "+z"))
     m += box((-0.08, -0.08, Hh), (W + 0.08, D + 0.08, Hh + 0.18), solid((128, 124, 118)), BSP)   # the cornice

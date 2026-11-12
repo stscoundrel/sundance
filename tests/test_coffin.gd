@@ -86,6 +86,10 @@ func _process(delta: float) -> bool:
 			c.blow()
 			check(not c.inside and not p.in_coffin and p.visible and p.rising_t >= 0.0 and p.propped, "not up out of the coffin: rising %.2f" % p.rising_t)
 			check(c.lid != null and c.sprite.texture.resource_path.contains("his_coffin_open"), "the lid's still on the box")
+			# the blow that broke the lid isn't a knife at whoever's by the box, and a man
+			# struck dumb couldn't turn a gun on him if it were
+			check(p.knife_cd >= Player.COFFIN_KNIFE - 0.01, "E out of the box is a lunge at once")
+			check(_mourners().all(func(e): return not e.can_fire_at(p)), "a man struck dumb could fire point-blank")
 			check(int(game.stats.get("struck dumb", 0)) >= 6, "struck dumb: %s" % game.stats.get("struck dumb", 0))
 			check(_mourners().all(func(e): return e.reaction == "agape"), "a mourner who wasn't struck dumb")
 			check(_mourners().all(func(e): return not e.listening()), "still listening with him out of the box")

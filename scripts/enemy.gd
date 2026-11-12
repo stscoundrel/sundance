@@ -2284,8 +2284,8 @@ func unaware() -> bool:
 func can_fire_at(p: Actor) -> bool:
 	if not alive or not revealed or is_staggered() or weapon.is_reloading() or not weapon.can_fire():
 		return false
-	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear", "patch", "rescue", "fetch", "arm"]:
-		return false
+	if reaction in ["cower", "flee", "dash", "hide", "throw", "clear", "patch", "rescue", "fetch", "arm", "agape"]:
+		return false   # (struck dumb at the sight of a dead man up: he's in no state to)
 	return absf(facing.angle_to(p.global_position - global_position)) < 1.1
 
 
