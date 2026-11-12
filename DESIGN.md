@@ -715,7 +715,13 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   round the grave looking in at it, a couple of steps back, outside the ring of
   paving stones, so the player can see what's going on; the other eight are well
   apart about the valley (the cantina's porch, both dinners, the mission wall, the
-  chapel steps, the wagons on the road, the rocks, the town's street). With them are
+  chapel steps, the wagons on the road, the rocks, the town's street). All of them
+  are in mourning: their type's own colours taken down to black (`mourning_palette`
+  in `make_funeral.py`: coat, shirt, trousers, hat and the rest, a trace of each
+  colour left so the sorts still read apart), skin, hair, boots and the small accents
+  as they were; the federales keep their blue coats and caps. Easier to tell a guest
+  from a digger in his white shirt; the men who ride in from the roads come in their
+  own colours. With them are
   the padre, the carpenter and a digger at the grave (see the burial), the
   undertaker and his digger at the fresh row (the stranger's grave, an
   `open_grave_empty`, isn't the digger's to fill; the day's dead go in the

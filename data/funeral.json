@@ -6108,7 +6108,52 @@
    "y": 49.4,
    "facing": 231,
    "mourning": true,
-   "gang": "bandidos"
+   "gang": "bandidos",
+   "palettes": [
+    {
+     "shirt": [
+      60,
+      59,
+      55
+     ],
+     "trousers": [
+      58,
+      56,
+      52
+     ],
+     "boots": [
+      92,
+      66,
+      44
+     ],
+     "hat": [
+      56,
+      52,
+      43
+     ],
+     "band": [
+      31,
+      28,
+      26
+     ],
+     "accent": [
+      176,
+      46,
+      36
+     ],
+     "skin": [
+      166,
+      108,
+      74
+     ],
+     "hair": [
+      26,
+      20,
+      18
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "revolucionario",
@@ -6116,7 +6161,67 @@
    "y": 51.36,
    "facing": 311,
    "mourning": true,
-   "gang": "revolutionaries"
+   "gang": "revolutionaries",
+   "palettes": [
+    {
+     "shirt": [
+      63,
+      62,
+      58
+     ],
+     "trousers": [
+      62,
+      60,
+      57
+     ],
+     "boots": [
+      110,
+      80,
+      52
+     ],
+     "hat": [
+      58,
+      54,
+      45
+     ],
+     "band": [
+      31,
+      28,
+      26
+     ],
+     "accent": [
+      176,
+      46,
+      36
+     ],
+     "poncho_a": [
+      47,
+      28,
+      27
+     ],
+     "poncho_b": [
+      61,
+      57,
+      49
+     ],
+     "poncho_c": [
+      27,
+      30,
+      34
+     ],
+     "skin": [
+      166,
+      108,
+      74
+     ],
+     "hair": [
+      26,
+      20,
+      18
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "manhunter",
@@ -6124,7 +6229,57 @@
    "y": 51.27,
    "facing": 349,
    "mourning": true,
-   "gang": "northerners"
+   "gang": "northerners",
+   "palettes": [
+    {
+     "coat": [
+      33,
+      32,
+      30
+     ],
+     "shirt": [
+      48,
+      46,
+      43
+     ],
+     "trousers": [
+      32,
+      31,
+      31
+     ],
+     "boots": [
+      44,
+      34,
+      28
+     ],
+     "hat": [
+      30,
+      29,
+      28
+     ],
+     "band": [
+      25,
+      24,
+      23
+     ],
+     "accent": [
+      150,
+      42,
+      36
+     ],
+     "skin": [
+      200,
+      150,
+      118
+     ],
+     "hair": [
+      70,
+      50,
+      36
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "soldado",
@@ -6132,7 +6287,57 @@
    "y": 48.86,
    "facing": 17,
    "mourning": true,
-   "gang": "federales"
+   "gang": "federales",
+   "palettes": [
+    {
+     "coat": [
+      50,
+      60,
+      104
+     ],
+     "trousers": [
+      63,
+      62,
+      60
+     ],
+     "accent": [
+      168,
+      40,
+      36
+     ],
+     "boots": [
+      34,
+      28,
+      24
+     ],
+     "hat": [
+      48,
+      56,
+      98
+     ],
+     "band": [
+      168,
+      40,
+      36
+     ],
+     "shirt": [
+      63,
+      62,
+      60
+     ],
+     "skin": [
+      168,
+      112,
+      78
+     ],
+     "hair": [
+      26,
+      20,
+      18
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "sargento",
@@ -6140,7 +6345,52 @@
    "y": 46.09,
    "facing": 65,
    "mourning": true,
-   "gang": "revolutionaries"
+   "gang": "revolutionaries",
+   "palettes": [
+    {
+     "shirt": [
+      56,
+      54,
+      50
+     ],
+     "trousers": [
+      41,
+      38,
+      35
+     ],
+     "boots": [
+      70,
+      50,
+      34
+     ],
+     "hat": [
+      47,
+      43,
+      36
+     ],
+     "band": [
+      49,
+      29,
+      28
+     ],
+     "accent": [
+      176,
+      46,
+      36
+     ],
+     "skin": [
+      150,
+      96,
+      66
+     ],
+     "hair": [
+      40,
+      32,
+      28
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "trapper",
@@ -6148,7 +6398,57 @@
    "y": 44.42,
    "facing": 148,
    "mourning": true,
-   "gang": "northerners"
+   "gang": "northerners",
+   "palettes": [
+    {
+     "coat": [
+      42,
+      38,
+      33
+     ],
+     "shirt": [
+      40,
+      31,
+      29
+     ],
+     "trousers": [
+      35,
+      33,
+      31
+     ],
+     "boots": [
+      70,
+      52,
+      36
+     ],
+     "hat": [
+      40,
+      36,
+      31
+     ],
+     "band": [
+      47,
+      43,
+      37
+     ],
+     "skin": [
+      190,
+      136,
+      100
+     ],
+     "hair": [
+      96,
+      66,
+      42
+     ],
+     "poncho_a": [
+      51,
+      47,
+      41
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "pistolero",
@@ -6156,63 +6456,513 @@
    "y": 45.22,
    "facing": 177,
    "mourning": true,
-   "gang": "bandidos"
+   "gang": "bandidos",
+   "palettes": [
+    {
+     "poncho_a": [
+      48,
+      31,
+      28
+     ],
+     "poncho_b": [
+      59,
+      53,
+      41
+     ],
+     "poncho_c": [
+      29,
+      27,
+      26
+     ],
+     "shirt": [
+      58,
+      56,
+      52
+     ],
+     "trousers": [
+      42,
+      39,
+      34
+     ],
+     "boots": [
+      70,
+      48,
+      32
+     ],
+     "hat": [
+      48,
+      43,
+      36
+     ],
+     "band": [
+      35,
+      27,
+      25
+     ],
+     "skin": [
+      168,
+      110,
+      76
+     ],
+     "hair": [
+      30,
+      24,
+      20
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "cowboy",
    "x": 66.6,
    "y": 46.4,
    "facing": 206,
-   "gang": "bandidos"
+   "gang": "bandidos",
+   "palettes": [
+    {
+     "vest": [
+      41,
+      37,
+      33
+     ],
+     "shirt": [
+      43,
+      46,
+      50
+     ],
+     "trousers": [
+      32,
+      33,
+      36
+     ],
+     "boots": [
+      76,
+      50,
+      32
+     ],
+     "hat": [
+      47,
+      42,
+      37
+     ],
+     "band": [
+      31,
+      28,
+      26
+     ],
+     "accent": [
+      60,
+      80,
+      130
+     ],
+     "skin": [
+      200,
+      146,
+      106
+     ],
+     "hair": [
+      120,
+      84,
+      50
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "drunkard",
    "x": 23.0,
    "y": 15.4,
    "facing": 26,
-   "gang": "bandidos"
+   "gang": "bandidos",
+   "palettes": [
+    {
+     "shirt": [
+      57,
+      55,
+      50
+     ],
+     "trousers": [
+      35,
+      34,
+      31
+     ],
+     "boots": [
+      62,
+      44,
+      32
+     ],
+     "hat": [
+      37,
+      35,
+      32
+     ],
+     "band": [
+      32,
+      30,
+      29
+     ],
+     "skin": [
+      204,
+      130,
+      104
+     ],
+     "hair": [
+      90,
+      70,
+      50
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "soldadera",
    "x": 64.6,
    "y": 15.4,
    "facing": 154,
-   "gang": "revolutionaries"
+   "gang": "revolutionaries",
+   "palettes": [
+    {
+     "dress": [
+      60,
+      58,
+      54
+     ],
+     "accent": [
+      176,
+      46,
+      36
+     ],
+     "hat": [
+      56,
+      52,
+      43
+     ],
+     "band": [
+      49,
+      29,
+      28
+     ],
+     "boots": [
+      70,
+      50,
+      34
+     ],
+     "skin": [
+      170,
+      112,
+      78
+     ],
+     "hair": [
+      20,
+      16,
+      14
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "tirador",
    "x": 36.0,
    "y": 28.8,
    "facing": 154,
-   "gang": "revolutionaries"
+   "gang": "revolutionaries",
+   "palettes": [
+    {
+     "shirt": [
+      62,
+      60,
+      57
+     ],
+     "trousers": [
+      60,
+      58,
+      54
+     ],
+     "boots": [
+      92,
+      66,
+      44
+     ],
+     "hat": [
+      56,
+      52,
+      43
+     ],
+     "band": [
+      26,
+      25,
+      25
+     ],
+     "accent": [
+      120,
+      40,
+      30
+     ],
+     "poncho_a": [
+      39,
+      27,
+      26
+     ],
+     "poncho_b": [
+      59,
+      56,
+      49
+     ],
+     "poncho_c": [
+      30,
+      28,
+      27
+     ],
+     "skin": [
+      160,
+      104,
+      70
+     ],
+     "hair": [
+      24,
+      18,
+      16
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "cabo",
    "x": 44.0,
    "y": 29.4,
    "facing": 154,
-   "gang": "federales"
+   "gang": "federales",
+   "palettes": [
+    {
+     "coat": [
+      50,
+      60,
+      104
+     ],
+     "trousers": [
+      63,
+      62,
+      60
+     ],
+     "accent": [
+      206,
+      166,
+      70
+     ],
+     "boots": [
+      34,
+      28,
+      24
+     ],
+     "hat": [
+      48,
+      56,
+      98
+     ],
+     "band": [
+      206,
+      166,
+      70
+     ],
+     "shirt": [
+      63,
+      62,
+      60
+     ],
+     "skin": [
+      160,
+      104,
+      72
+     ],
+     "hair": [
+      30,
+      24,
+      20
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "rural",
    "x": 40.0,
    "y": 67.4,
    "facing": 334,
-   "gang": "federales"
+   "gang": "federales",
+   "palettes": [
+    {
+     "coat": [
+      47,
+      46,
+      44
+     ],
+     "shirt": [
+      62,
+      61,
+      59
+     ],
+     "trousers": [
+      46,
+      45,
+      43
+     ],
+     "vest": [
+      47,
+      46,
+      44
+     ],
+     "boots": [
+      60,
+      44,
+      32
+     ],
+     "hat": [
+      50,
+      49,
+      46
+     ],
+     "band": [
+      59,
+      59,
+      58
+     ],
+     "accent": [
+      168,
+      40,
+      36
+     ],
+     "skin": [
+      176,
+      120,
+      84
+     ],
+     "hair": [
+      30,
+      24,
+      20
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "sharpshooter",
    "x": 61.0,
    "y": 29.0,
    "facing": 206,
-   "gang": "northerners"
+   "gang": "northerners",
+   "palettes": [
+    {
+     "coat": [
+      28,
+      28,
+      30
+     ],
+     "shirt": [
+      52,
+      50,
+      47
+     ],
+     "trousers": [
+      31,
+      30,
+      31
+     ],
+     "boots": [
+      40,
+      32,
+      26
+     ],
+     "hat": [
+      25,
+      24,
+      24
+     ],
+     "band": [
+      23,
+      22,
+      22
+     ],
+     "accent": [
+      150,
+      140,
+      112
+     ],
+     "skin": [
+      200,
+      150,
+      118
+     ],
+     "hair": [
+      120,
+      90,
+      60
+     ]
+    }
+   ],
+   "palette": 0
   },
   {
    "kind": "mountainman",
    "x": 79.2,
    "y": 54.0,
    "facing": 206,
-   "gang": "northerners"
+   "gang": "northerners",
+   "palettes": [
+    {
+     "coat": [
+      34,
+      31,
+      28
+     ],
+     "shirt": [
+      38,
+      36,
+      35
+     ],
+     "trousers": [
+      32,
+      30,
+      29
+     ],
+     "boots": [
+      60,
+      44,
+      32
+     ],
+     "hat": [
+      30,
+      28,
+      26
+     ],
+     "band": [
+      30,
+      28,
+      26
+     ],
+     "skin": [
+      186,
+      130,
+      96
+     ],
+     "hair": [
+      110,
+      78,
+      50
+     ],
+     "poncho_a": [
+      32,
+      29,
+      27
+     ]
+    }
+   ],
+   "palette": 0
   }
  ],
  "civilians": [

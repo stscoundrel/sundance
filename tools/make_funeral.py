@@ -18,6 +18,7 @@ sends a runner for them once one of its own falls (see CAMPS).
 
 Usage: tools/.venv/bin/python tools/make_funeral.py
 """
+import json
 import math
 import os
 import sys
@@ -302,6 +303,32 @@ ABOUT = [
     dict({"kind": "mountainman", "x": 67.2, "y": 36.0, "facing": W}, **NORTH_MEN),    # in the town's street
 ]
 ENEMIES = GRAVESIDE + ABOUT
+
+# Every guest in black for the burial: his type's own colours taken down to the
+# dark of mourning, the coat, shirt, trousers, hat and the rest, a trace of each
+# colour left so the sorts still read apart; skin, hair, boots and the small
+# accents as they were. The federales keep their blue coats and caps (a uniform's
+# fit for a funeral) with the rest of it dark. Easier, too, to tell a guest from a
+# digger in his white shirt. (The men who ride in from the roads come as they are.)
+MOURNING = ("coat", "shirt", "vest", "trousers", "hat", "band", "dress", "poncho_a", "poncho_b", "poncho_c")
+UNIFORM = {"soldado": ("coat", "hat", "band"), "cabo": ("coat", "hat", "band")}
+_TYPES = json.load(open(os.path.join(layout.ROOT, "data", "enemies.json")))["types"]
+
+
+def mourning_palette(kind):
+    pal = dict(_TYPES[kind]["palettes"][0])
+    for slot in MOURNING:
+        if slot in pal and slot not in UNIFORM.get(kind, ()):
+            r, g, b = pal[slot]
+            lum = 0.3 * r + 0.59 * g + 0.11 * b
+            dark = 18 + lum * 0.2
+            pal[slot] = [int(round(dark + (c - lum) * 0.15)) for c in (r, g, b)]
+    return pal
+
+
+for e in ENEMIES:
+    e["palettes"] = [mourning_palette(e["kind"])]
+    e["palette"] = 0
 
 # Who else came: the padre to say the words, the undertaker and his digger, and a
 # few who came to weep (or to make sure).
