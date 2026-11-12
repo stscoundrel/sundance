@@ -353,6 +353,8 @@ var volley_cd := 0.0
 var deserting := false
 var desert_to := Vector2.INF
 var camp_to := Vector2.INF   # his gang's camp, off the map: he's running for more men (Director)
+var _off_tries := 0          # (running for the camp or off the map: times his path's run out short of it)
+const OFF_TRIES := 6         # and he's given up finding a way, and goes off where he is
 var hunt_rolled := false
 var hunting: Civilian = null
 var bounds := Vector2i.ZERO              # (bounds made, and how many of them to cover: for the tests)
@@ -1241,8 +1243,9 @@ func fear() -> float:
 ## Roll how he reacts to gunfire and start it after a short, personal delay so a
 ## group never reacts in unison.
 func queue_reaction(from: Vector2, scary: bool, forced := false) -> void:
-	if not alive or pending != "" or (fear_cd > 0.0 and not forced) or flag_at != Vector2.INF:
-		return
+	if not alive or pending != "" or (fear_cd > 0.0 and not forced) or flag_at != Vector2.INF \
+			or camp_to != Vector2.INF or deserting:
+		return   # (a runner for his camp, or a man off out of it: nothing stops him to flinch)
 	if not forced and not near_action(from):
 		return   # a fight he can't see, off down the street: he just heads for it
 	if reaction != "" and reaction != "point" and reaction != "backoff":
@@ -3701,11 +3704,16 @@ func run_to_camp(at: Vector2) -> void:
 	_log("runs for the camp")
 
 
+## He's there when he's at the camp's way off the map (or, where the level has a
+## "shout", within shouting distance of it), or at the very edge. Not just where
+## his path happens to end: a dive for cover or a scuffle on the way (enter_combat,
+## a reaction) can change or clear it, and then he finds his way again.
 func _camp_run(_delta: float) -> void:
 	crouched = false
 	var g := Iso.to_grid(global_position)
-	var edge := minf(minf(g.x, g.y), minf(game.size - g.x, game.size - g.y)) < maxf(1.2, float(game.level.get("shout", 0.0)))
-	if follow_path(run) or edge:   # (the path's end: the camp's way, or as near it as the ground allows, or in shouting distance of it)
+	var edge := minf(minf(g.x, g.y), minf(game.size - g.x, game.size - g.y)) < 1.2
+	var heard := g.distance_to(Iso.to_grid(camp_to)) < maxf(1.5, float(game.level.get("shout", 0.0)))
+	if edge or heard or (follow_path(run) and _no_way_on(camp_to)):
 		camp_to = Vector2.INF
 		game.director.runner_home(self)
 
@@ -3714,8 +3722,18 @@ func _desert_run() -> void:
 	crouched = false
 	var g := Iso.to_grid(global_position)
 	var edge := minf(minf(g.x, g.y), minf(game.size - g.x, game.size - g.y)) < 1.5
-	if follow_path(run) or edge or global_position.distance_to(desert_to) < 40.0:
+	if edge or global_position.distance_to(desert_to) < 40.0 or (follow_path(run) and _no_way_on(desert_to)):
 		game.gone_off(self)   # off the map
+
+
+## His path's run out short of where he's going: a fresh one, unless he's tried that
+## too often already (nowhere to go but where he is: then he's as good as there).
+func _no_way_on(to: Vector2) -> bool:
+	_off_tries += 1
+	if _off_tries > OFF_TRIES:
+		return true
+	path_to(to if game.is_free(to) else game.free_point_near(to, 40.0, feud_rng))
+	return false
 
 
 ## Round among the carriers with the stranger nowhere near: once, maybe, he turns his

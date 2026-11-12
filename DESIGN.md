@@ -731,7 +731,10 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   tiles) he's heard, and 30 s on (saddling up, riding over) its five come down that
   road all at once. They rode
   in for a fight: armed with their long guns, quick to it, and not struck dumb (they
-  were told). Shoot the runner on the way and that faction gets no help.
+  were told). Shoot the runner on the way and that faction gets no help. Shot at and
+  missed, or grazed, he keeps running (no diving for cover on the way), and he's only
+  heard at his own road: wherever a scare leaves his path, he finds his way on
+  (`Enemy._no_way_on`; deserters at Paso Esperanza the same).
 - **In the coffin** (`scripts/coffin.gd`; `tests/test_coffin.gd`). He starts laid
   out in his own coffin before his empty grave (the map's `"coffin"`), the lid
   nailed down: nobody can see him and he can't move. The player sees the graveside

@@ -5,7 +5,9 @@ extends SceneTree
 ##             seconds on the faction's men ride in down that road, all at once,
 ##             armed with their long guns, quick to it and not struck dumb (they've
 ##             been told).
-##   shot    - a faction whose runner's shot down on the way gets no help.
+##   shot    - a faction whose runner's shot down on the way gets no help; one shot
+##             at (a near miss, a graze) keeps running, and is only heard at his
+##             road, never gone wherever the scare left him.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_runners.gd
 
 var game: Node
@@ -51,7 +53,7 @@ func _process(delta: float) -> bool:
 	if frame <= 3:
 		return false
 	t += delta
-	if t > 90.0:   # (a test that loses its way ends, failing, rather than run on)
+	if t > 110.0:   # (a test that loses its way ends, failing, rather than run on)
 		check(false, "ran out of time in phase %d" % phase)
 		return _done()
 	var d: Director = game.director
@@ -73,6 +75,10 @@ func _process(delta: float) -> bool:
 					return _done()
 				return false
 			runner = d.camps["bandidos"]["runner"]
+			# shot at as he runs (a near miss, then a graze): he keeps running, and
+			# doesn't vanish wherever the scare left him
+			runner.near_miss(game.player.global_position)
+			runner.take_hit(1, Vector2.RIGHT, game.player)
 			step = "shot"
 			d.camps["federales"]["runner"].take_hit(1000, Vector2.RIGHT, game.player)   # (the federal runner, cut down)
 			t0 = t
@@ -80,19 +86,21 @@ func _process(delta: float) -> bool:
 		2:   # the bandido gets in shouting distance, and his men come
 			if is_instance_valid(runner) and runner.alive:
 				last_at = runner.global_position
-			if d.camps["bandidos"]["state"] in ["running", "fetching"] and t - t0 < 60.0:
+			if d.camps["bandidos"]["state"] in ["running", "fetching"] and t - t0 < 80.0:
 				return false
 			step = "runner"
 			check(d.camps["bandidos"]["state"] == "sent", "the bandidos' men never came: %s" % d.camps["bandidos"]["state"])
 			check(d.camps["federales"]["state"] == "lost", "the federales got help with their runner dead: %s" % d.camps["federales"]["state"])
 			var g := Iso.to_grid(last_at)
+			var camp := Iso.to_grid(d.camps["bandidos"]["at"])
+			check(g.distance_to(camp) < float(game.level["shout"]) + 0.5, "heard a long way from the west road: %s, the road at %s" % [g, camp])
 			check(minf(g.x, g.y) > 1.2 or game.size - maxf(g.x, g.y) > 1.2, "he went right to the edge, not just in shouting distance")
 			phase = 3
 		3:
 			for e in game.enemies:
 				if not old.has(e) and not came_in.has(e):
 					came_in[e] = Iso.to_grid(e.global_position)
-			if came_in.size() < 5 and t - t0 < 70.0:
+			if came_in.size() < 5 and t - t0 < 90.0:
 				return false
 			var new: Array = came_in.keys()
 			check(new.size() == 5 and new.all(func(e): return e.gang == "bandidos"), "the bandidos' men: %s" % [new.map(func(e): return e.gang)])
