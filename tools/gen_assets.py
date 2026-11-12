@@ -1339,6 +1339,18 @@ def gen_sfx(meta):
     fade = np.linspace(0, 1, k)
     r[:k] = r[:k] * fade + r[-k:] * (1 - fade)
     write("rain", r[:-k], meta, 0.35)
+    # Thunder as a downpour comes in (Snowfall in its rain): the near crack of it,
+    # then a long rolling rumble that grumbles and dies away; three takes.
+    hrng = np.random.default_rng(104)
+    for take in ("thunder", "thunder_2", "thunder_3"):
+        dur = hrng.uniform(4.5, 6.5)
+        ht = t_of(dur)
+        crack = highpass(hrng.normal(0, 1, len(ht)), 700) * np.exp(-ht / 0.12) * hrng.uniform(0.4, 0.9)
+        rumble = lowpass(lowpass(hrng.normal(0, 1, len(ht)), 160), 120)
+        rolls = sum(np.exp(-((ht - hrng.uniform(0.2, dur * 0.6)) / hrng.uniform(0.3, 0.9)) ** 2) * hrng.uniform(0.5, 1.0)
+                    for _ in range(5))
+        env = (1 - np.exp(-ht / 0.15)) * np.exp(-ht / (dur * 0.35)) * (0.5 + rolls)
+        write(take, room(crack + rumble * env * 3.0, hrng, 0.6, 0.4), meta, 0.85, 1.4)
 
 
 def main():

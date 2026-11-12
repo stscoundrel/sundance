@@ -1042044,7 +1042044,10 @@
   "chop_2": "res://assets/sfx/chop_2.wav",
   "chop_3": "res://assets/sfx/chop_3.wav",
   "crackle": "res://assets/sfx/crackle.wav",
-  "rain": "res://assets/sfx/rain.wav"
+  "rain": "res://assets/sfx/rain.wav",
+  "thunder": "res://assets/sfx/thunder.wav",
+  "thunder_2": "res://assets/sfx/thunder_2.wav",
+  "thunder_3": "res://assets/sfx/thunder_3.wav"
  },
  "ground": {
   "file": "res://assets/sprites/ground.png",

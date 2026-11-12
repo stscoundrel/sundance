@@ -1405,6 +1405,7 @@ func _process(delta: float) -> void:
 	mat.set_shader_parameter("time_s", now / 1000.0)
 	if snowfall:   # a squall: the white closing in, and the wind howling
 		mat.set_shader_parameter("fog", snowfall.storm * (0.6 if snowfall.rain else 1.0))
+		mat.set_shader_parameter("flash", snowfall.flash)
 		wind_player.volume_db = (-14.0 + 10.0 * snowfall.storm) if snowfall.rain else (-12.0 + 9.0 * snowfall.storm)
 	mat.set_shader_parameter("hurt", hurt_fx)
 	if player and player.down:

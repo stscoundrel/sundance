@@ -14,6 +14,7 @@ uniform float contrast = 1.08;
 uniform float lift = 0.0;
 uniform float fog = 0.0;   // a snow squall: white closing in from the edges
 uniform vec3 fog_col = vec3(0.86, 0.88, 0.92);   // (a downpour's is grey)
+uniform float flash = 0.0;   // lightning as a downpour comes in
 
 void fragment() {
 	vec3 c = texture(screen_tex, SCREEN_UV).rgb;
@@ -25,6 +26,7 @@ void fragment() {
 	c = mix(c, c * vec3(0.95, 0.92, 1.0), smoothstep(0.5, 0.0, l) * 0.3);
 	vec2 d = SCREEN_UV - 0.5;
 	c = mix(c, fog_col, fog * (0.18 + 0.62 * smoothstep(0.1, 0.62, length(d * vec2(1.0, 1.4)))));
+	c = mix(c, vec3(0.9, 0.93, 1.0), flash * 0.45);
 	c *= 1.0 - dot(d * vec2(1.0, 1.25), d * vec2(1.0, 1.25)) * 1.1;
 	vec2 px = floor(SCREEN_UV * grain);
 	float n = fract(sin(dot(px + floor(time_s * 12.0) * 17.0, vec2(12.9898, 78.233))) * 43758.5453);

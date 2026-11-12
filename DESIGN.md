@@ -718,7 +718,11 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   a dark `fog_col`). It's what everyone sees by, as the snow is: `game.sight` 0.88 in
   the steady rain, 0.6 in a downpour's worst. The wind's loop is the rain's (`rain`
   in the sfx bake: a hiss, a low wash and the patter of near drops), louder in a
-  downpour. None of the snow's other workings: no prints or drifts, and nobody goes
+  downpour. Each downpour is marked coming in: lightning as it starts to build (the
+  post shader's `flash`: bright, a dip, bright again, fading over 0.7 s, on game
+  time) and the thunder 0.7 s after it, up the valley (`thunder`, three takes in the
+  sfx bake, played on `Snowfall.rng`); once a downpour, a few seconds before the
+  toast. None of the snow's other workings: no prints or drifts, and nobody goes
   in out of it (they came to bury him). Not yet: puddles that come and go, the noise
   of it covering shots, the blood trail washing out.
 - **The guests.** Fifteen, in four factions, one from each town: San Miguel's

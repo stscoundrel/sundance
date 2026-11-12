@@ -7,6 +7,8 @@ extends SceneTree
 ##   downpour - every so often the heavens open: everyone sees well over a third less
 ##              far, the grey closes in from the edges; and nobody goes in out of it
 ##              (they came to bury him).
+##   thunder  - each downpour is marked coming in: a flash of lightning, and the
+##              thunder a moment after, once a downpour.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_rain.gd
 
 var game: Node
@@ -66,6 +68,16 @@ func _process(_delta: float) -> bool:
 		for e in game.enemies:
 			sheltered += 1 if e.shelter_rolled >= 0 else 0
 		check(sheltered == mark, "nobody goes in out of the rain")
+		step = "thunder"
+		check(sf.flashed >= 0.0, "lightning as the downpour comes in")
+		check(game.post.material.get_shader_parameter("flash") > 0.0, "the screen whitens")
+	elif frame == 110:   # a second on: the thunder's come, the flash is gone
+		check(sf._thunder_at < 0.0, "the thunder came after the flash")
+		check(sf.flash == 0.0, "the flash is over")
+		var f := sf.flashed
+		for i in 30:
+			sf._physics_process(0.0)
+		check(sf.flashed == f, "one flash a downpour")
 		print("rain test: ", "OK" if failures == 0 else "%d failures" % failures)
 		quit(1 if failures else 0)
 		return true

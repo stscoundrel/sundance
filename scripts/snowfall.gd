@@ -23,7 +23,8 @@ extends Node2D
 ## downpour that hammers down, greys out the edges of the screen and drowns the
 ## world in its noise. The same squalls, the same cut to everyone's sight; nothing
 ## else of the snow (no prints, no drifts, nobody goes in out of it: they came to
-## bury him and they'll stand there wet).
+## bury him and they'll stand there wet). Each downpour is marked coming in: a
+## flash of lightning, the screen whitening twice, and the thunder a moment after.
 
 static var rng := RandomNumberGenerator.new()   # (when the squalls come, and how long they blow)
 const SHADER := preload("res://shaders/snowfall.gdshader")
@@ -45,6 +46,7 @@ const RAIN_STORM_COUNT := 2200
 const RAIN_WIND := Vector2(40.0, 150.0)
 const RAIN_FALL := Vector2(420.0, 760.0)
 const RAIN_SIGHT := Vector2(0.88, 0.6)
+const THUNDER_LAG := 0.7    # s from the flash to the thunder (it's a way off, up the valley)
 
 var game: Node
 var rain := false           # the funeral's rain, not the snow (setup's `wet`)
@@ -55,6 +57,10 @@ var t := 0.0
 var drift := 0.0            # px the wind's carried a flake of depth 0.5, all told
 var fall := 0.0             # s of falling (a squall's counting for more)
 var _was_up := false
+var _heard := -1            # the last downpour the thunder marked
+var _thunder_at := -1.0     # game time the thunder's due, after the flash
+var flashed := -1.0         # game time of the last flash; -1 none yet
+var flash := 0.0            # how white the lightning has the screen (post's "flash")
 var _mm := MultiMesh.new()
 var _mats: Array[ShaderMaterial] = []
 
@@ -142,6 +148,19 @@ func _physics_process(_delta: float) -> void:
 	if storm > 0.5 and not _was_up and game.state == "play":
 		game.hud.toast("The heavens open" if rain else "A squall comes down off the mountain")
 	_was_up = storm > 0.5
+	if rain:
+		var i := squall_at(game.clock)
+		if i >= 0 and i != _heard:   # a downpour coming in: the lightning, then the thunder
+			_heard = i
+			flashed = game.clock
+			_thunder_at = game.clock + THUNDER_LAG
+		if _thunder_at >= 0.0 and game.clock >= _thunder_at:
+			_thunder_at = -1.0
+			if game.state == "play":
+				game.sfx("thunder", null, -1.0, 0.08, rng)
+		# (the flash: bright, a dip, bright again, then fading over half a second)
+		var since: float = game.clock - flashed
+		flash = 0.0 if flashed < 0.0 or since > 0.7 else (1.0 if since < 0.07 else 0.35 if since < 0.14 else 0.9 * (1.0 - (since - 0.14) / 0.56))
 
 
 func _process(delta: float) -> void:
