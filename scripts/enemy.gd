@@ -219,7 +219,6 @@ var groan_t := 0.0
 var rescuer: Enemy = null    # who's come for him
 var medic: Civilian = null   # the barber-surgeon, if he's come for him instead
 var rescuing: Enemy = null   # (as the rescuer) who he's come for
-var died_helping := false    # shot down as he dragged or bound up a wounded man (on the stranger's record)
 var rescue_phase := ""       # "go", "drag", "treat"
 var fetching: Strongbox = null   # (Silencio's trappers) the strongbox he's taking home
 var fetch_phase := ""            # "go", "carry"
@@ -2600,7 +2599,6 @@ func _fumble_stick() -> void:
 func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
 	var s := stick
 	stick = null
-	died_helping = reaction == "rescue" and rescuing != null
 	_end_rescue()
 	super(from_dir, shooter, how)
 	if s:
@@ -2836,11 +2834,6 @@ func finish(by: Actor) -> void:
 		rescuer._end_rescue()
 	rescuer = null
 	game.sfx("hit", global_position, -6.0)
-	if by and by.is_player and gasping:
-		_log("shot with his gun up")   # (fair: he was shooting back)
-	elif by and by.is_player:
-		game.stats["wounded men shot"] = game.stats.get("wounded men shot", 0) + 1   # (on his record: see Record)
-		game.verdict("A MAN IN THE DIRT", "the padre will hear of it")
 	_log("finished")
 
 

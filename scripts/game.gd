@@ -2591,8 +2591,7 @@ func forget_record() -> void:
 func _keep_record() -> void:
 	if level.has("coffin") or level_entry.get("hidden", false):
 		return
-	var rec := {"innocents": innocents, "downed_shot": int(stats.get("wounded men shot", 0)),
-		"rescuers_shot": int(stats.get("rescuers shot", 0)), "priests_dead": int(stats.get("priests dead", 0))}
+	var rec := {"innocents": innocents, "priests_dead": int(stats.get("priests dead", 0))}
 	if hanging:
 		rec["condemned"] = "hanged" if hanging.state in ["hanged", "shot"] else "saved"
 	if captive:
@@ -2630,9 +2629,6 @@ func _on_enemy_died(e: Actor) -> void:
 	var side := gang_of(e)
 	gangs[side]["fallen"] += 1
 	deaths.append(clock)
-	if e is Enemy and e.died_helping and e.killer is Player:
-		stats["rescuers shot"] = stats.get("rescuers shot", 0) + 1   # (on his record: see Record)
-		verdict("HE WAS HELPING HIS OWN", "the padre will hear of it")
 	if battle():
 		for o in enemies:   # (it's a battle now, not a funeral: the rest think of their long guns)
 			if o.alive and o.st == Enemy.St.COMBAT:

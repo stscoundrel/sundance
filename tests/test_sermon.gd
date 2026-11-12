@@ -61,7 +61,7 @@ func _process(_delta: float) -> bool:
 				return false
 			step = "sermon"
 			var want := Funeral.nails_for(Funeral.RECORDS["middling"])
-			check(c.nails == want and want == 5, "nails in the lid: %d of %d" % [c.nails, want])
+			check(c.nails == want and want == 4, "nails in the lid: %d of %d" % [c.nails, want])
 			for l in f.lines:
 				check(said.has(l["text"]), "the padre never said: %s" % l["text"])
 			check(f.lines.any(func(l): return l["text"].contains("hang a man")) and f.lines.back()["text"] == "Amen.", "the sermon: %s" % [f.lines.map(func(l): return l["text"])])

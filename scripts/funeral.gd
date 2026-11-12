@@ -34,20 +34,18 @@ const WEIGHTS := {
 	"carriers_dead": [4, 1, 3],   # one nail for every four carriers dead at Paso Esperanza
 	"silencio_wiped": [1, 2, 2],  # every outlaw and every hunter dead, for the gold
 	"innocents": [1, 1, 3],
-	"downed_shot": [2, 1, 2],     # men finished lying in the dirt, not aiming at him
-	"rescuers_shot": [2, 1, 2],   # men shot dragging or binding up their wounded
 	"priests_dead": [1, 2, 4],
 }
 # Made-up records, for trying the funeral out (--record=NAME) and for the tests.
 const RECORDS := {
 	"good": {"condemned": "saved", "captive": "saved", "carriers_dead": 2, "silencio_wiped": false,
-		"innocents": 0, "downed_shot": 1, "rescuers_shot": 0, "priests_dead": 0},
+		"innocents": 0, "priests_dead": 0},
 	"middling": {"condemned": "hanged", "captive": "saved", "carriers_dead": 6, "silencio_wiped": false,
-		"innocents": 1, "downed_shot": 0, "rescuers_shot": 1, "priests_dead": 0},
+		"innocents": 1, "priests_dead": 0},
 	"bad": {"condemned": "hanged", "captive": "dead", "carriers_dead": 9, "silencio_wiped": true,
-		"innocents": 2, "downed_shot": 2, "rescuers_shot": 0, "priests_dead": 0},
+		"innocents": 2, "priests_dead": 0},
 	"worst": {"condemned": "hanged", "captive": "dead", "carriers_dead": 14, "silencio_wiped": true,
-		"innocents": 4, "downed_shot": 5, "rescuers_shot": 3, "priests_dead": 1},
+		"innocents": 4, "priests_dead": 1},
 }
 
 var game: Node
@@ -133,10 +131,6 @@ static func sermon(rec: Dictionary) -> Array[Dictionary]:
 	var inn := int(rec.get("innocents", 0))
 	if inn > 0:
 		say.call("He shot a man who never wore a gun." if inn == 1 else "He shot %d who never wore a gun." % inn, "innocents")
-	if int(rec.get("downed_shot", 0)) > 0:
-		say.call("He finished men lying in the dirt.", "downed_shot")
-	if int(rec.get("rescuers_shot", 0)) > 0:
-		say.call("He shot men dragging their wounded.", "rescuers_shot")
 	if int(rec.get("priests_dead", 0)) > 0:
 		say.call("A man of God died where he passed.", "priests_dead")
 	var n := nails_for(rec)

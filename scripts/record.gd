@@ -60,7 +60,7 @@ static func merged(all: Dictionary) -> Dictionary:
 	for id in all:
 		var rec: Dictionary = all[id]
 		for k in rec:
-			if k in ["innocents", "downed_shot", "rescuers_shot", "priests_dead", "carriers_dead"]:
+			if k in ["innocents", "priests_dead", "carriers_dead"]:
 				out[k] = int(out.get(k, 0)) + int(rec[k])
 			else:
 				out[k] = rec[k]

@@ -776,8 +776,7 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   him kindly", or "He lived by the gun... and by the gun he died"), and "Amen." For
   each sin named the carpenter drives nails into the lid (`Funeral.WEIGHTS`: the
   condemned man hanged 1, the captive dead 1, a nail for every four carriers dead
-  up to 3, Silencio's two gangs wiped out 2, each innocent 1 up to 3, downed men
-  finished and men shot helping the wounded a nail a pair up to 2 each, a priest
+  up to 3, Silencio's two gangs wiped out 2, each innocent 1 up to 3, a priest
   dead 2); a good deed he lets lie. Lying in the box the stranger can only listen
   (E hurries the padre on). At the Amen the coffin is let down into the grave, him
   in it, and the digger shovels the earth back in (14 s, a bar under the nails):
@@ -791,12 +790,11 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   last win standing). A town keeps what it asked of him (San Miguel the condemned
   man saved or hanged, Cruz Verde the captive, Paso Esperanza the carriers dead,
   Silencio whether both its gangs died to the last man) and what any town does: the
-  innocents he shot, the wounded he finished in the dirt while they weren't shooting
-  back, the men he shot as they dragged or bound up their wounded, and the priests
-  who died, however they died. The towns add up for the padre; one never won he says
-  nothing of. Finishing a wounded man and shooting a man helping his own flash on
-  screen as they happen ("A MAN IN THE DIRT", "HE WAS HELPING HIS OWN": "the padre
-  will hear of it"), as shooting a townsman always has ("AN INNOCENT"). The level
+  innocents he shot and the priests who died, however they died. The towns add up
+  for the padre; one never won he says nothing of. Shooting a townsman flashes on
+  screen as it happens ("AN INNOCENT"). Finishing a wounded man, or shooting one as
+  he drags or binds up his own, is no sin: in a fight there's no telling which of
+  them is still a threat, and they're the gang all the same. The level
   picker's last row has "FORGET WHAT HE DID" beside the way out: asked twice, it
   wipes the lot. `--record=NAME` (good, middling, bad, worst) still tries the
   funeral on a made-up one; the tests never touch the player's record (nothing is
@@ -1333,8 +1331,8 @@ carried, which you collect by walking over them.
   the downed man presses the wound and his clock stops. Patched up, he gets up with
   1 HP, shaken and limping, his own gun back in hand. Shoot the rescuer and the
   man's left lying there, clock running again. Another round (or the knife,
-  quietly) finishes a downed man; the stranger's tally of such is kept, unseen, for
-  a later honour system. His hurtbox lies along his body as drawn (the bake records
+  quietly) finishes a downed man. That's no sin on his record (see the funeral): a
+  man in the dirt may yet come up shooting, and he's still the gang. His hurtbox lies along his body as drawn (the bake records
   where each fall leaves him, by direction: `meta.json` "lie"), so a round or the
   cursor on any part of him finds him, not just the spot where his boots were. The
   undertaker, padre and gunsmith leave him be till he's

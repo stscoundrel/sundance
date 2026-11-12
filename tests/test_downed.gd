@@ -4,7 +4,7 @@ extends SceneTree
 ##   down    - a killing shot puts a bandido in the dirt: out of the fight (not
 ##             counted standing) but still there to hit.
 ##   bleed   - nobody comes for him: he bleeds out in 45 s.
-##   finish  - another round finishes him (the stranger's tally of such kept, hidden).
+##   finish  - another round finishes him (no sin: he's still the gang).
 ##   rescue  - a comrade runs to him, drags him into cover and bandages him: the clock
 ##             stops while he's got him, and he gets up with 1 HP, gun in hand.
 ##   dropped - the rescuer shot dead mid-drag: he's left there, the clock running.
@@ -137,7 +137,7 @@ func _finish() -> void:
 		game.spawn_bullet(from, Vector2(900, 0), 120.0, 2, game.player, Iso.GUN_H, false)])
 	queue.append([0.4, func():
 		check(not a.downed and not a.alive, "a round should finish a downed man")
-		check(game.stats.get("wounded men shot", 0) == 1, "the stranger's tally of wounded men shot")
+		check(game.verdict_t <= 0.0, "finishing him counted as a sin: '%s'" % game.verdict_title)
 		_rescue()])
 
 
