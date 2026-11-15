@@ -735,9 +735,18 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   post shader's `flash`: bright, a dip, bright again, fading over 0.7 s, on game
   time) and the thunder 0.7 s after it, up the valley (`thunder`, three takes in the
   sfx bake, played on `Snowfall.rng`); once a downpour, a few seconds before the
-  toast. None of the snow's other workings: no prints or drifts, and nobody goes
-  in out of it (they came to bury him). Not yet: puddles that come and go, the noise
-  of it covering shots, the blood trail washing out.
+  toast. The rain washes his blood away (`Snowfall._wash`, every 0.5 s of
+  game time; `Decals.wash`): every red mark on the ground and every drop of his trail
+  fades, gone in 90 s of the steady rain or 15 s of a downpour, and a drop half washed
+  out is no lead (blood marks say so when they're made, `Decals.add`'s `blood`; `WASH_LEAD`: `trail_lead` skips it, as it does a print the snow's
+  half filled). The pools where men fell thin to 40% but stay, so a pool with nobody
+  in it still tells. None of the snow's other workings: no prints or drifts, and nobody goes
+  in out of it (they came to bury him). Puddles (`scripts/puddles.gd`, only looks): water standing all over
+  the open ground, about 230 dealt on dice of their own (seed 211; every lobe clear
+  of anything solid, and off the paving and the grave at his own graveside, `DRY`), each a few lobes strung out one way like water in a rut: a wet rim, dark
+  water, the grey sky pale in it, and rain rings spreading on it, a few in the
+  steady rain and most of its surface in a downpour, which spreads them 14% too.
+  Not yet: the noise of it covering shots.
 - **The guests.** Fifteen, in four factions, one from each town: San Miguel's
   bandidos, the revolutionaries, the federales, and the northerners from Silencio
   (its hunters and outlaws together; each faction a `"gang"` of its own). Seven stand
@@ -760,7 +769,7 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
 - **Runners and reinforcements** (the map's `"camps"`, `Director`; `tests/test_runners.gd`).
   Each faction has its own road home and five more of its own sorts waiting just past
   the edge of the map down it: the bandidos the west road, the revolutionaries the
-  mission track, the federales the east road, the northerners the town. Once one of
+  mission track, the federales the east road, the northerners the town (the revolutionaries' are all men: no soldaderas ride in). Once one of
   a faction falls, its nearest man drops everything and runs for its road, a banner
   saying so; within shouting distance of the map's edge (the level's `"shout"`, 3.5
   tiles) he's heard, and 30 s on (saddling up, riding over) its five come down that

@@ -25,6 +25,10 @@ extends Node2D
 ## else of the snow (no prints, no drifts, nobody goes in out of it: they came to
 ## bury him and they'll stand there wet). Each downpour is marked coming in: a
 ## flash of lightning, the screen whitening twice, and the thunder a moment after.
+## And the rain washes the blood away: every drop on the ground (Decals) and on the
+## stranger's trail (`game.trails`) fades, a minute and a half in the steady rain,
+## a quarter of a minute in a downpour; a drop half washed out is no lead to follow.
+## The pools where men fell thin, but stay (a pool with nobody in it still tells).
 
 static var rng := RandomNumberGenerator.new()   # (when the squalls come, and how long they blow)
 const SHADER := preload("res://shaders/snowfall.gdshader")
@@ -47,6 +51,10 @@ const RAIN_WIND := Vector2(40.0, 150.0)
 const RAIN_FALL := Vector2(420.0, 760.0)
 const RAIN_SIGHT := Vector2(0.88, 0.6)
 const THUNDER_LAG := 0.7    # s from the flash to the thunder (it's a way off, up the valley)
+const WASH := Vector2(90.0, 15.0)   # s for the rain to wash a drop of blood away: steady, downpour
+const WASH_EVERY := 0.5     # s between washes (game time: the trail's a lead the gang follows)
+const WASH_LEAD := 0.5      # washed out this far, a drop's no lead
+const POOL_LEFT := 0.4      # of a pool where a man fell, what the rain leaves of it
 
 var game: Node
 var rain := false           # the funeral's rain, not the snow (setup's `wet`)
@@ -61,6 +69,7 @@ var _heard := -1            # the last downpour the thunder marked
 var _thunder_at := -1.0     # game time the thunder's due, after the flash
 var flashed := -1.0         # game time of the last flash; -1 none yet
 var flash := 0.0            # how white the lightning has the screen (post's "flash")
+var _wash_t := 0.0
 var _mm := MultiMesh.new()
 var _mats: Array[ShaderMaterial] = []
 
@@ -122,6 +131,23 @@ func storm_at(s: float) -> float:
 	return 0.0
 
 
+## The rain at the blood for `dt` seconds: the marks on the ground, the drops of his
+## trail, the pools.
+func _wash(dt: float) -> void:
+	var by := dt / lerpf(WASH.x, WASH.y, storm)
+	game.decals.wash(by)
+	var kept: Array[Dictionary] = []
+	for d in game.trails:
+		d["wash"] = d.get("wash", 0.0) + by
+		if d["wash"] < 1.0:
+			kept.append(d)
+	game.trails = kept
+	for pl in game.blood_pools:
+		var sp: Sprite2D = pl.get("sprite")
+		if is_instance_valid(sp):
+			sp.modulate.a = maxf(POOL_LEFT, sp.modulate.a - by)
+
+
 ## Which squall is blowing at game time `s` (building, at its worst or dying away),
 ## by its place in the list; -1 between them.
 func squall_at(s: float) -> int:
@@ -158,6 +184,10 @@ func _physics_process(_delta: float) -> void:
 			_thunder_at = -1.0
 			if game.state == "play":
 				game.sfx("thunder", null, -1.0, 0.08, rng)
+		_wash_t += _delta
+		if _wash_t >= WASH_EVERY:
+			_wash(_wash_t)
+			_wash_t = 0.0
 		# (the flash: bright, a dip, bright again, then fading over half a second)
 		var since: float = game.clock - flashed
 		flash = 0.0 if flashed < 0.0 or since > 0.7 else (1.0 if since < 0.07 else 0.35 if since < 0.14 else 0.9 * (1.0 - (since - 0.14) / 0.56))

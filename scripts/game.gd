@@ -67,6 +67,7 @@ var last_gunfire_at := Vector2.INF
 var director: Director = null   # a level's waves, if it has any
 var snowfall: Snowfall = null   # a snowy map's weather (see Snowfall), if it has any
 var drifts: Drifts = null       # and the snow covering the dead (see Drifts)
+var puddles: Puddles = null   # the rain's puddles (see Puddles), if it's raining
 var footprints: Footprints = null   # and the tracks everyone leaves in its snow
 var sight := 1.0                # of a man's sight the weather leaves him (Snowfall: snow, a squall)
 var wind_player: AudioStreamPlayer
@@ -1333,6 +1334,9 @@ func _build_overlay() -> void:
 		snowfall = Snowfall.new()
 		snowfall.setup(self, true)
 		add_child(snowfall)
+		puddles = Puddles.new()   # (and the water standing in the mud)
+		puddles.setup(self)
+		add_child(puddles)
 		mat.set_shader_parameter("fog_col", Vector3(0.36, 0.38, 0.42))
 
 	hud_layer = CanvasLayer.new()
@@ -3759,7 +3763,7 @@ func _shards(at: Vector2, height: float, col: Color, n: int) -> void:
 
 ## A drop of blood where a wounded man is (or was a moment ago).
 func drip(a: Actor, at: Vector2) -> void:
-	decals.add(at + Vector2(randf_range(-2, 2), randf_range(-1, 1)), randf_range(1.3, 2.1), Color(0.42, 0.05, 0.04, 0.85))
+	decals.add(at + Vector2(randf_range(-2, 2), randf_range(-1, 1)), randf_range(1.3, 2.1), Color(0.42, 0.05, 0.04, 0.85), true)
 	trails.append({"at": at, "t": clock, "player": a.is_player})
 	if trails.size() > 400:
 		trails.pop_front()
@@ -3973,8 +3977,8 @@ func trail_lead(e: Enemy, newer: float) -> Dictionary:
 		var d: Dictionary = trails[i]
 		if d["t"] <= newer or clock - d["t"] > TRAIL_FRESH:
 			break
-		if not d["player"] or d.get("depth", 1.0) < Footprints.LEAD:
-			continue   # (a print the snow's half filled is no lead)
+		if not d["player"] or d.get("depth", 1.0) < Footprints.LEAD or d.get("wash", 0.0) > Snowfall.WASH_LEAD:
+			continue   # (a print the snow's half filled is no lead, nor a drop the rain's half washed out)
 		var dist: float = e.global_position.distance_to(d["at"])
 		if dist < TRAIL_SEE and e.visibility_of(d["at"], true, false) > 0.0:
 			return d
@@ -4363,7 +4367,7 @@ func blood(pos: Vector2, dir: Vector2, height: float) -> void:
 			randf_range(0.25, 0.5), randf_range(0.8, 1.6), Color(0.55, 0.06, 0.04, 1.0), 0.0, 120.0)
 	world.add_child(puff)
 	for i in 3:
-		decals.add(pos + dir * randf_range(4, 18) + Vector2(randf_range(-4, 4), randf_range(-2, 2)), randf_range(1.0, 2.5), Color(0.38, 0.05, 0.04, 0.85))
+		decals.add(pos + dir * randf_range(4, 18) + Vector2(randf_range(-4, 4), randf_range(-2, 2)), randf_range(1.0, 2.5), Color(0.38, 0.05, 0.04, 0.85), true)
 
 
 ## A sound and its alternative takes (name_2 ... name_5).

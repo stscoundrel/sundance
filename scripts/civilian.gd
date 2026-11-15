@@ -810,7 +810,7 @@ func _work(delta: float) -> void:
 				body.global_position = global_position - velocity.normalized() * 16.0
 			if body.global_position.distance_to(trail) > 9.0:
 				trail = body.global_position
-				game.decals.add(trail, _rr(1.2, 2.2), Color(0.34, 0.07, 0.05, 0.4))
+				game.decals.add(trail, _rr(1.2, 2.2), Color(0.34, 0.07, 0.05, 0.4), true)
 			if there:
 				game.bury(body, grave)
 				body = null
@@ -1455,7 +1455,7 @@ func _sister(delta: float) -> void:
 				body.global_position = global_position - velocity.normalized() * 16.0
 			if body.global_position.distance_to(trail) > 9.0:
 				trail = body.global_position
-				game.decals.add(trail, _rr(1.2, 2.2), Color(0.34, 0.07, 0.05, 0.4))
+				game.decals.add(trail, _rr(1.2, 2.2), Color(0.34, 0.07, 0.05, 0.4), true)
 			if there:
 				_take_in(body)
 				body = null

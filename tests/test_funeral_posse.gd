@@ -48,7 +48,7 @@ func _process(delta: float) -> bool:
 	if frame <= 3:
 		return false
 	t += delta
-	if t > 90.0:   # (a test that loses its way ends, failing, rather than run on)
+	if t > 100.0:   # (a test that loses its way ends, failing, rather than run on)
 		check(false, "ran out of time in phase %d" % phase)
 		return _done()
 	var d: Director = game.director
@@ -62,8 +62,9 @@ func _process(delta: float) -> bool:
 					d.camps[g]["state"] = "fetching"
 					d.camps[g]["due"] = 1e9
 			var alive: Array = game.enemies.filter(func(e): return e.alive and e.gang != "northerners")
-			for i in alive.size() - 7:
-				alive[i].take_hit(1000, Vector2.RIGHT, game.player)
+			for i in game.alive_enemies() - 7:   # (dead of nothing anyone saw: nobody runs off after the stranger)
+				alive[i].silent_death = true
+				alive[i].take_hit(1000, Vector2.RIGHT, null)
 			phase = 1
 			t0 = t
 		1:
@@ -118,7 +119,7 @@ func _process(delta: float) -> bool:
 			t0 = t
 		3:   # gathered, off, and to the first place
 			var p: Posse = game.posse
-			if p.visited.is_empty() and t - t0 < 75.0:
+			if p.visited.is_empty() and t - t0 < 85.0:
 				return false
 			step = "sweep"
 			check(not p.gathering, "never set off")

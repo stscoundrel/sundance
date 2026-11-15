@@ -64,6 +64,7 @@ func _process(delta: float) -> bool:
 				return false
 			step = "runner"
 			check(d != null and d.camps.size() == 4, "no roads home: %s" % [d.camps.keys() if d else "-"])
+			check(not "soldadera" in d.camps["revolutionaries"]["kinds"], "women among the revolutionaries' help: %s" % [d.camps["revolutionaries"]["kinds"]])
 			for e in game.enemies:
 				old[e] = true
 			_of("bandidos")[0].take_hit(1000, Vector2.RIGHT, game.player)   # (one of the bandidos down)

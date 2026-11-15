@@ -2919,7 +2919,7 @@ func _rescue(delta: float) -> void:
 				d.global_position = d.global_position.move_toward(behind, maxf(velocity.length(), 20.0) * delta * 1.5)
 			if d.global_position.distance_to(smear) > 9.0:
 				smear = d.global_position
-				game.decals.add(smear, randf_range(1.2, 2.2), Color(0.38, 0.06, 0.04, 0.5))
+				game.decals.add(smear, randf_range(1.2, 2.2), Color(0.38, 0.06, 0.04, 0.5), true)
 			if there:
 				rescue_phase = "treat"
 				work_t = TREAT_T

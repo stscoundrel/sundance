@@ -403,7 +403,7 @@ CAMP_COUNT = 5
 CAMP_AFTER = 30.0   # s from the runner shouting for them to the first of them in (saddling up, riding over)
 CAMPS_AT = {
     "bandidos": ("the west road", ["pistolero", "bandido", "cowboy", "redscarf", "rifleman", "gunslinger"]),
-    "revolutionaries": ("the mission track", ["revolucionario", "sargento", "tirador", "soldadera"]),
+    "revolutionaries": ("the mission track", ["revolucionario", "sargento", "tirador"]),   # (all men: no soldaderas ride in)
     "federales": ("the east road", ["soldado", "cabo", "rural", "teniente"]),
     "northerners": ("the town", ["manhunter", "sharpshooter", "trapper", "trappeur", "mountainman", "woodsman"]),
 }

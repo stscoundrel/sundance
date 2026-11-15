@@ -508,7 +508,7 @@ func _drag(delta: float, input: Vector2) -> void:
 		b.global_position = b.global_position.move_toward(behind, maxf(velocity.length(), 20.0) * delta * 1.5)
 	if b.global_position.distance_to(smear_at) > DRAG_SMEAR:
 		smear_at = b.global_position
-		game.decals.add(smear_at, randf_range(1.2, 2.2), Color(0.38, 0.06, 0.04, 0.5))
+		game.decals.add(smear_at, randf_range(1.2, 2.2), Color(0.38, 0.06, 0.04, 0.5), true)
 		game.trails.append({"at": smear_at, "t": game.clock, "player": true})   # (the bandits read it like his own blood)
 
 
