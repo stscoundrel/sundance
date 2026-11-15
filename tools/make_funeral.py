@@ -354,6 +354,28 @@ TOWNSFOLK = [
     {"kind": "saloon_girl", "x": 53.0, "y": -3.0, "facing": S, "palette": 2},
 ]
 
+
+def townsfolk_guest(kind, a, palette, r=7.6):
+    """One of the townsfolk come to see the stranger buried, in a looser ring behind
+    the gunmen round the grave, in their own clothes (the black is the gunmen's);
+    away down the nearest road at the first shot (Civilian "guest")."""
+    x, y = C[0] + r * math.cos(a), C[1] + r * math.sin(a)
+    return {"kind": kind, "x": round(x, 2), "y": round(y, 2), "facing": toward(x, y, *C), "role": "guest",
+            "wander": 0, "snitch": 0.0, "shy": False, "flirts": False, "palette": palette}
+
+
+# Twenty of the folk of the four towns, for whom he was something of a hero: San
+# Miguel's and Cruz Verde's townsfolk and peons, Silencio's snowbound in their
+# winter things, and peons for Paso Esperanza (its cargadores dress as the
+# revolution's fighters do: too easily taken for one of them).
+NUDGE = {2: 0.17, 6: -0.15, 16: 0.17}   # (round the ring a little, off an obelisk or a grave: index -> radians)
+_GUEST_KINDS = ["townsman", "peon", "townswoman", "snowbound", "peon", "townswoman", "winter_girl", "townsman",
+                "snowbound_woman", "peon", "townswoman", "snowbound", "townsman", "winter_girl", "peon", "snowbound_woman",
+                "townswoman", "peon", "snowbound", "townsman"]
+TOWN_GUESTS = [townsfolk_guest(k, 0.2 + i * math.tau / len(_GUEST_KINDS) + NUDGE.get(i, 0.0), i % 2, 7.6 + (i % 2) * 0.8)
+               for i, k in enumerate(_GUEST_KINDS)]
+TOWNSFOLK += TOWN_GUESTS
+
 HOLDOUTS = [{"name": "chapel", "x": 32.0, "y": 8.9}, {"name": "cantina", "x": 55.0, "y": 27.4},
             {"name": "undertaker's", "x": 10.4, "y": 28.4}]
 ENTRIES = [{"name": "west road", "x": 0.7 - OX, "y": 51.5}, {"name": "east road", "x": N - 0.7 - OX, "y": 51.5},

@@ -261,6 +261,7 @@ func _ready() -> void:
 		Minefield.rng.randomize()
 		Strongbox.rng.randomize()
 		Snowfall.rng.randomize()
+		Civilian.guest_rng.randomize()
 		Enemy.feud_rng.randomize()
 		Enemy.gasp_rng.randomize()
 		wind_rng.randomize()
@@ -325,6 +326,7 @@ func _ready() -> void:
 		Minefield.rng.seed = 83
 		Strongbox.rng.seed = 101
 		Snowfall.rng.seed = 103
+		Civilian.guest_rng.seed = 163
 		Enemy.feud_rng.seed = 107
 		Enemy.peso_rng.seed = 109
 		Enemy.habit_rng.seed = 131

@@ -238,6 +238,8 @@ var shy_look := 0.0
 var condemned := false       # the man on the gallows (see Hanging)
 var bound := false           # noosed and tied: going nowhere, whatever happens
 var last_words := false      # shot in the middle of a line: what he got out stays over him a moment
+var guest := false           # one of the townsfolk come to see the stranger buried (role "guest")
+static var guest_rng := RandomNumberGenerator.new()   # (the guests' own dice)
 var still := false           # hanged: he's done moving
 var refuge := Vector2.INF    # where he runs once he's loose, if not just the nearest door
 var woodcutter := false
@@ -262,6 +264,7 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	digger = tdata.get("role", "") == "digger"
 	carrier = tdata.get("role", "") == "carrier"
 	leader = tdata.get("role", "") == "leader"
+	guest = tdata.get("role", "") == "guest"
 	local = visitor or digger or carrier or tdata.get("local", false)
 	condemned = tdata.get("role", "") == "condemned"
 	if tdata.has("ward"):
@@ -270,7 +273,9 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 	flirts = tdata.get("flirts", false)
 	woodcutter = tdata.get("role", "") == "woodcutter"
 	flirt_cd = flirt_rng.randf_range(FLIRT_FIRST.x, FLIRT_FIRST.y) if flirts else 0.0
-	if woodcutter:
+	if guest:
+		dice = guest_rng
+	elif woodcutter:
 		dice = wood_rng
 	elif sister or barber or local or shy:
 		dice = rng
@@ -364,6 +369,10 @@ func hear(pos: Vector2, radius: float, _k: String, source: Node) -> void:
 		return
 	if leader:
 		return   # (he's heard worse)
+	if guest:   # a shot anywhere about the burial ground, and they're away
+		if _k in GUNFIRE and source != self and alive and not st in [St.FLEE, St.COWER, St.GONE]:
+			alarm(pos, true)
+		return
 	if (sister or barber or local) and alive:
 		if _k in GUNFIRE and source != self:
 			_hear_near(pos)
@@ -441,7 +450,7 @@ func alarm(from: Vector2, scary: bool) -> void:
 	_drop_job()
 	if st == St.COWER:
 		return
-	var freeze := (1.0 - nerve) * (0.7 if scary else 0.4)
+	var freeze := 0.0 if guest else (1.0 - nerve) * (0.7 if scary else 0.4)   # (a guest doesn't stop to gape: he runs)
 	if _rf() < freeze:
 		st = St.COWER
 		cower_t = _rr(2.0, 5.0)
@@ -468,7 +477,8 @@ func set_free(from: Vector2, thanks: String) -> void:
 func _flee() -> void:
 	st = St.FLEE
 	crouched = false
-	hid_at = _west_edge() if visitor or digger else game.refuge_for(global_position, threat) if refuge == Vector2.INF else refuge
+	hid_at = _road_away() if guest else _west_edge() if visitor or digger \
+		else game.refuge_for(global_position, threat) if refuge == Vector2.INF else refuge
 	path = game.find_path(global_position, hid_at)
 	path_i = 0
 	if _rf() < 0.5:
@@ -748,7 +758,7 @@ func _go_inside(hiding := true) -> void:
 	fade.tween_property(self, "modulate:a", 0.0, 0.4)
 	fade.tween_callback(func(): visible = false)
 	inside_t = 0.0
-	back_after = _rr(SHY_BACK.x, SHY_BACK.y) if shy else _rr(0.0, 15.0)   # they don't all come out at once
+	back_after = INF if guest else _rr(SHY_BACK.x, SHY_BACK.y) if shy else _rr(0.0, 15.0)   # they don't all come out at once (a guest's gone home)
 	if hiding:
 		game.stats["civilian hides"] = game.stats.get("civilian hides", 0) + 1
 
@@ -1810,6 +1820,20 @@ func _next_grave() -> void:
 
 
 ## Off the west edge of the map: the cemetery's nearest way out of it all.
+## A guest's way home: the road off the map (the map's "entries") that takes him
+## furthest from the shooting for the least running.
+func _road_away() -> Vector2:
+	var best := Vector2.INF
+	var best_score := -INF
+	for e in game.level.get("entries", []):
+		var at: Vector2 = Iso.to_screen(Vector2(e["x"], e["y"]))
+		var score: float = at.distance_to(threat) - global_position.distance_to(at)
+		if score > best_score:
+			best_score = score
+			best = at
+	return best if best != Vector2.INF else game.refuge_for(global_position, threat)
+
+
 func _west_edge() -> Vector2:
 	var g := Iso.to_grid(global_position)
 	for dy in [0.0, 1.0, -1.0, 2.0, -2.0, 3.0, -3.0]:

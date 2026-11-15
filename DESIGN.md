@@ -709,6 +709,18 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   mud dark, puddles in it (`GROUND_PALETTES` in `gen_assets.py`); the grade washed out
   and cool (`GRADES` in `game.gd`, by weather, as Silencio's snow is); no tumbleweed
   blows through the wet. The covered wagons wear and break like the plain ones.
+- **The townsfolk round the grave** (Civilian role `"guest"`; `tests/test_funeral_guests.gd`).
+  Twenty of the four towns' folk, for whom he was something of a hero: San Miguel's
+  and Cruz Verde's townsmen, townswomen and peons, Silencio's snowbound and winter
+  girls, and peons for Paso Esperanza (its cargadores dress as the revolution's
+  fighters: too easily taken for one). They stand in a looser ring 7.6-8.4 tiles out,
+  well behind the gunmen at 3.6 (so those stay clear targets), in their own clothes (the black marks the armed guests),
+  facing the grave, never wandering, snitching or flirting. At the first gunfire
+  anywhere about the burial ground they run at once, none stopping to gape, down
+  whichever road off the map takes them furthest from the shooting for the least
+  running (`Civilian._road_away`), and they're gone for good. Their dice are their
+  own (`Civilian.guest_rng`). The gang's fire can catch one as he runs (the gang's
+  doing, no sin of his); the stranger shooting one is "AN INNOCENT", as anywhere.
 - **The posse** (the map's `"posse_route"` and `"posse_stands"`; `Posse`,
   `Director.all_in`; `tests/test_funeral_posse.gd`). San Miguel's posse, with three
   changes. It waits until every faction's help is on the field or isn't coming

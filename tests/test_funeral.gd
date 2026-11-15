@@ -13,7 +13,7 @@ extends SceneTree
 ##            seven round the grave looking in at it; the padre, the undertaker, his
 ##            digger, three mourners, the two women who cooked the wake and a man of
 ##            the town besides, at the grave the carpenter and a second digger, and
-##            three girls from the cantina; every guest in mourning black; the rest of the guests at their ease (a
+##            three girls from the cantina, and twenty of the four towns' folk round the grave; every guest in mourning black; the rest of the guests at their ease (a
 ##            smoke, a call of nature, sooner than anywhere).
 ##   dead   - the digger keeps to his own row (the stranger's grave isn't his to
 ##            fill), and the undertaker buries the day's dead in his own plot, clear
@@ -137,7 +137,7 @@ func _guests() -> void:
 			if pal.has(slot):
 				var c: Array = pal[slot]
 				check(0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2] < 90.0, "%s's %s isn't for a funeral: %s" % [e.kind, slot, c])
-	check(game.civilians.size() == 14, "townsfolk: %d" % game.civilians.size())
+	check(game.civilians.size() == 34, "townsfolk: %d" % game.civilians.size())   # (twenty of them the townsfolk come to see him buried: test_funeral_guests)
 	check(game.civilians.filter(func(c): return c.flirts).size() == 3, "girls from the cantina: %d" % game.civilians.filter(func(c): return c.flirts).size())
 	# at their ease: a smoke and a call of nature come round sooner than in any town
 	for e in game.enemies:
