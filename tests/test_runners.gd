@@ -5,7 +5,8 @@ extends SceneTree
 ##             seconds on the faction's men ride in down that road, all at once,
 ##             armed with their long guns, quick to it and not struck dumb (they've
 ##             been told).
-##   shot    - a faction whose runner's shot down on the way gets no help; one shot
+##   shot    - a faction whose runner's shot down on the way gets its help anyway,
+##             later (they heard the shooting: the map's "help_comes"); one shot
 ##             at (a near miss, a graze) keeps running, and is only heard at his
 ##             road, never gone wherever the scare left him.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_runners.gd
@@ -90,7 +91,7 @@ func _process(delta: float) -> bool:
 				return false
 			step = "runner"
 			check(d.camps["bandidos"]["state"] == "sent", "the bandidos' men never came: %s" % d.camps["bandidos"]["state"])
-			check(d.camps["federales"]["state"] == "lost", "the federales got help with their runner dead: %s" % d.camps["federales"]["state"])
+			check(d.camps["federales"]["state"] in ["fetching", "sent"], "the federales' help never came with their runner dead: %s" % d.camps["federales"]["state"])
 			var g := Iso.to_grid(last_at)
 			var camp := Iso.to_grid(d.camps["bandidos"]["at"])
 			check(g.distance_to(camp) < float(game.level["shout"]) + 0.5, "heard a long way from the west road: %s, the road at %s" % [g, camp])
@@ -100,8 +101,12 @@ func _process(delta: float) -> bool:
 			for e in game.enemies:
 				if not old.has(e) and not came_in.has(e):
 					came_in[e] = Iso.to_grid(e.global_position)
-			if came_in.size() < 5 and t - t0 < 90.0:
+			var feds: Array = came_in.keys().filter(func(e): return e.gang == "federales")
+			if (came_in.size() - feds.size() < 5 or feds.size() < 5) and t - t0 < 90.0:
 				return false
+			check(feds.size() == 5, "the federales' help, their runner shot: %d came" % feds.size())   # (help_comes: they heard)
+			for e in feds:
+				came_in.erase(e)
 			var new: Array = came_in.keys()
 			check(new.size() == 5 and new.all(func(e): return e.gang == "bandidos"), "the bandidos' men: %s" % [new.map(func(e): return e.gang)])
 			check(new.all(func(e): return not e.tdata.get("pistols_only", false) and e.reflex <= float(e.tdata["reflex"][1]) + 0.001), "they came as guests (pistols only, slow at it), not armed for a fight")

@@ -709,6 +709,19 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   mud dark, puddles in it (`GROUND_PALETTES` in `gen_assets.py`); the grade washed out
   and cool (`GRADES` in `game.gd`, by weather, as Silencio's snow is); no tumbleweed
   blows through the wet. The covered wagons wear and break like the plain ones.
+- **The posse** (the map's `"posse_route"` and `"posse_stands"`; `Posse`,
+  `Director.all_in`; `tests/test_funeral_posse.gd`). San Miguel's posse, with three
+  changes. It waits until every faction's help is on the field or isn't coming
+  (its men walked in; here they always come, see the runners above); from then,
+  seven or fewer left and the guests band together, whatever their faction
+  (checked every tick on a map with camps, since the last help can walk in with
+  the count already low). It sweeps the burial ground's own places instead of
+  streets: the grave, the chapel, the mission, both dinners, the undertaker's, the
+  cantina, the town's three streets and the lower town, the cemetery gate, the road
+  west and east, the old graves (15 points, the stalest nearest first, as in town).
+  And nobody in it runs (`Enemy.stands`): no flee at a fright, no losing heart; it's
+  them or him. As anywhere, a sighting is a fight, his blood is followed, and with
+  neither they fall back in on the leader and the round.
 - **The rain** (the map's `"rain": true`; `Snowfall` in its rain, `tests/test_rain.gd`).
   It rains on his funeral: Silencio's snowfall with streaks for flakes (long, thin,
   slanting with the wind, no sway, no undersides; `rain` in `snowfall.gdshader`) and
@@ -753,7 +766,12 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   tiles) he's heard, and 30 s on (saddling up, riding over) its five come down that
   road all at once. They rode
   in for a fight: armed with their long guns, quick to it, and not struck dumb (they
-  were told). Shoot the runner on the way and that faction gets no help. Shot at and
+  were told). The help always comes here (the map's `"help_comes"`, `Director.LATE`):
+  shoot the runner on the way, or cut his whole faction down before one can go, and
+  they've heard the shooting anyway: a banner says so, and they come 10 s later than
+  a runner's would (40 s). A faction never touched sends its runner once everyone
+  else is down to the posse's seven with all their help in, so the posse never waits
+  for help nobody sent for. Shot at and
   missed, or grazed, he keeps running (no diving for cover on the way), and he's only
   heard at his own road: wherever a scare leaves his path, he finds his way on
   (`Enemy._no_way_on`; deserters at Paso Esperanza the same).

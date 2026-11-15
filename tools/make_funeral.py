@@ -359,6 +359,26 @@ HOLDOUTS = [{"name": "chapel", "x": 32.0, "y": 8.9}, {"name": "cantina", "x": 55
 ENTRIES = [{"name": "west road", "x": 0.7 - OX, "y": 51.5}, {"name": "east road", "x": N - 0.7 - OX, "y": 51.5},
            {"name": "mission track", "x": 32.0, "y": 0.8 - OY}, {"name": "town", "x": 67.0, "y": 0.8 - OY}]
 CENTER = {"x": C[0], "y": C[1] + 4.0}
+# The last of the guests, banded into a posse (Posse), sweep these: the grave, the
+# mission and its chapel, both dinners, the undertaker's and the cantina, the town's
+# streets, the road and the old graves south of it.
+POSSE_ROUTE = [
+    {"name": "the grave", "x": C[0], "y": C[1] + 4.0},
+    {"name": "the chapel", "x": 32.0, "y": 10.5},
+    {"name": "the mission", "x": 31.0, "y": -11.0},
+    {"name": "the west dinner", "x": 11.0, "y": -2.7},
+    {"name": "the east dinner", "x": 51.0, "y": -2.7},
+    {"name": "the undertaker's", "x": 12.0, "y": 30.0},
+    {"name": "the cantina", "x": 52.0, "y": 30.0},
+    {"name": "the town's street", "x": 67.0, "y": 0.0},
+    {"name": "the main street", "x": 78.0, "y": -8.0},
+    {"name": "the cross street", "x": 72.5, "y": 12.5},
+    {"name": "the lower town", "x": 72.0, "y": 44.0},
+    {"name": "the cemetery gate", "x": 32.0, "y": 46.0},
+    {"name": "the road west", "x": 6.0, "y": 51.5},
+    {"name": "the road east", "x": 56.0, "y": 51.5},
+    {"name": "the old graves", "x": 32.0, "y": 64.0},
+]
 PLAYER = {"x": 32.0, "y": 80.0}   # (--at, or no coffin: in from the south, through the old graves)
 # Boot hill: the first is the undertaker's own plot, clear ground below his fresh row
 # where the day's dead go in; the second is the old rings, for the mourners to go round.
@@ -466,7 +486,8 @@ def main():
         "posts": posts,
         "entries": ENTRIES,
         "center": CENTER,
-        "posse": False,
+        "posse_route": [dict(r, x=round(r["x"] + OX, 2), y=round(r["y"] + OY, 2)) for r in POSSE_ROUTE],
+        "posse_stands": True,   # once they've banded together, nobody runs: it's them or him
         "coffin": [round(COFFIN[0] + OX, 2), round(COFFIN[1] + OY, 2)],
         "grave": [round(GRAVE[0] + OX, 2), round(GRAVE[1] + OY, 2)],
         "pickups": pickups,   # cartridges lying about the dinners, the cantina and the wagons   # (its corner: where the coffin goes down, see Funeral)
@@ -474,6 +495,7 @@ def main():
         "wake": True,     # everyone's here for the funeral and the party after: slow to take alarm
         "arms": arms,     # where their long guns are: every guest has only his pistol on him
         "camps": CAMPS,   # each faction's men waiting down its road, for a runner to fetch (Director)
+        "help_comes": True,   # every faction's men come, runner or no (Director.LATE)
         "shout": 3.5,     # tiles from the map's edge: a runner this near is heard
     })
     print("burial ground: %d objects (%d graves), %d guests, %d townsfolk, %d guard posts, %d places their long guns are" % (

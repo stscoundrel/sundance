@@ -38,7 +38,11 @@ extends Node
 ## of the gang have fallen; else down to RUNNER_AT). The stranger's funeral has four
 ## (each faction of the guests its own road), and there a runner needs only get within
 ## shouting distance of the map's edge (the level's "shout", tiles): his men are
-## waiting just past it, armed (see Enemy, "armed").
+## waiting just past it, armed (see Enemy, "armed"). And there the help always comes
+## (the map's "help_comes"): a runner shot, or his whole faction down before one
+## went, and they've heard the shooting anyway and come LATE seconds after they
+## would have; a faction never touched sends its runner once the rest are down to
+## the posse's few with all their help in, so the posse never waits on nobody.
 
 const WARN := 15.0          # s of warning: which roads they're coming down
 const EVERY := 0.45         # s between men walking in off the same road (a band, not a file)
@@ -51,6 +55,7 @@ const WARN_LOADS := 2       # loads of warning, for a wave that comes with the l
 const RALLY_AFTER := 20.0   # s after a wave's due that word comes of the next one rallying, after a lull
 const RUNNER_AT := 3        # men left on their feet, and a gang sends for its camp
 const CAMP_T := 25.0        # s from the runner getting there to the first of them walking back in
+const LATE := 10.0          # s later than that where the help comes regardless, no runner home ("help_comes")
 
 var game: Node
 var waves: Array = []
@@ -147,6 +152,13 @@ func done() -> bool:
 		and camps.values().all(func(c): return not c["state"] in ["running", "fetching"])
 
 
+## Every camp's help on the field, or not coming: its men walked in, its runner shot,
+## or nobody of its gang left to run (the funeral's posse waits on this).
+func all_in() -> bool:
+	return done() and camps.keys().all(func(g): return camps[g]["state"] in ["sent", "lost"] \
+		or camps[g]["state"] == "" and game.alive_in(g) == 0)
+
+
 ## How many in the gang all told, those indoors included.
 func indoors() -> int:
 	return sleepers.size()
@@ -239,24 +251,50 @@ func _wake() -> void:
 # ------------------------------------------------------------------ the camps
 
 func _camps() -> void:
+	var sure: bool = game.level.get("help_comes", false)
 	for g in camps:
 		var c: Dictionary = camps[g]
 		match c["state"]:
 			"":
 				var left: int = game.alive_in(g)
 				var low: bool = game.gangs[g]["fallen"] >= c["losses"] if c["losses"] > 0 else left <= RUNNER_AT
-				if left > 0 and low:
+				if left > 0 and (low or sure and _last_out(g)):
 					_send_runner(g, c)
+				elif left == 0 and sure:   # (all of them down before a man could run: the shooting's heard anyway)
+					_heard(g, c)
 			"running":
 				var r: Enemy = c["runner"]
 				if not is_instance_valid(r) or not r.alive:
-					c["state"] = "lost"
-					game.hud.banner("The %s' runner is down!  No help is coming." % g)
 					game.stats["runners down"] = game.stats.get("runners down", 0) + 1
+					if sure:
+						_heard(g, c)
+					else:
+						c["state"] = "lost"
+						game.hud.banner("The %s' runner is down!  No help is coming." % g)
 			"fetching":
 				if clock >= c["due"]:
 					c["state"] = "sent"
 					_send_camp(g, c)
+
+
+## No runner home, but the help comes all the same ("help_comes"), LATE seconds behind.
+func _heard(g: String, c: Dictionary) -> void:
+	c["state"] = "fetching"
+	c["due"] = clock + c["after"] + LATE
+	game.hud.banner("No runner came, but the %s heard the shooting!  %d more are on their way." % [g, c["count"]])
+	game.sfx("sting", null, -8.0, 0.0, rng)
+	game.stats["help heard"] = game.stats.get("help heard", 0) + 1
+
+
+## A faction never touched, its help never sent for, with the rest down to the posse's
+## few and all their help in: it sends now, so the posse doesn't wait for ever.
+func _last_out(g: String) -> bool:
+	if game.alive_enemies() > game.posse_size or not queue.is_empty():
+		return false
+	for o in camps:
+		if o != g and not (camps[o]["state"] in ["sent", "lost"] or camps[o]["state"] == "" and game.alive_in(o) > 0):
+			return false
+	return true
 
 
 ## The nearest of them to the camp (the boss last of all) drops everything and runs.

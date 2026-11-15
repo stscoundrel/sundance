@@ -905,7 +905,7 @@ func lose_heart() -> void:
 	if assault and tdata.get("deserts", false):
 		desert()
 		return
-	if reaction in ["", "point", "flinch"] and randf() < 0.6 * (1.0 - nerve):
+	if reaction in ["", "point", "flinch"] and randf() < 0.6 * (1.0 - nerve) and not stands():
 		threat = game.seen_pos if game.seen_pos != Vector2.ZERO else global_position
 		start_reaction("flee")
 		_log("loses heart")
@@ -1269,10 +1269,15 @@ func _pick_reaction(scary: bool, forced: bool) -> String:
 		"cower": 0.7 * f * f * (1.0 if scary else 0.3) * timid,
 		"dash": (0.45 * f + 0.1) * timid,
 		"backoff": (0.35 if scary else 0.2) * timid,
-		"flee": 0.6 * f * f * f * (1.5 if forced else 1.0) * timid,
+		"flee": 0.0 if stands() else 0.6 * f * f * f * (1.5 if forced else 1.0) * timid,
 		"": (0.6 * bold if forced else 0.2 * (1.0 - f) + 0.8 * bold),
 	}
 	return _weighted(w)
+
+
+## One of the funeral's posse: there's nowhere left to run to ("posse_stands").
+func stands() -> bool:
+	return in_posse and game.level.get("posse_stands", false)
 
 
 func _weighted(w: Dictionary) -> String:

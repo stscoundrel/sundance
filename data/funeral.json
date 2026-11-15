@@ -7606,7 +7606,84 @@
   "x": 44.0,
   "y": 52.0
  },
- "posse": false,
+ "posse_route": [
+  {
+   "name": "the grave",
+   "x": 44.0,
+   "y": 52.0
+  },
+  {
+   "name": "the chapel",
+   "x": 44.0,
+   "y": 28.5
+  },
+  {
+   "name": "the mission",
+   "x": 43.0,
+   "y": 7.0
+  },
+  {
+   "name": "the west dinner",
+   "x": 23.0,
+   "y": 15.3
+  },
+  {
+   "name": "the east dinner",
+   "x": 63.0,
+   "y": 15.3
+  },
+  {
+   "name": "the undertaker's",
+   "x": 24.0,
+   "y": 48.0
+  },
+  {
+   "name": "the cantina",
+   "x": 64.0,
+   "y": 48.0
+  },
+  {
+   "name": "the town's street",
+   "x": 79.0,
+   "y": 18.0
+  },
+  {
+   "name": "the main street",
+   "x": 90.0,
+   "y": 10.0
+  },
+  {
+   "name": "the cross street",
+   "x": 84.5,
+   "y": 30.5
+  },
+  {
+   "name": "the lower town",
+   "x": 84.0,
+   "y": 62.0
+  },
+  {
+   "name": "the cemetery gate",
+   "x": 44.0,
+   "y": 64.0
+  },
+  {
+   "name": "the road west",
+   "x": 18.0,
+   "y": 69.5
+  },
+  {
+   "name": "the road east",
+   "x": 68.0,
+   "y": 69.5
+  },
+  {
+   "name": "the old graves",
+   "x": 44.0,
+   "y": 82.0
+  }
+ ],
+ "posse_stands": true,
  "coffin": [
   43.2,
   49.05
@@ -7940,5 +8017,6 @@
    ]
   }
  },
+ "help_comes": true,
  "shout": 3.5
 }

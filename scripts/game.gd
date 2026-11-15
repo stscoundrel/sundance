@@ -380,6 +380,14 @@ func _ready() -> void:
 	open_on = ""
 
 
+## Few enough left, and no more coming: the last of them band together (see Posse).
+func _maybe_posse() -> void:
+	if posse == null and level.get("posse", true) and alive_enemies() <= posse_size and alive_enemies() > 0 \
+			and (director == null or director.all_in()):   # (the funeral's: every faction's help in first)
+		posse = Posse.new(self)
+		posse.form()
+
+
 ## The level: the one the tests ask for, or named on the command line (--level=id),
 ## or picked last, or the first. A shuffled one deals its gang out over the map's
 ## guard posts, and a smaller or larger gang has a reserve and a posse to match.
@@ -2133,6 +2141,8 @@ func _physics_process(delta: float) -> void:
 			break
 	if posse:
 		posse.update(delta)
+	elif level.has("camps"):   # (the last of the help walking in, with few enough already left)
+		_maybe_posse()
 	# Knowledge gone stale: the shooting dies down to the odd harassing shot at his
 	# last known position from one bandit at a time, then stops altogether.
 	var stale := staleness()
@@ -2348,6 +2358,10 @@ func _gun_fright(at: Vector2) -> void:
 ## A deserter off the edge of the map: gone, not dead (nobody to bury, no gun dropped).
 func gone_off(e: Enemy) -> void:
 	enemies.erase(e)
+	if posse and posse.members.has(e):   # (out of the posse too: the next man leads, if it was him)
+		posse.members.erase(e)
+		if posse.leader == e:
+			posse._pick_leader()
 	e.set_physics_process(false)   # (out of the reckoning; freed at the frame's end)
 	e.visible = false
 	if e.ghost:
@@ -2694,10 +2708,7 @@ func _on_enemy_died(e: Actor) -> void:
 				g["ammo"] = p   # it goes with his gun
 				g["ammo_kind"] = ammo
 				break
-	if posse == null and level.get("posse", true) and alive_enemies() <= posse_size and alive_enemies() > 0 \
-			and (director == null or director.done()):
-		posse = Posse.new(self)
-		posse.form()
+	_maybe_posse()
 	var coming: bool = den.has("door") and den["rallied"] and not den["squad"].is_empty() \
 		or director != null and not director.done()   # (more on the way: it isn't over)
 	if alive_enemies() == 0 and state == "play" and not coming and cargo == null:   # (the cargo's won at the wagon)

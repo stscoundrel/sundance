@@ -5,6 +5,12 @@ extends RefCounted
 ## street to street, always towards the parts they've seen least lately, and the
 ## others keep their places around him, each watching his own side. A fight breaks
 ## the formation as usual; afterwards each man falls back in on the leader.
+##
+## At the stranger's funeral the guests, whatever their faction, band together the
+## same way, but only once every faction's help is on the field (or isn't coming):
+## they sweep the burial ground's own places (the map's "posse_route": the grave, the
+## mission, the dinners, the town, the road...) instead of streets, and they don't
+## run ("posse_stands"): it's them or him.
 
 const SIZE := 7              # a band of seven: too many for one man's six shots
 const GATHER_MAX := 30.0   # set off with whoever has arrived by then
@@ -35,8 +41,16 @@ func _init(g: Node) -> void:
 
 
 ## Route points along the middle of every street and the plaza (a town without
-## streets drawn: its guard posts).
+## streets drawn: its guard posts; a map with places named for it: those).
 func _build_points() -> void:
+	if game.level.has("posse_route"):
+		for r in game.level["posse_route"]:
+			var p: Vector2 = Iso.to_screen(Vector2(r["x"], r["y"]))
+			if not game.is_free(p):
+				p = game.free_point_near(p, 40.0)
+			if p != Vector2.INF:
+				points.append(p)
+		return
 	if game.level.get("streets", []).is_empty():
 		for p in game.level.get("posts", []):
 			points.append(Iso.to_screen(Vector2(p["x"], p["y"])))
