@@ -1041918,6 +1041918,50 @@
      ]
     }
    ]
+  },
+  "fence_x": {
+   "file": "res://assets/sprites/world/fence_x.png",
+   "anchor": [
+    8,
+    41
+   ],
+   "footprint": [
+    4,
+    0.2
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     4,
+     0.2
+    ]
+   ],
+   "doors": []
+  },
+  "fence_y": {
+   "file": "res://assets/sprites/world/fence_y.png",
+   "anchor": [
+    193,
+    41
+   ],
+   "footprint": [
+    0.2,
+    4
+   ],
+   "collide": "none",
+   "fade": false,
+   "colliders": [
+    [
+     0,
+     0,
+     0.2,
+     4
+    ]
+   ],
+   "doors": []
   }
  },
  "tumbleweed": {

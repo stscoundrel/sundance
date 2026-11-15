@@ -686,8 +686,16 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   on its main street (saloon, hotel, sheriff, gunsmith, barber, bank, store), the
   older graves going on south past the road round a mortuary chapel and more crypts,
   and to the west the carpenter who makes the coffins and the mason who cuts the
-  stones, with their yards. About 1,170 things on it (880 of them graves); it renders
-  at about 140 fps.
+  stones, with their yards. The map grew in pieces, and its seams are joined up
+  (`MISSION_WALLS`, `paupers_field`): the mission is one long ruined compound, its
+  outer wall running from the cloister's corners round both dinners (they're laid in
+  its forecourt) and down to the chapel, which stands at the compound's south gate
+  where the mission track goes through to the graves, breached here and there with
+  the rubble in the gaps; the older graves north of the rings are the mission's
+  churchyard. In the north-west corner, outside the wall, the paupers' field: a rail
+  fence round it (`fence_x`, `fence_y`: low, stepped over, no cover) with a gap east
+  and south, the nameless buried in rows gone ragged under bare mounds and crude
+  crosses, no headstones. About 1,240 things on it (910 of them graves).
 - **The gate and the cartridges.** The path up to the graves from the road goes
   through a wooden gateway (`cem_gate`), and beside it is the rack where the guests
   stood their long guns before they went up (`gun_rack`): four in it for the

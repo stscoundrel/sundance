@@ -99,7 +99,7 @@ def cemetery():
 # North of the rings the older graves go on in rows, out round the mission and up
 # to the dinner tables; a crypt or two and an obelisk among them, the rocks left
 # where they lay.
-NORTH_MARKERS = [("crypt_b", 8.4, 8.6), ("crypt_b", 55.6, 8.4), ("obelisk", 17.2, 7.2), ("obelisk", 46.6, 9.4),
+NORTH_MARKERS = [("crypt_b", 8.4, 5.4), ("crypt_b", 55.6, 5.2), ("obelisk", 17.2, 7.2), ("obelisk", 46.6, 6.4),
                  ("obelisk", 4.6, 3.0), ("crypt_b", 59.6, 15.4)]
 
 
@@ -121,10 +121,25 @@ def old_graves(rings):
     return out
 
 
-BUILDINGS_AT = [
-    # the mission to the north, half fallen in: its chapel still stands
+# The mission's outer wall, one ruin with the cloister's: out from the cloister's
+# corners round both dinners (west at x=2, east at x=64) and down to the chapel's
+# front (y=9), where the gate lets the mission track through to the graves. Breached
+# here and there, the rubble lying in the gaps.
+MISSION_WALLS = [
+    ("wall_x8", 3.0, -8.0), ("wall_x4", 11.0, -8.0), ("rubble", 15.2, -8.1),          # north-west, to the cloister
+    ("wall_x8", 48.0, -8.0), ("wall_x8", 56.0, -8.0),                                  # north-east
+    ("wall_y8", 2.0, -8.0), ("rubble", 1.6, 0.4), ("wall_y4", 2.0, 2.0), ("wall_y4", 2.0, 6.0),     # west side
+    ("wall_y8", 64.0, -8.0), ("rubble", 63.8, 0.4), ("wall_y4", 64.0, 2.0), ("wall_y4", 64.0, 6.0),  # east side
+    ("wall_x8", 3.0, 9.0), ("wall_x8", 11.0, 9.0),                                    # the front, west of the gate
+    ("wall_x8", 44.0, 9.0), ("wall_x8", 52.0, 9.0), ("wall_x4", 60.0, 9.0),           # and east of it
+]
+
+BUILDINGS_AT = MISSION_WALLS + [
+    # the mission to the north, half fallen in: its chapel still stands at the gate
+    # of the long walled compound that runs back to the house and the dormitory
+    # (MISSION_WALLS), the wake's dinners laid out in its forecourt
     ("chapel", 29.5, 2.2),
-    ("wall_x4", 22.0, 9.0), ("wall_x4", 38.0, 9.0), ("wall_y4", 21.0, 3.0), ("wall_y4", 42.0, 4.0),
+    ("wall_x4", 22.0, 9.0), ("wall_x4", 38.0, 9.0),
     # the undertaker's yard to the west, and the digger's hut
     ("undertaker", 6.0, 26.0), ("jacal", 6.5, 35.5),
     # the way-station to the east: the cantina, a shed for the stage
@@ -177,7 +192,7 @@ PROPS = [
     ("wagon", 48.0, 53.8), ("horse_sorrel", 51.6, 54.0), ("covered_wagon", 56.0, 53.8), ("horse_grey", 59.6, 54.0),
     ("horse", 63.4, 53.6), ("horse_sorrel", 58.8, 48.4), ("horse_grey", 1.0, 54.0), ("horse_black", 19.0, 54.2),
     # the valley sides: rocks all the way up, and the scrub between them
-    ("rock_c", 3.0, 4.0), ("rock", 8.0, 2.0), ("rock_b", 13.0, 5.0), ("rock_c", 15.6, 12.0), ("rock", 4.0, 14.0),
+    ("rock_c", -1.6, 4.0), ("rock", 8.0, 2.0), ("rock_b", 13.0, 5.0), ("rock_c", 15.6, 12.0), ("rock", 4.0, 14.0),
     ("rock_b", 9.6, 18.4), ("rock_c", 47.0, 4.0), ("rock", 52.0, 8.0), ("rock_c", 58.0, 3.0), ("rock_b", 61.0, 11.0),
     ("rock", 48.0, 14.0), ("rock_c", 56.0, 15.0), ("rock_b", 2.0, 22.0), ("rock_c", 1.4, 42.0), ("rock", 4.0, 46.0),
     ("rock_c", 60.4, 43.0), ("rock", 62.0, 47.6), ("rock_b", 46.6, 42.4), ("rock", 17.6, 43.4),
@@ -192,7 +207,7 @@ PROPS = [
     ("crate_stack", 73.6, 40.0), ("woodpile", 63.0, 20.6), ("barrel", 64.2, 42.6), ("well", 63.2, 37.0),
     ("washline", 70.0, 47.2), ("coop", 74.4, 46.6),
     # the far slopes, north and south, and east beyond the town
-    ("rock_c", 3.0, -4.0), ("rock", 26.0, -4.0), ("rock_b", 40.0, -4.4), ("rock_c", 63.0, -3.0), ("rock", 71.0, 4.0),
+    ("rock_c", -1.6, -4.0), ("rock", 26.0, -4.0), ("rock_b", 40.0, -4.4), ("rock_c", 62.0, 4.0), ("rock", 71.0, 4.0),
     ("rock_b", 74.0, 9.0), ("rock_c", 72.0, 57.0), ("rock", 67.0, 62.0), ("rock_b", 8.0, 64.0), ("rock_c", 16.0, 66.0),
     ("rock", 34.0, 65.0), ("rock_c", 50.0, 64.0), ("rock_b", 60.0, 66.0), ("dead_tree", 22.0, 63.0),
     ("dead_tree_b", 46.0, 66.0), ("agave", 28.0, 67.0), ("cactus", 62.0, 61.0),
@@ -245,6 +260,35 @@ PICKUPS = [{"kind": "colt", "x": 8.6, "y": -2.6}, {"kind": "colt", "x": 17.4, "y
            {"kind": "colt", "x": 53.8, "y": 28.2}, {"kind": "rifle", "x": 57.0, "y": 28.4},
            {"kind": "colt", "x": 24.6, "y": 46.6}, {"kind": "rifle", "x": 39.6, "y": 48.4},
            {"kind": "coach", "x": 21.0, "y": 49.2}, {"kind": "rifle", "x": 34.6, "y": 46.0}]
+
+
+# The paupers' field, in the north-west corner of the valley outside the mission's
+# wall: the nameless and the hanged, a fresh mound or a crude cross apiece, no
+# headstones, in rows gone ragged, a rail fence round it with a gap to come in by
+# from the east and another from the south. The rocks stay where they lay.
+FIELD = (-11.4, -14.5, 0.6, 13.5)   # x0, y0, x1, y1 (valley frame)
+
+
+def paupers_field(taken_objs):
+    x0, y0, x1, y1 = FIELD
+    out = [("fence_x", x0 + 4.0 * i, y0) for i in range(3)]                       # north
+    out += [("fence_x", x0 + 4.0 * i, y1) for i in range(3) if i != 1]            # south, a gap in the middle
+    out += [("fence_y", x0, y0 + 4.0 * i) for i in range(7)]                     # west
+    out += [("fence_y", x1 - 0.2, y0 + 4.0 * i) for i in range(7) if i != 5]     # east, a gap towards the road
+    taken = [layout.footprint(k, x, y) for k, x, y in taken_objs + out]
+    rng = np.random.default_rng(223)
+    for row, y in enumerate(np.arange(y0 + 1.4, y1 - 1.0, 1.7)):
+        for x in np.arange(x0 + 1.2 + (row % 2) * 0.6, x1 - 1.0, 1.4):
+            if rng.random() < 0.22:
+                continue   # (a gap in the row: a grave sunk flat, or never dug)
+            px, py = x + rng.uniform(-0.3, 0.3), y + rng.uniform(-0.25, 0.25)
+            kind = "mound" if rng.random() < 0.6 else "cross"
+            fp = layout.footprint(kind, px, py)
+            if any(layout.overlaps(fp, t, 0.4) for t in taken):
+                continue
+            taken.append(fp)
+            out.append((kind, round(float(px), 2), round(float(py), 2)))
+    return out
 
 
 def south_graves(taken_objs):
@@ -470,6 +514,7 @@ def place(kind, x, y):
 def main():
     global STREETS, MUD, BOOTHILLS, ENEMIES, TOWNSFOLK, HOLDOUTS, ENTRIES, CENTER, PLAYER
     rest = BUILDINGS_AT + PROPS + DINNERS + BEYOND + cemetery()
+    rest += paupers_field(rest)
     placed = [q for k, x, y in rest + south_graves(rest) for q in place(k, x, y)]
     objects = [{"type": k, "x": round(x + OX, 2), "y": round(y + OY, 2)} for k, x, y in placed]
     graves = sum(o["type"] in GRAVE_KINDS for o in objects)

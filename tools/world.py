@@ -1763,6 +1763,23 @@ def bench(along_x=True):
     return _along(m, along_x, D)
 
 
+def fence(along_x=True):
+    """A run of rail fence round the paupers' field: grey split posts, two rails
+    sagging between them, low enough to step over and no cover from a bullet."""
+    L, D = 4 * T, 0.2 * T
+    grey, dark = (118, 108, 96), (86, 78, 70)
+    m = Cloud()
+    for i, x in enumerate((0.15, L / 2, L - 0.15)):
+        lean = (0.03, -0.04, 0.05)[i]
+        m += beam((x, D / 2, 0), (x + lean, D / 2, 0.82), 0.05, dark)
+    for z, sag in ((0.68, 0.05), (0.38, 0.03)):
+        for a, b in ((0.15, L / 2), (L / 2, L - 0.15)):
+            mid = (a + b) / 2
+            m += beam((a, D / 2, z), (mid, D / 2, z - sag), 0.03, grey)
+            m += beam((mid, D / 2, z - sag), (b, D / 2, z), 0.03, grey)
+    return _along(m, along_x, D)
+
+
 def cookfire():
     """Where the wake's food was cooked: a ring of stones round the embers, a pot on a
     tripod over them and a kid goat on the spit beside."""
@@ -2769,6 +2786,8 @@ BUILDINGS = {
     "covered_wagon": (covered_wagon, (2.4, 1.2), "cover", False, [[0.2, 0.15, 2.2, 1.05]]),
     "feast_y": (lambda: feast_table(False, 1), (0.9, 3), "cover", False, None),
     "bench_x": (lambda: bench(True), (3, 0.35), "none", False, None),
+    "fence_x": (lambda: fence(True), (4, 0.2), "none", False, None),
+    "fence_y": (lambda: fence(False), (0.2, 4), "none", False, None),
     "bench_y": (lambda: bench(False), (0.35, 3), "none", False, None),
     "cookfire": (cookfire, (1.2, 1.2), "none", False, None),
     "cem_gate": (cem_gate, (3.6, 0.4), "post", False, [[0.05, 0.05, 0.35, 0.35], [3.25, 0.05, 3.55, 0.35]]),
