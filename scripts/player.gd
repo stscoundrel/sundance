@@ -701,6 +701,7 @@ func _strike(e: Enemy) -> void:
 		game.sfx("hit", global_position, -14.0)
 		game.make_noise(global_position, 40.0, "struggle", self)
 		game.stats["takedowns"] = game.stats.get("takedowns", 0) + 1
+		game.firsts.once("drag")
 		_knife_done(KNIFE_CD)
 		return
 	if e.can_fire_at(self):
@@ -844,6 +845,7 @@ func _goes_down(dmg: int, shooter: Actor) -> bool:
 
 func _go_down(from_dir: Vector2, shooter: Actor) -> void:
 	get_off()
+	game.firsts.once("down", true)
 	stand_used = true
 	down = true
 	down_t = 0.0

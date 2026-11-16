@@ -93,6 +93,18 @@ in hints.json that fits the most of it (how, the killer's gun, range, many), the
 first on a tie, the last a catch-all; nothing random. A loss of another kind (the
 carriers gone, buried at the funeral) already says why in its title.
 
+**First-time hints** (`scripts/firsts.gd`, hints.json's `first`, `hud._draw_hint`;
+`tests/test_hints.gd`). The first time each comes up, a plain line low in the middle
+of the screen on a dark plate, for six seconds: Tab, ten seconds into a town with
+somewhere to go; the first "?" over a man on screen (`wary`: he's noticed something)
+and the first "!" (`seen`); his first wound (B); his first quiet kill (drag a body,
+hold E); his first last stand (it jumps the queue); a town where he carries a stick
+(G); forty seconds into a quiet town (Q, the peso). One at a time, held back under
+the end screen and the menu, and told only once shown. What he's been told is kept
+in user://hints.json across sittings (under `fixed_seed` nothing is, but a test's own
+`hints_file`), until the picker's FORGET THE HINTS, asked twice like his record. The
+picker's last row is three wide now: forget what he did, forget the hints, leave.
+
 The five stories make one run: the stranger is a gun for hire and takes whoever's
 money is on offer. San Miguel's mayor pays him to end the gang, who are hanging the
 one villager who stood up to them. At Cruz Verde his partner's on the wrong side of

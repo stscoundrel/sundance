@@ -23,6 +23,9 @@ var message := ""
 var sub := ""
 var hint := ""   # the end screen's way on (Enter: the next town...)
 var why := PackedStringArray()   # how he died and a tip, under the title (game.why_dead)
+var hint_line := ""   # a first-time hint (game.firsts), low in the middle for a few seconds
+var hint_t := 0.0
+const HINT_FOR := 6.0
 var msg_t := 0.0
 var banner_text := ""
 var banner_t := 0.0
@@ -92,6 +95,7 @@ func _process(delta: float) -> void:
 	if message != "":
 		msg_t += real
 	toast_t = maxf(0.0, toast_t - real)
+	_next_hint(real)
 	banner_t = maxf(0.0, banner_t - real)
 	_keep_stills()
 	queue_redraw()
@@ -183,6 +187,7 @@ func _draw_enemy_marks() -> void:
 		if not e.revealed:
 			continue   # passing as townsfolk: nothing gives him away
 		if e.marker_t > 0.0 and e.marker != "":
+			game.firsts.once("wary" if e.marker == "?" else "seen")   # (the first he sees over a man's head)
 			var c := Color(1, 0.85, 0.3) if e.marker == "?" else Color(1, 0.25, 0.15)
 			_text(Vector2(head.x - 3, y - 6), e.marker, 14, c, font)
 		elif e.suspicion > 0.02 and e.st != Enemy.St.COMBAT:
@@ -265,6 +270,7 @@ func _draw_status(p: Player) -> void:
 	if game.cargo:
 		_draw_cargo(game.cargo)
 	_draw_marks()
+	_draw_hint()
 	_draw_man(p)
 	_draw_plunger(p)
 	if banner_t > 0.0:
@@ -352,6 +358,29 @@ func marks_alpha(t: float, held: bool) -> float:
 	if t < MARKS_FROM or t >= MARKS_TILL:
 		return 0.0
 	return minf(minf(t - MARKS_FROM, MARKS_TILL - t), 1.0)
+
+
+## The first-time hints, one at a time while he's in town (not over the end screen or
+## the menu, which hold them back): the next waiting one once the last has had its
+## few seconds.
+func _next_hint(real: float) -> void:
+	if game.state != "play" or not game.menu.is_empty() or message != "" or game.firsts == null:
+		return
+	hint_t = maxf(0.0, hint_t - real)
+	if hint_t <= 0.0:
+		hint_line = game.firsts.next()
+		hint_t = HINT_FOR if hint_line != "" else 0.0
+
+
+func _draw_hint() -> void:
+	if hint_t <= 0.0 or game.state != "play" or not game.menu.is_empty():
+		return
+	var a := minf(minf(hint_t, HINT_FOR - hint_t) * 2.0, 1.0)   # (half a second in, half out)
+	var w := small.get_string_size(hint_line, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x + 16.0
+	var r := Rect2(page.x / 2 - w / 2, page.y - 92, w, 18)
+	draw_rect(r, Color(PANEL, PANEL.a * a))
+	draw_rect(r, Color(BRASS, 0.6 * a), false, 1.0)
+	_text(Vector2(0, r.position.y + 13), hint_line, 10, Color(1, 0.88, 0.6, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 ## The cargo's count under the bandit count; with it all in, the wagon marked.
@@ -646,7 +675,8 @@ func _row(i: int) -> Rect2:
 
 
 ## Which level row is under the cursor on the picker, or -1 (past the towns,
-## forgetting his record and the way out, side by side on the last row).
+## forgetting his record, forgetting the hints and the way out, side by side on the
+## last row).
 func level_hit(pos: Vector2) -> int:
 	for i in game.way_out() + 1:
 		if _pick_rect(i).has_point(pos - menu_at()):
@@ -654,14 +684,15 @@ func level_hit(pos: Vector2) -> int:
 	return -1
 
 
-## Picker row `i`: a town's, or one of the two half-rows under them.
+## Picker row `i`: a town's, or one of the three under them (a row wider than the
+## towns', so their names fit).
 func _pick_rect(i: int) -> Rect2:
 	var n: int = game.levels.size()
 	if i < n:
 		return _row(i)
-	var r := _row(n)
-	var w := (r.size.x - 30) / 2
-	return Rect2(r.position + Vector2(10 + (i - n) * (w + 10), 4), Vector2(w, 20))
+	var r := _row(n).grow_individual(50, 0, 50, 0)
+	var w := (r.size.x - 20) / 3
+	return Rect2(r.position + Vector2((i - n) * (w + 10), 4), Vector2(w, 20))
 
 
 func _draw_levels() -> void:
@@ -685,12 +716,14 @@ func _draw_levels() -> void:
 			Color(0.95, 0.75, 0.35) if on else Color(INK, 0.6), font, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 10)
 		if game.ridden.has(l["id"]):
 			_text(r.position + Vector2(0, 13), "quiet now", 8, Color(0.6, 0.78, 0.5, 0.9 if on else 0.6), null, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 70)
-	for i in [game.levels.size(), game.way_out()]:
+	for i in range(game.levels.size(), game.way_out() + 1):
 		var q := _pick_rect(i)
 		var qon: bool = game.level_pick == i or over == i
 		var label := "LEAVE THE TERRITORY"
 		if i == game.levels.size():
 			label = "SURE? ENTER AGAIN" if game.forget_armed else "FORGET WHAT HE DID"
+		elif i == game.levels.size() + 1:
+			label = "SURE? ENTER AGAIN" if game.hints_armed else "FORGET THE HINTS"
 		draw_rect(q, Color(0.16, 0.1, 0.07, 0.95) if qon else PANEL)
 		draw_rect(q, BRASS if qon else Color(0.3, 0.22, 0.15), false, 2.0 if game.level_pick == i else 1.0)
 		_text(Vector2(q.position.x, q.position.y + 14), label, 10, Color(0.95, 0.75, 0.35) if qon else Color(INK, 0.6),

@@ -17,6 +17,7 @@ var levels: Array = []          # the ones the picker shows
 var level_entry: Dictionary = {}
 var level_pick := 0             # the picker's cursor (past the towns: forgetting his record, then the way out)
 var forget_armed := false       # "FORGET WHAT HE DID" taken once: again, and it's gone
+var hints_armed := false        # "FORGET THE HINTS" the same
 var posse_size := Posse.SIZE    # how few left before they band together (fewer, in a smaller gang)
 const META_PATH := "res://assets/meta.json"
 const ENEMIES_PATH := "res://data/enemies.json"
@@ -42,7 +43,8 @@ const HUD_PAGE := Vector2(640, 360)   # the HUD's own pixels, at the least
 
 var meta: Dictionary
 var enemy_data: Dictionary   # data/enemies.json: body templates, bandit types, palettes
-var hints: Dictionary        # data/hints.json: what he's told when he's lost
+var hints: Dictionary        # data/hints.json: what he's told when he's lost, and the first time things happen
+var firsts: Firsts           # which of those first-time hints he's had (kept across sittings)
 var blast_mine := false      # the blast going off now is one of the mines
 var level: Dictionary
 var size := 40
@@ -346,6 +348,7 @@ func _ready() -> void:
 	meta = _load_json(META_PATH)
 	enemy_data = _load_json(ENEMIES_PATH)
 	hints = _load_json(HINTS_PATH)
+	firsts = Firsts.new(hints["first"])
 	_load_level()
 	size = int(level["size"])
 	if level.has("haze"):
@@ -671,10 +674,12 @@ func _levels_input(event: InputEvent) -> void:
 			KEY_UP, KEY_W:
 				level_pick = posmod(level_pick - 1, way_out() + 1)
 				forget_armed = false
+				hints_armed = false
 				sfx("close", null, -14.0)
 			KEY_DOWN, KEY_S:
 				level_pick = posmod(level_pick + 1, way_out() + 1)
 				forget_armed = false
+				hints_armed = false
 				sfx("close", null, -14.0)
 			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 				pick_level(level_pick)
@@ -688,9 +693,10 @@ func _levels_input(event: InputEvent) -> void:
 			pick_level(i)
 
 
-## The picker's last row: after the towns, forgetting his record, then the way out.
+## The picker's last row: after the towns, forgetting his record, forgetting the
+## hints, then the way out.
 func way_out() -> int:
-	return levels.size() + 1
+	return levels.size() + 2
 
 
 ## This one: on to the guns if it's the town already loaded, else load it (the
@@ -699,6 +705,9 @@ func way_out() -> int:
 func pick_level(i: int) -> void:
 	if i == levels.size():
 		forget_record()
+		return
+	if i == levels.size() + 1:
+		forget_hints()
 		return
 	if i >= way_out():
 		get_tree().quit()
@@ -735,6 +744,7 @@ func _escape() -> void:
 		"levels":
 			level_pick = way_out()
 			forget_armed = false
+			hints_armed = false
 			sfx("close", null, -14.0)
 		"loadout", "brief":
 			_to_levels()
@@ -2169,6 +2179,17 @@ func holding(e: Enemy) -> bool:
 	return hanging != null and hanging.holds(e) or captive != null and captive.holds(e)
 
 
+## The first-time hints that come with time in a town: Tab once he's had his look
+## at where he's needed, the stick he's carrying, and (in a quiet town) the peso.
+func _hint_times() -> void:
+	if clock > 10.0 and not marks().is_empty():
+		firsts.once("tab")
+	if clock > 14.0 and player.sticks > 0:
+		firsts.once("dynamite")
+	if clock > 40.0 and player.pesos > 0 and not level_entry.get("action", false):
+		firsts.once("peso")
+
+
 ## Seconds since anyone in the gang saw or heard the stranger.
 func staleness() -> float:
 	return clock - seen_at
@@ -2178,6 +2199,7 @@ func _physics_process(delta: float) -> void:
 	if state != "play":
 		return
 	clock += delta
+	_hint_times()
 	plans_left = PLANS_A_FRAME
 	rescue_cd -= delta
 	if rescue_cd <= 0.0:
@@ -2660,6 +2682,20 @@ func _record() -> Dictionary:
 
 
 ## "FORGET WHAT HE DID": once to ask, twice to wipe every town's record (see Record).
+## The picker's "FORGET THE HINTS": asked twice, like his record, then every
+## first-time hint is told again.
+func forget_hints() -> void:
+	level_pick = levels.size() + 1
+	if not hints_armed:
+		hints_armed = true
+		sfx("close", null, -8.0)
+		return
+	hints_armed = false
+	firsts.forget()
+	hud.toast("Forgotten. He'll be told again.")
+	sfx("bell", null, -8.0, 0.0)
+
+
 func forget_record() -> void:
 	level_pick = levels.size()
 	if not forget_armed:
@@ -2973,6 +3009,8 @@ func on_player_hurt() -> void:
 		print("%.1fs  hero hit, hp %d" % [(Time.get_ticks_msec() - start_time) / 1000.0, player.hp])
 	hurt_fx = 1.0
 	add_shake(4.0)
+	if not player.down:
+		firsts.once("hurt")
 
 
 func alive_enemies() -> int:
