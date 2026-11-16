@@ -4,6 +4,7 @@
  "ground": "ground_funeral",
  "weather": "grey",
  "rain": true,
+ "clears": true,
  "streets": [
   [
    0.0,

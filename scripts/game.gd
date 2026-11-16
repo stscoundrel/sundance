@@ -26,6 +26,7 @@ const GRADES := {
 	"snow": {"tint": Vector3(0.97, 1.0, 1.05), "sat": 0.62, "contrast": 0.94, "lift": 0.05},
 	"grey": {"tint": Vector3(0.98, 0.99, 1.02), "sat": 0.6, "contrast": 1.02, "lift": 0.03},
 }
+const SUN := {"tint": Vector3(1.06, 0.99, 0.86), "sat": 0.86, "contrast": 1.08, "lift": 0.0}   # (post.gdshader's defaults: the desert sun)
 const LOUD := ["colt", "coach", "rifle", "sharps", "howdah", "spencer", "musket", "bell", "boom"]
 const WIND := Vector2(7, -2)   # px/s drift for smoke and dust
 # How much of the town the screen shows. The art is drawn in whole screen pixels to a
@@ -71,6 +72,7 @@ var puddles: Puddles = null   # the rain's puddles (see Puddles), if it's rainin
 var footprints: Footprints = null   # and the tracks everyone leaves in its snow
 var sight := 1.0                # of a man's sight the weather leaves him (Snowfall: snow, a squall)
 var wind_player: AudioStreamPlayer
+var sun_wind: AudioStreamPlayer   # the wind, back as the funeral's rain clears (see Snowfall.clear)
 var hanging: Hanging = null     # a man on the gallows to save, if the level has one
 var captive: Captive = null     # a man tied to a pole, if the level has one
 var cargo: Cargo = null         # the arms to be carried off, if the level has them (it's won at the wagon)
@@ -369,6 +371,14 @@ func _ready() -> void:
 	wind.process_mode = Node.PROCESS_MODE_ALWAYS   # (it blows on under the menu)
 	wind.play()
 	wind_player = wind
+	if snowfall and snowfall.clears:   # (the wind, back under the rain as it clears: see Snowfall)
+		sun_wind = AudioStreamPlayer.new()
+		sun_wind.stream = load(meta["sfx"]["wind"])
+		sun_wind.volume_db = -80.0
+		add_child(sun_wind)
+		sun_wind.finished.connect(sun_wind.play)
+		sun_wind.process_mode = Node.PROCESS_MODE_ALWAYS
+		sun_wind.play()
 	sfx("bell", null, -4.0, 0.0)
 	if _args.has("guns"):
 		start_guns = Array(_args["guns"].split(",")).filter(func(k): return Player.SLOT.has(k))
@@ -381,6 +391,12 @@ func _ready() -> void:
 	elif open_on == "levels":
 		_to_levels()
 	open_on = ""
+
+
+## How many of them he's still to deal with: those on their feet, and every man still
+## to come down the roads (the funeral's weather clears as it falls: see Snowfall).
+func gang_left() -> int:
+	return alive_enemies() + (director.still_to_come() if director else 0)
 
 
 ## Few enough left, and no more coming: the last of them band together (see Posse).
@@ -1420,7 +1436,16 @@ func _process(delta: float) -> void:
 	if snowfall:   # a squall: the white closing in, and the wind howling
 		mat.set_shader_parameter("fog", snowfall.storm * (0.6 if snowfall.rain else 1.0))
 		mat.set_shader_parameter("flash", snowfall.flash)
-		wind_player.volume_db = (-14.0 + 10.0 * snowfall.storm) if snowfall.rain else (-12.0 + 9.0 * snowfall.storm)
+		wind_player.volume_db = (-14.0 + 10.0 * snowfall.storm + linear_to_db(maxf(0.001, snowfall.wet))) if snowfall.rain \
+			else (-12.0 + 9.0 * snowfall.storm)
+		if snowfall.clears and GRADES.has(level.get("weather", "")):   # the sky clearing: the grey going warm, towards the desert sun's (the shader's own)
+			var g: Dictionary = GRADES[level["weather"]]
+			var c: float = smoothstep(0.0, 1.0, snowfall.clear)
+			mat.set_shader_parameter("tint", g["tint"].lerp(SUN["tint"], c))
+			if sun_wind:
+				sun_wind.volume_db = -12.0 + linear_to_db(maxf(0.001, snowfall.clear))
+			for k in ["sat", "contrast", "lift"]:
+				mat.set_shader_parameter(k, lerpf(g[k], SUN[k], c))
 	mat.set_shader_parameter("hurt", hurt_fx)
 	if player and player.down:
 		# the colour going out of it as he bleeds, and his heart, slowing

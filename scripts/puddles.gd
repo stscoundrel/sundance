@@ -84,7 +84,7 @@ func _draw() -> void:
 	var view: Rect2 = game.view_rect(40.0)
 	var storm := _storm()
 	var grow := 1.0 + SPREAD * storm
-	var odds := lerpf(RING_ODDS.x, RING_ODDS.y, storm)
+	var odds: float = lerpf(RING_ODDS.x, RING_ODDS.y, storm) * (game.snowfall.wet if game.snowfall else 1.0)   # (no rain, no rings)
 	var tex := Puff.disc_tex()
 	for p in puddles:
 		var at: Vector2 = p["at"]

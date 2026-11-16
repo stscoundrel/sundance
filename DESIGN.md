@@ -717,6 +717,25 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   mud dark, puddles in it (`GROUND_PALETTES` in `gen_assets.py`); the grade washed out
   and cool (`GRADES` in `game.gd`, by weather, as Silencio's snow is); no tumbleweed
   blows through the wet. The covered wagons wear and break like the plain ones.
+- **The sky clearing as he wins** (the map's `"clears"`; `Snowfall.clear`, `game.gang_left`,
+  `Director.still_to_come`; `tests/test_clearing.gd`). So the end isn't a slog through
+  the mud in the rain: the fewer of them left, every guest on his feet and every man
+  still down the roads counted (35 at the start), the clearer the sky. Full storm down
+  to 25; from 25 to 15 the downpours die away ("The rain eases") and the rain thins;
+  from 15 to 5 an overcast drizzle; with fewer than 5 the clouds break ("The sun
+  breaks through"): not at 7, when they band into a posse, since a posse is often
+  all in one place and the sun would come out with nobody left to see it on. `clear` drifts there at most 1/25 a second
+  (game time: it steers the AI), and the rain goes with it: the downpours scaled away
+  by 0.45, no thunder past 0.3, the drops and the rain's noise by `wet` (1 - clear),
+  everyone's sight back to the full, the blood no longer washed (in the dry his trail
+  stays for the gang to follow), the rings gone from the puddles, which stay. The
+  grade goes from the grey to the desert sun's (`SUN`, the post shader's own
+  defaults), smoothstepped. The rain's loop fades out and the wind's comes back in under it
+  (`game.sun_wind`). The count is taken four times a second (`SKY_EVERY`), and once
+  it's dry the wash doesn't run at all. The mud stays baked into the ground: just
+  after the rain. Measured windowed in the storm: the rain and puddles cost about 2
+  fps of 89, within the noise; the count 8 µs a look, a wash about 0.35 ms every half
+  second while it rains.
 - **The townsfolk round the grave** (Civilian role `"guest"`; `tests/test_funeral_guests.gd`).
   Twenty of the four towns' folk, for whom he was something of a hero: San Miguel's
   and Cruz Verde's townsmen, townswomen and peons, Silencio's snowbound and winter

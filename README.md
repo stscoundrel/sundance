@@ -120,6 +120,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_camps.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_trespass.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_funeral.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_rain.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_clearing.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_funeral_posse.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_funeral_guests.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_coffin.gd

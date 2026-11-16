@@ -159,6 +159,17 @@ func all_in() -> bool:
 		or camps[g]["state"] == "" and game.alive_in(g) == 0)
 
 
+## Men still to come: walking in down a road now, or waiting down one for word (a
+## camp whose men haven't come; where the help always comes, its runner shot or not).
+func still_to_come() -> int:
+	var n: int = queue.size()
+	for g in camps:
+		var c: Dictionary = camps[g]
+		if c["state"] in ["running", "fetching"] or c["state"] == "" and game.level.get("help_comes", false):
+			n += int(c["count"])
+	return n
+
+
 ## How many in the gang all told, those indoors included.
 func indoors() -> int:
 	return sleepers.size()

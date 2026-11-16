@@ -29,6 +29,17 @@ extends Node2D
 ## stranger's trail (`game.trails`) fades, a minute and a half in the steady rain,
 ## a quarter of a minute in a downpour; a drop half washed out is no lead to follow.
 ## The pools where men fell thin, but stay (a pool with nobody in it still tells).
+##
+## And it clears as he wins (the map's "clears"): the fewer of them left, the guests
+## alive and every man still coming down the roads counted (`game.gang_left`), the
+## less it rains. Full storm down to 25 of them; from 25 to 15 the downpours die down
+## and the rain thins; from 15 to 5 an overcast drizzle, the light warming; with
+## fewer than 5 the clouds break and the sun comes out on the last of them (the
+## posse they band into at 7 is often all in one place: the sun waits for the last
+## few, so it isn't spent while they're still out of sight together). It drifts
+## there over half a minute or so, not at a shot: `clear`, 0 the storm .. 1 sun, and
+## everything the rain does goes with it, the downpours, the drops, the thunder, the
+## sight it takes, the blood it washes, the noise (the wind coming back in under it).
 
 static var rng := RandomNumberGenerator.new()   # (when the squalls come, and how long they blow)
 const SHADER := preload("res://shaders/snowfall.gdshader")
@@ -55,6 +66,11 @@ const WASH := Vector2(90.0, 15.0)   # s for the rain to wash a drop of blood awa
 const WASH_EVERY := 0.5     # s between washes (game time: the trail's a lead the gang follows)
 const WASH_LEAD := 0.5      # washed out this far, a drop's no lead
 const POOL_LEFT := 0.4      # of a pool where a man fell, what the rain leaves of it
+# How clear it is for so many left (`clear` heads for it): [left, clear], in order.
+const CLEARING := [[25, 0.0], [15, 0.45], [5, 0.85], [4, 1.0]]
+const CLEAR_RATE := 1.0 / 25.0   # of `clear` a second, at most: the sky takes its time
+const NO_DOWNPOURS := 0.45  # clear this far, the downpours have died away
+const NO_THUNDER := 0.3     # and past this, no more thunder
 
 var game: Node
 var rain := false           # the funeral's rain, not the snow (setup's `wet`)
@@ -70,6 +86,14 @@ var _thunder_at := -1.0     # game time the thunder's due, after the flash
 var flashed := -1.0         # game time of the last flash; -1 none yet
 var flash := 0.0            # how white the lightning has the screen (post's "flash")
 var _wash_t := 0.0
+var clear := 0.0            # 0 the storm .. 1 the sun out (the map's "clears")
+var wet := 1.0              # how much it's raining, of the storm's steady rain (1 - clear)
+var _eased := false         # "The rain eases" said
+var _sunny := false         # "The sun breaks through" said
+var clears := false         # the map's "clears", read once
+var _sky := 0.0             # how clear the sky's heading for, by the count (looked at now and then)
+var _sky_t := 0.0
+const SKY_EVERY := 0.25     # s between counts: men fall at a shot, not sixty times a second
 var _mm := MultiMesh.new()
 var _mats: Array[ShaderMaterial] = []
 
@@ -77,6 +101,7 @@ var _mats: Array[ShaderMaterial] = []
 func setup(g: Node, wet := false) -> void:
 	game = g
 	rain = wet
+	clears = rain and g.level.get("clears", false)
 	var at := rng.randf_range(FIRST.x, FIRST.y)
 	while at < 3600.0:
 		var blow := rng.randf_range(BLOW.x, BLOW.y)
@@ -134,7 +159,9 @@ func storm_at(s: float) -> float:
 ## The rain at the blood for `dt` seconds: the marks on the ground, the drops of his
 ## trail, the pools.
 func _wash(dt: float) -> void:
-	var by := dt / lerpf(WASH.x, WASH.y, storm)
+	var by := dt / lerpf(WASH.x, WASH.y, storm) * wet   # (dried up: the blood stays)
+	if by <= 0.0:
+		return   # (nothing to wash: no walking every mark on the ground for it)
 	game.decals.wash(by)
 	var kept: Array[Dictionary] = []
 	for d in game.trails:
@@ -167,10 +194,35 @@ func _view() -> Rect2:
 	return game.view_rect(MARGIN)
 
 
+## How clear the sky should be with `left` of them still to deal with (CLEARING).
+static func clearing_for(left: int) -> float:
+	if left >= CLEARING[0][0]:
+		return 0.0
+	for i in range(1, CLEARING.size()):
+		var a: Array = CLEARING[i - 1]
+		var b: Array = CLEARING[i]
+		if left >= b[0]:
+			return lerpf(a[1], b[1], float(a[0] - left) / float(a[0] - b[0]))
+	return 1.0
+
+
 func _physics_process(_delta: float) -> void:
-	storm = storm_at(game.clock)
+	if clears:
+		_sky_t -= _delta
+		if _sky_t <= 0.0:
+			_sky_t = SKY_EVERY
+			_sky = clearing_for(game.gang_left())
+		clear = move_toward(clear, _sky, CLEAR_RATE * _delta)
+		wet = 1.0 - clear
+		if clear >= NO_DOWNPOURS and not _eased and game.state == "play":
+			_eased = true
+			game.hud.toast("The rain eases")
+		if clear >= 0.99 and not _sunny and game.state == "play":
+			_sunny = true
+			game.hud.toast("The sun breaks through")
+	storm = storm_at(game.clock) * clampf(1.0 - clear / NO_DOWNPOURS, 0.0, 1.0)
 	var sight := RAIN_SIGHT if rain else SIGHT
-	game.sight = lerpf(sight.x, sight.y, storm)
+	game.sight = lerpf(lerpf(sight.x, sight.y, storm), 1.0, clear)
 	if storm > 0.5 and not _was_up and game.state == "play":
 		game.hud.toast("The heavens open" if rain else "A squall comes down off the mountain")
 	_was_up = storm > 0.5
@@ -178,8 +230,9 @@ func _physics_process(_delta: float) -> void:
 		var i := squall_at(game.clock)
 		if i >= 0 and i != _heard:   # a downpour coming in: the lightning, then the thunder
 			_heard = i
-			flashed = game.clock
-			_thunder_at = game.clock + THUNDER_LAG
+			if clear < NO_THUNDER:   # (the storm passing: no more of it)
+				flashed = game.clock
+				_thunder_at = game.clock + THUNDER_LAG
 		if _thunder_at >= 0.0 and game.clock >= _thunder_at:
 			_thunder_at = -1.0
 			if game.state == "play":
@@ -199,7 +252,7 @@ func _process(delta: float) -> void:
 	drift += lerpf(wind.x, wind.y, storm) * delta
 	fall += (1.0 + storm * (0.4 if rain else 0.8)) * delta
 	var v := _view()
-	_mm.visible_instance_count = int(lerpf(RAIN_COUNT, RAIN_STORM_COUNT, storm)) if rain else int(lerpf(COUNT, STORM_COUNT, storm))
+	_mm.visible_instance_count = int(lerpf(RAIN_COUNT, RAIN_STORM_COUNT, storm) * wet) if rain else int(lerpf(COUNT, STORM_COUNT, storm))
 	for mat in _mats:
 		mat.set_shader_parameter("view", Vector4(v.position.x, v.position.y, v.size.x, v.size.y))
 		mat.set_shader_parameter("drift", drift)
