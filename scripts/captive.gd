@@ -124,6 +124,11 @@ func seconds_left() -> float:
 	return count_t if state in ["guard", "general"] else -1.0
 
 
+## Where the stranger's wanted, for the HUD's arrows: his partner, while he's still tied.
+func marks() -> Array:
+	return [[man.global_position, "YOUR PARTNER"]] if state in ["tied", "guard", "coming", "general"] and man.alive else []
+
+
 func _physics_process(delta: float) -> void:
 	if game.state != "play" or state in ["freed", "dead"]:
 		return

@@ -68,6 +68,18 @@ and first gun, standing three-quarters to us (`hud._still`; the paint shared wit
 `Actor.painted`). A townsman's body stands in its own pose (the mayor's, the padre's
 prayer). A town without a `who` (the test yard) goes straight to the guns.
 
+**Where to go** (`game.marks`, `hud._draw_marks`; `tests/test_marks.gd`). From a
+second into a town till nine (game time: a second fading in, one out), and whenever
+Tab's held, an arrow points out what the town asks of him, named on a dark plate so
+it reads on sand and snow: THE GALLOWS (San Miguel, till the man's saved or gone),
+YOUR PARTNER (Cruz Verde, till he's loose or dead), THE CARRIERS (Paso Esperanza, at
+the comandante by the cab, till it's all loaded and the wagon has its own arrow),
+THE GOLD and YOUR HORSE (Silencio; the gold only while it isn't in his arms). Each
+objective says its own (`marks()` on Hanging, Captive, Cargo and Strongbox). The
+arrows are the waves' (`_pointer`): over the place when it's on screen, on the edge
+pointing out to it when it isn't; a label that would land on another steps down
+below it. The funeral has none: he starts in the coffin, and the grave is the scene.
+
 The five stories make one run: the stranger is a gun for hire and takes whoever's
 money is on offer. San Miguel's mayor pays him to end the gang, who are hanging the
 one villager who stood up to them. At Cruz Verde his partner's on the wrong side of
@@ -975,6 +987,7 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
 | F | Swap the gun in that slot for the one at his feet |
 | E | Knife: a silent takedown from behind, or a rush |
 | Enter | After a win: on to the next town · after a loss: the same town again |
+| Tab (hold) | Arrows to what the town asks of him (the gallows, his partner, the carriers, the gold, his horse) |
 | Esc | Back a step; in town, the menu (paused): resume, start over, another town, quit |
 
 ## Hero

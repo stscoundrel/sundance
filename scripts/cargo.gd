@@ -175,6 +175,14 @@ func _replace(k: String) -> void:
 	game.hud.toast("Another carrier comes up from the wagons")
 
 
+## Where the stranger's wanted, for the HUD's arrows: the carriers, at the comandante's
+## heap by the cab, till it's all loaded (then the wagon has its own arrow).
+func marks() -> Array:
+	if done or over:
+		return []
+	return [[leader.global_position if leader and leader.alive else wagon_at(), "THE CARRIERS"]]
+
+
 func carriers_alive() -> int:
 	var n := 0
 	for c in carriers:

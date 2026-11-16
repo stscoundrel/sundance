@@ -118,6 +118,12 @@ func seconds_left() -> float:
 	return at - game.clock
 
 
+## Where the stranger's wanted, for the HUD's arrows (the opening's, and Tab's): the
+## gallows, while there's still a man on them to save.
+func marks() -> Array:
+	return [[trap, "THE GALLOWS"]] if state in ["waiting", "lever", "hanging"] else []
+
+
 ## A round's path from `p` along `v`: does it carry on over the platform to the man
 ## on the trap (or the rope he hangs from)? Heights don't count, so without this the
 ## gallows' edge would stop every one.

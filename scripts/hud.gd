@@ -262,6 +262,7 @@ func _draw_status(p: Player) -> void:
 		_draw_captive(game.captive, p)
 	if game.cargo:
 		_draw_cargo(game.cargo)
+	_draw_marks()
 	_draw_man(p)
 	_draw_plunger(p)
 	if banner_t > 0.0:
@@ -291,7 +292,9 @@ func _draw_waves(d: Director) -> void:
 
 ## An arrow at a place in the world (or, off screen, on the edge pointing out to
 ## it), named.
-func _pointer(world_at: Vector2, name: String, col: Color, ink: Color, above := false) -> void:
+## With `taken` (the labels already drawn this frame), a label that would land on one
+## steps down below it, and its own place is added.
+func _pointer(world_at: Vector2, name: String, col: Color, ink: Color, above := false, plate := false, taken: Array = []) -> void:
 	var to_local := get_global_transform_with_canvas().affine_inverse()
 	var view := get_viewport().get_canvas_transform()
 	var mid := page / 2
@@ -311,7 +314,42 @@ func _pointer(world_at: Vector2, name: String, col: Color, ink: Color, above := 
 		tip = at + Vector2(0, -30)
 	var side := dir.orthogonal()
 	draw_colored_polygon(PackedVector2Array([tip + dir * 8.0, tip - dir * 4.0 + side * 6.0, tip - dir * 4.0 - side * 6.0]), col)
-	_text(tip - dir * 14.0 + Vector2(-60, 3), name, 8, ink, null, HORIZONTAL_ALIGNMENT_CENTER, 120)
+	var at_label := tip - dir * 14.0
+	var w := small.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 8.0
+	var box := Rect2(at_label + Vector2(-w / 2, -7), Vector2(w, 13))
+	for r in taken:
+		if box.intersects(r):
+			box.position.y = r.end.y + 1
+	at_label.y = box.position.y + 7
+	taken.append(box)
+	if plate:   # (dark under it: brass on the sand or the snow is hard to read)
+		draw_rect(box, Color(PANEL, PANEL.a * ink.a))
+	_text(at_label + Vector2(-60, 3), name, 8, ink, null, HORIZONTAL_ALIGNMENT_CENTER, 120)
+
+
+const MARKS_FROM := 1.0   # game seconds in: the opening's arrows come up...
+const MARKS_TILL := 9.0   # ...and are gone (the last second fading)
+
+
+## Arrows to what the town asks of him (game.marks): as he rides in, so a new hand
+## knows which way to go, and whenever Tab's held. On game time, so a test sees them.
+func _draw_marks() -> void:
+	var a := marks_alpha(game.clock, Input.is_action_pressed("marks"))
+	if a <= 0.0 or game.state != "play":
+		return
+	var taken := []
+	for m in game.marks():
+		_pointer(m[0], m[1], Color(0.95, 0.75, 0.35, a), Color(1, 0.88, 0.6, a), true, true, taken)
+
+
+## How plain the arrows are `t` game seconds in: a second fading in, the opening's
+## few seconds, a second fading out; full while Tab's held.
+func marks_alpha(t: float, held: bool) -> float:
+	if held:
+		return 1.0
+	if t < MARKS_FROM or t >= MARKS_TILL:
+		return 0.0
+	return minf(minf(t - MARKS_FROM, MARKS_TILL - t), 1.0)
 
 
 ## The cargo's count under the bandit count; with it all in, the wagon marked.
@@ -922,7 +960,7 @@ func _draw_title() -> void:
 	# and who's who come on its briefing.
 	_text(Vector2(0, 200), "One stranger. Five towns. Whoever pays.", 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	var lines := [
-		"WASD move   MOUSE aim   LMB fire   RMB fan the hammer / both barrels   C crouch   R reload   1 2 3 guns",
+		"WASD move   MOUSE aim   LMB fire   RMB fan the hammer / both barrels   C crouch   R reload   1 2 3 guns   Tab where to go",
 		"E knife, drag a body (hold), cut a man loose, use   B bandage   G dynamite   Q toss a peso   F take a gun   Esc menu",
 		"Stay out of their sight and crouch behind cover: a man who sees you shouts for the rest.",
 	]

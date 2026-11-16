@@ -49,6 +49,18 @@ func setup(g: Node, at: Vector2, horse_at: Vector2) -> void:
 	add_child(sprite)
 
 
+## Where the stranger's wanted, for the HUD's arrows: the gold, wherever it lies (not
+## while it's in his arms), and his horse to take it to.
+func marks() -> Array:
+	if away:
+		return []
+	var out := []
+	if not (holder and holder.is_player):
+		out.append([global_position, "THE GOLD"])
+	out.append([horse, "YOUR HORSE"])
+	return out
+
+
 func lying() -> bool:
 	return holder == null and not away
 

@@ -48,8 +48,8 @@ godot --headless --path . --fixed-fps 60 -s tests/test_pickups.gd   # one, outpu
   ending `... test: OK`. New features get a `tests/test_<feature>.gd` and a line in README.
 - Engine metas switch things off for tests: `fixed_seed`, `level`, `no_civilians`,
   `no_reserve`, `no_downed`, `no_alarm`, `always_gasp`, `no_gasp`, `no_last_stand`,
-  `no_hanging` (every test on the default San Miguel sets it, but test_hanging), `no_captive`
-  (every Cruz Verde test sets it, but test_captive), `no_waves` (the Paso Esperanza tests of
+  `no_hanging` (every test on the default San Miguel sets it, but test_hanging and test_marks), `no_captive`
+  (every Cruz Verde test sets it, but test_captive and test_marks), `no_waves` (the Paso Esperanza tests of
   the place and the cargo set it; test_federales doesn't), and at the funeral `no_coffin`
   (he starts walking about), `no_sermon` (in the coffin, the lid open to blows at once),
   `nails`, `record` (a `Funeral.RECORDS` name, or a dictionary), `record_file` (where his kept

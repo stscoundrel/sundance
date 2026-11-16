@@ -396,6 +396,17 @@ func _ready() -> void:
 	open_on = ""
 
 
+## Where the stranger's wanted ([world position, name] each), from whatever the level
+## asks of him: the gallows, his partner, the carriers, the gold and his horse. The
+## HUD points them out as he rides in, and while Tab's held.
+func marks() -> Array:
+	var out := []
+	for o in [hanging, captive, cargo, strongbox]:
+		if o:
+			out.append_array(o.marks())
+	return out
+
+
 ## How many of them he's still to deal with: those on their feet, and every man still
 ## to come down the roads (the funeral's weather clears as it falls: see Snowfall).
 func gang_left() -> int:
@@ -572,7 +583,7 @@ func _setup_input() -> void:
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
 		"crouch": [KEY_C, KEY_CTRL], "reload": [KEY_R], "knife": [KEY_E], "bandage": [KEY_B], "throw": [KEY_G], "toss": [KEY_Q], "take": [KEY_F],
 		"weapon_1": [KEY_1], "weapon_2": [KEY_2], "weapon_3": [KEY_3],
-		"restart": [KEY_ENTER], "quit": [KEY_ESCAPE],
+		"restart": [KEY_ENTER], "quit": [KEY_ESCAPE], "marks": [KEY_TAB],
 	}
 	for action in keys:
 		if InputMap.has_action(action):
