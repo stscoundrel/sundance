@@ -282,4 +282,6 @@ func line() -> String:
 			return "the condemned man: hanged, you failed him   -   "
 		"shot":
 			return "the condemned man: shot dead, you failed him   -   "
+	if hangman and hangman.alive:   # (the stranger's down before noon: it isn't over for him)
+		return "the condemned man: still on the gallows   -   "
 	return "the condemned man: saved   -   "   # (alive on the trap, and nobody left to drop him)

@@ -98,7 +98,10 @@ func _process(delta: float) -> bool:
 			check(h().man.bound and h().man.alive and h().man.global_position == h().trap, "the man isn't on the trap")
 			check(h().man.lift.y < -20.0, "he isn't up on the platform")
 			check(h().state == "waiting" and h().seconds_left() > 200.0, "the hour isn't set: %s, %.0f" % [h().state, h().seconds_left()])
-			check("condemned man: saved" in game._tally(), "the end card doesn't count him")
+			check("condemned man: still on the gallows" in game._tally(), "the end card should have him still up there: %s" % game._tally())
+			hm.alive = false   # (staged: with nobody left to drop him, he counts as saved)
+			check("condemned man: saved" in game._tally(), "the end card doesn't count him saved with the hangman dead")
+			hm.alive = true
 			_next()
 		"rope", "rope_n", "rope_s":
 			if phase == 0:
