@@ -140,6 +140,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_champion.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_rollingblock.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_henry.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_pump.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_revolving.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_buntline.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_kegs.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_laststand.gd

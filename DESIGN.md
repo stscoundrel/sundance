@@ -1313,6 +1313,33 @@ One El Jefe in three carries it for his coach gun (the type's `"pump"` chance,
 `Enemy.pump_rng`); nobody else. The stranger rides in with it (slot 2, 10 shells)
 or takes it off a dead Jefe. `tests/test_pump.gd`.
 
+### Colt Model 1855 revolving shotgun — five chambers, cap-and-ball
+The Navy's idea made a long gun, off the war's surplus into the revolution's
+hands: five shots of shot, more than any scattergun but the Spencer pump, for 4
+points on the stranger's shotgun card.
+- **Quick to fire**: the side hammer thumbed back between shots, 0.42 s (the Navy
+  0.38). A 12 bore's pattern a little looser than the Champion's (8 pellets, spread
+  7, range 200). No fanning.
+- **An age to load**: each chamber is the Navy's work at shotgun size, a cap picked
+  off (0.3 s) and powder, wad and shot rammed with the lever (1.8 s): about 12 s
+  empty to full, stoppable. On the Navy's powder, off the same belt (15 to ride in
+  with).
+- **Chainfire**: one shot in forty (`"chainfire"` 0.025, on its own dice,
+  `Weapon.chain_rng`, seed 173), the flash jumps to the rest and every loaded chamber
+  goes off at once, wide and wild (`Weapon.CHAIN_SPREAD`), and the hand out on the
+  fore-end in front of the cylinder is burnt: a point off whoever holds it
+  (`chain_burn`), a wound to bandage like any other, and on the stranger's last bar
+  his last stand like any other; a burn, not a round, so no blood or limp, and on
+  the chainfire's own dice. A bandit burnt yelps and
+  doesn't turn on himself; burnt to death, he's killed by his own gun. The stranger
+  burnt to death is told so on the end screen ("chainfire" in `hints.json`).
+- In the gang's hands, a type's `"revolving"` is the chance (`Enemy.revolving_rng`,
+  seed 179): a revolucionario with only a sidearm has one slung beside it (0.1,
+  after the Champion's and the Rolling Block's rolls), a sargento has one for his
+  coach gun (0.33); never a man handed his guns (a wave's arms, the rabble's among them, or a placement's `loadouts`) unless those say `"revolving"` too. Five shots closing in (`fires_on_move`), then likely the
+  revolver rather than the long reload (`draw_sidearm` 0.6). Never a man out of a
+  door. `tests/test_revolving.gd`.
+
 ### Henry 1860, .44 Henry rimfire — 15 rounds
 The Winchester's forerunner, much the same gun and the same rounds, but worse to
 live with in three ways, so it stays the lesser choice (4 points to the Winchester's

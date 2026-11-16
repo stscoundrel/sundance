@@ -312,6 +312,14 @@ static var champion_rng := RandomNumberGenerator.new()
 # Champion, and its own dice too.
 const ROLLINGBLOCK_STYLE := {"range": [70, 220], "draw_sidearm": 0.7, "fires_on_move": false}
 static var rollingblock_rng := RandomNumberGenerator.new()
+# The revolution has some of the old Colt revolving shotguns off the war's surplus
+# (data "revolving": the chance, for his type). A man with only a sidearm carries
+# one slung beside it, and a sargento may have one for his coach gun; never a man
+# handed his guns (a wave's arms, a placement's loadouts). Five shots
+# closing in; and it's long to load, so he's apt to go to the revolver once it's
+# empty. Its own dice.
+const REVOLVING_STYLE := {"range": [40, 150], "draw_sidearm": 0.6, "fires_on_move": true}
+static var revolving_rng := RandomNumberGenerator.new()
 const FINISH_NEAR := 34.0    # px: as close as a man walking up to finish the stranger comes
 const GASP_LINES := ["You first, gringo...", "¡Hasta el infierno!", "Not... alone...", "¡Muere, cabrón!",
 	"Come here... stranger..."]
@@ -488,6 +496,15 @@ func setup(g: Node, k: String, pos: Vector2, route: PackedVector2Array, facing_d
 		loadout = ["rollingblock"] + loadout
 		for key in ROLLINGBLOCK_STYLE:
 			tdata[key] = ROLLINGBLOCK_STYLE[key]
+	# (not for a man handed his guns, by a wave's arms or his placement, unless that says so too)
+	var rev: float = overrides.get("revolving", 0.0) if overrides.has("loadouts") else tdata.get("revolving", 0.0)
+	if rev > 0.0 and not tdata.get("pistols_only", false) and not tdata["concealed"]:
+		if loadout.size() == 1 and loadout[0] in PISTOLS and revolving_rng.randf() < rev:
+			loadout = ["colt55"] + loadout
+			for key in REVOLVING_STYLE:
+				tdata[key] = REVOLVING_STYLE[key]
+		elif loadout[0] == "coach" and revolving_rng.randf() < rev:
+			loadout = ["colt55"] + loadout.slice(1)
 	var top: float = tdata.get("schofield", SCHOFIELD)
 	loadout = loadout.map(func(gun): return "schofield" if gun == "colt" and schofield_rng.randf() < top else gun)
 	var old: float = tdata.get("henry", HENRY)
@@ -2599,6 +2616,21 @@ func _fumble_stick() -> void:
 	reaction = ""
 	reaction_t = 0.0
 	s.drop()
+
+
+## His own revolving shotgun chain-fired and burnt his hand: a point off him and a
+## yelp, but nobody to turn on for it (not take_hit, which looks for who did it).
+func chain_burn() -> void:
+	if not alive or downed:
+		return
+	killed_with = weapon.kind
+	super()
+	if not alive:
+		return
+	shaken = min(1.0, shaken + 0.3)
+	var english: bool = tdata.get("tongue", "") == "english"
+	say_line("burnt", ["My hand!", "Damn this gun!"] if english else ["¡Ay, mi mano!", "¡Me quemé!", "¡Maldita escopeta!"],
+		Weapon.chain_rng)
 
 
 func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:

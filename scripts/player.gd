@@ -9,10 +9,10 @@ extends Actor
 
 const ORDER := ["colt", "coach", "rifle"]
 const SLOT := {"colts": "colt", "colt": "colt", "schofield": "colt", "buntline": "colt", "navy": "colt", "howdah": "colt", "derringer": "colt", "pistola": "colt",
-	"coach": "coach", "spencer82": "coach", "sawnoff": "coach", "champion": "coach", "escopeta": "coach",
+	"coach": "coach", "spencer82": "coach", "sawnoff": "coach", "champion": "coach", "escopeta": "coach", "colt55": "coach",
 	"rifle": "rifle", "henry": "rifle", "spencer": "rifle", "springfield": "rifle", "rollingblock": "rifle", "remington": "rifle", "sharps": "rifle"}   # the guns he can take up, by slot
 const RESERVE := {"colts": 36, "colt": 30, "schofield": 30, "buntline": 30, "navy": 24, "howdah": 10, "derringer": 12, "pistola": 12,
-	"coach": 10, "spencer82": 10, "sawnoff": 10, "champion": 10, "escopeta": 8,
+	"coach": 10, "spencer82": 10, "sawnoff": 10, "champion": 10, "escopeta": 8, "colt55": 15,
 	"rifle": 26, "henry": 26, "spencer": 21, "springfield": 12, "rollingblock": 10, "remington": 12, "sharps": 12}   # what he rides in with, per gun (to his belt)
 const TROPHIES := ["buntline"]   # his only off the dead: not on the loadout screen
 const KIT := {"bandage": 1, "dynamite": 2}   # what kit costs on the loadout screen (one of each at most)
@@ -795,6 +795,25 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 		game.on_player_hurt()
 
 
+## Burnt by his own chainfire: a point off him as a wound would be, the bandage
+## and the stick let go of, and on his last bar the last stand like any other
+## (no shotgun at arm's length here, whatever _goes_down would make of it).
+func chain_burn() -> void:
+	if not alive or down:
+		return
+	stop_bandage()
+	drop_body()
+	_drop_stick(hp <= 1)
+	if hp <= 1 and _goes_down(1, null):
+		flash_t = 0.12
+		game.sfx("hit", global_position, -2.0, 0.06, Weapon.chain_rng)
+		_go_down(-facing, null)
+		return
+	super()
+	if alive:
+		game.on_player_hurt()
+
+
 func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
 	get_off()
 	_note_death(shooter)
@@ -815,17 +834,19 @@ func _note_death(shooter: Actor) -> void:
 		how = "blast"
 		if shooter == self:
 			how = "own_mines" if game.blast_mine else "own_blast"
+	elif shooter == self:
+		how = "chainfire"   # (the one round of his own that can: see Weapon._chainfire)
 	elif shooter == null and down:
 		how = "bled"
 	elif down:
 		how = "finished"
 	var on_him := {}
 	for h in hits:
-		if h[1] and game.clock - h[0] < 5.0:
+		if h[1] and h[1] != self and game.clock - h[0] < 5.0:
 			on_him[h[1]] = true
 	var far := shooter.global_position.distance_to(global_position) if shooter and shooter != self else 0.0
 	death = {"how": how, "by": shooter, "range": "close" if far > 0.0 and far < 80.0 else ("long" if far > 420.0 else ""),
-		"many": on_him.size() >= 3}
+		"many": on_him.size() >= 3 and how != "chainfire"}   # (his own gun did it, however many were on him)
 
 
 # ------------------------------------------------------------------ the last stand

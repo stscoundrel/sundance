@@ -6,6 +6,8 @@ extends RefCounted
 ##              A pair ("twin") holds twelve, fired right hand, left hand, in turn.
 ##              The old cap-and-ball Navy loads each chamber from the front: slow.
 ##              The Schofield ("topbreak") breaks open and dumps all six at once.
+##              And the Colt revolving shotgun: five chambers of shot, loaded
+##              like the Navy, and now and then they all go off at once ("chainfire").
 ##   lever    - Winchester 1866: tube magazine, a lever stroke between shots. The
 ##              Spencer too: a smaller tube, and the hammer thumbed back as well.
 ##              The Henry: a longer tube, filled from the front ("open"/"close").
@@ -87,6 +89,20 @@ const DATA := {
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 22, "smoke_push": 1.7, "ammo": "coach",
 		"open": [0.32, "break_open"], "eject": [0.3, "eject"], "insert": [0.38, "shell_in"], "close": [0.3, "close"],
 		"status": {"cycle": "", "open": "BREAKING OPEN", "close": "CLOSING"}},
+	# Colt Model 1855 revolving shotgun: the Navy's idea made a long gun, five chambers
+	# of shot in a cylinder as big as a fist. Five shots as quick as the side hammer
+	# comes back, more than any scattergun but the Spencer pump; but each chamber is
+	# powder, wad and shot rammed with the lever and a cap on the nipple, so an empty
+	# one wants the best part of a quarter-minute to fill. And the old fault of the
+	# cap-and-ball: now and then the flash of one jumps to the rest ("chainfire": the
+	# chance a shot), every loaded chamber goes off together in a wild blast, and the
+	# hand out on the fore-end in front of the cylinder is burnt. The revolution's
+	# surplus. Takes the Navy's powder.
+	"colt55": {"name": "COLT REVOLVING SHOTGUN", "points": 4, "action": "revolver", "chambers": 5,
+		"chainfire": 0.025, "damage": 1, "speed": 520.0, "range": 200.0, "spread": 7.0, "pellets": 8,
+		"noise": 460.0, "sfx": "coach", "cycle": 0.42, "shake": 3.8, "smoke": 22, "smoke_push": 1.5,
+		"ammo": "powder", "open": [0.5, "gate"], "eject": [0.3, "gate"], "insert": [1.8, "ram"], "close": [0.6, "cock"],
+		"status": {"cycle": "COCKING", "open": "POWDER AND SHOT", "close": "CAPPED"}},
 	# Johnson & Bye Champion (1879): the cheap single-barrel break-open gun every
 	# hardware store sold. One long choked barrel throws the shot tighter and further
 	# than the coach gun, and the side lever snaps it open quick for the next shell;
@@ -238,6 +254,9 @@ var racking := false
 const COOL := 0.15   # of it a second, off
 const HOT_SPREAD := 1.0   # as much again on the spread, at its hottest
 var heat := 0.0
+# Chainfire's dice (the revolving shotgun's), apart from the rest of the fight.
+static var chain_rng := RandomNumberGenerator.new()
+const CHAIN_SPREAD := 14.0   # degrees more, every chamber at once out of a jumping gun
 
 
 func _init(k: String, h: Actor) -> void:
@@ -650,13 +669,27 @@ func _dry() -> void:
 func _colt_fire(fan: bool) -> void:
 	if d.get("twin", false):
 		hand = cur % 2   # even chambers are the right gun's, odd the left's
-	if chambers[cur] == 1:
+	if chambers[cur] == 1 and d.has("chainfire") and chambers.count(1) > 1 \
+			and chain_rng.randf() < float(d["chainfire"]):   # (the last one has nothing to jump to)
+		_chainfire()
+	elif chambers[cur] == 1:
 		chambers[cur] = 2
 		_shoot(1, 11.0 if fan else 0.0)
 	else:
 		_snd("dry", 2.0)
 	cocked = false
 	_cycle(0.12 if fan else d["cycle"])
+
+
+## The flash of one chamber jumping to the rest: every loaded one goes off at once,
+## wide and wild, and the hand out in front of the cylinder is burnt.
+func _chainfire() -> void:
+	var n := chambers.count(1)
+	for i in chambers.size():
+		if chambers[i] == 1:
+			chambers[i] = 2
+	_shoot(n, CHAIN_SPREAD)
+	holder.chain_burn()
 
 
 func _shoot(mult: int, extra_spread := 0.0) -> void:
@@ -680,4 +713,4 @@ func _shoot(mult: int, extra_spread := 0.0) -> void:
 	h.play_action("fire_l" if hand == 1 else "fire")
 	_snd(d["sfx"], 2.0 if mult > 1 else 0.0)
 	h.game.make_noise(h.global_position, d["noise"], "shot" if h.is_player else "enemy_shot", h)
-	h.on_fired(d["shake"] * mult)
+	h.on_fired(d["shake"] * minf(mult, 2.5))   # (a chainfire's five shake no worse than a big volley)

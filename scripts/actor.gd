@@ -425,6 +425,22 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 		play_action("hit_l" if facing.cross(-from_dir) < 0.0 else "hit_r")
 
 
+## His own gun's chainfire: the hand out in front of the cylinder burnt, a point
+## off him and no one else to blame. A burn, not a round: no blood, no limp, the
+## left hand snatched back; and on the chainfire's own dice, so a seeded fight
+## stays as it was up to it.
+func chain_burn() -> void:
+	if not alive:
+		return
+	hp -= 1
+	flash_t = 0.12
+	game.sfx("hit", global_position, -2.0, 0.06, Weapon.chain_rng)
+	if hp <= 0:
+		die(-facing, self)
+		return
+	play_action("hit_l")
+
+
 func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
 	alive = false
 	killer = shooter

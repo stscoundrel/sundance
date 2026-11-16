@@ -38,7 +38,7 @@ def template_guns():
     """Which guns each body template must be baked holding (every gun its types carry).
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
-    out = {"hero": ["colts", "colt", "buntline", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "howdah", "derringer", "pistola", "sawnoff", "champion", "escopeta", "spencer",
+    out = {"hero": ["colts", "colt", "buntline", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "howdah", "derringer", "pistola", "sawnoff", "champion", "escopeta", "colt55", "spencer",
                     "springfield", "rollingblock", "remington", "sharps", "mgun", "strongbox"]}
 
     def need(template, g, t=None):
@@ -72,6 +72,8 @@ def template_guns():
                      option.get("rollingblock", t.get("rollingblock", 0)))
         if not t.get("loadouts"):
             champion(t["template"], t.get("champion", 0), t["loadout"], t.get("rollingblock", 0))
+        if t.get("revolving", 0) > 0:   # (the old Colt revolving shotgun: Enemy.REVOLVING)
+            need(t["template"], "colt55")
         if t.get("concealed"):
             need(t["template"], "unarmed")
         if t.get("fetches"):   # (Silencio's trappers carry the strongbox home)
@@ -125,7 +127,7 @@ PISTOLS = ("colt", "colts", "schofield", "buntline", "navy", "derringer", "howda
 
 
 CARRY_SET = {"mg": "mgcarry"}   # a carrier's load, by the pose set he carries it in
-GUN_LEN = {"colts": 0.31, "m1895": 1.0, "remington": 1.3, "colt": 0.31, "buntline": 0.52, "schofield": 0.33, "coach": 0.97, "spencer82": 1.02, "rifle": 1.1, "henry": 1.12, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "navy": 0.36,
+GUN_LEN = {"colts": 0.31, "m1895": 1.0, "remington": 1.3, "colt": 0.31, "buntline": 0.52, "schofield": 0.33, "coach": 0.97, "spencer82": 1.02, "rifle": 1.1, "henry": 1.12, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "colt55": 1.05, "navy": 0.36,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
@@ -512,6 +514,18 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0, detail=False):
         out += beam(hinge + upb * 0.012, hinge + ab * bl + upb * 0.012, 0.022, GUNMETAL)
         out += beam(hinge - upb * 0.016, hinge + ab * (bl * 0.34) - upb * 0.016, 0.026, WOOD)    # fore-end
         out += beam(at(0.26, (0, 0.03)), at(0.3, (0, 0.075)), 0.012, STEEL)                   # hammer
+    elif kind == "colt55":
+        # Colt 1855 revolving shotgun: a walnut butt, the open-top frame with the side
+        # hammer, a cylinder as fat as a fist, the long round barrel with the loading
+        # lever folded under it, a short fore-end and a brass trigger guard
+        out += frustum(at(0.0, (0, -0.045)), at(0.28), 0.056, 0.03, (114, 72, 42))
+        out += box(tuple(at(0.27) - 0.034), tuple(at(0.31) + 0.034), STEEL)              # frame
+        out += frustum(at(0.3), at(0.43), 0.052, 0.052, GUNMETAL)                       # cylinder
+        out += beam(at(0.43, (0, 0.014)), at(1.0, (0, 0.014)), 0.02, GUNMETAL)          # barrel
+        out += beam(at(0.45, (0, -0.02)), at(0.7, (0, -0.02)), 0.01, STEEL)             # loading lever
+        out += beam(at(0.46, (0, -0.016)), at(0.62, (0, -0.016)), 0.028, (114, 72, 42)) # fore-end
+        out += beam(at(0.24, (0, -0.045)), at(0.31, (0, -0.04)), 0.011, BRASS)          # trigger guard
+        out += beam(at(0.26, (0.03, 0.025)), at(0.29, (0.03, 0.065)), 0.011, STEEL)     # side hammer
     elif kind == "spencer":
         # Spencer carbine: walnut butt with the magazine tube's brass cap at its heel, a
         # dark case-hardened receiver, side hammer, a short fore-end and one barrel band
@@ -1520,6 +1534,17 @@ def _key_poses(w):
         k = _key_poses("coach")
         k["cock"] = P(k["aim"], eR=V(-0.06, -0.29, 0.24), hR=V(0.08, -0.16, 0.2))
         return k
+    if w == "colt55":
+        # held at the hip like the other scatterguns, the left hand out on the fore-end
+        # ahead of the cylinder (where the chainfire burns it); the thumb to the side
+        # hammer; loaded at the hip, a cap picked off, each chamber charged and rammed
+        k = _key_poses("champion")
+        k["load"] = P(k["load"], broken=0.0, hL=V(0.26, -0.11, 0.22))
+        k["eject_a"] = P(k["load"], hL=V(0.24, -0.12, 0.2), gun=k["load"]["gun"])
+        k["eject_b"] = P(k["load"], eL=V(0.16, 0.16, 0.18), hL=V(0.26, -0.15, 0.25), gun=k["load"]["gun"])
+        k["insert_a"] = P(k["load"], **BELT_L)
+        k["insert_b"] = P(k["load"], eL=V(0.14, 0.16, 0.14), hL=V(0.3, -0.16, 0.2))
+        return k
     if w in ("navy", "pistola", "buntline"):
         return _key_poses("colt")   # held and loaded like any Colt
     if w in ("derringer", "schofield"):   # held like a Colt; broken open to load
@@ -1827,6 +1852,13 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 8, events={1: "brass"})
         add("reload_insert", [k["insert_a"], k["insert_b"]], 5.5, True)
         add("reload_close", _frames([k["load"], k["aim"]], 2), 7)
+    elif w == "colt55":
+        # the Navy's way, at the hip: a cap picked off, then each chamber charged and rammed
+        add("cock", [k["cock"], k["aim"]], 6)
+        add("reload_open", _frames([k["aim"], k["load"]], 2), 5)
+        add("reload_eject", [k["eject_a"], k["eject_b"]], 8)
+        add("reload_insert", [k["insert_a"], k["insert_b"], k["eject_b"], k["insert_b"]], 2.4, True)
+        add("reload_close", _frames([k["load"], k["aim"]], 2), 5)
     elif w in ("navy", "banner"):
         # no brass to shake out: a spent cap picked off, then each chamber charged and rammed
         add("cock", [k["cock"], k["aim"]], 6)

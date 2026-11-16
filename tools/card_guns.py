@@ -359,6 +359,27 @@ def champion(g):
     g.trigger(0.305, -0.045, 0.016)
 
 
+def colt55(g):
+    """Colt 1855 revolving shotgun: a walnut butt to the open-top frame and side hammer,
+    the fat five-shot cylinder, the long round barrel on its lug with the loading lever
+    folded under it, a short fore-end, the brass trigger guard."""
+    w = g.wood(WALNUT)
+    _butt(g, 0.27, -0.012, (-0.024, -0.058), -0.13, w, BRASS)
+    g.box(0.27, -0.046, -0.015, 0.31, 0.004, 0.015, BLUED)                     # frame
+    g.box(0.31, -0.046, -0.012, 0.44, -0.034, 0.012, BLUED)                    # under the cylinder
+    _cylinder(g, 0.312, 0.43, -0.004, 0.03, (78, 84, 104), flutes=False)
+    g.box(0.43, -0.03, -0.011, 0.47, 0.0, 0.011, BLUED)                        # the barrel lug
+    g.rod((0.43, 0.006), (1.05, 0.006), 0.0108, BLUED, 0.0098)
+    g.bore(1.05, 0.006, 0.0074)
+    g.ball((1.044, 0.019, 0), 0.0028, BRASS)
+    g.line([(0.45, -0.03), (0.52, -0.016), (0.72, -0.012)], 0.0038, case_hardened)   # loading lever
+    g.ball((0.72, -0.012, 0), 0.004, STEEL)
+    g.slab(0.47, 0.64, [(0.47, -0.006), (0.64, -0.006)], [(0.47, -0.03), (0.64, -0.024)], 0.013, w)
+    g.hammer(0.29, 0.002, 0.026, 0.02, case_hardened)
+    g.guard(0.25, 0.31, -0.046, 0.024, 0.003, BRASS)
+    g.trigger(0.285, -0.046, 0.016)
+
+
 def spencer82(g):
     """Spencer 1882 slide-action: a deep blued frame with the port on top the empties fly
     out of, one long barrel, the tube under it and on the tube the ribbed wooden slide."""
@@ -579,7 +600,7 @@ def rollingblock(g):
 
 
 DETAILED = {k: f for k, f in globals().items() if k in (
-    "colt", "buntline", "schofield", "navy", "howdah", "derringer", "pistola", "coach", "sawnoff", "champion", "spencer82", "escopeta",
+    "colt", "buntline", "schofield", "navy", "howdah", "derringer", "pistola", "coach", "sawnoff", "champion", "spencer82", "escopeta", "colt55",
     "rifle", "henry", "spencer", "springfield", "remington", "sharps", "rollingblock")}
 
 

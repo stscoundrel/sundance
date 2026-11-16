@@ -889,6 +889,7 @@ const BLURB := {"colts": "twelve, right and left, slow to load", "colt": "six, q
 	"spencer82": "six, a stiff slide",
 	"sawnoff": "two short barrels, murder up close",
 	"champion": "one barrel, reaches further",
+	"colt55": "five, an age to load, may all go off",
 	"escopeta": "one barrel, a long reload", "rifle": "thirteen, a quick lever",
 	"henry": "fifteen, loaded at the muzzle",
 	"spencer": "seven, lever and hammer", "springfield": "one hard shot, slow to load",

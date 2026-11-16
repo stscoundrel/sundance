@@ -1,5 +1,5 @@
 {
- "_doc": "What the stranger's told, in plain words. 'death': the end screen's tip under how he died (game.why_dead). A rule matches when every key it has fits: 'how' (shot, finished, bled, blast, own_blast, own_mines), 'guns' (the killer's gun kinds, Weapon.DATA), 'range' (close, long), 'many' (true: three or more firing on him at the end). The rule matching the most keys wins; the first such one on a tie. The last, with no keys, is for anything else. 'first': what he's told the first time each comes up, once ever (kept in user://hints.json; see scripts/firsts.gd): 'tab' ten seconds into a town with somewhere to go, 'wary' the first '?' over a bandit, 'seen' the first '!', 'hurt' his first wound, 'drag' his first quiet kill, 'down' his first last stand, 'dynamite' a town where he carries a stick, 'peso' forty seconds into a quiet town (not an action one). 'keys': the Esc menu's page of keys (THE KEYS), in groups, each group a 'col' (0 left, 1 right) and its rows [key, what it does, the input actions it covers (a test checks every one the game sets up is somewhere here)]; 'e_also': what E does besides, by what the town has (only those it has are shown).",
+ "_doc": "What the stranger's told, in plain words. 'death': the end screen's tip under how he died (game.why_dead). A rule matches when every key it has fits: 'how' (shot, finished, bled, blast, own_blast, own_mines, chainfire), 'guns' (the killer's gun kinds, Weapon.DATA), 'range' (close, long), 'many' (true: three or more firing on him at the end). The rule matching the most keys wins; the first such one on a tie. The last, with no keys, is for anything else. 'first': what he's told the first time each comes up, once ever (kept in user://hints.json; see scripts/firsts.gd): 'tab' ten seconds into a town with somewhere to go, 'wary' the first '?' over a bandit, 'seen' the first '!', 'hurt' his first wound, 'drag' his first quiet kill, 'down' his first last stand, 'dynamite' a town where he carries a stick, 'peso' forty seconds into a quiet town (not an action one). 'keys': the Esc menu's page of keys (THE KEYS), in groups, each group a 'col' (0 left, 1 right) and its rows [key, what it does, the input actions it covers (a test checks every one the game sets up is somewhere here)]; 'e_also': what E does besides, by what the town has (only those it has are shown).",
  "death": [
   {
    "many": true,
@@ -11,7 +11,8 @@
     "coach",
     "sawnoff",
     "champion",
-    "spencer82"
+    "spencer82",
+    "colt55"
    ],
    "range": "close",
    "tip": "Don't let a shotgun get close. Drop him on the way in."
@@ -44,6 +45,10 @@
   {
    "how": "own_blast",
    "tip": "Throw dynamite well away from yourself, and mind the kegs near it."
+  },
+  {
+   "how": "chainfire",
+   "tip": "Once in a while every chamber goes off at once and burns your hand. Don't fire it hurt."
   },
   {
    "how": "own_mines",

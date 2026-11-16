@@ -282,6 +282,8 @@ func _ready() -> void:
 		Enemy.pump_rng.randomize()
 		Enemy.champion_rng.randomize()
 		Enemy.rollingblock_rng.randomize()
+		Enemy.revolving_rng.randomize()
+		Weapon.chain_rng.randomize()
 		Wounds.rng.randomize()
 		Civilian.rng.randomize()
 		Civilian.flirt_rng.randomize()
@@ -315,6 +317,8 @@ func _ready() -> void:
 		Enemy.pump_rng.seed = 97
 		Enemy.champion_rng.seed = 37
 		Enemy.rollingblock_rng.seed = 41
+		Enemy.revolving_rng.seed = 179
+		Weapon.chain_rng.seed = 173
 		Wounds.rng.seed = 41
 		Civilian.rng.seed = 43
 		Civilian.flirt_rng.seed = 127
@@ -2927,6 +2931,8 @@ func why_dead() -> PackedStringArray:
 			cause = "Caught in your own blast."
 		"own_mines":
 			cause = "Caught in your own mines."
+		"chainfire":
+			cause = "Your revolving shotgun went off all at once."
 		"finished":
 			cause = "Finished off by %s while you were down." % _who(by) if by else "Finished off while you were down."
 		_:
