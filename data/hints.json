@@ -1,5 +1,5 @@
 {
- "_doc": "What the stranger's told, in plain words. 'death': the end screen's tip under how he died (game.why_dead). A rule matches when every key it has fits: 'how' (shot, finished, bled, blast, own_blast, own_mines), 'guns' (the killer's gun kinds, Weapon.DATA), 'range' (close, long), 'many' (true: three or more firing on him at the end). The rule matching the most keys wins; the first such one on a tie. The last, with no keys, is for anything else. 'first': what he's told the first time each comes up, once ever (kept in user://hints.json; see scripts/firsts.gd): 'tab' ten seconds into a town with somewhere to go, 'wary' the first '?' over a bandit, 'seen' the first '!', 'hurt' his first wound, 'drag' his first quiet kill, 'down' his first last stand, 'dynamite' a town where he carries a stick, 'peso' forty seconds into a quiet town (not an action one).",
+ "_doc": "What the stranger's told, in plain words. 'death': the end screen's tip under how he died (game.why_dead). A rule matches when every key it has fits: 'how' (shot, finished, bled, blast, own_blast, own_mines), 'guns' (the killer's gun kinds, Weapon.DATA), 'range' (close, long), 'many' (true: three or more firing on him at the end). The rule matching the most keys wins; the first such one on a tie. The last, with no keys, is for anything else. 'first': what he's told the first time each comes up, once ever (kept in user://hints.json; see scripts/firsts.gd): 'tab' ten seconds into a town with somewhere to go, 'wary' the first '?' over a bandit, 'seen' the first '!', 'hurt' his first wound, 'drag' his first quiet kill, 'down' his first last stand, 'dynamite' a town where he carries a stick, 'peso' forty seconds into a quiet town (not an action one). 'keys': the Esc menu's page of keys (THE KEYS), in groups, each group a 'col' (0 left, 1 right) and its rows [key, what it does, the input actions it covers (a test checks every one the game sets up is somewhere here)]; 'e_also': what E does besides, by what the town has (only those it has are shown).",
  "death": [
   {
    "many": true,
@@ -62,5 +62,166 @@
   "down": "Down, not out. Shoot back, or B to bind it before you bleed out.",
   "dynamite": "G throws your stick of dynamite.",
   "peso": "Q tosses a peso. The clink draws a man's eyes to the dirt."
+ },
+ "keys": {
+  "groups": [
+   {
+    "name": "MOVING",
+    "col": 0,
+    "rows": [
+     [
+      "WASD",
+      "move",
+      [
+       "move_up",
+       "move_down",
+       "move_left",
+       "move_right"
+      ]
+     ],
+     [
+      "Mouse",
+      "aim (over a man, at him)",
+      []
+     ],
+     [
+      "C / Ctrl",
+      "crouch: slower, quieter, low behind cover",
+      [
+       "crouch"
+      ]
+     ]
+    ]
+   },
+   {
+    "name": "SHOOTING",
+    "col": 0,
+    "rows": [
+     [
+      "LMB",
+      "fire",
+      [
+       "fire"
+      ]
+     ],
+     [
+      "RMB",
+      "fan the hammer, or both barrels",
+      [
+       "alt"
+      ]
+     ],
+     [
+      "R",
+      "reload (fire stops a part reload)",
+      [
+       "reload"
+      ]
+     ],
+     [
+      "1 2 3, wheel",
+      "switch guns",
+      [
+       "weapon_1",
+       "weapon_2",
+       "weapon_3"
+      ]
+     ],
+     [
+      "F",
+      "take the gun at your feet",
+      [
+       "take"
+      ]
+     ]
+    ]
+   },
+   {
+    "name": "QUIET WORK",
+    "col": 0,
+    "rows": [
+     [
+      "E",
+      "knife: quiet from behind, a rush from the front",
+      [
+       "knife"
+      ]
+     ],
+     [
+      "Hold E",
+      "drag a body out of sight",
+      []
+     ]
+    ]
+   },
+   {
+    "name": "KIT",
+    "col": 1,
+    "rows": [
+     [
+      "B",
+      "bind a wound",
+      [
+       "bandage"
+      ]
+     ],
+     [
+      "G",
+      "throw dynamite",
+      [
+       "throw"
+      ]
+     ],
+     [
+      "Q",
+      "toss a peso: the clink draws a man's eyes",
+      [
+       "toss"
+      ]
+     ]
+    ]
+   },
+   {
+    "name": "FINDING YOUR WAY",
+    "col": 1,
+    "rows": [
+     [
+      "Tab",
+      "hold: where you're needed",
+      [
+       "marks"
+      ]
+     ]
+    ]
+   },
+   {
+    "name": "MENUS",
+    "col": 1,
+    "rows": [
+     [
+      "Esc",
+      "this menu, or back a step",
+      [
+       "quit"
+      ]
+     ],
+     [
+      "Enter",
+      "after a town: ride on, or try again",
+      [
+       "restart"
+      ]
+     ]
+    ]
+   }
+  ],
+  "e_also": {
+   "gallows": "hold by the gallows: cut the man loose",
+   "captive": "hold by the well: cut your partner loose",
+   "mgun": "by the machine gun: get on it, or off",
+   "plunger": "by the plunger: fire the mines",
+   "strongbox": "by the gold: take it up, or set it down",
+   "coffin": "in your coffin: a blow on the lid, or hurry the padre"
+  }
  }
 }

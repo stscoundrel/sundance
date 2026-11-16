@@ -13,6 +13,7 @@ var brief_at := 0   # when the briefing came up (wall clock: only for not readin
 static var ridden := {}         # the towns he's left quiet this sitting (the picker marks them)
 var menu: Array[String] = []    # Esc's menu, while it's up (the town stands still under it)
 var menu_pick := 0
+var keys_open := false          # the menu's page of keys is up over it
 var levels: Array = []          # the ones the picker shows
 var level_entry: Dictionary = {}
 var level_pick := 0             # the picker's cursor (past the towns: forgetting his record, then the way out)
@@ -693,6 +694,18 @@ func _levels_input(event: InputEvent) -> void:
 			pick_level(i)
 
 
+## What E does here besides the knife (hints.json's keys.e_also), by what the town
+## has: the gallows, his partner's pole, the machine gun, the plunger, the gold, his coffin.
+func e_also() -> Array:
+	var has := {"gallows": hanging != null, "captive": captive != null, "mgun": mgun != null,
+		"plunger": minefield != null, "strongbox": strongbox != null, "coffin": coffin != null}
+	var out := []
+	for k in hints["keys"]["e_also"]:
+		if has.get(k, false):
+			out.append(hints["keys"]["e_also"][k])
+	return out
+
+
 ## The picker's last row: after the towns, forgetting his record, forgetting the
 ## hints, then the way out.
 func way_out() -> int:
@@ -759,7 +772,7 @@ func open_menu() -> void:
 	menu.assign(["resume"])
 	if state == "won" and not next_level().is_empty():
 		menu.append("next")
-	menu.append_array(["again", "levels", "quit"])
+	menu.append_array(["keys", "again", "levels", "quit"])
 	menu_pick = 0
 	get_tree().paused = true
 	sfx("close", null, -10.0)
@@ -767,12 +780,18 @@ func open_menu() -> void:
 
 func close_menu() -> void:
 	menu.clear()
+	keys_open = false
 	get_tree().paused = false
 
 
 ## The menu's keys (the hud hands them on: the game's paused under it). Up and down
 ## and Enter, a number, or a click; Esc closes it.
 func menu_input(event: InputEvent) -> void:
+	if keys_open:   # (the page of keys: anything at all goes back to the menu)
+		if event.is_pressed() and (event is InputEventKey or event is InputEventMouseButton):
+			keys_open = false
+			sfx("close", null, -14.0)
+		return
 	if event.is_action_pressed("quit"):
 		close_menu()
 	elif event is InputEventKey and event.pressed:
@@ -800,6 +819,8 @@ func menu_choose(k: String) -> void:
 	match k:
 		"resume":
 			close_menu()
+		"keys":
+			keys_open = true
 		"next":
 			ride_to(next_level()["id"], "brief")
 		"again":

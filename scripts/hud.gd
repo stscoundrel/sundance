@@ -134,7 +134,10 @@ func _draw() -> void:
 	elif game.state == "levels":
 		_draw_levels()
 	if not game.menu.is_empty():
-		_draw_menu()
+		if game.keys_open:
+			_draw_keys()
+		else:
+			_draw_menu()
 
 
 ## A line said, in a bubble over a head (screen space), fading out at the end.
@@ -1036,7 +1039,7 @@ func job() -> String:
 
 
 const MENU_ROW := Rect2(220, 130, 200, 22)
-const MENU_NAME := {"resume": "BACK TO IT", "next": "RIDE ON TO %s", "again": "START THIS TOWN OVER",
+const MENU_NAME := {"resume": "BACK TO IT", "next": "RIDE ON TO %s", "keys": "THE KEYS", "again": "START THIS TOWN OVER",
 	"levels": "ANOTHER TOWN", "quit": "LEAVE THE TERRITORY"}
 
 
@@ -1058,6 +1061,48 @@ func _menu_name(k: String) -> String:
 	if k == "resume" and game.state != "play":
 		return "BACK"
 	return MENU_NAME[k]
+
+
+const KEY_COL := [70.0, 340.0]   # the keys page's two columns: where each starts
+const KEY_W := 60.0              # the key's own width, before what it does
+
+
+## The Esc menu's page of keys (hints.json's keys), in two columns of groups; under
+## the knife, what E does in this town besides (game.e_also).
+func _draw_keys() -> void:
+	draw_rect(Rect2(Vector2.ZERO, page), Color(0.03, 0.02, 0.02, 0.88))
+	draw_set_transform(menu_at())
+	_text(Vector2(0, 48), "THE KEYS", 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	for col in key_rows():
+		for r in col:
+			if r[0] == "#":
+				_text(Vector2(r[2], r[3]), r[1], 10, Color(0.95, 0.75, 0.35), font)
+			else:
+				_text(Vector2(r[2], r[3]), r[0], 8, INK, font)
+				_text(Vector2(r[2] + KEY_W, r[3]), r[1], 8, Color(0.8, 0.74, 0.62))
+	_text(Vector2(0, 340), "any key or a click: back to the menu", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	draw_set_transform(Vector2.ZERO)
+
+
+## The keys page laid out: per column, rows of [key, what, x, y]; a group's name is
+## a row of its own with "#" for its key. A test reads it as it is.
+func key_rows() -> Array:
+	var cols := [[], []]
+	var y := [80.0, 80.0]
+	for g in game.hints["keys"]["groups"]:
+		var c: int = g["col"]
+		var x: float = KEY_COL[c]
+		cols[c].append(["#", g["name"], x, y[c]])
+		y[c] += 14.0
+		var rows: Array = g["rows"].map(func(r): return [r[0], r[1]])
+		if g["name"] == "QUIET WORK":
+			for line in game.e_also():
+				rows.append(["E", line])
+		for r in rows:
+			cols[c].append([r[0], r[1], x, y[c]])
+			y[c] += 12.0
+		y[c] += 10.0
+	return cols
 
 
 func _draw_menu() -> void:

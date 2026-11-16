@@ -4,7 +4,8 @@ extends SceneTree
 ##              back a step: the title to the picker, the briefing and the guns to the picker,
 ##              the picker to its way out of the game (Enter on it leaves); in town it
 ##              brings up the menu, the town paused under it (game time stands still),
-##              and Esc again lets it go on.
+##              and Esc again lets it go on. THE KEYS opens a page of them over it
+##              (every input on it, each line fitting), and any key goes back.
 ##   budgets  - each town gives its own points: Silencio the fewest, Paso Esperanza
 ##              the most; the picker shows them.
 ##   onward   - a town won is marked on the picker, and Enter (or the menu's "ride on")
@@ -148,9 +149,37 @@ func _esc() -> void:
 	check(game.state == "play", "he should ride in (%s)" % game.state)
 	game._unhandled_input(_key(KEY_ESCAPE))
 	check(not game.menu.is_empty() and paused, "Esc in town should bring the menu up, paused")
-	check(game.menu == ["resume", "again", "levels", "quit"], "the menu in town: %s" % [game.menu])
+	check(game.menu == ["resume", "keys", "again", "levels", "quit"], "the menu in town: %s" % [game.menu])
+	_keys()
 	game.menu_input(_key(KEY_ESCAPE))
 	check(game.menu.is_empty() and not paused, "Esc should close it")
+
+
+## THE KEYS: its page over the paused town, back to the menu on any key; every input
+## the game sets up is on it, and every line fits its column.
+func _keys() -> void:
+	step = "keys"
+	game.menu_choose("keys")
+	check(game.keys_open and paused, "THE KEYS should open its page, the town still paused")
+	var listed := {}
+	for g in game.hints["keys"]["groups"]:
+		for r in g["rows"]:
+			for a in r[2]:
+				listed[a] = true
+	for a in InputMap.get_actions():
+		if not str(a).begins_with("ui_"):
+			check(listed.has(str(a)), "the key for '%s' isn't on the page" % a)
+	var cols: Array = game.hud.key_rows()
+	for c in cols.size():
+		var room: float = (game.hud.KEY_COL[1] - game.hud.KEY_COL[0] - 10.0) if c == 0 else (game.hud.PAGE.x - game.hud.KEY_COL[1] - 20.0)
+		for r in cols[c]:
+			var w: float = game.hud.small.get_string_size(r[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + (game.hud.KEY_W if r[0] != "#" else 0.0)
+			check(w <= room, "'%s' runs out of its column (%d px)" % [r[1], w])
+			check(r[3] <= 330.0, "'%s' runs into the foot of the page" % r[1])
+	check(game.e_also().is_empty(), "with no hanging here, E should say nothing more: %s" % [game.e_also()])
+	game.menu_input(_key(KEY_ESCAPE))
+	check(not game.keys_open and not game.menu.is_empty() and paused, "Esc on the keys should go back to the menu, still paused")
+	step = "esc"
 
 
 func _budgets() -> void:
@@ -173,6 +202,6 @@ func _onward() -> void:
 	game.end_level(true, "THE TOWN IS QUIET")
 	check(game.state == "won" and game.hud.hint.contains("Cruz Verde"), "the win should offer Cruz Verde (%s)" % game.hud.hint)
 	game.open_menu()
-	check(game.menu == ["resume", "next", "again", "levels", "quit"], "the menu after a win: %s" % [game.menu])
+	check(game.menu == ["resume", "next", "keys", "again", "levels", "quit"], "the menu after a win: %s" % [game.menu])
 	Engine.remove_meta("level")
 	game.menu_choose("next")

@@ -5,7 +5,7 @@ extends SceneTree
 ##              many bands are left.
 ##   gold     - Silencio's truce and gold on one line: the truce holding, the gold in
 ##              the livery; in his arms, to the horse; set down, lying in the snow;
-##              the truce broken.
+##              the truce broken. The keys page's E says the gold, and only that.
 ##   funeral  - the funeral counts MOURNERS; a runner for help has an arrow on him, and
 ##              once he's home, the help's countdown.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_goals.gd
@@ -76,6 +76,7 @@ func _process(_delta: float) -> bool:
 			step = "gold"
 			if frame == 5:
 				var sb: Strongbox = game.strongbox
+				check(game.e_also() == [game.hints["keys"]["e_also"]["strongbox"]], "the keys page's E in Silencio: %s" % [game.e_also()])
 				check(_has("THE TRUCE HOLDS") and _has("THE GOLD: IN THE OUTLAWS' LIVERY"), "the truce and the gold at home: %s" % [_lines()])
 				sb.take(game.player)
 				check(_has("GET THE GOLD TO YOUR HORSE"), "the gold in his arms: %s" % [_lines()])

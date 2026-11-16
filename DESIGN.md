@@ -1024,10 +1024,19 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
 | R | Reload (press fire to stop a partial reload) |
 | 1 / 2 / 3, wheel | Revolver / shotgun / rifle slot (the ones he has) |
 | F | Swap the gun in that slot for the one at his feet |
-| E | Knife: a silent takedown from behind, or a rush |
+| E | Knife: a silent takedown from behind, or a rush (hold: drag a body; by the gallows or the pole, cut a man loose; the machine gun, the plunger, the strongbox, the coffin lid) |
+| B | Bind a wound (bandage) |
+| G | Throw dynamite |
+| Q | Toss a peso |
 | Enter | After a win: on to the next town · after a loss: the same town again |
 | Tab (hold) | Arrows to what the town asks of him (the gallows, his partner, the carriers, the gold, his horse) |
-| Esc | Back a step; in town, the menu (paused): resume, start over, another town, quit |
+| Esc | Back a step; in town, the menu (paused): resume, the keys, start over, another town, quit |
+
+The menu's THE KEYS is the in-game copy of this table (hints.json's `keys`, grouped:
+moving, shooting, quiet work, kit, finding your way, menus; `hud._draw_keys`), with
+what E does besides in the town he's in (`game.e_also`: the gallows, his partner's
+pole, the machine gun, the plunger, the gold, the coffin). Any key or a click goes back
+to the menu. `tests/test_menu.gd` checks every input the game sets up is on it.
 
 ## Hero
 
