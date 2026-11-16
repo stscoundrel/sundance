@@ -8542,6 +8542,8 @@
    ]
   }
  },
+ "foes": "Mourners",
+ "foe_count": "MOURNERS",
  "help_comes": true,
  "shout": 3.5
 }

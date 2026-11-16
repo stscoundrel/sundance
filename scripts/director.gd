@@ -170,6 +170,27 @@ func still_to_come() -> int:
 	return n
 
 
+## The men running for help, for the HUD's arrows: [where he is, "RUNNER: THE GANG"].
+func runners() -> Array:
+	var out := []
+	for g in camps:
+		var c: Dictionary = camps[g]
+		if c["state"] == "running" and is_instance_valid(c["runner"]) and c["runner"].alive:
+			out.append([c["runner"].global_position, "RUNNER: %s" % g.to_upper()])
+	return out
+
+
+## The help on its way, a line each for under the count: "HELP FOR THE FEDERALES  0:24".
+func help_coming() -> Array:
+	var out := []
+	for g in camps:
+		var c: Dictionary = camps[g]
+		if c["state"] == "fetching":
+			var t := maxf(0.0, float(c["due"]) - clock)
+			out.append("HELP FOR THE %s  %d:%02d" % [g.to_upper(), int(t) / 60, int(t) % 60])
+	return out
+
+
 ## How many in the gang all told, those indoors included.
 func indoors() -> int:
 	return sleepers.size()

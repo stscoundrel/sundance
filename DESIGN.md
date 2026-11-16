@@ -105,6 +105,19 @@ in user://hints.json across sittings (under `fixed_seed` nothing is, but a test'
 `hints_file`), until the picker's FORGET THE HINTS, asked twice like his record. The
 picker's last row is three wide now: forget what he did, forget the hints, leave.
 
+**Under the count** (`hud.status_lines`; `tests/test_goals.gd`). Where the town's
+goal stands, a line each, stacked under the count (and the banner, when one's up):
+the hour of the hanging; at Cruz Verde, "YOUR PARTNER IS AT THE WELL" till the first
+shot, then whoever's counting over him; the loading; Silencio's truce, shown always
+("THE TRUCE HOLDS", red once broken: in the chaos a one-time banner is easy to miss),
+with where the gold is on the same line (`Strongbox.status`: in the livery, in his
+arms to the horse, lying in the snow, a trapper taking it home); the next band, with
+how many are left ("MORE COMING 0:30     4 BANDS LEFT"); and help on its way
+("HELP FOR THE FEDERALES 0:24", `Director.help_coming`). A man running for help
+has a red arrow on him, always ("RUNNER: BANDIDOS", `Director.runners`). The counts
+name who they are: REVOLUTIONARIES at Cruz Verde, MOURNERS at the funeral (the
+map's `foe_count`, written by its make_*.py).
+
 The five stories make one run: the stranger is a gun for hire and takes whoever's
 money is on offer. San Miguel's mayor pays him to end the gang, who are hanging the
 one villager who stood up to them. At Cruz Verde his partner's on the wrong side of

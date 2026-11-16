@@ -261,12 +261,16 @@ func _draw_status(p: Player) -> void:
 	if game.level.has("gangs"):   # two gangs, a count each (Silencio: HUNTERS 12   OUTLAWS 16)
 		label = "     ".join(game.level["gangs"].map(func(g): return "%s  %d" % [g.to_upper(), game.alive_in(g)]))
 	_text(Vector2(0, 16), label, 12, INK, font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	var lines := status_lines()
+	var y0 := 50.0 if banner_t > 0.0 else 30.0
+	for i in lines.size():
+		_text(Vector2(0, y0 + i * 14), lines[i][0], 8, lines[i][1], null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	if game.director:
 		_draw_waves(game.director)
 	if game.hanging:
-		_draw_hanging(game.hanging, p)
+		_draw_cut(game.hanging, game.hanging.man, p)
 	if game.captive:
-		_draw_captive(game.captive, p)
+		_draw_cut(game.captive, game.captive.man, p)
 	if game.cargo:
 		_draw_cargo(game.cargo)
 	_draw_marks()
@@ -283,12 +287,6 @@ func _draw_status(p: Player) -> void:
 ## them (and while they walk in), which way: a mark at the road, or at the edge of
 ## the screen pointing to it.
 func _draw_waves(d: Director) -> void:
-	var t := d.next_in()
-	if t >= 0.0:
-		var warn := not d.warned_from().is_empty()
-		var c := Color(1, 0.8, 0.45) if warn else Color(INK, 0.8)
-		_text(Vector2(0, 50 if banner_t > 0.0 else 30), "MORE COMING  %d:%02d" % [int(t) / 60, int(t) % 60], 8, c,
-			null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	var roads: Array = d.warned_from()
 	for r in d.arriving_from():
 		if not r in roads:
@@ -296,6 +294,9 @@ func _draw_waves(d: Director) -> void:
 	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 180.0)
 	for r in roads:
 		_pointer(r["at"], r["name"].to_upper(), Color(1, 0.55, 0.3, pulse), Color(1, 0.8, 0.45, pulse))
+	var taken := []
+	for r in d.runners():   # (a man running for help: always shown, he's the one to stop)
+		_pointer(r[0], r[1], Color(1, 0.35, 0.25, pulse), Color(1, 0.8, 0.45, pulse), true, true, taken)
 
 
 ## An arrow at a place in the world (or, off screen, on the edge pointing out to
@@ -385,15 +386,9 @@ func _draw_hint() -> void:
 
 ## The cargo's count under the bandit count; with it all in, the wagon marked.
 func _draw_cargo(c: Cargo) -> void:
-	var y := (64.0 if banner_t > 0.0 else 44.0) if game.director else (50.0 if banner_t > 0.0 else 30.0)
 	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 180.0)
-	if c.done:
-		_text(Vector2(0, y), "ALL LOADED  -  GET TO THE WAGON", 8, Color(1, 0.8, 0.45, pulse), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-		if game.state == "play":
-			_pointer(c.wagon_at(), "THE WAGON", Color(1, 0.55, 0.3, pulse), Color(1, 0.8, 0.45, pulse), true)
-		return
-	_text(Vector2(0, y), "LOADED  %d / %d     CARRIERS  %d" % [c.loaded, c.goal, c.carriers_alive()], 8, Color(INK, 0.85),
-		null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	if c.done and game.state == "play":
+		_pointer(c.wagon_at(), "THE WAGON", Color(1, 0.55, 0.3, pulse), Color(1, 0.8, 0.45, pulse), true)
 
 
 func _draw_weapon(p: Player) -> void:
@@ -484,36 +479,54 @@ func _draw_cylinder(c: Vector2, chambers: Array[int], top: int, cocked: bool) ->
 	draw_colored_polygon(PackedVector2Array([c + Vector2(-3, -21), c + Vector2(3, -21), c + Vector2(0, -17)]), hammer)
 
 
-## The hour of the hanging under the bandit count, red while the hangman's at the
-## lever; then the man kicking on the rope. And, at the gallows, the knife's prompt.
-func _draw_hanging(h: Hanging, p: Player) -> void:
-	var y := 50.0 if banner_t > 0.0 else 30.0
+## What the town asks of him, and how it stands, a line each under the count (stacked
+## there by _draw_status): the hour of the hanging, the man counting over his
+## partner, the loading, the gold and the truce, the next band and how many are
+## left, and the help on its way. [text, colour] each; a test reads them as they are.
+func status_lines() -> Array:
+	var out := []
 	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 120.0)
-	match h.state:
-		"waiting":
-			var t := maxf(0.0, h.seconds_left())
-			var c := Color(1, 0.8, 0.45) if t < 60.0 else Color(INK, 0.8)
-			_text(Vector2(0, y), "HANGING AT NOON  %d:%02d" % [int(t) / 60, int(t) % 60], 8, c, null,
-				HORIZONTAL_ALIGNMENT_CENTER, page.x)
-		"lever":
-			_text(Vector2(0, y), "THE HANGMAN'S AT THE LEVER!", 8, Color(1, 0.35, 0.25, pulse), null,
-				HORIZONTAL_ALIGNMENT_CENTER, page.x)
-		"hanging":
-			_text(Vector2(0, y), "HE'S HANGING  -  SHOOT THE ROPE", 8, Color(1, 0.35, 0.25, pulse), null,
-				HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	_draw_cut(h, h.man, p)
-
-
-## Whoever's counting over the man at the pole, under the wave countdown; and, at
-## the pole, the knife's prompt.
-func _draw_captive(c: Captive, p: Player) -> void:
-	var t := c.seconds_left()
-	if t >= 0.0:
-		var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 120.0)
-		var who := "THE GUARD" if c.state == "guard" else "EL GENERAL"
-		_text(Vector2(0, 64 if banner_t > 0.0 else 44), "%s: ¡ALTO O LO MATO!  %d" % [who, ceili(t)], 8,
-			Color(1, 0.35, 0.25, pulse), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	_draw_cut(c, c.man, p)
+	var hot := Color(1, 0.35, 0.25, pulse)
+	var h: Hanging = game.hanging
+	if h:
+		match h.state:
+			"waiting":
+				var t := maxf(0.0, h.seconds_left())
+				out.append(["HANGING AT NOON  %d:%02d" % [int(t) / 60, int(t) % 60], Color(1, 0.8, 0.45) if t < 60.0 else Color(INK, 0.8)])
+			"lever":
+				out.append(["THE HANGMAN'S AT THE LEVER!", hot])
+			"hanging":
+				out.append(["HE'S HANGING  -  SHOOT THE ROPE", hot])
+	var cap: Captive = game.captive
+	if cap:
+		var t := cap.seconds_left()
+		if t >= 0.0:
+			out.append(["%s: ¡ALTO O LO MATO!  %d" % ["THE GUARD" if cap.state == "guard" else "EL GENERAL", ceili(t)], hot])
+		elif cap.state == "tied" and not cap.roused:
+			out.append(["YOUR PARTNER IS AT THE WELL", Color(INK, 0.8)])
+	var c: Cargo = game.cargo
+	if c:
+		if c.done:
+			out.append(["ALL LOADED  -  GET TO THE WAGON", Color(1, 0.8, 0.45, pulse)])
+		else:
+			out.append(["LOADED  %d / %d     CARRIERS  %d" % [c.loaded, c.goal, c.carriers_alive()], Color(INK, 0.85)])
+	if game.level.has("gangs"):   # (Silencio: the truce, then the gold, on one line)
+		var truce := "THE TRUCE IS BROKEN" if game.war else "THE TRUCE HOLDS"
+		var gold: Array = game.strongbox.status() if game.strongbox else []
+		if gold.is_empty():
+			out.append([truce, Color(1, 0.45, 0.35) if game.war else Color(INK, 0.8)])
+		else:
+			out.append([truce + "     " + gold[0], Color(1, 0.8, 0.45, pulse) if gold[1] else (Color(1, 0.45, 0.35) if game.war else Color(INK, 0.8))])
+	var d: Director = game.director
+	if d:
+		var t := d.next_in()
+		if t >= 0.0:
+			var left: int = d.waves.size() - d.next
+			out.append(["MORE COMING  %d:%02d     %d %s LEFT" % [int(t) / 60, int(t) % 60, left, "BAND" if left == 1 else "BANDS"],
+				Color(1, 0.8, 0.45) if not d.warned_from().is_empty() else Color(INK, 0.8)])
+		for line in d.help_coming():
+			out.append([line, Color(1, 0.8, 0.45)])
+	return out
 
 
 ## The knife's prompt for a tied man: over his head, faint once the stranger's near

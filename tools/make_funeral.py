@@ -563,6 +563,8 @@ def main():
         "wake": True,     # everyone's here for the funeral and the party after: slow to take alarm
         "arms": arms,     # where their long guns are: every guest has only his pistol on him
         "camps": CAMPS,   # each faction's men waiting down its road, for a runner to fetch (Director)
+        "foes": "Mourners",
+        "foe_count": "MOURNERS",   # (the count at the top: the guests, every faction)
         "help_comes": True,   # every faction's men come, runner or no (Director.LATE)
         "shout": 3.5,     # tiles from the map's edge: a runner this near is heard
     })

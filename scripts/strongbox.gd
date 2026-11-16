@@ -61,6 +61,20 @@ func marks() -> Array:
 	return out
 
 
+## Where the gold stands, for the line under the count: [text, urgent], or [] once
+## he's away with it.
+func status() -> Array:
+	if away:
+		return []
+	if holder and holder.is_player:
+		return ["GET THE GOLD TO YOUR HORSE", true]
+	if holder or (fetcher and is_instance_valid(fetcher) and fetcher.alive and fetcher.reaction == "fetch"):
+		return ["A TRAPPER IS TAKING THE GOLD HOME", false]
+	if at_home():
+		return ["THE GOLD: IN THE OUTLAWS' LIVERY", false]
+	return ["THE GOLD: LYING IN THE SNOW", false]
+
+
 func lying() -> bool:
 	return holder == null and not away
 

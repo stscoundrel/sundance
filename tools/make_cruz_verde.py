@@ -231,6 +231,8 @@ def main():
         "center": CENTER,
         "wave_kinds": WAVE_KINDS,
         "posse": False,   # (a fort, not a town to get lost in: the last of them just hold it)
+        "foes": "Revolutionaries",   # (the waves' banners)
+        "foe_count": "REVOLUTIONARIES",   # (the count at the top of the screen)
     })
     print("Cruz Verde: %d buildings, %d props, %d bandits on guard and %d indoors, %d townsfolk, %d guard posts" % (
         len(FORT + INSIDE + OUTSIDE), len(PROPS) + len(cemetery()), len(ENEMIES), len(SLEEPERS), len(CIVILIANS), len(posts)))

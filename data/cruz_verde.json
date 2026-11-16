@@ -2113,5 +2113,7 @@
   "tirador": 2,
   "sargento": 1
  },
- "posse": false
+ "posse": false,
+ "foes": "Revolutionaries",
+ "foe_count": "REVOLUTIONARIES"
 }
