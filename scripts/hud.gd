@@ -91,6 +91,7 @@ func _process(delta: float) -> void:
 		msg_t += real
 	toast_t = maxf(0.0, toast_t - real)
 	banner_t = maxf(0.0, banner_t - real)
+	_keep_stills()
 	queue_redraw()
 
 
@@ -122,6 +123,8 @@ func _draw() -> void:
 		_draw_title()
 	if game.state == "loadout":
 		_draw_loadout(p)
+	elif game.state == "brief":
+		_draw_brief()
 	elif game.state == "levels":
 		_draw_levels()
 	if not game.menu.is_empty():
@@ -651,6 +654,117 @@ func _draw_levels() -> void:
 	_text(Vector2(0, 340), "up / down and Enter, a number, or a click      Esc: the way out", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	draw_colored_polygon(PackedVector2Array([mouse, mouse + Vector2(0, 11), mouse + Vector2(3, 8), mouse + Vector2(7, 8)]), BRASS)
 	draw_set_transform(Vector2.ZERO)
+
+
+# ------------------------------------------------------------------ brief
+
+const BRIEF_ROW := Rect2(110, 128, 420, 46)   # who's who: the first row; the rest follow under it
+const STILL_W := 26.0                          # room for one man's still in a row
+const STORY_W := 470.0
+
+var stills: Array[Node2D] = []   # the men on the card, a row's at a time (sprites: drawn over the page)
+
+
+func _brief_row(i: int) -> Rect2:
+	return Rect2(BRIEF_ROW.position + Vector2(0, i * (BRIEF_ROW.size.y + 4)), BRIEF_ROW.size)
+
+
+## The story so far (who's paying him this time), the job, and who's who, each row
+## with a still of the men it means. Before the guns, so he picks for the job.
+func _draw_brief() -> void:
+	draw_rect(Rect2(Vector2.ZERO, page), Color(0.03, 0.02, 0.02, 0.96))
+	var b: Dictionary = game.level_entry.get("brief", {})
+	draw_set_transform(menu_at())
+	_text(Vector2(0, 46), game.level_entry["name"].to_upper(), 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	var lines: PackedStringArray = wrapped(b.get("story", ""), STORY_W, 9)
+	for i in lines.size():
+		_text(Vector2(0, 68 + i * 12), lines[i], 9, Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	_text(Vector2(0, 112), job(), 10, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	var who: Array = b.get("who", [])
+	for i in who.size():
+		var r := _brief_row(i)
+		draw_rect(r, PANEL)
+		draw_rect(r, Color(0.3, 0.22, 0.15), false, 1.0)
+		var x: float = r.position.x + 12 + STILL_W * who[i]["kinds"].size()
+		_text(Vector2(x, r.position.y + 17), who[i]["name"].to_upper(), 10, Color(0.95, 0.75, 0.35), font)
+		var said: PackedStringArray = wrapped(who[i]["line"], r.end.x - x - 10, 8)
+		for j in said.size():
+			_text(Vector2(x, r.position.y + 30 + j * 10), said[j], 8, INK)
+	_text(Vector2(0, 340), "Enter or a click: on to the guns      Esc: back", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	draw_set_transform(Vector2.ZERO)
+
+
+## `t` broken into lines no wider than `w` at size `sz` (the small face).
+func wrapped(t: String, w: float, sz: int) -> PackedStringArray:
+	var out := PackedStringArray()
+	var line := ""
+	for word in t.split(" ", false):
+		var tried: String = word if line == "" else line + " " + word
+		if line != "" and small.get_string_size(tried, HORIZONTAL_ALIGNMENT_LEFT, -1, sz).x > w:
+			out.append(line)
+			line = word
+		else:
+			line = tried
+	if line != "":
+		out.append(line)
+	return out
+
+
+## The card's men stand while it's up, and go with it.
+func _keep_stills() -> void:
+	if game.state != "brief":
+		if not stills.is_empty():
+			for n in stills:
+				n.queue_free()
+			stills.clear()
+		return
+	if stills.is_empty():
+		for row in game.level_entry.get("brief", {}).get("who", []):
+			for k in row["kinds"]:
+				stills.append(_still(k))
+	var n := 0
+	var who: Array = game.level_entry["brief"]["who"]
+	for i in who.size():
+		var r := _brief_row(i)
+		for j in who[i]["kinds"].size():
+			stills[n].position = menu_at() + Vector2(r.position.x + 10 + STILL_W * (j + 0.5), r.end.y - 4)
+			n += 1
+
+
+## A man of type `kind` (a bandit's or a townsman's) standing, three-quarters to us,
+## in his own colours with his first gun up: legs and upper body as he's drawn in town.
+func _still(kind: String) -> Node2D:
+	var t: Dictionary = game.enemy_type(kind) if game.enemy_data["types"].has(kind) else game.civilian_type(kind)
+	var tpl: String = t["template"]
+	var cd: Dictionary = game.meta["chars"][tpl]
+	var pals: Array = t.get("palettes", [])
+	var mat := Actor.painted(game, tpl, pals[int(t.get("palette", 0)) % pals.size()] if not pals.is_empty() else {})
+	var gun: String = t["loadout"][0] if t.has("loadout") else ("bound" if t.get("role", "") == "condemned" else "unarmed")
+	var anims: Dictionary = cd["anims"]
+	var legs: Dictionary = anims["legs/idle"]
+	var up: Dictionary = anims.get("upper/%s/aim" % gun, anims.get("upper/unarmed/aim", {}))
+	if up.is_empty():   # (a townsman stands his own way: the mayor's thumbs in his vest, the padre at prayer)
+		for k in anims:
+			if k.begins_with("upper/") and k.ends_with("/aim"):
+				up = anims[k]
+				break
+	var man := Node2D.new()
+	for part in [[legs, 0.0], [up, (float(cd["h_ref"]) - float(legs["hip"][0])) * Actor.PZ]]:
+		if part[0].is_empty():
+			continue
+		var fr: Array = part[0]["frames"][1][0]   # (facing down and to the right, at us)
+		var spr := Sprite2D.new()
+		spr.centered = false
+		spr.region_enabled = true
+		spr.texture = game.tex(cd["atlas"])
+		spr.material = mat
+		spr.region_rect = Rect2(fr[0], fr[1], fr[2], fr[3])
+		spr.offset = Vector2(fr[4], fr[5])
+		spr.scale = Vector2.ONE * game.tex_scale
+		spr.position = Vector2(0, part[1])
+		man.add_child(spr)
+	add_child(man)
+	return man
 
 
 # ------------------------------------------------------------------ loadout

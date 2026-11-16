@@ -142,24 +142,32 @@ func set_character(template: String, palette: Dictionary) -> void:
 	cdata = game.meta["chars"][template]
 	_anims = cdata.get("anims", {})
 	var tex: Texture2D = game.tex(cdata["atlas"])
-	var neutral: float = float(game.meta.get("neutral", 200)) / 255.0
+	var mat := painted(game, template, palette)
+	for s in [legs_spr, upper_spr]:
+		s.texture = tex
+		s.scale = Vector2.ONE * game.tex_scale
+		s.material = mat
+
+
+## A body template's paint: its slots coloured from `palette`, the rest neutral grey
+## (his own, and the briefing card's stills of who's who).
+static func painted(g: Node, template: String, palette: Dictionary) -> ShaderMaterial:
+	var cd: Dictionary = g.meta["chars"][template]
+	var neutral: float = float(g.meta.get("neutral", 200)) / 255.0
 	var pal := PackedVector3Array()
 	pal.resize(16)
 	pal.fill(Vector3(neutral, neutral, neutral))
-	var names: Array = game.enemy_data["slots"]
+	var names: Array = g.enemy_data["slots"]
 	for i in names.size():
 		if palette.has(names[i]):
 			var c: Array = palette[names[i]]
 			pal[i + 1] = Vector3(c[0], c[1], c[2]) / 255.0
 	var mat := ShaderMaterial.new()
 	mat.shader = PALETTE_SHADER
-	mat.set_shader_parameter("slots", game.tex(cdata["slots"]))
+	mat.set_shader_parameter("slots", g.tex(cd["slots"]))
 	mat.set_shader_parameter("pal", pal)
 	mat.set_shader_parameter("neutral", neutral)
-	for s in [legs_spr, upper_spr]:
-		s.texture = tex
-		s.scale = Vector2.ONE * game.tex_scale
-		s.material = mat
+	return mat
 
 
 ## Draw nothing of him below world height `y` (1e9: all of him).

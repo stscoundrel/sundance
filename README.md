@@ -15,7 +15,7 @@ WASD move · mouse aim · LMB fire · RMB fan the Colt / fire both barrels · C 
 R reload (fire stops a partial reload) · 1/2/3 or wheel to switch guns · E knife (hold to drag
 a body; at the gallows or the pole, hold to cut the man loose; by the machine gun, get on or off it; by the plunger, fire the mines; by the strongbox, take it up or set it down; in your coffin, a blow on the lid, or during the sermon, hurry the padre on) · B bandage · G throw dynamite · Q toss a peso · F swap for the gun at your feet (at the funeral, or take a long gun from a saddle or wagon) · Esc the menu (the town paused: resume, start over, another town,
 leave the game) · after a win, Enter rides on to the next town; after a loss, Enter tries it again.
-On the title, the picker and the loadout, Esc goes back a step; the picker's last row leaves the game. The title card and the Esc menu both say what wins the town you picked.
+On the title, the picker and the loadout, Esc goes back a step; the picker's last row leaves the game. The title card and the Esc menu both say what wins the town you picked; a town picked (or ridden on to) opens on a briefing first: who's paying, the job, who's who (Enter or a click on to the guns).
 
 The window can be any size. A bigger one shows more of the town, up to about 640x360 world
 pixels on a 16:9 screen (wider on a 21:9 one); past that the pixels only get bigger. A
@@ -98,6 +98,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_snowcover.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_shelter.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_fires.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_briefing.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_menu.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_hanging.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_captive.gd

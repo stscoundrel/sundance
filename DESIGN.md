@@ -28,7 +28,7 @@ the stranger failed him.
 After the title card comes the level picker (San Miguel, Cruz Verde, Paso Esperanza, Silencio and A Good
 Man Never Dies; the shuffled
 San Miguels and the wave test are hidden, kept for the tests) ("Where to, stranger?"; up/down and
-Enter, a number or a click), then the loadout. The levels are listed in
+Enter, a number or a click), then its briefing (below), then the loadout. The levels are listed in
 `data/levels.json`, each a map (a town file) and, optionally, a **count**: with one,
 the gang is shuffled. Each map carries **guard posts** (San Miguel has 64, written by
 `tools/make_town.py`: its own gang's 25 and more spread along the streets, alleys
@@ -54,6 +54,31 @@ on its way"; Silencio counts its two gangs). The title card's two lines of keys
 cover all of them, with one line of stealth advice. New players weren't being
 told that most levels aren't won by killing everyone; this fixes that.
 `tests/test_levels.gd` checks every town has a job and that it fits the page.
+
+**The briefing** (`game._to_brief`, `hud._draw_brief`; `tests/test_briefing.gd`). A
+town picked on the picker, or ridden on to after a win, comes up on a card before
+the guns, so the job is known before the guns are picked. Starting it over, or trying
+again after a loss, goes straight to the guns: he's heard it. Esc goes back to the
+picker; Enter or a click goes on, though not the same click that picked the town
+(400 ms). The card has the town's name, its `story` (who's paying him this time),
+the job in brass, then two to four rows of who's who (`who`: a `name`, a `line`, and
+the `kinds` it means, bandit or townsfolk types), each with a still of every kind in
+it. The stills are Sprite2Ds on the HUD, built from the type's body, first palette
+and first gun, standing three-quarters to us (`hud._still`; the paint shared with
+`Actor.painted`). A townsman's body stands in its own pose (the mayor's, the padre's
+prayer). A town without a `who` (the test yard) goes straight to the guns.
+
+The five stories make one run: the stranger is a gun for hire and takes whoever's
+money is on offer. San Miguel's mayor pays him to end the gang, who are hanging the
+one villager who stood up to them. At Cruz Verde his partner's on the wrong side of
+the revolution, held in the fort, and the federales might pay whoever comes out of it
+alive. They never do, so at Paso Esperanza he takes the revolution's gold to cover a
+train of the army's rifles against them. In Silencio the gold that should have bought
+the revolution its guns is in the wrong hands, snowed in with the thieves. At the
+funeral everyone he rode for or against has come to see him buried: his luck ran
+out. Nothing on the card judges him; the padre does that at the grave. The
+lines are spoken, not rules: what's at stake, not how it works (the "first shot"
+and the timers are for the player to find).
 
 **Getting about.** The picker's rows show each town's points (below) and mark the
 ones won this sitting "quiet now" (not saved: a new game starts fresh); under them,

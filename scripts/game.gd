@@ -5,9 +5,10 @@ extends Node2D
 const LEVELS_PATH := "res://data/levels.json"
 const BUDGET := 12   # loadout points where a level names none: a good gun in each slot and a bandage
 # The level picker's choice, kept over the scene reload that loads it; and where
-# that reload lands ("loadout" after a pick, "levels" after a restart).
+# that reload lands ("brief" after a pick or riding on, "loadout" after a loss or starting over, "levels" after a restart).
 static var chosen_level := ""
 static var open_on := ""
+var brief_at := 0   # when the briefing came up (wall clock: only for not reading past it on the same click)
 static var ridden := {}         # the towns he's left quiet this sitting (the picker marks them)
 var menu: Array[String] = []    # Esc's menu, while it's up (the town stands still under it)
 var menu_pick := 0
@@ -388,6 +389,8 @@ func _ready() -> void:
 		hud.hide_title()   # debug: look around town with everyone standing still
 	elif open_on == "loadout":
 		_to_loadout()
+	elif open_on == "brief":
+		_to_brief()
 	elif open_on == "levels":
 		_to_levels()
 	open_on = ""
@@ -603,11 +606,16 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif state == "loadout" and event.is_pressed():
 		_loadout_input(event)
 		get_viewport().set_input_as_handled()
+	elif state == "brief" and event.is_pressed() and (event is InputEventMouseButton or event is InputEventKey):
+		if Time.get_ticks_msec() - brief_at > 400:   # (the click that picked the town isn't the one that reads past it)
+			sfx("close", null, -8.0)
+			_to_loadout()
+		get_viewport().set_input_as_handled()
 	elif (state == "won" or state == "lost") and event.is_action_pressed("restart"):
 		if state == "lost":
 			ride_to(level_entry["id"], "loadout")   # (straight back to the guns: try it another way)
 		elif not next_level().is_empty():
-			ride_to(next_level()["id"], "loadout")
+			ride_to(next_level()["id"], "brief")
 		else:
 			ride_to(level_entry["id"], "levels")   # the last of them: choose where to ride
 	elif event is InputEventMouseButton and event.pressed and player and state == "play":
@@ -683,12 +691,12 @@ func pick_level(i: int) -> void:
 	var l: Dictionary = levels[i]
 	sfx("close", null, -8.0)
 	if l["id"] == level_entry["id"]:
-		_to_loadout()
+		_to_brief()
 		return
-	ride_to(l["id"], "loadout")
+	ride_to(l["id"], "brief")
 
 
-## The scene comes back up with town `id`, at "loadout" or "levels".
+## The scene comes back up with town `id`, at "brief", "loadout" or "levels".
 func ride_to(id: String, at: String) -> void:
 	get_tree().paused = false
 	Engine.time_scale = 1.0
@@ -713,7 +721,7 @@ func _escape() -> void:
 			level_pick = way_out()
 			forget_armed = false
 			sfx("close", null, -14.0)
-		"loadout":
+		"loadout", "brief":
 			_to_levels()
 			sfx("close", null, -14.0)
 		_:
@@ -768,7 +776,7 @@ func menu_choose(k: String) -> void:
 		"resume":
 			close_menu()
 		"next":
-			ride_to(next_level()["id"], "loadout")
+			ride_to(next_level()["id"], "brief")
 		"again":
 			ride_to(level_entry["id"], "loadout")
 		"levels":
@@ -784,6 +792,18 @@ func onward() -> String:
 	if next_level().is_empty():
 		return "Enter: choose where to ride      Esc: the menu"
 	return "Enter: ride on to %s      Esc: the menu" % next_level()["name"]
+
+
+## A town he's chosen (or ridden on to) is told before he picks his guns: who hired
+## him, the job, and who's who (the level's brief; hud._draw_brief). Starting it over
+## or trying it again after a loss goes straight to the guns: he's heard it.
+func _to_brief() -> void:
+	if level_entry.get("brief", {}).get("who", []).is_empty():
+		_to_loadout()
+		return
+	state = "brief"
+	brief_at = Time.get_ticks_msec()
+	hud.hide_title()
 
 
 ## The title card (or the level picker) gives way to choosing his guns.

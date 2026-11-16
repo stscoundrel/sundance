@@ -10,8 +10,8 @@ extends SceneTree
 ##   picker   - the title gives way to the picker, which offers San Miguel, Cruz
 ##              Verde, Paso Esperanza and Silencio (the rest are hidden, for the tests), each
 ##              note short enough for its row and a job that fits the page; picking another town
-##              reloads with it, at the guns, and the drawn town keeps its 25 (and the hangman), its posse
-##              of seven, its five; picking the town already loaded goes on to the guns.
+##              reloads with it, at its briefing, and the drawn town keeps its 25 (and the hangman), its posse
+##              of seven, its five; picking the town already loaded goes on to its briefing.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
 
 var game: Node
@@ -55,14 +55,14 @@ func _process(_delta: float) -> bool:
 		return false
 	var g: Node = current_scene
 	check(g != game and g.level_entry["id"] == "san_miguel", "the drawn town didn't load")
-	check(g.state == "loadout", "a new town should open on the guns (%s)" % g.state)
+	check(g.state == "brief", "a new town should open on its briefing (%s)" % g.state)
 	check(g.enemies.size() == 26 and g.hanging != null and g.posse_size == Posse.SIZE and g.level["reserve"]["squad"].size() == 5,
 		"the drawn town: %d bandits, posse %d, reserve %d" % [g.enemies.size(), g.posse_size, g.level["reserve"]["squad"].size()])
 	step = "picker"
 	g._to_levels()
 	check(g.levels[g.level_pick]["id"] == "san_miguel", "the cursor isn't on the town loaded")
 	g.pick_level(g.level_pick)
-	check(g.state == "loadout", "picking the town already loaded didn't go on to the guns (%s)" % g.state)
+	check(g.state == "brief", "picking the town already loaded didn't go on to its briefing (%s)" % g.state)
 	print("levels test: ", "OK" if failures == 0 else "%d failures" % failures)
 	quit(1 if failures else 0)
 	return true

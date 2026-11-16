@@ -1,13 +1,14 @@
 extends SceneTree
 ## Getting about between the towns (no townsfolk, no hanging):
-##   esc      - Esc goes back a step: the title to the picker, the guns to the picker,
+##   esc      - a town picked is told first (its briefing), then the guns; Esc goes
+##              back a step: the title to the picker, the briefing and the guns to the picker,
 ##              the picker to its way out of the game (Enter on it leaves); in town it
 ##              brings up the menu, the town paused under it (game time stands still),
 ##              and Esc again lets it go on.
 ##   budgets  - each town gives its own points: Silencio the fewest, Paso Esperanza
 ##              the most; the picker shows them.
 ##   onward   - a town won is marked on the picker, and Enter (or the menu's "ride on")
-##              rides on to the next one, at the guns; the last has none to ride on to.
+##              rides on to the next one, at its briefing; the last has none to ride on to.
 ##   retry    - a town lost: Enter goes straight back to its guns, the slow-motion gone.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_menu.gd
 
@@ -77,10 +78,13 @@ func _process(_delta: float) -> bool:
 			phase = "to cruz verde"
 			waited = 0
 		"to cruz verde":
-			if not _arrived("cruz_verde"):
+			if not _arrived("cruz_verde", "brief"):
 				return false
 			step = "onward"
 			check(game.ridden.has("san_miguel"), "San Miguel won, but not marked on the picker")
+			game.brief_at = 0
+			game._unhandled_input(_key(KEY_ENTER))
+			check(game.state == "loadout", "Enter on the briefing should go on to the guns (%s)" % game.state)
 			game._ride_in()
 			game.end_level(false, "THE CAPTIVE IS DEAD")
 			step = "retry"
@@ -89,7 +93,7 @@ func _process(_delta: float) -> bool:
 			phase = "again"
 			waited = 0
 		"again":
-			if not _arrived("cruz_verde"):
+			if not _arrived("cruz_verde", "loadout"):
 				return false
 			check(Engine.time_scale == 1.0, "the loss's slow-motion should be gone (%.2f)" % Engine.time_scale)
 			print("menu test: ", "OK" if failures == 0 else "%d failures" % failures)
@@ -98,17 +102,18 @@ func _process(_delta: float) -> bool:
 	return false
 
 
-## Whether the scene has come back up with town `id`, at the guns (a limit on the wait).
-func _arrived(id: String) -> bool:
+## Whether the scene has come back up with town `id`, at `at` (its briefing, or the
+## guns), with a limit on the wait.
+func _arrived(id: String, at: String) -> bool:
 	waited += 1
 	var g: Node = current_scene
-	if g != game and g != null and g.is_node_ready() and g.state == "loadout":
+	if g != game and g != null and g.is_node_ready() and g.state == at:
 		game = g
 		check(g.level_entry["id"] == id, "rode on to %s, not %s" % [g.level_entry["id"], id])
 		check(not paused, "the new town shouldn't come up paused")
 		return true
 	if waited > 120:
-		check(false, "no %s loadout after %d frames (%s)" % [id, waited, g.state if g else "no scene"])
+		check(false, "no %s %s after %d frames (%s)" % [id, at, waited, g.state if g else "no scene"])
 		quit(1)
 	return false
 
@@ -125,11 +130,20 @@ func _esc() -> void:
 	check(game.hud.level_hit(out.get_center() + game.hud.menu_at()) == game.way_out(), "the way out should take a click")
 	var forget: Rect2 = game.hud._pick_rect(game.levels.size())
 	check(game.hud.level_hit(forget.get_center() + game.hud.menu_at()) == game.levels.size(), "forgetting his record should take a click")
-	game.pick_level(0)   # (the town already loaded: on to the guns)
-	check(game.state == "loadout", "picking San Miguel should go on to the guns (%s)" % game.state)
+	game.pick_level(0)   # (the town already loaded: its briefing, then the guns)
+	check(game.state == "brief", "picking San Miguel should tell him the job (%s)" % game.state)
+	game._unhandled_input(_key(KEY_ESCAPE))
+	check(game.state == "levels", "Esc on the briefing should go back to the picker (%s)" % game.state)
+	game.pick_level(0)
+	game._unhandled_input(_key(KEY_ENTER))
+	check(game.state == "brief", "the click that picked it shouldn't read past the briefing too (%s)" % game.state)
+	game.brief_at = 0
+	game._unhandled_input(_key(KEY_ENTER))
+	check(game.state == "loadout", "Enter on the briefing should go on to the guns (%s)" % game.state)
 	game._unhandled_input(_key(KEY_ESCAPE))
 	check(game.state == "levels", "Esc on the guns should go back to the picker (%s)" % game.state)
 	game.pick_level(0)
+	game._to_loadout()
 	game._ride_in()
 	check(game.state == "play", "he should ride in (%s)" % game.state)
 	game._unhandled_input(_key(KEY_ESCAPE))
