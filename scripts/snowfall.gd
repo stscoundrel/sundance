@@ -40,6 +40,8 @@ extends Node2D
 ## there over half a minute or so, not at a shot: `clear`, 0 the storm .. 1 sun, and
 ## everything the rain does goes with it, the downpours, the drops, the thunder, the
 ## sight it takes, the blood it washes, the noise (the wind coming back in under it).
+## As the sun breaks through, the mission bell tolls (and the ground steams, the
+## puddles catch the light: see Puddles).
 
 static var rng := RandomNumberGenerator.new()   # (when the squalls come, and how long they blow)
 const SHADER := preload("res://shaders/snowfall.gdshader")
@@ -220,6 +222,7 @@ func _physics_process(_delta: float) -> void:
 		if clear >= 0.99 and not _sunny and game.state == "play":
 			_sunny = true
 			game.hud.toast("The sun breaks through")
+			game.sfx("bell", null, -4.0, 0.0, rng)   # (the mission's bell: the funeral's, rung for a clear day)
 	storm = storm_at(game.clock) * clampf(1.0 - clear / NO_DOWNPOURS, 0.0, 1.0)
 	var sight := RAIN_SIGHT if rain else SIGHT
 	game.sight = lerpf(lerpf(sight.x, sight.y, storm), 1.0, clear)

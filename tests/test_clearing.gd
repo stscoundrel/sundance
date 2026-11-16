@@ -8,7 +8,7 @@ extends SceneTree
 ##            thunder with it; everyone sees as far as in the other towns; the light
 ##            goes from the grey to the desert sun's; the blood stays where it falls;
 ##            "The rain eases", then "The sun breaks through"; the rain's
-##            noise gone, the wind back.
+##            noise gone, the wind back, the ground steaming.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_clearing.gd
 
 var game: Node
@@ -89,6 +89,7 @@ func _process(delta: float) -> bool:
 			check((mat.get_shader_parameter("tint") as Vector3).distance_to(game.SUN["tint"]) < 0.01, "the light's still grey")
 			check(game.sun_wind != null and game.sun_wind.volume_db > -13.0, "no wind in the sun: %.1f dB" % (game.sun_wind.volume_db if game.sun_wind else -999.0))
 			check(game.wind_player.volume_db < -50.0, "rain still heard in the sun: %.1f dB" % game.wind_player.volume_db)
+			check(game.puddles._steam_t > 0.0, "the ground never steamed in the sun")
 			check(sf._eased and sf._sunny, "no word of it: eased %s, sun %s" % [sf._eased, sf._sunny])
 			game.drip(game.player, game.player.global_position + Vector2(20, 0))
 			splat = game.decals.splats[game.decals.splats.size() - 1]

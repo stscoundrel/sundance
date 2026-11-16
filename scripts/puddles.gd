@@ -7,6 +7,10 @@ extends Node2D
 ## and there in the steady rain, the whole of every puddle stippled with them in a
 ## downpour, and the puddles spread a little while it lasts.
 ##
+## As the sky clears (Snowfall.clear) the sky in them warms and a glint of sun
+## catches each; and once the sun's coming out the wet ground steams, wisps rising
+## off the puddles in view, most at first, dying away over a minute.
+##
 ## Only looks: nobody slips or splashes, and they hide nobody. Where they lie is
 ## dealt once, on dice of their own (never the game's), and the rings run on the
 ## frame clock (nothing turns on them).
@@ -22,10 +26,18 @@ const WATER := Color(0.15, 0.16, 0.18, 0.78)
 const RIM := Color(0.24, 0.21, 0.18, 0.55)
 const SKY := Color(0.62, 0.65, 0.70, 0.32)
 const RING := Color(0.78, 0.81, 0.86, 0.55)
+const SUNLIT := Color(0.98, 0.9, 0.7, 0.42)   # the sky in them once the sun's out
+const GLINT := Color(1.0, 0.96, 0.84, 0.8)    # and the sun itself, caught in each
+const STEAM_FROM := 0.8      # clear this far, the ground starts to steam
+const STEAM_T := 60.0        # s it steams, dying away
+const STEAM_RATE := 1.5      # wisps a second at first, across the screen
 
 var game: Node
 var puddles: Array = []      # {at, lobes: [[offset, r]], phase}
 var t := 0.0
+var _steam_t := -1.0         # s it's been steaming; -1 not yet
+var _wisp := 0.0             # wisps owed
+var _look := RandomNumberGenerator.new()   # (where the wisps rise: only looks)
 var _dry: Array[Rect2] = []  # where nothing stands (DRY's footprints, on the tile grid)
 
 
@@ -33,6 +45,7 @@ func setup(g: Node) -> void:
 	game = g
 	var dice := RandomNumberGenerator.new()   # (where they lie: only looks)
 	dice.seed = 211
+	_look.seed = 227
 	var n: int = game.size
 	for o in game.level["objects"]:
 		if o["type"] in DRY:
@@ -73,7 +86,32 @@ func _process(delta: float) -> void:
 	if game.state != "play" or get_tree().paused:
 		return   # (rings stood still under a menu: nothing to redraw)
 	t += delta
+	_steam(delta)
 	queue_redraw()
+
+
+## The wet ground steaming in the sun: a wisp off a puddle in view now and then,
+## fewer as it dries.
+func _steam(delta: float) -> void:
+	if not game.snowfall or game.snowfall.clear < STEAM_FROM or _steam_t >= STEAM_T:
+		return
+	_steam_t = maxf(_steam_t, 0.0) + delta
+	_wisp += STEAM_RATE * (1.0 - _steam_t / STEAM_T) * delta
+	if _wisp < 1.0:
+		return
+	_wisp -= 1.0
+	var view: Rect2 = game.view_rect(0.0)
+	var near: Array = puddles.filter(func(p): return view.has_point(p["at"]))
+	if near.is_empty():
+		return
+	var p: Dictionary = near[_look.randi() % near.size()]
+	var l: Array = p["lobes"][_look.randi() % p["lobes"].size()]
+	var puff := Puff.new()
+	puff.position = p["at"] + l[0]
+	for k in 3:
+		puff.smoke(Vector2(_look.randf_range(-0.6, 0.6) * l[1], -2.0 - k * 3.0), Vector2(_look.randf_range(-2.0, 2.0), -_look.randf_range(5.0, 9.0)),
+			_look.randf_range(3.0, 5.0), _look.randf_range(3.0, 5.0), Color(0.95, 0.94, 0.9, 0.14), 1.6, game.WIND * 0.4)
+	game.world.add_child(puff)
 
 
 func _storm() -> float:
@@ -86,6 +124,8 @@ func _draw() -> void:
 	var grow := 1.0 + SPREAD * storm
 	var odds: float = lerpf(RING_ODDS.x, RING_ODDS.y, storm) * (game.snowfall.wet if game.snowfall else 1.0)   # (no rain, no rings)
 	var tex := Puff.disc_tex()
+	var sun: float = game.snowfall.clear if game.snowfall else 0.0
+	var sky := SKY.lerp(SUNLIT, sun)
 	for p in puddles:
 		var at: Vector2 = p["at"]
 		if not view.has_point(at):
@@ -97,8 +137,13 @@ func _draw() -> void:
 				if pass_i == 2:
 					r *= 0.55
 					c += Vector2(-r * 0.25, -r * 0.12)
-				var col := RIM if pass_i == 0 else WATER if pass_i == 1 else SKY
+				var col := RIM if pass_i == 0 else WATER if pass_i == 1 else sky
 				draw_texture_rect(tex, Rect2(c - Vector2(r, r * 0.5), Vector2(r * 2.0, r)), false, col)
+		if sun > 0.5:   # the sun caught in it, off the brightest of the sky
+			var g: Array = p["lobes"][0]
+			var gr: float = clampf(g[1] * 0.12, 1.2, 2.6)
+			var gc: Vector2 = at + g[0] * grow + Vector2(-g[1] * 0.35, -g[1] * 0.18)
+			draw_texture_rect(tex, Rect2(gc - Vector2(gr, gr * 0.5), Vector2(gr * 2.0, gr)), false, Color(GLINT.r, GLINT.g, GLINT.b, GLINT.a * (sun - 0.5) * 2.0))
 		# the rain on it: each ring slot rings in some of its turns, more in a downpour
 		for k in RINGS:
 			var clock: float = t / RING_T + p["phase"] + k * 0.37

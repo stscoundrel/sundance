@@ -731,7 +731,11 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   stays for the gang to follow), the rings gone from the puddles, which stay. The
   grade goes from the grey to the desert sun's (`SUN`, the post shader's own
   defaults), smoothstepped. The rain's loop fades out and the wind's comes back in under it
-  (`game.sun_wind`). The count is taken four times a second (`SKY_EVERY`), and once
+  (`game.sun_wind`). As the sun breaks through the mission bell tolls twice (the
+  funeral's bell, rung for a clear day). The puddles catch it: the sky in them warms
+  from grey to gold (`Puddles.SUNLIT`) and a glint of sun sits in each; and from 0.8
+  clear the wet ground steams, faint wisps rising off the puddles in view, 1.5 a
+  second at first and dying away over a minute (only looks, on dice of their own). The count is taken four times a second (`SKY_EVERY`), and once
   it's dry the wash doesn't run at all. The mud stays baked into the ground: just
   after the rain. Measured windowed in the storm: the rain and puddles cost about 2
   fps of 89, within the noise; the count 8 µs a look, a wash about 0.35 ms every half
