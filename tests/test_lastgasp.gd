@@ -6,8 +6,8 @@ extends SceneTree
 ##             apart, then sinks back: either dead of it or still down, his clock run on.
 ##   sidearm - a rifleman leaves his rifle lying and draws the Colt he never used.
 ##   no pistol - a poacher with only his Sharps never tries it.
-##   shot    - one shot while he's up is finished, the gun falling, and it isn't
-##             counted against the stranger as shooting a wounded man.
+##   shot    - one shot while he's up is finished, the gun falling, and it's no sin
+##             (nor is any man in the dirt: he's still the gang).
 ##   walk-up - the stranger right on a bandido whose comrade is on his way to drag him
 ##             clear: he doesn't wait for help, and the comrade's let off.
 ##   hope    - with a comrade close enough to come for him, he's less likely to try;
@@ -169,13 +169,11 @@ func _wait_aim(waited: float) -> void:
 		return
 	check(a.gasp == "aim", "he never got his gun up")
 	var p: Player = game.player
-	var wounded0: int = game.stats.get("wounded men shot", 0)
 	var aim: Vector2 = a.aim_point()
 	game.spawn_bullet(p.global_position, (aim - p.global_position).normalized() * 900.0, 400.0, 2, p, Iso.GUN_H, false)
 	queue.push_front([0.5, func():
 		check(not a.downed and not a.alive, "a round while he was up didn't finish him")
-		check(game.stats.get("shot with his gun up", 0) == 1, "not counted as shooting a man with his gun up")
-		check(game.stats.get("wounded men shot", 0) == wounded0, "counted as shooting a wounded man")
+		check(game.verdict_t <= 0.0, "shooting him with his gun up counted as a sin: '%s'" % game.verdict_title)
 		check(game.loose_guns.any(func(g): return g["under"] == a), "his gun didn't fall")
 		_walk_up()])
 
