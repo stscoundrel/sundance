@@ -658,7 +658,7 @@ func _draw_levels() -> void:
 
 # ------------------------------------------------------------------ brief
 
-const BRIEF_ROW := Rect2(110, 128, 420, 46)   # who's who: the first row; the rest follow under it
+const BRIEF_ROW := Rect2(110, 132, 420, 44)   # who's who: the first row; the rest follow under it
 const STILL_W := 26.0                          # room for one man's still in a row
 const STORY_W := 470.0
 
@@ -675,11 +675,12 @@ func _draw_brief() -> void:
 	draw_rect(Rect2(Vector2.ZERO, page), Color(0.03, 0.02, 0.02, 0.96))
 	var b: Dictionary = game.level_entry.get("brief", {})
 	draw_set_transform(menu_at())
-	_text(Vector2(0, 46), game.level_entry["name"].to_upper(), 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	_text(Vector2(0, 40), game.level_entry["name"].to_upper(), 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	_text(Vector2(0, 57), "%s.  One stranger." % odds(), 10, INK, font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	var lines: PackedStringArray = wrapped(b.get("story", ""), STORY_W, 9)
 	for i in lines.size():
-		_text(Vector2(0, 68 + i * 12), lines[i], 9, Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
-	_text(Vector2(0, 112), job(), 10, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+		_text(Vector2(0, 76 + i * 12), lines[i], 9, Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	_text(Vector2(0, 120), job(), 10, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	var who: Array = b.get("who", [])
 	for i in who.size():
 		var r := _brief_row(i)
@@ -692,6 +693,16 @@ func _draw_brief() -> void:
 			_text(Vector2(x, r.position.y + 30 + j * 10), said[j], 8, INK)
 	_text(Vector2(0, 340), "Enter or a click: on to the guns      Esc: back", 8, Color(INK, 0.5), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
 	draw_set_transform(Vector2.ZERO)
+
+
+## Who he's up against, counted ("26 bandits", "15 revolutionaries", "The army on its
+## way"; Silencio's two gangs each): the level's cast, under its name on the briefing.
+func odds() -> String:
+	if game.level.has("gangs"):   # Silencio: "12 hunters, 16 outlaws"
+		return ", ".join(game.level["gangs"].map(func(g): return "%d %s" % [game.alive_in(g), g]))
+	var n: int = game.enemies.size() + (game.director.indoors() if game.director else 0)
+	var cast: String = game.level_entry.get("brief", {}).get("cast", "%d bandits")
+	return cast % n if cast.contains("%d") else cast
 
 
 ## `t` broken into lines no wider than `w` at size `sz` (the small face).
@@ -906,24 +917,18 @@ func _draw_title() -> void:
 	var sz := t.get_size()
 	sz *= game.tex_scale
 	draw_texture_rect(t, Rect2(Vector2(round(page.x / 2 - sz.x / 2), 110), sz), false, Color(1, 1, 1, a))
-	var town: String = game.level.get("name", "")
 	_text(Vector2(0, 100), "~ un western all'italiana ~", 10, Color(0.85, 0.7, 0.5, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	var n: int = game.enemies.size() + (game.director.indoors() if game.director else 0)
-	var cast: String = game.level_entry.get("brief", {}).get("cast", "%d bandits")   # (who he's up against, by the level's own name for them)
-	var who := cast % n if cast.contains("%d") else cast
-	if game.level.has("gangs"):   # Silencio: "12 hunters, 16 outlaws"
-		who = ", ".join(game.level["gangs"].map(func(g): return "%d %s" % [game.alive_in(g), g]))
-	_text(Vector2(0, 196), "%s.  %s.  One stranger." % [town, who], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	# What he's here to do, before the keys: a new hand learns the job first.
-	_text(Vector2(0, 226), job(), 10, Color(0.95, 0.75, 0.35, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	# The whole game's, not a town's: the town is picked after this, and its odds, job
+	# and who's who come on its briefing.
+	_text(Vector2(0, 200), "One stranger. Five towns. Whoever pays.", 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	var lines := [
 		"WASD move   MOUSE aim   LMB fire   RMB fan the hammer / both barrels   C crouch   R reload   1 2 3 guns",
 		"E knife, drag a body (hold), cut a man loose, use   B bandage   G dynamite   Q toss a peso   F take a gun   Esc menu",
 		"Stay out of their sight and crouch behind cover: a man who sees you shouts for the rest.",
 	]
 	for i in lines.size():
-		_text(Vector2(0, 256 + i * 14), lines[i], 8, Color(0.8, 0.74, 0.62, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	_text(Vector2(0, 320), "click to ride in", 10, Color(0.95, 0.75, 0.35, a * (0.6 + 0.4 * sin(Time.get_ticks_msec() / 300.0))), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+		_text(Vector2(0, 244 + i * 14), lines[i], 8, Color(0.8, 0.74, 0.62, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	_text(Vector2(0, 320), "click to choose where to ride", 10, Color(0.95, 0.75, 0.35, a * (0.6 + 0.4 * sin(Time.get_ticks_msec() / 300.0))), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	draw_set_transform(Vector2.ZERO)
 	# The release build carries its tag (the pipeline writes it in), so a bug report says which
 	# stranger it was; a build from the editor has none and says nothing.
@@ -934,8 +939,8 @@ func _draw_title() -> void:
 
 # ------------------------------------------------------------------ menu
 
-## What the stranger's here to do, in a plain line (the level's brief): on the title
-## card and the Esc menu, so nobody rides in not knowing what wins it.
+## What the stranger's here to do, in a plain line (the level's brief): on the
+## briefing and the Esc menu, so nobody rides in not knowing what wins it.
 func job() -> String:
 	return game.level_entry.get("brief", {}).get("job", "Kill the whole gang.")
 
