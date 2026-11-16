@@ -794,17 +794,21 @@ func _draw_title() -> void:
 	draw_texture_rect(t, Rect2(Vector2(round(page.x / 2 - sz.x / 2), 110), sz), false, Color(1, 1, 1, a))
 	var town: String = game.level.get("name", "")
 	_text(Vector2(0, 100), "~ un western all'italiana ~", 10, Color(0.85, 0.7, 0.5, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	var who := "%d bandits" % (game.enemies.size() + (game.director.indoors() if game.director else 0))
+	var n: int = game.enemies.size() + (game.director.indoors() if game.director else 0)
+	var cast: String = game.level_entry.get("brief", {}).get("cast", "%d bandits")   # (who he's up against, by the level's own name for them)
+	var who := cast % n if cast.contains("%d") else cast
 	if game.level.has("gangs"):   # Silencio: "12 hunters, 16 outlaws"
 		who = ", ".join(game.level["gangs"].map(func(g): return "%d %s" % [game.alive_in(g), g]))
 	_text(Vector2(0, 196), "%s.  %s.  One stranger." % [town, who], 12, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	# What he's here to do, before the keys: a new hand learns the job first.
+	_text(Vector2(0, 226), job(), 10, Color(0.95, 0.75, 0.35, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	var lines := [
-		"WASD move   MOUSE aim   LMB fire   C crouch   R reload   E knife (hold: drag a body)   B bandage   1 2 3 guns",
-		"RMB: fan the Colt's hammer  /  fire both barrels of a double gun",
-		"Stay out of their sight. Crouch behind cover. Kill them all.",
+		"WASD move   MOUSE aim   LMB fire   RMB fan the hammer / both barrels   C crouch   R reload   1 2 3 guns",
+		"E knife, drag a body (hold), cut a man loose, use   B bandage   G dynamite   Q toss a peso   F take a gun   Esc menu",
+		"Stay out of their sight and crouch behind cover: a man who sees you shouts for the rest.",
 	]
 	for i in lines.size():
-		_text(Vector2(0, 250 + i * 14), lines[i], 8, Color(0.8, 0.74, 0.62, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+		_text(Vector2(0, 256 + i * 14), lines[i], 8, Color(0.8, 0.74, 0.62, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	_text(Vector2(0, 320), "click to ride in", 10, Color(0.95, 0.75, 0.35, a * (0.6 + 0.4 * sin(Time.get_ticks_msec() / 300.0))), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	draw_set_transform(Vector2.ZERO)
 	# The release build carries its tag (the pipeline writes it in), so a bug report says which
@@ -815,6 +819,12 @@ func _draw_title() -> void:
 
 
 # ------------------------------------------------------------------ menu
+
+## What the stranger's here to do, in a plain line (the level's brief): on the title
+## card and the Esc menu, so nobody rides in not knowing what wins it.
+func job() -> String:
+	return game.level_entry.get("brief", {}).get("job", "Kill the whole gang.")
+
 
 const MENU_ROW := Rect2(220, 130, 200, 22)
 const MENU_NAME := {"resume": "BACK TO IT", "next": "RIDE ON TO %s", "again": "START THIS TOWN OVER",
@@ -846,7 +856,7 @@ func _draw_menu() -> void:
 	var over := menu_hit(get_local_mouse_position())
 	draw_set_transform(menu_at())
 	_text(Vector2(0, 96), game.level_entry["name"].to_upper(), 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
-	_text(Vector2(0, 114), "The town holds its breath.", 8, Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	_text(Vector2(0, 114), job(), 8, Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)   # (what he came for, should he have lost the thread)
 	for i in game.menu.size():
 		var r := _menu_row(i)
 		var on: bool = i == game.menu_pick or i == over

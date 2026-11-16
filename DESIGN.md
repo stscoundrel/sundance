@@ -43,6 +43,18 @@ scales its saloon reserve (2 to 8) and the size it bands into a posse (3 to 7). 
 hand-drawn San Miguel stays first in the list, unshuffled: the tests and the tuning
 lean on it. Picking another level reloads the scene with it, straight to the guns.
 
+**What he's told.** Each level's picker row has a short note saying what kind of fight
+it is, and its `"brief"` in levels.json says the rest. `job` is the level's goal in
+one plain line, said the way a man would tell him, not as a rule list (Cruz Verde's: "Free the
+prisoner at the well, then hold the fort against every band. He will be executed if
+you are too slow."). It's on the title card in brass under the count, and under the
+town's name in the Esc menu (`hud.job()`; with no brief, "Kill the whole gang.").
+`cast` names who he's up against on the title card ("%d revolutionaries", "The army
+on its way"; Silencio counts its two gangs). The title card's two lines of keys
+cover all of them, with one line of stealth advice. New players weren't being
+told that most levels aren't won by killing everyone; this fixes that.
+`tests/test_levels.gd` checks every town has a job and that it fits the page.
+
 **Getting about.** The picker's rows show each town's points (below) and mark the
 ones won this sitting "quiet now" (not saved: a new game starts fresh); under them,
 "Leave the territory" quits. Esc goes back a step: the title to the picker, the

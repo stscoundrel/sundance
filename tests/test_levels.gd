@@ -9,7 +9,7 @@ extends SceneTree
 ##              smaller reserve; the hand-drawn town keeps its seven and its five.
 ##   picker   - the title gives way to the picker, which offers San Miguel, Cruz
 ##              Verde, Paso Esperanza and Silencio (the rest are hidden, for the tests), each
-##              note short enough for its row; picking another town
+##              note short enough for its row and a job that fits the page; picking another town
 ##              reloads with it, at the guns, and the drawn town keeps its 25 (and the hangman), its posse
 ##              of seven, its five; picking the town already loaded goes on to the guns.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
@@ -149,3 +149,7 @@ func _picker() -> void:
 	for l in game.levels:   # (each note on one line in its row: a short one)
 		var w: float = game.hud.small.get_string_size(l.get("note", ""), HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
 		check(w <= game.hud.ROW.size.x - 46.0, "%s's note runs out of its row (%d px)" % [l["id"], w])
+		# and its job, the plain line on the title card (the bigger face) and the Esc menu
+		check(l.has("brief") and l["brief"].has("job"), "%s says nothing of what wins it" % l["id"])
+		var jw: float = game.hud.font.get_string_size(l.get("brief", {}).get("job", ""), HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+		check(jw <= game.hud.PAGE.x - 20.0, "%s's job runs off the page (%d px)" % [l["id"], jw])
