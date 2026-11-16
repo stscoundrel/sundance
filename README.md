@@ -100,6 +100,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_fires.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_levels.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_briefing.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_marks.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_defeat.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_menu.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_hanging.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_captive.gd

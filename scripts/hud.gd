@@ -22,6 +22,7 @@ var eyes_t := 0.0
 var message := ""
 var sub := ""
 var hint := ""   # the end screen's way on (Enter: the next town...)
+var why := PackedStringArray()   # how he died and a tip, under the title (game.why_dead)
 var msg_t := 0.0
 var banner_text := ""
 var banner_t := 0.0
@@ -65,10 +66,11 @@ func toast(t: String) -> void:
 	toast_t = 3.0
 
 
-func show_message(m: String, s: String, h := "") -> void:
+func show_message(m: String, s: String, h := "", w := PackedStringArray()) -> void:
 	message = m
 	sub = s
 	hint = h
+	why = w
 	msg_t = 0.0
 
 
@@ -617,12 +619,16 @@ func _draw_verdict() -> void:
 func _draw_message() -> void:
 	var a: float = clamp(msg_t * 1.5, 0.0, 1.0)
 	var y := floorf(page.y / 2)
-	draw_rect(Rect2(0, y - 40, page.x, 84), Color(0, 0, 0, 0.6 * a))
+	var more := 30.0 if why.size() >= 2 else 0.0   # (how he died, and a tip, between the title and the tally)
+	draw_rect(Rect2(0, y - 40, page.x, 84 + more), Color(0, 0, 0, 0.6 * a))
 	_text(Vector2(0, y), message, 26, Color(0.95, 0.75, 0.35, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
-	_text(Vector2(0, y + 20), sub, 8, Color(INK, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	if more > 0.0:
+		_text(Vector2(0, y + 20), why[0], 10, Color(INK, a), font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+		_text(Vector2(0, y + 34), why[1], 8, Color(1, 0.88, 0.6, a), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	_text(Vector2(0, y + 20 + more), sub, 8, Color(INK, a * (0.7 if more > 0.0 else 1.0)), null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 	if hint != "" and game.menu.is_empty():
 		var b := Color(0.95, 0.75, 0.35, a * (0.7 + 0.3 * sin(Time.get_ticks_msec() / 300.0)))
-		_text(Vector2(0, y + 36), hint, 10, b, font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+		_text(Vector2(0, y + 36 + more), hint, 10, b, font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 # ------------------------------------------------------------------ levels

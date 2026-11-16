@@ -109,6 +109,8 @@ var bandage_t := -1.0          # time into bandaging; < 0 when not at it
 var down := false              # in his last stand
 var medic: Civilian            # the barber-surgeon binding him up, while he keeps still
 var stand_used := false        # (once a level)
+var hits: Array = []           # [game clock, shooter] for every round that found him (who was on him at the end)
+var death := {}                # how he died, for the end screen (game.why_dead): how, by, range, many
 var down_t := 0.0              # bleeding out
 var lie_facing := Vector2.RIGHT   # the way his boots point, lying there
 var dirt_drops := 0            # men he's dropped this last stand
@@ -777,6 +779,7 @@ func gun_height() -> float:
 
 
 func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
+	hits.append([game.clock, shooter])
 	stop_bandage()
 	drop_body()   # (a round in him: he lets go)
 	_drop_stick(hp - dmg <= 0)
@@ -793,12 +796,35 @@ func take_hit(dmg: int, from_dir: Vector2, shooter: Actor) -> void:
 
 func die(from_dir: Vector2, shooter: Actor = null, how := "") -> void:
 	get_off()
+	_note_death(shooter)
 	if down:   # where he lies, the gun falling from his hand
 		how = weapon.kind + "/gasp_die"
 		from_dir = -lie_facing
 		down = false
 		propped = false
 	super(from_dir, shooter, how)
+
+
+## What killed him, as it happened, before dying tidies it away: a blast (his own
+## stick or keg, his own mines, or theirs), bleeding out in the dirt, a round while
+## he was down, or a round; who, how far off, and how many were on him at the end.
+func _note_death(shooter: Actor) -> void:
+	var how := "shot"
+	if blasted:
+		how = "blast"
+		if shooter == self:
+			how = "own_mines" if game.blast_mine else "own_blast"
+	elif shooter == null and down:
+		how = "bled"
+	elif down:
+		how = "finished"
+	var on_him := {}
+	for h in hits:
+		if h[1] and game.clock - h[0] < 5.0:
+			on_him[h[1]] = true
+	var far := shooter.global_position.distance_to(global_position) if shooter and shooter != self else 0.0
+	death = {"how": how, "by": shooter, "range": "close" if far > 0.0 and far < 80.0 else ("long" if far > 420.0 else ""),
+		"many": on_him.size() >= 3}
 
 
 # ------------------------------------------------------------------ the last stand

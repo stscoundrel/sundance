@@ -3,6 +3,7 @@ extends Node2D
 ## (physics queries, pathfinding, noise, bullets, effects, sound) and the match flow.
 
 const LEVELS_PATH := "res://data/levels.json"
+const HINTS_PATH := "res://data/hints.json"
 const BUDGET := 12   # loadout points where a level names none: a good gun in each slot and a bandage
 # The level picker's choice, kept over the scene reload that loads it; and where
 # that reload lands ("brief" after a pick or riding on, "loadout" after a loss or starting over, "levels" after a restart).
@@ -41,6 +42,8 @@ const HUD_PAGE := Vector2(640, 360)   # the HUD's own pixels, at the least
 
 var meta: Dictionary
 var enemy_data: Dictionary   # data/enemies.json: body templates, bandit types, palettes
+var hints: Dictionary        # data/hints.json: what he's told when he's lost
+var blast_mine := false      # the blast going off now is one of the mines
 var level: Dictionary
 var size := 40
 
@@ -342,6 +345,7 @@ func _ready() -> void:
 	_setup_input()
 	meta = _load_json(META_PATH)
 	enemy_data = _load_json(ENEMIES_PATH)
+	hints = _load_json(HINTS_PATH)
 	_load_level()
 	size = int(level["size"])
 	if level.has("haze"):
@@ -2846,8 +2850,64 @@ func _on_player_died(_p: Actor) -> void:
 	state = "lost"
 	end_time = Time.get_ticks_msec()
 	Engine.time_scale = 0.35
-	hud.show_message("ADIOS, AMIGO", _tally().trim_suffix("   -   "), onward())
+	hud.show_message("ADIOS, AMIGO", _tally().trim_suffix("   -   "), onward(), why_dead())
 	sfx("lose", null, -2.0, 0.0)
+
+
+## How he died and one thing to try next time, in plain words: [cause, tip]. The
+## tip is hints.json's rule that fits the most of what happened (see its _doc).
+func why_dead() -> PackedStringArray:
+	var d: Dictionary = player.death
+	var how: String = d.get("how", "shot")
+	var by: Actor = d.get("by")
+	var cause := "Shot."
+	match how:
+		"bled":
+			cause = "Bled out."
+		"blast":
+			cause = "Killed in a blast."
+		"own_blast":
+			cause = "Caught in your own blast."
+		"own_mines":
+			cause = "Caught in your own mines."
+		"finished":
+			cause = "Finished off by %s while you were down." % _who(by) if by else "Finished off while you were down."
+		_:
+			if d.get("many", false):
+				cause = "Shot down with several of them firing on you."
+			elif by:
+				cause = "Shot by %s%s." % [_who(by), {"close": ", up close", "long": ", from long range"}.get(d.get("range", ""), "")]
+	var kind: String = by.weapon.kind if by and by.weapon else ""
+	var best: Dictionary = {}
+	var score := -1
+	for r in hints["death"]:
+		var n := 0
+		var fits := true
+		for k in ["how", "guns", "range", "many"]:
+			if not r.has(k):
+				continue
+			var ok: bool
+			match k:
+				"how": ok = r["how"] == how
+				"guns": ok = kind in r["guns"]
+				"range": ok = r["range"] == d.get("range", "")
+				"many": ok = r["many"] == d.get("many", false)
+			fits = fits and ok
+			n += 1
+		if fits and n > score:
+			best = r
+			score = n
+	return PackedStringArray([cause, best.get("tip", "")])
+
+
+## A man by his type's name, as you'd say it: "a rifleman", "an old timer", "El Jefe".
+func _who(a: Actor) -> String:
+	var name: String = a.tdata.get("name", "") if "tdata" in a else ""
+	if name == "":
+		return "one of them"
+	if name.begins_with("El ") or name.begins_with("The "):
+		return name
+	return ("an " if name.to_lower()[0] in "aeiou" else "a ") + name.to_lower()
 
 
 ## The shot that should have killed him has put him down instead: the moment
@@ -3287,6 +3347,7 @@ func stick_landed(d: Dynamite) -> void:
 ## apart (but a mine's spares the breastwork it was laid round); and the whole town
 ## hears it.
 func blast(at: Vector2, by: Actor, r := Dynamite.R, core := Dynamite.CORE, mine := false) -> void:
+	blast_mine = mine   # (for the length of the blast: whose death it is, if it's his)
 	dyn_cd = DYN_CD
 	stats["blasts"] = stats.get("blasts", 0) + 1
 	var hurt: Array[Actor] = []

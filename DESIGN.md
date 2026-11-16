@@ -80,6 +80,19 @@ arrows are the waves' (`_pointer`): over the place when it's on screen, on the e
 pointing out to it when it isn't; a label that would land on another steps down
 below it. The funeral has none: he starts in the coffin, and the grave is the scene.
 
+**Why he lost** (`Player._note_death`, `game.why_dead`, `data/hints.json`;
+`tests/test_defeat.gd`). Under "ADIOS, AMIGO", in plain words, how he died and one
+thing to try next time, above the tally. The player notes it as he dies, before
+dying tidies it away: a blast (his own stick or keg, his own mines, theirs), bleeding
+out in his last stand, a round while he was down ("finished"), or a round; who fired
+it, near or far (under 80 px "up close", past 420 "from long range"; no yards), and
+whether three or more had found him in the last five seconds. The cause line names
+the man by his type, as you'd say it ("Shot by a red scarf, up close.", "Finished
+off by El Jefe while you were down.", "Bled out."; `game._who`). The tip is the rule
+in hints.json that fits the most of it (how, the killer's gun, range, many), the
+first on a tie, the last a catch-all; nothing random. A loss of another kind (the
+carriers gone, buried at the funeral) already says why in its title.
+
 The five stories make one run: the stranger is a gun for hire and takes whoever's
 money is on offer. San Miguel's mayor pays him to end the gang, who are hanging the
 one villager who stood up to them. At Cruz Verde his partner's on the wrong side of
@@ -170,7 +183,8 @@ runs down the steps for the nearest building and stays in it. He can be hit as h
 goes (or on the trap: a stray lined up on him), though nobody aims at him. Too late,
 and he hangs there, his head fallen forward, turning a little on the rope. The end card: "the condemned man:
 saved", "hanged, you failed him" or "shot dead, you failed him" (alive on the trap
-with the gang all dead counts as saved). The captive's "bound" pose set
+with the gang all dead, or the hangman, counts as saved; "still on the gallows" if
+the stranger's the one dead first, the hangman still waiting by the steps). The captive's "bound" pose set
 (in `tools/chars.py`: hands behind his back, rope at the wrists; "struggle" for
 the kicking, "hang" for after) is his upper body; his legs are the walk cycle for
 the kicking. He's lowered through the trap and clipped at the platform (the palette

@@ -1,0 +1,14 @@
+{
+ "_doc": "What the stranger's told when he's lost, in plain words (and, next, the first-time hints). 'death': the end screen's tip under how he died (game.why_dead). A rule matches when every key it has fits: 'how' (shot, finished, bled, blast, own_blast, own_mines), 'guns' (the killer's gun kinds, Weapon.DATA), 'range' (close, long), 'many' (true: three or more firing on him at the end). The rule matching the most keys wins; the first such one on a tie. The last, with no keys, is for anything else.",
+ "death": [
+  {"many": true, "tip": "Too many at once. Break their line of sight and let them come to you one at a time."},
+  {"how": "shot", "guns": ["coach", "sawnoff", "champion", "spencer82"], "range": "close", "tip": "Don't let a shotgun get close. Drop him on the way in."},
+  {"how": "shot", "guns": ["rifle", "henry", "spencer", "springfield", "sharps", "remington", "rollingblock"], "tip": "Rifles reach a long way. Keep walls between you, and cross open ground quickly."},
+  {"how": "finished", "tip": "Down, you can still shoot. Make them pay for coming close."},
+  {"how": "bled", "tip": "B binds a wound, even while you're down."},
+  {"how": "blast", "tip": "A lit stick gives you a few seconds. Get clear of it."},
+  {"how": "own_blast", "tip": "Throw dynamite well away from yourself, and mind the kegs near it."},
+  {"how": "own_mines", "tip": "The charges go up all round the breastwork. Stay behind the bags when you fire them."},
+  {"tip": "Stay out of their sight and crouch behind cover."}
+ ]
+}
