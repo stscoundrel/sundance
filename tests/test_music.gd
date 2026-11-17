@@ -8,6 +8,9 @@ extends SceneTree
 ##   lost   - when the stranger's dead the whole score fades, the ground too.
 ##   fort   - Cruz Verde asleep plays only the tension; the shooting
 ##            starts and the tension gives way to the battle, back once it's long over.
+##   train  - Paso Esperanza's pieces: nothing till he rides in, then the build; the
+##            first soldier on the map brings the call and the action; won, the win;
+##            his death fades it all.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_music.gd
 
 var game: Node
@@ -43,6 +46,10 @@ func check(cond: bool, msg: String) -> void:
 
 func _process(delta: float) -> bool:
 	frame += 1
+	if frame == 2 and town == "train":
+		step = "train"
+		check(game.music != null and game.music.piece == "" and not game.music.player.playing,
+			"the train's music plays before he's ridden in")
 	if frame == 3:
 		game.begin()
 	if frame <= 3:
@@ -55,6 +62,11 @@ func _process(delta: float) -> bool:
 	check(m != null, "%s has no score" % town)
 	if m == null:
 		quit(1)
+		return true
+	if town == "train":
+		_train(m)
+		print("music test: %s" % ("OK" if failures == 0 else "%d FAILURES" % failures))
+		quit(failures)
 		return true
 	check(m.stream.stream_count == m.roles.size() and m.player.playing, "not playing all its layers")
 	for i in m.roles.size():
@@ -71,9 +83,9 @@ func _process(delta: float) -> bool:
 		_ride("cruz_verde")
 		return false
 	_fort(m)
-	print("music test: %s" % ("OK" if failures == 0 else "%d FAILURES" % failures))
-	quit(failures)
-	return true
+	game.queue_free()
+	_ride("train")
+	return false
 
 
 ## The rules, fed by hand: what each layer heads for, and how long it stays.
@@ -126,3 +138,25 @@ func _fort(m: Music) -> void:
 	check(m.level["calm"] == 0.0 and m.level["fight"] == 1.0, "the shooting didn't bring the battle in: %s" % m.level)
 	m.decide(Music.LINGER["fight"] + 0.5, false, false, "play")
 	check(m.want["calm"] == 1.0 and m.want["fight"] == 0.0, "the tension isn't back after the fight: %s" % m.want)
+
+
+func _train(m: Music) -> void:
+	step = "train"
+	var names := []
+	for i in m.pieces.clip_count:
+		names.append(String(m.pieces.get_clip_name(i)))
+		var o: AudioStreamOggVorbis = m.pieces.get_clip_stream(i)
+		check(o.loop == (names[i] in ["hold", "action"]), "%s loops wrong" % names[i])
+		var beats_long := o.beat_count * 60.0 / o.bpm
+		check(absf(o.get_length() - beats_long) < 0.01 if o.loop else o.get_length() >= beats_long - 0.01,
+			"%s isn't its beats long: %.3f s" % [names[i], o.get_length()])
+	check(names == ["build", "hold", "call", "action", "won"], "the pieces: %s" % [names])
+	check(m.piece == "build" and m.player.playing, "the build isn't playing: %s" % m.piece)
+	check(not m.army_in(), "the army's in already, %.1f s in" % t)
+	m.step_pieces("play", true)
+	check(m.piece == "action", "the army's in and no action: %s" % m.piece)
+	m.step_pieces("won", true)
+	check(m.piece == "won", "won, and no win: %s" % m.piece)
+	m.piece = "action"
+	m.step_pieces("lost", true)
+	check(m.piece == "lost", "dead, and it plays on: %s" % m.piece)

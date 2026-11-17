@@ -13,6 +13,13 @@ extends Node
 ## Unease and the fight linger a while after the trouble that brought them: a
 ## town doesn't settle the moment the last shot's fired. When he dies it all
 ## goes, and only the wind is left; when the job's done it's the ground alone.
+##
+## A score can instead be pieces played in turn ("pieces", Paso Esperanza's),
+## where the game knows when the fight comes: a build from the moment he's in
+## town, then a hold that swells round and round, however long the army takes,
+## till the first of them sets foot on the map; then the call and the action,
+## looping to the end; the win on the next bar line once it's won. Played through
+## an AudioStreamInteractive, each switch waiting for the next beat or bar.
 
 const RISE := {"always": 3.0, "calm": 3.0, "unease": 4.0, "fight": 1.5}   # s from silent to full
 const FALL := {"always": 5.0, "calm": 2.0, "unease": 9.0, "fight": 7.0}   # s from full to silent
@@ -29,6 +36,9 @@ var level := {"always": 0.0, "calm": 0.0, "unease": 0.0, "fight": 0.0}   # where
 var want := {"always": 1.0, "calm": 1.0, "unease": 0.0, "fight": 0.0}    # where it's heading
 var linger := {"unease": 0.0, "fight": 0.0}
 var _look_t := 0.0
+var pieces: AudioStreamInteractive = null   # a score played in turn, if it's that kind
+var piece := ""        # where it's got to: "" (not begun), "build" (and the hold), "action", "won", "lost"
+var gain := 1.0        # 0..1: the whole of a score in pieces, faded out over his body
 
 
 ## The score a level names in levels.json ("music"), or null if it has none baked.
@@ -39,28 +49,68 @@ static func make(g: Node, name: String) -> Music:
 	m.game = g
 	m.name = "Music"
 	m.process_mode = Node.PROCESS_MODE_ALWAYS   # (it plays on under the menu)
-	var layers: Array = g.meta["music"][name]["layers"]
-	m.stream = AudioStreamSynchronized.new()
-	m.stream.stream_count = layers.size()
-	for i in layers.size():
-		var s: AudioStream = load(layers[i]["path"])
-		m.stream.set_sync_stream(i, s)
-		m.stream.set_sync_stream_volume(i, -80.0)
-		m.roles.append(layers[i]["role"])
+	var score: Dictionary = g.meta["music"][name]
 	m.player = AudioStreamPlayer.new()
-	m.player.stream = m.stream
+	if score.has("pieces"):
+		m._make_pieces(score)
+		m.player.stream = m.pieces
+	else:
+		var layers: Array = score["layers"]
+		m.stream = AudioStreamSynchronized.new()
+		m.stream.stream_count = layers.size()
+		for i in layers.size():
+			var s: AudioStream = load(layers[i]["path"])
+			m.stream.set_sync_stream(i, s)
+			m.stream.set_sync_stream_volume(i, -80.0)
+			m.roles.append(layers[i]["role"])
+		m.player.stream = m.stream
 	m.player.volume_db = LOUDNESS
 	m.player.process_mode = Node.PROCESS_MODE_ALWAYS
 	m.add_child(m.player)
 	return m
 
 
+## The pieces, each told its tempo and length so a switch can wait for a beat:
+## build runs into the hold, the call into the action; the build or the hold
+## gives way to the call on the next beat, anything to the win on the next bar.
+func _make_pieces(score: Dictionary) -> void:
+	var list: Array = score["pieces"]
+	pieces = AudioStreamInteractive.new()
+	pieces.clip_count = list.size()
+	var at := {}
+	for i in list.size():
+		var p: Dictionary = list[i]
+		var s: AudioStreamOggVorbis = load(p["path"])
+		s.bpm = float(score["bpm"])
+		s.beat_count = int(p["beats"])
+		s.bar_beats = 4
+		s.loop = bool(p["loops"])
+		pieces.set_clip_name(i, p["name"])
+		pieces.set_clip_stream(i, s)
+		at[p["name"]] = i
+	pieces.initial_clip = at["build"]
+	for pair in [["build", "hold"], ["call", "action"]]:
+		pieces.set_clip_auto_advance(at[pair[0]], AudioStreamInteractive.AUTO_ADVANCE_ENABLED)
+		pieces.set_clip_auto_advance_next_clip(at[pair[0]], at[pair[1]])
+	for from in ["build", "hold"]:
+		pieces.add_transition(at[from], at["call"], AudioStreamInteractive.TRANSITION_FROM_TIME_NEXT_BEAT,
+			AudioStreamInteractive.TRANSITION_TO_TIME_START, AudioStreamInteractive.FADE_OUT, 1.0)
+	pieces.add_transition(AudioStreamInteractive.CLIP_ANY, at["won"], AudioStreamInteractive.TRANSITION_FROM_TIME_NEXT_BAR,
+		AudioStreamInteractive.TRANSITION_TO_TIME_START, AudioStreamInteractive.FADE_OUT, 1.0)
+
+
 func _ready() -> void:
-	player.play()
+	if pieces == null:
+		player.play()   # (a score in pieces waits for him to ride in)
 
 
 func _process(delta: float) -> void:
 	var real := delta / maxf(Engine.time_scale, 0.01)   # fades by the ear, not slowed with the game
+	if pieces:
+		step_pieces(game.state, army_in())
+		gain = move_toward(gain, 0.0 if piece == "lost" else 1.0, real / FALL["always"])
+		player.volume_db = LOUDNESS + linear_to_db(maxf(gain, 0.0001))
+		return
 	_look_t -= delta
 	if _look_t <= 0.0:
 		_look_t = LOOK_EVERY
@@ -115,3 +165,29 @@ func fade(dt: float) -> void:
 	if stream:
 		for i in roles.size():
 			stream.set_sync_stream_volume(i, linear_to_db(maxf(level[roles[i]], 0.0001)))
+
+
+## Has the first of the army set foot on the map?
+func army_in() -> bool:
+	return game.director != null and game.director.arrived > 0
+
+
+## Moves a score in pieces on, by how the level stands.
+func step_pieces(state: String, army: bool) -> void:
+	if piece == "" and state == "play":
+		piece = "build"
+		player.play()
+	if piece == "build" and army:
+		piece = "action"
+		_switch("call")
+	if state == "won" and piece != "won" and piece != "lost":
+		piece = "won"
+		_switch("won")
+	if state == "lost" and piece != "lost" and piece != "":
+		piece = "lost"
+
+
+func _switch(clip: String) -> void:
+	var pb := player.get_stream_playback() as AudioStreamPlaybackInteractive
+	if pb:
+		pb.switch_to_clip_by_name(clip)

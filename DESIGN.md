@@ -1895,7 +1895,30 @@ carried, which you collect by walking over them.
     drumming on every eighth with flams on the strong beats (no backbeat), timpani on
     one and three, rasgueados, two trumpets in thirds on the battle tune, the chapel
     bell clanging, a men's choir on the second and fourth phrase, the gang shouting.
-  `tests/test_music.gd` covers both towns' layers and their rules. The layers are Ogg
+  Paso Esperanza's is pieces played in turn, not layers (`"pieces"` in meta.json,
+  through an `AudioStreamInteractive`), since there the game knows when the fight
+  comes: the first wave walks in 25 s after he's in town, word of it at 10 s. All at
+  132 in E minor:
+  - *build* (12 bars, 22 s), played once from the moment he rides in (the picker and
+    loadout have only the wind): a low string pulsing in eighths like a slow train, a
+    heartbeat, a high string; at 10 s, with the word, a **bugle far off**, the federales'
+    own call on a bugle's open notes, answered from the other side with another call,
+    then both again, nearer each time (louder, brighter, less of the hall), the army
+    closing in by ear, over a quiet snare and the choir swelling onto B. (Climbing
+    strings, hammered piano octaves and a tremolo guitar were tried under it: none
+    beat the bugles.)
+  - *hold* (4 bars, looping): B held, timpani and snare rolling, till the first soldier
+    sets foot on the map (`Director.arrived`), however late a pause or a slow frame
+    makes him. It's quieter than the action, so the arrival lands as a blow.
+  - *call* (2 bars): on the next beat, the **bugle up close** over a roll, running into
+  - *action* (64 bars, 116 s, looping to the end; A A B C A B C A): strings chugging in
+    sixteenths like the engine, bass in eighths, timpani on one and three, military
+    snare with no backbeat, whips at each phrase, two trumpets in thirds on the tune
+    and the calls, the twang in the gaps, an anvil, the men's choir and the soprano on
+    the C phrases, the gang shouting.
+  - *won* (on the next bar once it's won): the trumpets close it on E major, a bell.
+  His death fades it out, as everywhere.
+  `tests/test_music.gd` covers the three towns' scores and their rules. The layers are Ogg
   Vorbis (about 185 kbps, under 3 MB each), imported to loop. Silencio's fight layer
   suits its hush; the other towns' firefights want more drive, action rather than lament.
 

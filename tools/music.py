@@ -487,7 +487,8 @@ def write_wav(path, x):
 
 CHORDS = {"Dm": (2, 5, 9), "Gm": (7, 10, 2), "A": (9, 1, 4), "F": (5, 9, 0),
           "C": (0, 4, 7), "Eb": (3, 7, 10), "Bb": (10, 2, 5),
-          "Am": (9, 0, 4), "G": (7, 11, 2), "E": (4, 8, 11)}
+          "Am": (9, 0, 4), "G": (7, 11, 2), "E": (4, 8, 11),
+          "Em": (4, 7, 11), "D": (2, 6, 9), "B": (11, 3, 6)}
 
 
 def tones(ch, lo, hi):
@@ -939,12 +940,14 @@ CRUZ_WHISTLE = [
 ]
 
 
-def third_below(m, ch):
-    """The second trumpet's note: a chord tone under the tune, else a third under it in A minor."""
+def third_below(m, ch, scale=None):
+    """The second trumpet's note: a chord tone under the tune, else a third under
+    it in the key (A minor, with G sharp over E, unless told another scale)."""
     under = [t for t in tones(ch, m - 5, m - 3)]
     if under:
         return under[-1]
-    scale = (9, 11, 0, 2, 4, 5, 8 if ch == "E" else 7)
+    if scale is None:
+        scale = (9, 11, 0, 2, 4, 5, 8 if ch == "E" else 7)
     below = [x for x in range(m - 4, m - 2) if x % 12 in scale]
     return below[0] if below else m - 3
 
@@ -1062,10 +1065,264 @@ def cruz_verde():
                    (("tension", cruz_tension, 22), ("battle", cruz_battle, 23)))
 
 
+# --- Paso Esperanza: waiting for the army, then the fight for the train --------
+#
+# Not layers but a run of pieces, one after the other (scripts/music.gd plays
+# them through an AudioStreamInteractive), all at 132 in E minor. The build plays
+# once from the start: a low string pulsing like a slow train, a heartbeat, a
+# high string; at ten seconds (when word comes that they're on the road) a bugle
+# far off, the federales' own, answered from another side, then both again, nearer
+# each time, over a quiet snare and the choir, everything swelling onto B. The hold goes on swelling, round
+# and round, till the first soldier walks onto the map, whenever that is. Then the
+# call: the bugle up close over a roll, and the action crashes in: strings
+# chugging in sixteenths like the engine, the march's drums (no backbeat),
+# trumpets in thirds, the twang, whips and an anvil, the choir and the soprano,
+# the gang shouting. Two minutes round, and round again till it's over. Won, the
+# trumpets close it on E major and a bell.
+
+TRAIN_BPM = 132
+TRAIN_A = ["Em", "Em", "D", "D", "C", "C", "B", "B"]
+TRAIN_B = ["Am", "Em", "Am", "B", "C", "D", "Em", "B"]
+TRAIN_C = ["Em", "F", "Em", "F", "C", "D", "B", "B"]
+TRAIN_FORM = "AABCABCA"
+TRAIN_CHORDS = sum(({"A": TRAIN_A, "B": TRAIN_B, "C": TRAIN_C}[k] for k in TRAIN_FORM), [])
+E_MINOR = (4, 6, 7, 9, 11, 0, 2)
+TRAIN_TUNE = [   # (bar, beat, beats, midi): the A phrase
+    (0, 0, 1.5, 83), (0, 1.5, .5, 79), (0, 2, 1, 76), (0, 3, 1, 79),
+    (1, 0, 2, 83), (1, 2, 1, 84), (1, 3, 1, 83),
+    (2, 0, 1.5, 81), (2, 1.5, .5, 78), (2, 2, 1, 74), (2, 3, 1, 78),
+    (3, 0, 3, 81),
+    (4, 0, 1.5, 79), (4, 1.5, .5, 76), (4, 2, 1, 72), (4, 3, 1, 76),
+    (5, 0, 2, 79), (5, 2, 1, 81), (5, 3, 1, 79),
+    (6, 0, 1.5, 78), (6, 1.5, .5, 75), (6, 2, 1, 71), (6, 3, 1, 75),
+    (7, 0, 3, 78),
+]
+TRAIN_TURN = [(7, 0, 1, 83), (7, 1, 1, 81), (7, 2, 1, 79), (7, 3, 1, 78)]   # the A phrase's second ending
+TRAIN_CALLS = [  # the B phrase
+    (0, 0, .5, 76), (0, .5, .5, 81), (0, 1, 3, 84), (1, 0, 4, 83),
+    (2, 0, .5, 76), (2, .5, .5, 81), (2, 1, 2, 84), (2, 3, 1, 88),
+    (3, 0, 2, 87), (3, 2, 2, 83), (4, 0, 2, 88), (4, 2, 2, 84),
+    (5, 0, 2, 86), (5, 2, 2, 81), (6, 0, 1, 83), (6, 1, 1, 79), (6, 2, 2, 76), (7, 0, 4, 78),
+]
+TRAIN_SONG = [   # the C phrase, for the soprano
+    (0, 0, 4, 83), (1, 0, 4, 84), (2, 0, 2, 83), (2, 2, 2, 79), (3, 0, 4, 81),
+    (4, 0, 2, 79), (4, 2, 2, 76), (5, 0, 2, 78), (5, 2, 2, 81), (6, 0, 4, 83), (7, 0, 4, 78),
+]
+# The bugle's call, on the open notes of a bugle in B: three quick, then up.
+BUGLE = [(0, 1 / 3, 71), (1 / 3, 1 / 3, 71), (2 / 3, 1 / 3, 71), (1, 1, 78), (2, .5, 75), (2.5, .5, 78), (3, 2.5, 83)]
+
+
+def anvil(vel=1.0):
+    n = secs(1.2)
+    t = np.arange(n) / SR
+    out = np.zeros(n)
+    for r, a, tau in ((1, 1, .9), (2.76, .6, .5), (5.4, .35, .3), (8.93, .2, .18)):
+        out += a * np.exp(-t / tau) * np.sin(2 * np.pi * 1100 * r * t + rng.uniform(0, 6.3))
+    out /= 2.15
+    out += 0.4 * noise(n, lambda f: hp(f, 2000)) * np.exp(-t / 0.004)
+    return out * vel
+
+
+# Another bugle answering from another side: down from the top.
+BUGLE_ANSWER = [(0, .5, 78), (.5, .5, 78), (1, 1, 83), (2, .5, 78), (2.5, .5, 75), (3, 2, 71)]
+
+
+def bugle(c, at, far=False, call=BUGLE, near=None):
+    """The army's call. A bugle has no valves: no vibrato to speak of, bright.
+    near (0 far off .. 1 at hand) darkens it with the distance; far is near 0."""
+    notes = [(c.at(0, at + b), c.dur(d) * 0.95, m, 1.0) for b, d, m in call]
+    start, ph, f, a = line(notes, attack=0.03, release=0.08, glide=0.01, vib_depth=0.04, drift=0.02,
+                           scoop=0.4, scoop_time=0.03, artic=0.05, punch=0.35)
+    e = a / (a.max() + 1e-9)
+    out = np.zeros(len(a))
+    for k in range(1, 24):
+        if k * float(f.mean()) > 9000:
+            break
+        out += e ** (1 + 0.3 * (k - 1)) * k ** -0.05 * lp(k * f, 4500) * bump(k * f, 1500, 7, 0.7) * np.sin(k * ph)
+    out /= np.abs(out).max() + 1e-9
+    if near is None and far:
+        near = 0.0
+    if near is not None and near < 1.0:
+        cut = 2200 * (3.0 ** near)
+        out = fft_filter(out, lambda fr: lp(fr, cut, 2) * hp(fr, 300 * (1 - near) + 60))
+    return start, out
+
+
+def train_build(c, mix):
+    roots = ["Em"] * 6 + ["C", "C", "D", "D", "B", "B"]
+    for bar, ch in enumerate(roots):
+        r = low_root(ch)
+        grow = bar / 11
+        for e in range(8):   # the pulse, a slow train
+            mix.put(pluck(r, c.dur(0.4), (0.9 if e % 2 == 0 else 0.6), pickup=0.2, tau=0.8, bright=0.5,
+                          maxf=3000, damp=0.03, click=0.1), c.at(bar, e * 0.5), "close", 0.0, 0.18 + 0.3 * grow)
+        if bar < 9:
+            mix.put(timp(r if r >= 36 else r + 12, 0.35 + 0.2 * grow, 1.2), c.at(bar), "close", -0.1, 0.4)
+            mix.put(timp(r if r >= 36 else r + 12, 0.22 + 0.1 * grow, 1.0), c.at(bar, 0.4), "close", -0.1, 0.4)
+        if bar >= 7:
+            for j in range(16):
+                mix.put(snare(0.08 + 0.3 * grow + (0.15 if j % 4 == 0 else 0)), c.at(bar, j / 4), "close", 0.15, 0.25)
+        if bar >= 9:
+            for j in range(8):
+                mix.put(timp(r if r >= 36 else r + 12, 0.3 + 0.5 * grow, 0.8), c.at(bar, j / 2), "close", -0.1, 0.4)
+            for m in tones(ch, 47, 62):
+                cs, csig = choir([(c.at(bar), c.dur(3.9), m, 0.5 + 0.4 * grow)], "a_male", voices=3, attack=0.6,
+                                 release=0.3, glide=0, vib_depth=0.15, drift=0.05)
+                mix.put(csig, cs, "far", rng.uniform(-.6, .6), 0.05)
+        if bar >= 10:
+            mix.put(strings(83, c.dur(4), 0.8, attack=1.0, release=0.2, voices=3), c.at(bar), "far", 0.4, 0.04)
+    mix.put(strings(88, c.dur(16), 0.6, attack=4.0, release=1.5, voices=2), c.at(1), "far", 0.4, 0.02)
+    # Word of them on the road: a bugle far off, answered from another side, then
+    # both again, nearer each time; the last of them up close is the call itself.
+    for beat, call, pan, near, gain in ((5 * 4 + 2, BUGLE, 0.5, 0.0, 0.14), (7 * 4, BUGLE_ANSWER, -0.6, 0.15, 0.13),
+                                        (8 * 4 + 2, BUGLE, 0.45, 0.35, 0.17), (9 * 4 + 2, BUGLE_ANSWER, -0.5, 0.5, 0.18),
+                                        (10 * 4 + 1, BUGLE, 0.4, 0.65, 0.2)):
+        s0, sig = bugle(c, beat, call=call, near=near)
+        mix.put(sig, s0, "far", pan, gain)
+    snare_roll(mix, c, 11, 0, 4, 0.3, 0.9, 0.9)
+    for j in range(16):
+        mix.put(timp(35, 0.4 + 0.5 * j / 15, 0.8), c.at(11, j / 4), "close", -0.1, 0.4)
+
+
+def _swelling(c, mix, bars, level=1.0):
+    """B held: a timpani and a snare rolling, the low pulse, strings and choir held."""
+    for bar in range(bars):
+        for j in range(16):
+            mix.put(timp(35, (0.45 + 0.1 * (j % 4 == 0)) * level, 0.7), c.at(bar, j / 4), "close", -0.1, 0.25)
+            mix.put(snare((0.25 + 0.1 * (j % 4 == 0)) * level), c.at(bar, j / 4), "close", 0.15, 0.15)
+        for e in range(8):
+            mix.put(pluck(35, c.dur(0.4), 0.9 if e % 2 == 0 else 0.65, pickup=0.2, tau=0.8, bright=0.5, maxf=3000,
+                          damp=0.03, click=0.1), c.at(bar, e * 0.5), "close", 0.0, 0.3 * level)
+    for m in (47, 54, 59, 63):
+        mix.put(strings(m, c.dur(4 * bars), 0.9, attack=0.05, release=0.05, voices=3), c.at(0), "mid", rng.uniform(-.4, .4), 0.035)
+    for m in (47, 54, 59):
+        cs, csig = choir([(c.at(0), c.dur(4 * bars), m, 0.85)], "a_male", voices=3, attack=0.1, release=0.1,
+                         glide=0, vib_depth=0.15, drift=0.05)
+        mix.put(csig, cs, "far", rng.uniform(-.6, .6), 0.03)
+    mix.put(strings(83, c.dur(4 * bars), 0.8, attack=0.05, release=0.05, voices=3), c.at(0), "far", 0.4, 0.025)
+
+
+def train_hold(c, mix):
+    _swelling(c, mix, 4)
+
+
+def train_call(c, mix):
+    _swelling(c, mix, 2, 0.9)
+    snare_roll(mix, c, 1, 2, 2, 0.4, 1.0)
+    s0, sig = bugle(c, 0)
+    mix.put(sig, s0, "mid", -0.2, 0.32)
+
+
+def train_action(c, mix):
+    snare_vel = [.8, .2, .3, .2, .5, .2, .3, .4, .8, .2, .3, .2, .5, .3, .6, .4]
+    for bar, ch in enumerate(TRAIN_CHORDS):
+        sec, inbar = TRAIN_FORM[bar // 8], bar % 8
+        r = low_root(ch)
+        tm = r if r >= 36 else r + 12
+        for j in range(16):   # the engine: strings chugging in sixteenths
+            m = (r + 12, r + 24, r + 19, r + 24)[j % 4]
+            t = c.at(bar, j / 4) + rng.normal(0, 0.002)
+            mix.put(strings(m, 0.09, 1.0 if j % 4 == 0 else 0.7, attack=0.008, release=0.05, voices=2), t, "mid", 0.25, 0.05)
+            mix.put(snare(snare_vel[j]), t, "close", 0.15, 0.22)
+            if j % 2 == 0:
+                mix.put(pluck(r, c.dur(0.45), 1.0 if j % 8 == 0 else 0.65, pickup=0.22, tau=1.0, bright=0.45,
+                              maxf=2500, damp=0.03, click=0.1), t, "close", 0.0, 0.45)
+        mix.put(timp(tm, 1.0), c.at(bar), "close", -0.1, 0.55)
+        mix.put(timp(tm, 0.75), c.at(bar, 2), "close", -0.1, 0.5)
+        if inbar == 0:
+            mix.put(whip(), c.at(bar) - 0.14, "mid", 0.5, 0.28)
+        if sec == "C":
+            mix.put(anvil(0.7), c.at(bar, 3), "mid", 0.45, 0.12)
+            mix.put(anvil(0.5), c.at(bar, 3.5), "mid", 0.45, 0.12)
+        if sec in "BC":
+            for m in tones(ch, 48, 62):
+                cs, csig = choir([(c.at(bar), c.dur(3.9), m, 0.8)], "a_male", voices=3, attack=0.12,
+                                 release=0.25, glide=0, vib_depth=0.15, drift=0.05)
+                mix.put(csig, cs, "far", rng.uniform(-.6, .6), 0.045)
+        if inbar == 7 and bar == len(TRAIN_CHORDS) - 1:
+            snare_roll(mix, c, bar, 2, 2, 0.3, 1.0)
+    trumpet_lines = []
+    for i, sec in enumerate(TRAIN_FORM):
+        b0 = i * 8
+        if sec == "A":
+            tune = TRAIN_TUNE if i % 2 == 0 else [n for n in TRAIN_TUNE if n[0] < 7] + TRAIN_TURN
+            trumpet_lines += shifted(tune, b0)
+            for b in (3, 7):   # the twang in the gaps
+                ch = TRAIN_CHORDS[b0 + b]
+                riff = [low_root(ch) + 12 + x for x in (0, 7, 12, 7)] if i % 2 else [low_root(ch) + 12 + x for x in (12, 7, 3 if "m" in ch else 4, 0)]
+                for j, m in enumerate(riff):
+                    mix.put(pluck(m, c.dur(0.5), 1.0, pickup=0.09, tau=1.6, bright=1.3, maxf=7000),
+                            c.at(b0 + b, 2 + j * 0.5), "guitar", -0.3, 0.4)
+            mix.put(shout(55 + rng.integers(0, 3)), c.at(b0 + 7, 3) - 0.03, "mid", rng.uniform(-.3, .3), 0.38)
+        elif sec == "B":
+            trumpet_lines += shifted(TRAIN_CALLS, b0)
+            for b in (3, 7):
+                mix.put(shout(55 + rng.integers(0, 3)), c.at(b0 + b, 3) - 0.03, "mid", rng.uniform(-.3, .3), 0.38)
+        else:
+            s0, sig = sing(notes_of(c, shifted(TRAIN_SONG, b0), 0, 0.9), "a_sop", tilt=1.2, attack=0.08,
+                           release=0.14, glide=0.06, vib_rate=5.8, vib_depth=0.35, vib_delay=0.15, drift=0.04, scoop=0.25)
+            mix.put(sig, s0, "far", 0.1, 0.4)
+            for b in range(8):   # the twang doubling the engine, low
+                ch = TRAIN_CHORDS[b0 + b]
+                for j in range(8):
+                    mix.put(pluck(low_root(ch) + 12, c.dur(0.4), 0.9 if j % 2 == 0 else 0.6, pickup=0.09, tau=1.2,
+                                  bright=1.2, maxf=7000, damp=0.03), c.at(b0 + b, j / 2), "guitar", -0.35, 0.14)
+    lead = trumpet_lines
+    second = [(b, e, d, third_below(m, TRAIN_CHORDS[b], E_MINOR if TRAIN_CHORDS[b] != "B" else (4, 6, 7, 9, 11, 0, 3)))
+              for b, e, d, m in trumpet_lines]
+    for part, pan, gain in ((lead, -0.25, 0.22), (second, 0.25, 0.16)):
+        s0, sig = trumpet(notes_of(c, part, 0, 0.95))
+        mix.put(sig, s0, "mid", pan, gain)
+
+
+def train_won(c, mix):
+    close = [(0, 0, 2, 83), (0, 2, 2, 79), (1, 0, 2, 84), (1, 2, 2, 79), (2, 0, 2, 78), (2, 2, 2, 75), (3, 0, 8, 80)]
+    chords = ["Em", "C", "B", "E", "E", "E"]
+    second = [(b, e, d, third_below(m, chords[b], (4, 6, 8, 9, 11, 1, 3) if chords[b] == "E" else E_MINOR))
+              for b, e, d, m in close]
+    for part, pan, gain in ((close, -0.25, 0.24), (second, 0.25, 0.18)):
+        s0, sig = trumpet(notes_of(c, part, 0, 0.95))
+        mix.put(sig, s0, "mid", pan, gain)
+    for bar, ch in enumerate(chords[:4]):
+        r = low_root(ch)
+        mix.put(timp(r if r >= 36 else r + 12, 0.9 if bar == 3 else 0.6, 3.0 if bar == 3 else 1.4), c.at(bar), "close", -0.1, 0.5)
+        mix.put(pluck(r, c.dur(4 if bar < 3 else 10), 0.9, pickup=0.22, tau=2.0, bright=0.45, maxf=2500), c.at(bar), "close", 0.0, 0.45)
+        for m in tones(ch, 52, 68):
+            mix.put(strings(m, c.dur(4 if bar < 3 else 9), 0.8, attack=0.2, release=1.6, voices=2), c.at(bar), "far",
+                    rng.uniform(-.5, .5), 0.05)
+    mix.put(bell(64, 9.0, 0.8), c.at(3), "far", -0.4, 0.35)
+    snare_roll(mix, c, 2, 2, 2, 0.2, 0.8)
+
+
+def train():
+    """The pieces in the order they play: (name, audio, loops)."""
+    global rng
+    c = Clock(0.0, TRAIN_BPM)
+    out = []
+    for name, part, bars, loops, seed in (("build", train_build, 12, False, 31), ("hold", train_hold, 4, True, 32),
+                                          ("call", train_call, 2, False, 33), ("action", train_action, 64, True, 34),
+                                          ("won", train_won, 7, False, 35)):
+        rng = np.random.default_rng(seed)
+        n = secs(c.end(bars))
+        mix = Mix(c.end(bars) + 6.0)
+        part(c, mix)
+        x = render(mix)
+        if loops:
+            x[:, :x.shape[1] - n] += x[:, n:]
+            x = x[:, :n]
+        else:
+            x = x[:, :n] if name != "won" else x   # (a piece that hands over stops on its bar line; the end rings out)
+        beats = bars * 4 if loops or name != "won" else int(x.shape[1] / SR * TRAIN_BPM / 60)   # (the win rings out past its bars)
+        out.append((name, x, loops, beats))
+    peak = max(np.abs(x).max() for _, x, _, _ in out)
+    return [(name, x * 0.9 / peak, loops, beats) for name, x, loops, beats in out]
+
+
 # Each level's score: its layers, and the part each plays (see scripts/music.gd).
 SCORES = {
     "silencio": (silencio, {"snow": "always", "unease": "unease", "fight": "fight"}),
     "cruz_verde": (cruz_verde, {"tension": "calm", "battle": "fight"}),
+    "train": (train, None),   # pieces played in turn, not layers
 }
 
 
@@ -1076,6 +1333,15 @@ def bake(meta, assets):
     only = [k for k in os.environ.get("SUNDANCE_MUSIC", "").split(",") if k]
     for name, (fn, roles) in SCORES.items():
         if only and name not in only:
+            continue
+        if roles is None:
+            pieces = []
+            for k, x, loops, beats in fn():
+                rel = "music/%s_%s.ogg" % (name, k)
+                write_ogg(os.path.join(assets, rel), x)
+                pieces.append({"name": k, "path": "res://assets/" + rel, "loops": loops, "beats": beats})
+                print("    %s %s: %.1f s, %.1f dB rms" % (name, k, x.shape[1] / SR, 20 * np.log10(np.sqrt((x ** 2).mean()))))
+            meta["music"][name] = {"bpm": TRAIN_BPM, "pieces": pieces}
             continue
         layers = fn()
         out = []
@@ -1088,6 +1354,27 @@ def bake(meta, assets):
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "train":
+        # a listen through: the build, the hold twice round, the call, the action, the win
+        if len(sys.argv) > 2 and sys.argv[2] == "build":   # the build alone, quick, into the hold and the call
+            global rng
+            c = Clock(0.0, TRAIN_BPM)
+            run = []
+            for part, bars, seed in ((train_build, 12, 31), (train_hold, 2, 32), (train_call, 2, 33)):
+                rng = np.random.default_rng(seed)
+                mix = Mix(c.end(bars) + 1.0)
+                part(c, mix)
+                run.append(render(mix)[:, :secs(c.end(bars))])
+            x = np.concatenate(run, axis=1)
+            os.makedirs("build/music", exist_ok=True)
+            write_wav("build/music/train_build.wav", x * 0.9 / np.abs(x).max())
+            return
+        pieces = {k: x for k, x, _, _ in train()}
+        run = [pieces["build"], pieces["hold"], pieces["hold"][:, :secs(2 * 4 * 60 / TRAIN_BPM)], pieces["call"],
+               pieces["action"], pieces["won"]]
+        os.makedirs("build/music", exist_ok=True)
+        write_wav("build/music/train_preview.wav", np.clip(np.concatenate(run, axis=1), -1, 1))
+        return
     if len(sys.argv) > 1 and sys.argv[1] in SCORES:
         name = sys.argv[1]
         layers = SCORES[name][0]()

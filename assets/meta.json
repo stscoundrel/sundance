@@ -1083902,6 +1083902,41 @@
      "path": "res://assets/music/cruz_verde_battle.ogg"
     }
    ]
+  },
+  "train": {
+   "bpm": 132,
+   "pieces": [
+    {
+     "name": "build",
+     "path": "res://assets/music/train_build.ogg",
+     "loops": false,
+     "beats": 48
+    },
+    {
+     "name": "hold",
+     "path": "res://assets/music/train_hold.ogg",
+     "loops": true,
+     "beats": 16
+    },
+    {
+     "name": "call",
+     "path": "res://assets/music/train_call.ogg",
+     "loops": false,
+     "beats": 8
+    },
+    {
+     "name": "action",
+     "path": "res://assets/music/train_action.ogg",
+     "loops": true,
+     "beats": 256
+    },
+    {
+     "name": "won",
+     "path": "res://assets/music/train_won.ogg",
+     "loops": false,
+     "beats": 41
+    }
+   ]
   }
  }
 }
