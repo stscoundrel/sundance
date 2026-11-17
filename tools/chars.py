@@ -2217,8 +2217,20 @@ def jobs_for(template, guns):
 
 def pack(entries, width=4096):
     """Shelf-pack trimmed frames. entries: list of (key, dir, idx, img, slots, ox, oy).
-    Returns (atlas RGBA, slot atlas, {key: [[ [x, y, w, h, ox, oy] per frame ] per dir]})."""
-    order = sorted(range(len(entries)), key=lambda i: -entries[i][3].shape[0])
+    Returns (atlas RGBA, slot atlas, {key: [[ [x, y, w, h, ox, oy] per frame ] per dir]}).
+    A frame drawn exactly like one already on the sheet (pixels and slots both: a pose
+    held, a loop's frame repeated, the same aim in two anims) points at that one rather
+    than taking room of its own; that was a third of a big body's sheet, and every byte
+    of it sat in video memory. Its own offset still goes with it."""
+    first = {}   # pixels and slots -> the entry that's drawn on the sheet
+    same = {}    # entry -> the one it shares
+    for i, e in enumerate(entries):
+        k = (e[3].shape, e[3].tobytes(), e[4].tobytes())
+        if k in first:
+            same[i] = first[k]
+        else:
+            first[k] = i
+    order = sorted(first.values(), key=lambda i: -entries[i][3].shape[0])
     x = y = shelf = 0
     placed = {}
     for i in order:
@@ -2229,6 +2241,8 @@ def pack(entries, width=4096):
         placed[i] = (x, y)
         x += w + 1
         shelf = max(shelf, h)
+    for i, j in same.items():
+        placed[i] = placed[j]
     H = y + shelf + 1
     atlas = np.zeros((H, width, 4), np.uint8)
     slot_atlas = np.zeros((H, width), np.uint8)
@@ -2236,8 +2250,9 @@ def pack(entries, width=4096):
     for i, (key, d, idx, img, sl, ox, oy) in enumerate(entries):
         px_, py_ = placed[i]
         h, w = img.shape[:2]
-        atlas[py_:py_ + h, px_:px_ + w] = img
-        slot_atlas[py_:py_ + h, px_:px_ + w] = sl
+        if i not in same:
+            atlas[py_:py_ + h, px_:px_ + w] = img
+            slot_atlas[py_:py_ + h, px_:px_ + w] = sl
         rects.setdefault(key, {}).setdefault(d, {})[idx] = [px_, py_, w, h, ox, oy]
     out = {}
     for key, dd in rects.items():

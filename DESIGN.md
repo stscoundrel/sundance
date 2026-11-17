@@ -63,8 +63,14 @@ card ("RIDING TO", the town, its picker note) stands over it, and Esc can't turn
 Loading the next town in the background while its briefing is read was tried on paper and
 dropped: the old town would still be holding its sprites, two towns at once, the very
 thing that broke the Windows release, and nearly all of a town's men are asked for as it's
-built anyway (the reserve and guests stand ready from the start). Trimming the body
-sheets' empty space is the next step.
+built anyway (the reserve and guests stand ready from the start).
+
+A body's sheet keeps each drawing once: frames already came trimmed to the figure and
+shelf-packed, but a third of a big sheet was frames drawn exactly alike (a pose held, a
+loop's frame repeated, the same aim in two anims). The bake (`chars.pack`) points those
+at the one on the sheet, each keeping its own offset; the game reads the frames as it
+always did. The stranger's sheet went from 11007 rows to 6766, and a town's sprites to
+about 1.0 GB (Silencio) to 1.9 GB (the funeral), San Miguel 1.6.
 
 **What he's told.** The title card is the whole game's, not a town's: "One stranger.
 Five towns. Whoever pays.", the keys, a line of stealth advice, and "click to choose
