@@ -1388,6 +1388,12 @@ def gen_sfx(meta):
         write(take, room(crack + rumble * env * 3.0, hrng, 0.6, 0.4), meta, 0.85, 1.4)
 
 
+def gen_music(meta):
+    print("  music")
+    import music
+    music.bake(meta, ASSETS)
+
+
 def main():
     with open(os.path.join(ROOT, "data", "town.json")) as f:
         level = json.load(f)
@@ -1399,7 +1405,7 @@ def main():
         with open(meta_path) as f:
             meta = json.load(f)
     steps = {"chars": gen_characters, "world": gen_world, "fx": gen_fx, "ui": gen_ui, "sfx": gen_sfx,
-             "animals": gen_animals}
+             "animals": gen_animals, "music": gen_music}
     for key, fn in steps.items():
         if not only or key in only:
             fn(meta)

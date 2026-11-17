@@ -79,6 +79,7 @@ var puddles: Puddles = null   # the rain's puddles (see Puddles), if it's rainin
 var footprints: Footprints = null   # and the tracks everyone leaves in its snow
 var sight := 1.0                # of a man's sight the weather leaves him (Snowfall: snow, a squall)
 var wind_player: AudioStreamPlayer
+var music: Music = null   # the level's score, if levels.json gives it one (see Music)
 var sun_wind: AudioStreamPlayer   # the wind, back as the funeral's rain clears (see Snowfall.clear)
 var hanging: Hanging = null     # a man on the gallows to save, if the level has one
 var captive: Captive = null     # a man tied to a pole, if the level has one
@@ -403,6 +404,9 @@ func _ready() -> void:
 		sun_wind.finished.connect(sun_wind.play)
 		sun_wind.process_mode = Node.PROCESS_MODE_ALWAYS
 		sun_wind.play()
+	music = Music.make(self, level_entry.get("music", ""))
+	if music:
+		add_child(music)
 	sfx("bell", null, -4.0, 0.0)
 	if _args.has("guns"):
 		start_guns = Array(_args["guns"].split(",")).filter(func(k): return Player.SLOT.has(k))

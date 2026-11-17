@@ -1857,6 +1857,29 @@ carried, which you collect by walking over them.
   coach gun's hinge and snap, brass tinkling onto the boards, spurs jingling. The
   hero's own sounds play at full volume; a compressor and limiter on the master bus
   keep firefights punchy.
+- Music: composed and played by `tools/music.py` (its own melodies, nothing borrowed),
+  after *The Great Silence*, *Il Mercenario*, *Vamos a matar, compañeros* and *The Big
+  Gundown*. Pop sounds wrong here: no backbeat, no bouncing octave bass, no chord every
+  half bar. What works is a held low note, long tones with space around them, slow
+  walks down a minor key, and drums that roll and swell into a downbeat. A level's score
+  is one piece in layers that loop together (`Music`, an `AudioStreamSynchronized`),
+  every layer in the same bars and chords so any of them can come up mid-phrase. It
+  always plays, quietly, under the wind; it isn't a cue that only comes with trouble.
+  Silencio's (the only score yet, at 66, 32 bars round) has three:
+  - *snow*, always: piano rocking in eighths, then quarters under a hummed voice, then
+    the tune on the piano's top like a music box, then nearly nothing; strings under all.
+  - *unease*, while a gang's alarm is past uneasy, a man's investigating or searching, or
+    the gold's been missed or is in the stranger's hands: plucked low strings walking in
+    quarters, a timpani heartbeat, a thin high string and a low guitar note now and then.
+    It comes up over 4 s and stays 15 s after the trouble.
+  - *fight*, while a bandit's in combat or shooting at the other gang: timpani driving in
+    eighths, strings sawing under it, a bell at each phrase, the soprano crying the tune
+    high (a male choir the other times round). Up in 1.5 s, it stays 10 s after.
+  When he dies the whole score fades and only the wind's left; when the job's done it
+  settles back to the snow. `tests/test_music.gd` covers the layers and their rules.
+  The layers are Ogg Vorbis (about 185 kbps, under 3 MB each), imported to loop.
+  Silencio's fight layer suits its hush; the other towns' firefights want something
+  with more drive, more action than lament, when their scores come.
 
 ## Bandit types
 

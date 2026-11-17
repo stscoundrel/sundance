@@ -1083868,5 +1083868,15 @@
    -1856,
    -128
   ]
+ },
+ "music": {
+  "silencio": {
+   "bpm": 66,
+   "layers": {
+    "snow": "res://assets/music/silencio_snow.ogg",
+    "unease": "res://assets/music/silencio_unease.ogg",
+    "fight": "res://assets/music/silencio_fight.ogg"
+   }
+  }
  }
 }

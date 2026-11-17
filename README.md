@@ -91,12 +91,14 @@ time under snow, their `"snow"` skin, which a map with `"skin": "snow"` (Silenci
 place of the plain look; they're lit under cloud (`render(overcast=True)`, faint shadows) to
 go with its `"weather": "snow"`. Character animations are baked in parallel from key poses
 in `tools/chars.py` and packed into one atlas per character; baking every body takes ten
-minutes or more, so re-bake only the ones you changed.
+minutes or more, so re-bake only the ones you changed. The `music` step writes each level's
+score (`tools/music.py`, five minutes or so) to `assets/music/`; `tools/music.py silencio`
+writes the layers and a mix of all three to `build/music/` to listen to.
 
 ```bash
 python3 -m venv tools/.venv && tools/.venv/bin/pip install -r tools/requirements.txt
 tools/.venv/bin/python tools/gen_assets.py            # everything
-tools/.venv/bin/python tools/gen_assets.py chars ui   # or just some: chars world fx ui sfx animals ground
+tools/.venv/bin/python tools/gen_assets.py chars ui   # or just some: chars world fx ui sfx animals ground music
 SUNDANCE_TEMPLATES=veteran tools/.venv/bin/python tools/gen_assets.py chars   # re-bake some bodies
 SUNDANCE_OBJECTS=coop,hencrate tools/.venv/bin/python tools/gen_assets.py world   # re-bake some world objects
 SUNDANCE_GROUNDS=train tools/.venv/bin/python tools/gen_assets.py ground   # re-bake some maps' grounds (town, cruz_verde, train...)
@@ -180,6 +182,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_strongbox.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_snow.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_war.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_snowbound.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_music.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_camps.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_trespass.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_funeral.gd
