@@ -1918,7 +1918,18 @@ carried, which you collect by walking over them.
     the C phrases, the gang shouting.
   - *won* (on the next bar once it's won): the trumpets close it on E major, a bell.
   His death fades it out, as everywhere.
-  `tests/test_music.gd` covers the three towns' scores and their rules. The layers are Ogg
+  San Miguel's (the first town, so the game's own theme: 12/8 at 76, G minor, 32 bars
+  A B A B, 101 s round) has Cruz Verde's two parts, but its tension never stops: a
+  gang holds the town and a man hangs at noon. The theme climbs a fourth and a fifth
+  to a held note, then the same a step down, twice, and home (`SM_THEME_A`, `_B`).
+  - *tension*, the calm: the picked guitar and the low string tolling, a clock ticking
+    every beat, the jaw harp every other bar, the bell at each phrase, a high string,
+    timpani swelling into the next; over it the theme whistled, and the second time
+    round twanged low on the guitar.
+  - *battle*, the fight: Cruz Verde's band (the galloping bass, flammed snare,
+    rasgueados, whips, bell, choir, shouts) with the same theme on two trumpets in
+    thirds, the twang doubling them an octave down on the third phrase.
+  `tests/test_music.gd` covers the four towns' scores and their rules. The layers are Ogg
   Vorbis (about 185 kbps, under 3 MB each), imported to loop. Silencio's fight layer
   suits its hush; the other towns' firefights want more drive, action rather than lament.
 

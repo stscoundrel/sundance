@@ -8,6 +8,7 @@ extends SceneTree
 ##   lost   - when the stranger's dead the whole score fades, the ground too.
 ##   fort   - Cruz Verde asleep plays only the tension; the shooting
 ##            starts and the tension gives way to the battle, back once it's long over.
+##   town   - San Miguel's tension and battle, the same parts as Cruz Verde's.
 ##   train  - Paso Esperanza's pieces: nothing till he rides in, then the build; the
 ##            first soldier on the map brings the call and the action; won, the win;
 ##            his death fades it all.
@@ -82,7 +83,14 @@ func _process(delta: float) -> bool:
 		game.queue_free()
 		_ride("cruz_verde")
 		return false
-	_fort(m)
+	if town == "cruz_verde":
+		_fort(m)
+		game.queue_free()
+		_ride("san_miguel")
+		return false
+	step = "town"
+	check(Array(m.roles) == ["calm", "fight"], "San Miguel's layers: %s" % [m.roles])
+	check(m.level["calm"] > 0.99 and m.level["fight"] == 0.0, "the held town isn't the tension: %s" % m.level)
 	game.queue_free()
 	_ride("train")
 	return false

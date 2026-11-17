@@ -488,7 +488,7 @@ def write_wav(path, x):
 CHORDS = {"Dm": (2, 5, 9), "Gm": (7, 10, 2), "A": (9, 1, 4), "F": (5, 9, 0),
           "C": (0, 4, 7), "Eb": (3, 7, 10), "Bb": (10, 2, 5),
           "Am": (9, 0, 4), "G": (7, 11, 2), "E": (4, 8, 11),
-          "Em": (4, 7, 11), "D": (2, 6, 9), "B": (11, 3, 6)}
+          "Em": (4, 7, 11), "D": (2, 6, 9), "B": (11, 3, 6), "Cm": (0, 3, 7)}
 
 
 def tones(ch, lo, hi):
@@ -1318,11 +1318,132 @@ def train():
     return [(name, x * 0.9 / peak, loops, beats) for name, x, loops, beats in out]
 
 
+# --- San Miguel: the first town, and the theme ----------------------------
+#
+# The game's own tune, the one to remember: four bars that climb a fourth and
+# a fifth to a held note, then the same a step down, twice, and home. G minor,
+# twelve-eight at a dotted crotchet of 76, 32 bars (A B A B, 101 s round). Two
+# layers, as at Cruz Verde, but here the tension never stops: the town's held
+# by a gang and a man hangs at noon. It plays all the while there's no fight:
+# the picked guitar and the low string tolling, a clock ticking every beat, the
+# jaw harp, the bell at each phrase, a high string, the timpani swelling into
+# the next, and over it the theme whistled; the second time round, twanged low.
+# The fight is Cruz Verde's band (they liked it there) with the theme on the
+# trumpets, in thirds: the same tune, now in the open.
+
+SM_BEAT = 76
+SM_A = ["Gm", "Gm", "F", "F", "Eb", "D", "Gm", "D"]
+SM_B = ["Cm", "Gm", "Cm", "D", "Eb", "F", "D", "Gm"]
+SM_CHORDS = SM_A + SM_B + SM_A + SM_B
+SM_THEME_A = [   # (bar, eighth, eighths, midi)
+    (0, 0, 3, 74), (0, 3, 3, 79), (0, 6, 5, 82), (0, 11, 1, 81),
+    (1, 0, 9, 79), (1, 9, 3, 74),
+    (2, 0, 3, 72), (2, 3, 3, 77), (2, 6, 5, 81), (2, 11, 1, 79),
+    (3, 0, 9, 77), (3, 9, 3, 72),
+    (4, 0, 3, 70), (4, 3, 3, 75), (4, 6, 3, 79), (4, 9, 3, 82),
+    (5, 0, 6, 81), (5, 6, 3, 78), (5, 9, 3, 74),
+    (6, 0, 3, 79), (6, 3, 3, 82), (6, 6, 6, 86),
+    (7, 0, 12, 78),
+]
+SM_THEME_B = [
+    (0, 0, 6, 87), (0, 6, 3, 86), (0, 9, 3, 84),
+    (1, 0, 6, 82), (1, 6, 6, 79),
+    (2, 0, 3, 84), (2, 3, 3, 87), (2, 6, 3, 86), (2, 9, 3, 84),
+    (3, 0, 12, 81),
+    (4, 0, 6, 82), (4, 6, 6, 79),
+    (5, 0, 6, 81), (5, 6, 6, 84),
+    (6, 0, 3, 82), (6, 3, 3, 81), (6, 6, 3, 79), (6, 9, 3, 78),
+    (7, 0, 12, 79),
+]
+G_MINOR = (7, 9, 10, 0, 2, 3, 5)
+
+
+def sm_scale(ch):
+    return (7, 9, 10, 0, 2, 3, 6) if ch == "D" else G_MINOR
+
+
+def sm_tension(c, mix):
+    pedal(mix, c, SM_CHORDS, 0.4)
+    arpeggio(mix, c, SM_CHORDS, 0.4)
+    sweeps = [(350, 1500, 0.08), (1400, 500, 0.1), (400, 1200, 0.06)]
+    for bar, ch in enumerate(SM_CHORDS):
+        phrase, inbar = bar // 8, bar % 8
+        for beat in range(4):   # the clock: noon's coming
+            mix.put(tick(0.7 if beat == 0 else 0.45), c.at(bar, beat * 3), "mid", 0.5, 0.05)
+        if bar % 2 == 0:
+            for j, e in enumerate((0, 6)):
+                mix.put(jaw_harp(43, c.dur(1.5), sweeps[(bar + j) % 3], 0.8), c.at(bar, e), "mid", -0.45, 0.06)
+        if inbar == 0:
+            mix.put(bell(67, 7.0, 0.6), c.at(bar), "far", -0.4, 0.13)
+        if phrase % 2 == 1 and inbar % 4 == 0:
+            mix.put(strings(86, c.dur(46), 0.6, attack=4.0, release=2.0, voices=2), c.at(bar), "far", 0.4, 0.018)
+        if inbar == 7:
+            timp_roll(mix, c, bar, 6, 6, 43)
+    for phrase, part in enumerate((SM_THEME_A, SM_THEME_B, SM_THEME_A, SM_THEME_B)):
+        if phrase == 2:   # the second time round, twanged low on the guitar
+            for b, e, d, m in shifted(part, 16):
+                long = d >= 6
+                mix.put(pluck(m - 12, c.dur(d) * 0.95, 1.0, pickup=0.09, tau=2.8 if long else 1.6, bright=1.3,
+                              maxf=7000, damp=0.04, vib=0.3 if long else 0.0), c.at(b, e), "guitar", -0.15, 0.32)
+        else:
+            s0, sig = whistle(notes_of(c, shifted(part, phrase * 8)))
+            mix.put(sig, s0, "mid", 0.2, 0.17)
+
+
+def sm_battle(c, mix):
+    pedal(mix, c, SM_CHORDS, 0.55)
+    arpeggio(mix, c, SM_CHORDS, 0.55)
+    snare_vel = [.8, .2, .25, .4, .2, .25, .6, .2, .25, .4, .3, .5]
+    for bar, ch in enumerate(SM_CHORDS):
+        phrase, inbar = bar // 8, bar % 8
+        r = bass_note(ch)
+        tm = r if r >= 36 else r + 12
+        for e in range(12):
+            v = (1.0, 0.55, 0.75)[e % 3]
+            t = c.at(bar, e) + rng.normal(0, 0.003)
+            mix.put(pluck(r, c.dur(1) * 0.85, v, pickup=0.22, tau=1.0, bright=0.45, maxf=2500, damp=0.03, click=0.1),
+                    t, "close", 0.0, 0.5)
+            mix.put(strings(r + 12, 0.12, v, attack=0.01, release=0.07, voices=2), t, "mid", -0.15, 0.07)
+            mix.put(snare(snare_vel[e]), t, "close", 0.15, 0.24)
+            if snare_vel[e] >= 0.6:
+                mix.put(snare(0.2), t - 0.018, "close", 0.15, 0.24)   # the flam
+        mix.put(timp(tm, 1.0), c.at(bar), "close", -0.1, 0.55)
+        mix.put(timp(tm, 0.7), c.at(bar, 6), "close", -0.1, 0.5)
+        for e in (0, 6):
+            rasgueado(mix, c, ch, c.at(bar, e), 1.0)
+        if inbar == 0:
+            mix.put(whip(), c.at(bar) - 0.14, "mid", 0.5, 0.28)
+            mix.put(bell(67, 6.0, 0.9), c.at(bar), "far", -0.4, 0.32)
+        if inbar == 7:
+            snare_roll8(mix, c, bar, 6, 6, 0.2, 1.0)
+        if phrase % 2 == 1:
+            for m in tones(ch, 48, 62):
+                cs, csig = choir([(c.at(bar), c.dur(11.5), m, 0.8)], "a_male", voices=3, attack=0.15,
+                                 release=0.3, glide=0, vib_depth=0.15, drift=0.05)
+                mix.put(csig, cs, "far", rng.uniform(-.6, .6), 0.05)
+    for bar, e in ((7, 3), (7, 6), (15, 6), (15, 9), (23, 3), (23, 6), (31, 0), (31, 6)):
+        mix.put(shout(55 + rng.integers(0, 3)), c.at(bar, e) - 0.03, "mid", rng.uniform(-.3, .3), 0.38)
+    lines = shifted(SM_THEME_A, 0) + shifted(SM_THEME_B, 8) + shifted(SM_THEME_A, 16) + shifted(SM_THEME_B, 24)
+    second = [(b, e, d, third_below(m, SM_CHORDS[b], sm_scale(SM_CHORDS[b]))) for b, e, d, m in lines]
+    for part, pan, gain in ((lines, -0.25, 0.22), (second, 0.25, 0.16)):
+        s0, sig = trumpet(notes_of(c, part, 0, 0.95))
+        mix.put(sig, s0, "mid", pan, gain)
+    for b, e, d, m in shifted(SM_THEME_A, 16):   # the twang doubling the trumpets, an octave down, the third phrase
+        mix.put(pluck(m - 12, c.dur(d) * 0.95, 1.0, pickup=0.09, tau=2.4 if d >= 6 else 1.4, bright=1.3,
+                      maxf=7000, damp=0.04, vib=0.3 if d >= 6 else 0.0), c.at(b, e), "guitar", -0.4, 0.3)
+
+
+def san_miguel():
+    return layered(Clock8(0.0, SM_BEAT), len(SM_CHORDS),
+                   (("tension", sm_tension, 41), ("battle", sm_battle, 42)))
+
+
 # Each level's score: its layers, and the part each plays (see scripts/music.gd).
 SCORES = {
     "silencio": (silencio, {"snow": "always", "unease": "unease", "fight": "fight"}),
     "cruz_verde": (cruz_verde, {"tension": "calm", "battle": "fight"}),
     "train": (train, None),   # pieces played in turn, not layers
+    "san_miguel": (san_miguel, {"tension": "calm", "battle": "fight"}),
 }
 
 

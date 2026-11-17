@@ -1083937,6 +1083937,20 @@
      "beats": 41
     }
    ]
+  },
+  "san_miguel": {
+   "layers": [
+    {
+     "name": "tension",
+     "role": "calm",
+     "path": "res://assets/music/san_miguel_tension.ogg"
+    },
+    {
+     "name": "battle",
+     "role": "fight",
+     "path": "res://assets/music/san_miguel_battle.ogg"
+    }
+   ]
   }
  }
 }
