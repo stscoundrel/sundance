@@ -44,13 +44,17 @@ hand-drawn San Miguel stays first in the list, unshuffled: the tests and the tun
 lean on it. Picking another level reloads the scene with it, at its briefing.
 
 **Loading.** The game boots into San Miguel (the title stands over it), so every other
-town is a scene reload. Every sprite is loaded up front (`sprite_paths()`), not when
-first needed mid-fight; for now that is every sprite the asset meta names, whatever the
-town, which comes to about 3.6 GB of video memory and about six seconds of each reload.
-That is the likely reason the Windows release only got as far as San Miguel. test_ride
-rides the picker through every town and prints what each one loads; trimming that to
-the town's own sprites, loading the next town while the briefing is read, and keeping
-what the next town shares are the next steps.
+town is a scene reload. A town's sprites are loaded up front (`sprite_paths()`), not
+when first needed mid-fight: its own ground, the bodies of everyone who might walk into
+it, and the small things every town shares (props, guns, blood, cards; about 100 MB).
+The bodies are `town_templates()`: the stranger's, then every sort the town's data names
+anywhere (gang, townsfolk, reserve, waves, camps, guests, the hangman and his man, the
+briefing), and every sort those name in turn. A sprite asked for that wasn't loaded up
+front still loads, with a warning: a stall in play, and a hole in that list. Loading
+everything for every town came to 3.6 GB of video memory, the likely reason the Windows
+release went no further than San Miguel; now it's about 1.3 GB (Silencio) to 2.6 GB (the
+funeral, whose guests are everyone), with four to six seconds a reload. Loading the next
+town while the briefing is read, and trimming the body sheets, are the next steps.
 
 **What he's told.** The title card is the whole game's, not a town's: "One stranger.
 Five towns. Whoever pays.", the keys, a line of stealth advice, and "click to choose

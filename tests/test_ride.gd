@@ -4,8 +4,9 @@ extends SceneTree
 ##   ride     - from San Miguel, a number on the picker rides to every other town and
 ##              back: the old town goes, the new one comes up at its briefing, and the
 ##              key that picked it is taken (it once fell on a scene already gone).
-##   sprites  - every sprite a town loads up front is a real file, and what they come to
-##              in video memory is printed for each town (the budget to beat).
+##   sprites  - a town loads up front its own ground and no other's, the stranger's body
+##              among its men's, and nothing that isn't a real file; what that comes to in
+##              video memory is printed for each town, with the bodies (the budget to beat).
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_ride.gd
 
 const ORDER := ["cruz_verde", "train", "silencio", "funeral", "san_miguel"]
@@ -82,11 +83,17 @@ func _pick(id: String) -> void:
 func _sprites(g: Node) -> void:
 	step = "sprites"
 	var paths: Array[String] = g.sprite_paths()
+	var own: String = g._ground_meta()["file"]
+	for k in g.meta:
+		if k.begins_with("ground"):
+			var f: String = g.meta[k]["file"]
+			check(paths.has(f) == (f == own), "%s %s %s" % [g.level_entry["id"], "lacks its ground" if f == own else "loads another town's ground,", f])
+	check("hero" in g.town_templates(), "%s leaves out the stranger's body" % g.level_entry["id"])
 	var bytes := 0
 	for p in paths:
 		check(FileAccess.file_exists(p), "%s loads %s, which isn't there" % [g.level_entry["id"], p])
 		bytes += _gpu_bytes(p)
-	print("%-12s %d sprites, %.0f MB in video memory" % [g.level_entry["id"], paths.size(), bytes / 1e6])
+	print("%-12s %d sprites, %.0f MB in video memory: %s" % [g.level_entry["id"], paths.size(), bytes / 1e6, ", ".join(g.town_templates())])
 	step = "ride"
 
 

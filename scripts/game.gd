@@ -239,6 +239,7 @@ var end_time := 0
 var start_time := 0
 
 var _textures := {}
+var _up_front := {}   # sprite_paths(), as a set: what tex() expects to have been asked for already
 var tex_scale := 0.5   # sprites carry 2x detail; world units stay 32x16 per tile
 var _streams := {}
 var _args := {}
@@ -355,6 +356,8 @@ func _ready() -> void:
 	hints = _load_json(HINTS_PATH)
 	firsts = Firsts.new(hints["first"])
 	_load_level()
+	for path in sprite_paths():
+		_up_front[path] = true
 	size = int(level["size"])
 	if level.has("haze"):
 		haze = Vector2(level["haze"][0], level["haze"][1])
@@ -375,7 +378,7 @@ func _ready() -> void:
 	for k in meta["sfx"]:
 		_streams[k] = _takes(k)   # all up front: a first load mid-fight stalls the frame
 	if DisplayServer.get_name() != "headless":
-		for path in sprite_paths():   # every sprite too, for the same reason (a crate's wreck, a pool of blood...)
+		for path in _up_front:   # the town's sprites too, for the same reason (a crate's wreck, a pool of blood...)
 			tex(path)
 	var wind := AudioStreamPlayer.new()
 	wind.stream = load(meta["sfx"]["rain" if snowfall and snowfall.rain else "wind"])   # (the funeral's rain takes the wind's place)
@@ -540,12 +543,69 @@ static func _post_tag(kind: String) -> String:
 
 
 ## The sprites loaded up front, before the stranger rides in, so none is first
-## needed in the middle of a fight. For now it's every one the asset meta names,
-## whatever the town: all the bodies, all the guns and every town's ground.
+## needed in the middle of a fight: the town's own ground, the bodies of everyone who
+## might walk into it (town_templates), and all the small things every town shares
+## (the props, the guns in the dirt, the blood, the cards). Another town's ground and
+## another town's men stay on the disk: all of them at once came to 3.6 GB of video
+## memory, more than many a card has.
 func sprite_paths() -> Array[String]:
 	var out: Array[String] = []
-	_sprite_walk(meta, out, {})
+	var seen := {}
+	for k in meta:
+		if k != "chars" and not k.begins_with("ground"):
+			_sprite_walk(meta[k], out, seen)
+	_sprite_walk(_ground_meta(), out, seen)
+	for t in town_templates():
+		_sprite_walk(meta["chars"][t], out, seen)
 	return out
+
+
+## The body templates anyone in this town might wear: the stranger's, then every sort
+## of man or woman the town's data names anywhere (its gang, townsfolk, reserves, the
+## waves and camps, the guests, the hangman and his man, the briefing's who's who),
+## and every sort those sorts name in turn. Too many costs a little memory; too few, a
+## stall the first time he shows (tex warns of it).
+func town_templates() -> Array[String]:
+	var types: Dictionary = enemy_data["types"]
+	var civ: Dictionary = enemy_data["civilians"]["types"]
+	var named := {}
+	_strings(level, named)
+	_strings(level_entry, named)
+	var out: Array[String] = [enemy_data["player"]["template"]]
+	var done := {}
+	var todo: Array = named.keys()
+	while not todo.is_empty():
+		var k: String = todo.pop_back()
+		if done.has(k):
+			continue
+		done[k] = true
+		var t: Dictionary = types.get(k, civ.get(k, {}))
+		var tpl: String = t.get("template", k)
+		if meta["chars"].has(tpl) and not out.has(tpl):
+			out.append(tpl)
+		if not t.is_empty():
+			var more := {}
+			_strings(t, more)
+			todo.append_array(more.keys().filter(func(m): return (types.has(m) or civ.has(m)) and not done.has(m)))
+	return out
+
+
+## Every string anywhere in `node`, keys and values both, into `out`.
+static func _strings(node: Variant, out: Dictionary) -> void:
+	if node is Dictionary:
+		for k in node:
+			out[k] = true
+			_strings(node[k], out)
+	elif node is Array:
+		for v in node:
+			_strings(v, out)
+	elif node is String:
+		out[node] = true
+
+
+## The ground baked for this town (a map may bake its own; San Miguel's otherwise).
+func _ground_meta() -> Dictionary:
+	return meta.get(level.get("ground", "ground"), meta["ground"])
 
 
 func _sprite_walk(node: Variant, out: Array[String], seen: Dictionary) -> void:
@@ -592,6 +652,8 @@ func _load_json(path: String) -> Dictionary:
 
 func tex(path: String) -> Texture2D:
 	if not _textures.has(path):
+		if not _up_front.is_empty() and not _up_front.has(path):
+			push_warning("a sprite not loaded up front, loaded now: %s" % path)   # (a stall in play: see sprite_paths)
 		_textures[path] = load(path)
 	return _textures[path]
 
@@ -1009,7 +1071,7 @@ func _ride_in() -> void:
 
 func _build_world() -> void:
 	var ground := Sprite2D.new()
-	var gm: Dictionary = meta.get(level.get("ground", "ground"), meta["ground"])   # (a map may bake its own)
+	var gm := _ground_meta()
 	ground.texture = tex(gm["file"])
 	ground.centered = false
 	ground.position = Vector2(gm["origin"][0], gm["origin"][1])
@@ -1127,8 +1189,9 @@ func _build_world() -> void:
 	camera = Camera2D.new()
 	add_child(camera)
 	camera.make_current()
-	var origin := Vector2(meta["ground"]["origin"][0], meta["ground"]["origin"][1])
-	var gsize: Vector2 = tex(meta["ground"]["file"]).get_size() * tex_scale
+	# (the camera kept to the town's own ground: the funeral's is wider than San Miguel's)
+	var origin := Vector2(gm["origin"][0], gm["origin"][1])
+	var gsize: Vector2 = tex(gm["file"]).get_size() * tex_scale
 	camera.limit_left = int(origin.x)
 	camera.limit_top = int(origin.y)
 	camera.limit_right = int(origin.x + gsize.x)
