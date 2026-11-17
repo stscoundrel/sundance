@@ -218,7 +218,8 @@ var shutters: Array[Shutter] = []
 var cover_points := PackedVector2Array()
 var astar := AStarGrid2D.new()
 
-var state := "title"   # title, loadout, play, won, lost
+var state := "title"   # title, levels, brief, loadout, play, won, lost; riding (to riding_to) as the scene reloads
+var riding_to := ""
 static var picked: Array[String] = ["colt", "coach"]   # the loadout screen's choice (a gun a slot at most), kept across restarts
 var start_guns: Array = Player.ORDER   # what he rides in with (tests: all three)
 static var kit: Array[String] = ["bandage", "dynamite"]   # the kit bought on the loadout screen, kept too
@@ -238,7 +239,10 @@ var last_twang := -100.0   # (game time: a wall clock here would let machine loa
 var end_time := 0
 var start_time := 0
 
-var _textures := {}
+## Every sprite loaded, by path, kept across reloads (static): trying a town again, or
+## riding to one that shares men with this, loads nothing twice. Each town lets go of
+## what it doesn't use as it comes up (see _keep_sprites), so it never holds two towns.
+static var _textures := {}
 var _up_front := {}   # sprite_paths(), as a set: what tex() expects to have been asked for already
 var tex_scale := 0.5   # sprites carry 2x detail; world units stay 32x16 per tile
 var _streams := {}
@@ -358,6 +362,7 @@ func _ready() -> void:
 	_load_level()
 	for path in sprite_paths():
 		_up_front[path] = true
+	_keep_sprites()
 	size = int(level["size"])
 	if level.has("haze"):
 		haze = Vector2(level["haze"][0], level["haze"][1])
@@ -590,6 +595,14 @@ func town_templates() -> Array[String]:
 	return out
 
 
+## The sprites kept from the last town that this one doesn't use go (the card frees
+## them as the last reference does); those it shares stay loaded.
+func _keep_sprites() -> void:
+	for path in _textures.keys():
+		if not _up_front.has(path):
+			_textures.erase(path)
+
+
 ## Every string anywhere in `node`, keys and values both, into `out`.
 static func _strings(node: Variant, out: Dictionary) -> void:
 	if node is Dictionary:
@@ -809,12 +822,22 @@ func pick_level(i: int) -> void:
 	ride_to(l["id"], "brief")
 
 
-## The scene comes back up with town `id`, at "brief", "loadout" or "levels".
+## The scene comes back up with town `id`, at "brief", "loadout" or "levels". The
+## riding card goes up first and is drawn before the reload starts, so the seconds a
+## new town takes to load are spent looking at where he's going, not at a stuck frame.
 func ride_to(id: String, at: String) -> void:
+	if state == "riding":
+		return
 	get_tree().paused = false
 	Engine.time_scale = 1.0
 	chosen_level = id
 	open_on = at
+	riding_to = id
+	state = "riding"
+	menu.clear()
+	hud.hide_title()
+	for i in 2:   # (one frame to draw the card, one for it to reach the screen)
+		await get_tree().process_frame
 	get_tree().reload_current_scene()
 
 
@@ -838,6 +861,8 @@ func _escape() -> void:
 		"loadout", "brief":
 			_to_levels()
 			sfx("close", null, -14.0)
+		"riding":
+			pass   # (too late to turn back: he's on his way)
 		_:
 			open_menu()
 

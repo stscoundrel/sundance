@@ -127,7 +127,9 @@ func _draw() -> void:
 		_draw_message()
 	if title_alpha > 0.0:
 		_draw_title()
-	if game.state == "loadout":
+	if game.state == "riding":
+		_draw_riding()
+	elif game.state == "loadout":
 		_draw_loadout(p)
 	elif game.state == "brief":
 		_draw_brief()
@@ -760,6 +762,22 @@ var stills: Array[Node2D] = []   # the men on the card, a row's at a time (sprit
 
 func _brief_row(i: int) -> Rect2:
 	return Rect2(BRIEF_ROW.position + Vector2(0, i * (BRIEF_ROW.size.y + 4)), BRIEF_ROW.size)
+
+
+## Where he's riding, while the town loads: its name, and the picker's line about it.
+func _draw_riding() -> void:
+	draw_rect(Rect2(Vector2.ZERO, page + Vector2(8, 8)), Color(0.03, 0.02, 0.02, 1.0))   # (over the odd pixel the page rounds short of the window)
+	var l: Dictionary = {}
+	for e in game.levels:
+		if e["id"] == game.riding_to:
+			l = e
+	if l.is_empty() and game.riding_to == game.level_entry["id"]:
+		l = game.level_entry   # (a hidden town of the tests, ridden again)
+	draw_set_transform(menu_at())
+	_text(Vector2(0, 160), "RIDING TO", 10, Color(0.8, 0.74, 0.62), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	_text(Vector2(0, 186), l.get("name", "").to_upper(), 20, Color(0.95, 0.75, 0.35), font, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	_text(Vector2(0, 206), l.get("note", ""), 9, Color(0.8, 0.74, 0.62), null, HORIZONTAL_ALIGNMENT_CENTER, PAGE.x)
+	draw_set_transform(Vector2.ZERO)
 
 
 ## The story so far (who's paying him this time), the job, and who's who, each row

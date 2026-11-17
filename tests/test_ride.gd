@@ -3,7 +3,10 @@ extends SceneTree
 ## townsfolk, nobody hanged, no partner at the well, no army on the roads):
 ##   ride     - from San Miguel, a number on the picker rides to every other town and
 ##              back: the old town goes, the new one comes up at its briefing, and the
-##              key that picked it is taken (it once fell on a scene already gone).
+##              key that picked it is taken (it once fell on a scene already gone). The
+##              riding card is up the moment he picks, and Esc doesn't turn him back.
+##   kept     - the sprites ride along: the stranger's body is the very same texture in
+##              the next town (not loaded again), and the last town's ground is let go.
 ##   sprites  - a town loads up front its own ground and no other's, the stranger's body
 ##              among its men's, and nothing that isn't a real file; what that comes to in
 ##              video memory is printed for each town, with the bodies (the budget to beat).
@@ -17,6 +20,8 @@ var failures := 0
 var step := "ride"
 var leg := 0
 var waited := 0
+var his_body: Texture2D
+var left := ""   # the ground of the town he rode out of
 
 
 func _initialize() -> void:
@@ -55,6 +60,11 @@ func _process(_delta: float) -> bool:
 	check(not is_instance_valid(game) or not game.is_inside_tree(), "the town left behind is still standing")
 	check(g.level_entry["id"] == ORDER[leg], "rode for %s, got %s" % [ORDER[leg], g.level_entry["id"]])
 	check(g.state == "brief", "%s should open on its briefing (%s)" % [ORDER[leg], g.state])
+	step = "kept"
+	var atlas: String = g.meta["chars"]["hero"]["atlas"]
+	check(g.tex(atlas) == his_body, "the stranger's body was loaded again in %s" % ORDER[leg])
+	check(left == g._ground_meta()["file"] or not g._textures.has(left), "%s still holds %s" % [ORDER[leg], left.get_file()])
+	step = "ride"
 	if leg < ORDER.size() - 1:
 		_sprites(g)
 	game = g
@@ -76,8 +86,17 @@ func _pick(id: String) -> void:
 	ev.keycode = KEY_1 + i
 	ev.physical_keycode = KEY_1 + i
 	ev.pressed = true
+	his_body = game.tex(game.meta["chars"]["hero"]["atlas"])
+	left = game._ground_meta()["file"]
 	root.push_input(ev)
 	check(root.is_input_handled(), "the key that rode to %s wasn't taken" % id)
+	check(game.state == "riding" and game.riding_to == id, "no riding card for %s (%s)" % [id, game.state])
+	var esc := InputEventKey.new()
+	esc.keycode = KEY_ESCAPE
+	esc.physical_keycode = KEY_ESCAPE
+	esc.pressed = true
+	root.push_input(esc)
+	check(game.state == "riding" and game.menu.is_empty(), "Esc turned him back on the way to %s (%s)" % [id, game.state])
 
 
 func _sprites(g: Node) -> void:

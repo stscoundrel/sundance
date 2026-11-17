@@ -53,8 +53,18 @@ briefing), and every sort those name in turn. A sprite asked for that wasn't loa
 front still loads, with a warning: a stall in play, and a hole in that list. Loading
 everything for every town came to 3.6 GB of video memory, the likely reason the Windows
 release went no further than San Miguel; now it's about 1.3 GB (Silencio) to 2.6 GB (the
-funeral, whose guests are everyone), with four to six seconds a reload. Loading the next
-town while the briefing is read, and trimming the body sheets, are the next steps.
+funeral, whose guests are everyone).
+
+Loaded sprites are kept across reloads (a static cache), and each town lets go of what
+it doesn't use as it comes up, so it never holds two towns at once. Trying a town again
+loads nothing (under a second); riding to another loads only the men it doesn't share
+(one and a half to three seconds, was six or seven). While the scene reloads, the riding
+card ("RIDING TO", the town, its picker note) stands over it, and Esc can't turn him back.
+Loading the next town in the background while its briefing is read was tried on paper and
+dropped: the old town would still be holding its sprites, two towns at once, the very
+thing that broke the Windows release, and nearly all of a town's men are asked for as it's
+built anyway (the reserve and guests stand ready from the start). Trimming the body
+sheets' empty space is the next step.
 
 **What he's told.** The title card is the whole game's, not a town's: "One stranger.
 Five towns. Whoever pays.", the keys, a line of stealth advice, and "click to choose
