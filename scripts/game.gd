@@ -375,7 +375,8 @@ func _ready() -> void:
 	for k in meta["sfx"]:
 		_streams[k] = _takes(k)   # all up front: a first load mid-fight stalls the frame
 	if DisplayServer.get_name() != "headless":
-		_preload(meta)   # every sprite too, for the same reason (a crate's wreck, a pool of blood...)
+		for path in sprite_paths():   # every sprite too, for the same reason (a crate's wreck, a pool of blood...)
+			tex(path)
 	var wind := AudioStreamPlayer.new()
 	wind.stream = load(meta["sfx"]["rain" if snowfall and snowfall.rain else "wind"])   # (the funeral's rain takes the wind's place)
 	wind.volume_db = -12.0
@@ -538,17 +539,25 @@ static func _post_tag(kind: String) -> String:
 	return "street"
 
 
-## Every texture the asset meta names, loaded now rather than the first time it's
-## needed in the middle of a fight.
-func _preload(node: Variant) -> void:
+## The sprites loaded up front, before the stranger rides in, so none is first
+## needed in the middle of a fight. For now it's every one the asset meta names,
+## whatever the town: all the bodies, all the guns and every town's ground.
+func sprite_paths() -> Array[String]:
+	var out: Array[String] = []
+	_sprite_walk(meta, out, {})
+	return out
+
+
+func _sprite_walk(node: Variant, out: Array[String], seen: Dictionary) -> void:
 	if node is Dictionary:
 		for v in node.values():
-			_preload(v)
+			_sprite_walk(v, out, seen)
 	elif node is Array:
 		for v in node:
-			_preload(v)
-	elif node is String and node.begins_with("res://") and node.ends_with(".png"):
-		tex(node)
+			_sprite_walk(v, out, seen)
+	elif node is String and node.begins_with("res://") and node.ends_with(".png") and not seen.has(node):
+		seen[node] = true
+		out.append(node)
 
 
 ## Glue and a brick-wall limiter on the master bus: gunfire can be mixed hot and
@@ -616,24 +625,25 @@ func _setup_input() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	var vp := get_viewport()   # (taken first: a pick that rides to another town takes the scene out of the tree at once)
 	if event.is_action_pressed("quit"):
 		_escape()
-		get_viewport().set_input_as_handled()
+		vp.set_input_as_handled()
 	elif state == "title" and (event is InputEventMouseButton or event is InputEventKey) and event.is_pressed():
 		if Time.get_ticks_msec() - start_time > 600:
 			_to_levels()
-			get_viewport().set_input_as_handled()
+			vp.set_input_as_handled()
 	elif state == "levels" and event.is_pressed():
 		_levels_input(event)
-		get_viewport().set_input_as_handled()
+		vp.set_input_as_handled()
 	elif state == "loadout" and event.is_pressed():
 		_loadout_input(event)
-		get_viewport().set_input_as_handled()
+		vp.set_input_as_handled()
 	elif state == "brief" and event.is_pressed() and (event is InputEventMouseButton or event is InputEventKey):
 		if Time.get_ticks_msec() - brief_at > 400:   # (the click that picked the town isn't the one that reads past it)
 			sfx("close", null, -8.0)
 			_to_loadout()
-		get_viewport().set_input_as_handled()
+		vp.set_input_as_handled()
 	elif (state == "won" or state == "lost") and event.is_action_pressed("restart"):
 		if state == "lost":
 			ride_to(level_entry["id"], "loadout")   # (straight back to the guns: try it another way)

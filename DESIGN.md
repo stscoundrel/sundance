@@ -41,7 +41,16 @@ Jefe; each man goes to a post of his kind, kept six tiles from the others where 
 posts allow it, and posts on blocked ground are passed over. A smaller or bigger gang
 scales its saloon reserve (2 to 8) and the size it bands into a posse (3 to 7). The
 hand-drawn San Miguel stays first in the list, unshuffled: the tests and the tuning
-lean on it. Picking another level reloads the scene with it, straight to the guns.
+lean on it. Picking another level reloads the scene with it, at its briefing.
+
+**Loading.** The game boots into San Miguel (the title stands over it), so every other
+town is a scene reload. Every sprite is loaded up front (`sprite_paths()`), not when
+first needed mid-fight; for now that is every sprite the asset meta names, whatever the
+town, which comes to about 3.6 GB of video memory and about six seconds of each reload.
+That is the likely reason the Windows release only got as far as San Miguel. test_ride
+rides the picker through every town and prints what each one loads; trimming that to
+the town's own sprites, loading the next town while the briefing is read, and keeping
+what the next town shares are the next steps.
 
 **What he's told.** The title card is the whole game's, not a town's: "One stranger.
 Five towns. Whoever pays.", the keys, a line of stealth advice, and "click to choose
