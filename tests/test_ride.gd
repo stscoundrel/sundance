@@ -10,10 +10,15 @@ extends SceneTree
 ##   sprites  - a town loads up front its own ground (none wider than an older card's
 ##              8192: the funeral's comes in strips) and no other's, the stranger's body
 ##              among its men's, and nothing that isn't a real file; what that comes to in
-##              video memory is printed for each town, with the bodies (the budget to beat).
+##              video memory is printed for each town, with the bodies, and none goes over
+##              BUDGET_MB (all of it at once, 3.6 GB, broke the Windows release).
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_ride.gd
 
 const ORDER := ["cruz_verde", "train", "silencio", "funeral", "san_miguel"]
+## The most video memory a town's sprites may come to, as counted here (a shade over
+## what a window measures): room on a 4 GB card for everything else. The funeral, the
+## biggest, came to 1870 when this was set.
+const BUDGET_MB := 2000
 
 var game: Node
 var frame := 0
@@ -118,6 +123,7 @@ func _sprites(g: Node) -> void:
 		check(FileAccess.file_exists(p), "%s loads %s, which isn't there" % [g.level_entry["id"], p])
 		bytes += _size(p).x * _size(p).y / 2 if grounds.has(p) else _gpu_bytes(p)   # (a ground's compressed on the card: half a byte a pixel)
 	print("%-12s %d sprites, %.0f MB in video memory: %s" % [g.level_entry["id"], paths.size(), bytes / 1e6, ", ".join(g.town_templates())])
+	check(bytes / 1e6 <= BUDGET_MB, "%s's sprites come to %.0f MB, over the %d MB budget" % [g.level_entry["id"], bytes / 1e6, BUDGET_MB])
 	step = "ride"
 
 

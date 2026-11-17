@@ -108,7 +108,11 @@ godot --headless --path . --import
 `tools/run_tests.sh` runs them all, eight at a time, longest first (by last run's times,
 kept in `.godot/test_times`), and lists what failed (logs in `.godot/test_logs/`);
 `tools/run_tests.sh tests/test_kegs.gd` runs some of them. Each is an `extends SceneTree`
-script that stages one feature and prints `FAIL: ...` lines, ending `... test: OK`. Or run
+script that stages one feature and prints `FAIL: ...` lines, ending `... test: OK`.
+test_ride also holds each town's sprites to a video memory budget (`BUDGET_MB`). In a
+window, every town that comes up writes a `Town up:` line to the log (the graphics card,
+the video memory held, the build time): on Windows `%APPDATA%\Godot\app_userdata\Sundance\logs\`,
+on macOS `~/Library/Application Support/Godot/app_userdata/Sundance/logs/`. Or run
 one at a time:
 
 ```bash

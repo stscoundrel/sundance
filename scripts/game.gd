@@ -220,6 +220,7 @@ var astar := AStarGrid2D.new()
 
 var state := "title"   # title, levels, brief, loadout, play, won, lost; riding (to riding_to) as the scene reloads
 var riding_to := ""
+var built_from := 0   # wall clock as the town began to build (for the log's line only: see _log_load)
 static var picked: Array[String] = ["colt", "coach"]   # the loadout screen's choice (a gun a slot at most), kept across restarts
 var start_guns: Array = Player.ORDER   # what he rides in with (tests: all three)
 static var kit: Array[String] = ["bandage", "dynamite"]   # the kit bought on the loadout screen, kept too
@@ -264,6 +265,7 @@ var stats := {}   # counts of AI events ("orders covering fire", "panic shot"...
 
 
 func _ready() -> void:
+	built_from = Time.get_ticks_msec()
 	if not Engine.has_meta("fixed_seed"):   # tests seed the RNG themselves
 		randomize()
 		Shutter.rng.randomize()
@@ -415,6 +417,21 @@ func _ready() -> void:
 	elif open_on == "levels":
 		_to_levels()
 	open_on = ""
+	if DisplayServer.get_name() != "headless":
+		_log_load(Time.get_ticks_msec() - built_from)
+
+
+## One line in the log (godot.log, in the user data folder) as each town comes up: the
+## card, how long the town took, and the video memory it ended up holding. The Windows
+## release once went down in every town but San Miguel and left nothing to say why; a
+## crash now leaves the card and the memory just before it. (Wall clock: for the log only.)
+func _log_load(ms: int) -> void:
+	for i in 2:   # (the sprites reach the card over the next frame)
+		await get_tree().process_frame
+	print("Town up: %s on %s (%s): %.0f MB of sprites, %.0f MB of video memory in all, built in %d ms" % [
+		level_entry["id"], RenderingServer.get_video_adapter_name(), RenderingServer.get_video_adapter_vendor(),
+		Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1e6,
+		Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1e6, ms])
 
 
 ## Where the stranger's wanted ([world position, name] each), from whatever the level

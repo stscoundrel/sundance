@@ -79,6 +79,15 @@ would smear, so those stay lossless. A ground wider than an older (DX10-era) car
 edge (`ground_strips()`): the funeral's, in two. A town's sprites now come to about 0.9 GB
 (Silencio) to 1.7 GB (the funeral), San Miguel 1.5, up in three to four and a half seconds.
 
+So it can't creep back: test_ride fails any town whose sprites come to more than
+`BUDGET_MB` (2000, by its count, a shade over what a window measures; room on a 4 GB card),
+and every town that comes up in a window writes a line to the log (`godot.log` in the user
+data folder): the card, the sprites' and all the video memory it ended up holding, and how
+long it took to build (`_log_load`). A crash on someone else's machine leaves that behind.
+Baking at 2x rather than 3x would have cut it by more than half again, but was left: at the
+3x zoom of 720p and 1080p, a 3x bake puts one texel on one screen pixel, and 2x would draw
+every other texel a pixel wider.
+
 **What he's told.** The title card is the whole game's, not a town's: "One stranger.
 Five towns. Whoever pays.", the keys, a line of stealth advice, and "click to choose
 where to ride". Each picker row has a short note saying what kind of fight it is,
