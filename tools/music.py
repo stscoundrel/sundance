@@ -486,7 +486,8 @@ def write_wav(path, x):
 # --- the score -------------------------------------------------------------
 
 CHORDS = {"Dm": (2, 5, 9), "Gm": (7, 10, 2), "A": (9, 1, 4), "F": (5, 9, 0),
-          "C": (0, 4, 7), "Eb": (3, 7, 10), "Bb": (10, 2, 5)}
+          "C": (0, 4, 7), "Eb": (3, 7, 10), "Bb": (10, 2, 5),
+          "Am": (9, 0, 4), "G": (7, 11, 2), "E": (4, 8, 11)}
 
 
 def tones(ch, lo, hi):
@@ -853,15 +854,14 @@ def silencio_fight(c, mix):
         mix.put(sig, s, "far", 0.1, 0.42)
 
 
-def silencio():
-    """The three layers as stereo arrays of the loop's exact length. Each is
-    rendered with a tail and the tail folded back onto its start, so the loop's
-    seam rings on like any other bar line."""
+def layered(c, bars, parts):
+    """Each part rendered as a layer of the loop's exact length. Each is rendered
+    with a tail and the tail folded back onto its start, so the loop's seam rings
+    on like any other bar line. parts: (name, fn(clock, mix), seed)."""
     global rng
-    c = Clock(0.0, SILENCIO_BPM)
-    loop = c.end(len(SILENCIO_CHORDS))
+    loop = c.end(bars) - c.t0
     out = {}
-    for name, part, seed in (("snow", silencio_snow, 11), ("unease", silencio_unease, 12), ("fight", silencio_fight, 13)):
+    for name, part, seed in parts:
         rng = np.random.default_rng(seed)
         mix = Mix(loop + 6.0)
         part(c, mix)
@@ -869,33 +869,232 @@ def silencio():
         n = secs(loop)
         x[:, :x.shape[1] - n] += x[:, n:]
         out[name] = x[:, :n]
-    # One gain for all three, so they sit together as written.
+    # One gain for all of them, so they sit together as written.
     peak = np.abs(sum(out.values())).max()
     for k in out:
         out[k] *= 0.9 / peak
     return out
 
 
+def silencio():
+    return layered(Clock(0.0, SILENCIO_BPM), len(SILENCIO_CHORDS),
+                   (("snow", silencio_snow, 11), ("unease", silencio_unease, 12), ("fight", silencio_fight, 13)))
+
+
+# --- Cruz Verde: the fort asleep, then the battle --------------------------
+#
+# Twelve-eight at a dotted crotchet of 80, A minor walking down to E (the
+# Spanish way down), 32 bars round. The fort layer is the ground both halves
+# stand on: a picked guitar and the low string tolling. Tension plays while the
+# fort's asleep and the stranger's creeping in: a tick like a clock, the jaw
+# harp now and then, a whistle from the walls, a high string held. When the
+# shooting starts it gives way to the battle: the bass galloping in threes,
+# military drumming with no backbeat, rasgueados on the strong beats, two
+# trumpets in thirds as the revolution's bands play them, the chapel bell, the
+# men's choir and the gang shouting.
+
+CRUZ_BEAT = 80
+CRUZ_CHORDS = [
+    "Am", "G", "F", "E", "Am", "G", "F", "E",
+    "Dm", "Am", "Dm", "E", "F", "G", "Am", "E",
+    "Am", "G", "F", "E", "Am", "G", "F", "E",
+    "F", "G", "Am", "Am", "Dm", "E", "Am", "E",
+]
+# The battle tune, for the trumpets: (bar, eighth, eighths, midi), per eight bars.
+CRUZ_TUNE = [
+    (0, 0, 3, 76), (0, 3, 3, 81), (0, 6, 3, 84), (0, 9, 2, 83), (0, 11, 1, 81),
+    (1, 0, 6, 83), (1, 6, 3, 79), (1, 9, 2, 81), (1, 11, 1, 83),
+    (2, 0, 3, 84), (2, 3, 3, 81), (2, 6, 3, 77), (2, 9, 2, 81), (2, 11, 1, 84),
+    (3, 0, 9, 83), (3, 9, 1, 80), (3, 10, 1, 81), (3, 11, 1, 83),
+    (4, 0, 3, 84), (4, 3, 3, 83), (4, 6, 3, 81), (4, 9, 3, 76),
+    (5, 0, 3, 86), (5, 3, 3, 84), (5, 6, 3, 83), (5, 9, 3, 79),
+    (6, 0, 3, 81), (6, 3, 3, 84), (6, 6, 3, 81), (6, 9, 3, 77),
+    (7, 0, 10, 76),
+]
+CRUZ_CALLS = [   # the second phrase: calls answered by the choir
+    (0, 0, 3, 74), (0, 3, 3, 77), (0, 6, 6, 81),
+    (1, 0, 3, 76), (1, 3, 3, 81), (1, 6, 6, 84),
+    (2, 0, 6, 86), (2, 6, 6, 81),
+    (3, 0, 6, 80), (3, 6, 6, 83),
+    (4, 0, 3, 81), (4, 3, 3, 84), (4, 6, 6, 84),
+    (5, 0, 3, 83), (5, 3, 3, 86), (5, 6, 6, 79),
+    (6, 0, 3, 84), (6, 3, 3, 83), (6, 6, 6, 81),
+    (7, 0, 6, 80), (7, 6, 6, 83),
+]
+CRUZ_LAST = [    # the fourth: F G Am Am Dm E Am E, a gap for the shouting
+    (0, 0, 6, 81), (0, 6, 6, 84), (1, 0, 6, 83), (1, 6, 6, 86), (2, 0, 10, 84),
+    (4, 0, 3, 74), (4, 3, 3, 77), (4, 6, 3, 81), (4, 9, 3, 86), (5, 0, 9, 83), (5, 9, 3, 80),
+    (6, 0, 10, 81),
+]
+# The whistle from the walls, over the first eight bars.
+CRUZ_WHISTLE = [
+    (0, 0, 9, 81), (0, 9, 1, 83), (0, 10, 1, 81), (0, 11, 1, 79),
+    (1, 0, 3, 83), (1, 3, 6, 86), (1, 9, 2, 84), (1, 11, 1, 83),
+    (2, 0, 6, 84), (2, 6, 6, 81),
+    (3, 0, 12, 83),
+    (4, 0, 6, 88), (4, 6, 3, 86), (4, 9, 3, 84),
+    (5, 0, 6, 83), (5, 6, 6, 79),
+    (6, 0, 3, 81), (6, 3, 3, 84), (6, 6, 3, 83), (6, 9, 3, 81),
+    (7, 0, 6, 80), (7, 6, 6, 83),
+]
+
+
+def third_below(m, ch):
+    """The second trumpet's note: a chord tone under the tune, else a third under it in A minor."""
+    under = [t for t in tones(ch, m - 5, m - 3)]
+    if under:
+        return under[-1]
+    scale = (9, 11, 0, 2, 4, 5, 8 if ch == "E" else 7)
+    below = [x for x in range(m - 4, m - 2) if x % 12 in scale]
+    return below[0] if below else m - 3
+
+
+def tick(vel=1.0):
+    """A dry wooden tick, like a clock in an empty room."""
+    n = secs(0.12)
+    t = np.arange(n) / SR
+    nz = noise(n, lambda f: hp(f, 1800, 2) * lp(f, 7000) * bump(f, 3200, 6, 0.5))
+    tone = np.sin(2 * np.pi * 1250 * t) * np.exp(-t / 0.012)
+    return (0.5 * nz * np.exp(-t / 0.006) + 0.5 * tone) * vel
+
+
+def cruz_ground(c, mix):
+    """The picked guitar and the low string tolling: under the battle only, so the
+    sleeping fort keeps its silences."""
+    pedal(mix, c, CRUZ_CHORDS, 0.55)
+    arpeggio(mix, c, CRUZ_CHORDS, 0.55)
+
+
+# The sleeping fort: a sound, then nothing, then another. Each a moment at
+# (bar, eighth); the gaps between them, two to six seconds of only the wind and
+# the hall dying away, are the point. Some stop dead; a roll swells into no hit.
+CRUZ_QUIET = [
+    (0, 0, "twang", 33), (2, 0, "harp", 0), (2, 3, "harp", 1), (3, 6, "ticks", 3),
+    (4, 0, "whistle", (0, 2)), (6, 3, "harmonic", 88), (8, 0, "bell", 69),
+    (10, 0, "drone", 45), (12, 0, "ping", 76), (13, 0, "harp", 2), (13, 3, "harp", 0), (13, 6, "harp", 1),
+    (16, 0, "twang", 33), (16, 0, "bell", 69), (18, 0, "whistle", (2, 4)), (18, 0, "ticks", 8),
+    (21, 0, "roll", 45), (24, 0, "tremolo", 88), (27, 0, "ticks", 4),
+    (28, 0, "twang", 40), (29, 6, "harp", 2), (30, 0, "whistle", (7, 8)),
+]
+
+
+def cruz_tension(c, mix):
+    sweeps = [(350, 1500, 0.08), (1400, 500, 0.1), (400, 1200, 0.06)]
+    for bar, e, what, arg in CRUZ_QUIET:
+        t = c.at(bar, e)
+        if what == "twang":     # a low string, plucked once and left to ring out
+            mix.put(pluck(arg, c.dur(10), 1.0, pickup=0.09, tau=3.0, bright=1.1, maxf=6000, vib=0.25),
+                    t, "guitar", -0.3, 0.3)
+        elif what == "harp":
+            mix.put(jaw_harp(45, c.dur(2), sweeps[arg], 0.9), t, "mid", -0.45, 0.12)
+        elif what == "ticks":   # a clock in an empty room, a few strokes and stopped
+            for j in range(arg):
+                mix.put(tick(0.7 if j == 0 else 0.5), c.at(bar, e + j * 3), "mid", 0.5, 0.08)
+        elif what == "whistle":
+            lo, hi = arg
+            part = [n for n in CRUZ_WHISTLE if lo <= n[0] < hi]
+            s0, sig = whistle(notes_of(c, shifted(part, bar - lo)))
+            mix.put(sig, s0, "mid", 0.25, 0.2)
+        elif what == "harmonic":
+            mix.put(strings(arg, c.dur(9), 0.6, attack=2.5, release=1.5, voices=2), t, "far", 0.4, 0.025)
+        elif what == "bell":
+            mix.put(bell(arg, 8.0, 0.7), t, "far", -0.4, 0.2)
+        elif what == "drone":   # low strings swelling for two bars, then cut off dead
+            for m in (arg - 12, arg - 5):
+                mix.put(strings(m, c.dur(24), 0.9, attack=c.dur(22), release=0.04, voices=3), t, "mid", 0.0, 0.07)
+            mix.put(timp(arg - 12 if arg - 12 >= 36 else arg, 0.4, 1.6), t, "close", -0.1, 0.4)
+        elif what == "ping":    # one high note on the guitar, alone
+            mix.put(pluck(arg, c.dur(6), 0.8, pickup=0.15, tau=2.5, bright=0.9), t, "mid", 0.35, 0.16)
+        elif what == "roll":    # a timpani swelling for a bar... into nothing
+            k = 48
+            for j in range(k):
+                mix.put(timp(arg - 12 if arg - 12 >= 36 else arg, 0.05 + 0.6 * (j / k) ** 2, 0.5),
+                        c.at(bar, e + j / 4), "close", -0.1, 0.42)
+        elif what == "tremolo":  # a high string trembling, held three bars, cut
+            n = strings(arg, c.dur(34), 0.7, attack=c.dur(20), release=0.05, voices=3)
+            tt = np.arange(len(n)) / SR
+            mix.put(n * (0.7 + 0.3 * np.sin(2 * np.pi * 11 * tt)), t, "far", 0.4, 0.03)
+
+
+def cruz_battle(c, mix):
+    cruz_ground(c, mix)
+    snare_vel = [.8, .2, .25, .4, .2, .25, .6, .2, .25, .4, .3, .5]
+    for bar, ch in enumerate(CRUZ_CHORDS):
+        phrase, inbar = bar // 8, bar % 8
+        r = bass_note(ch)
+        tm = r if r >= 36 else r + 12
+        for e in range(12):
+            v = (1.0, 0.55, 0.75)[e % 3]
+            t = c.at(bar, e) + rng.normal(0, 0.003)
+            mix.put(pluck(r, c.dur(1) * 0.85, v, pickup=0.22, tau=1.0, bright=0.45, maxf=2500, damp=0.03, click=0.1),
+                    t, "close", 0.0, 0.5)
+            mix.put(strings(r + 12, 0.12, v, attack=0.01, release=0.07, voices=2), t, "mid", -0.15, 0.07)
+            mix.put(snare(snare_vel[e]), t, "close", 0.15, 0.24)
+            if snare_vel[e] >= 0.6:
+                mix.put(snare(0.2), t - 0.018, "close", 0.15, 0.24)   # the flam
+        mix.put(timp(tm, 1.0), c.at(bar), "close", -0.1, 0.55)
+        mix.put(timp(tm, 0.7), c.at(bar, 6), "close", -0.1, 0.5)
+        for e in (0, 6):
+            rasgueado(mix, c, ch, c.at(bar, e), 1.0)
+        if inbar == 0:
+            mix.put(bell(69, 6.0, 0.9), c.at(bar), "far", -0.4, 0.35)
+            mix.put(bell(69, 5.0, 0.6), c.at(bar, 6), "far", -0.4, 0.3)
+        if inbar == 7:
+            snare_roll8(mix, c, bar, 6, 6, 0.2, 1.0)
+        if phrase in (1, 3):
+            for m in tones(ch, 48, 62):
+                cs, csig = choir([(c.at(bar), c.dur(11.5), m, 0.8)], "a_male", voices=3, attack=0.15,
+                                 release=0.3, glide=0, vib_depth=0.15, drift=0.05)
+                mix.put(csig, cs, "far", rng.uniform(-.6, .6), 0.05)
+    for bar, e in ((7, 3), (7, 6), (11, 6), (15, 3), (15, 6), (19, 6), (23, 3), (23, 6),
+                   (27, 0), (27, 6), (31, 0), (31, 3), (31, 6)):
+        mix.put(shout(55 + rng.integers(0, 3)), c.at(bar, e) - 0.03, "mid", rng.uniform(-.3, .3), 0.38)
+    lines = shifted(CRUZ_TUNE, 0) + shifted(CRUZ_CALLS, 8) + shifted(CRUZ_TUNE, 16) + shifted(CRUZ_LAST, 24)
+    lead = [(b, e, d, m) for b, e, d, m in lines]
+    second = [(b, e, d, third_below(m, CRUZ_CHORDS[b])) for b, e, d, m in lines]
+    for part, pan, gain in ((lead, -0.25, 0.22), (second, 0.25, 0.16)):
+        s, sig = trumpet(notes_of(c, part, 0, 0.95))
+        mix.put(sig, s, "mid", pan, gain)
+
+
+def cruz_verde():
+    return layered(Clock8(0.0, CRUZ_BEAT), len(CRUZ_CHORDS),
+                   (("tension", cruz_tension, 22), ("battle", cruz_battle, 23)))
+
+
+# Each level's score: its layers, and the part each plays (see scripts/music.gd).
+SCORES = {
+    "silencio": (silencio, {"snow": "always", "unease": "unease", "fight": "fight"}),
+    "cruz_verde": (cruz_verde, {"tension": "calm", "battle": "fight"}),
+}
+
+
 def bake(meta, assets):
-    """Called by gen_assets.py: writes each level's layers and lists them in meta."""
-    meta["music"] = {}
-    layers = silencio()
-    paths = {}
-    for k, x in layers.items():
-        rel = "music/silencio_%s.ogg" % k
-        write_ogg(os.path.join(assets, rel), x)
-        paths[k] = "res://assets/" + rel
-        print("    silencio %s: %.1f dB rms" % (k, 20 * np.log10(np.sqrt((x ** 2).mean()))))
-    meta["music"]["silencio"] = {"bpm": SILENCIO_BPM, "layers": paths}
+    """Called by gen_assets.py: writes each level's layers and lists them in meta.
+    SUNDANCE_MUSIC=cruz_verde bakes only that one (each takes minutes)."""
+    meta.setdefault("music", {})
+    only = [k for k in os.environ.get("SUNDANCE_MUSIC", "").split(",") if k]
+    for name, (fn, roles) in SCORES.items():
+        if only and name not in only:
+            continue
+        layers = fn()
+        out = []
+        for k, x in layers.items():
+            rel = "music/%s_%s.ogg" % (name, k)
+            write_ogg(os.path.join(assets, rel), x)
+            out.append({"name": k, "role": roles[k], "path": "res://assets/" + rel})
+            print("    %s %s: %.1f dB rms" % (name, k, 20 * np.log10(np.sqrt((x ** 2).mean()))))
+        meta["music"][name] = {"layers": out}
 
 
 def main():
-    if len(sys.argv) > 1 and sys.argv[1] == "silencio":
-        layers = silencio()
+    if len(sys.argv) > 1 and sys.argv[1] in SCORES:
+        name = sys.argv[1]
+        layers = SCORES[name][0]()
         os.makedirs("build/music", exist_ok=True)
         for k, x in layers.items():
-            write_wav("build/music/silencio_%s.wav" % k, x)
-        write_wav("build/music/silencio_all.wav", np.clip(sum(layers.values()), -1, 1))
+            write_wav("build/music/%s_%s.wav" % (name, k), x)
+        write_wav("build/music/%s_all.wav" % name, np.clip(sum(layers.values()), -1, 1))
         return
     out = sys.argv[1] if len(sys.argv) > 1 else "build/music/sundance_theme.wav"
     t0 = time.time()

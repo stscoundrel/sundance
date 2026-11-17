@@ -92,8 +92,9 @@ place of the plain look; they're lit under cloud (`render(overcast=True)`, faint
 go with its `"weather": "snow"`. Character animations are baked in parallel from key poses
 in `tools/chars.py` and packed into one atlas per character; baking every body takes ten
 minutes or more, so re-bake only the ones you changed. The `music` step writes each level's
-score (`tools/music.py`, five minutes or so) to `assets/music/`; `tools/music.py silencio`
-writes the layers and a mix of all three to `build/music/` to listen to.
+score (`tools/music.py`, five minutes or so a town; `SUNDANCE_MUSIC=cruz_verde` bakes only
+some) to `assets/music/`; `tools/music.py silencio` (or `cruz_verde`) writes the layers and a
+mix of them all to `build/music/` to listen to.
 
 ```bash
 python3 -m venv tools/.venv && tools/.venv/bin/pip install -r tools/requirements.txt

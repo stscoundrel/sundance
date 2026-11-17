@@ -1,11 +1,13 @@
 extends SceneTree
-## Silencio's score:
-##   quiet  - in a quiet town only the snow layer plays, and it's come up to full;
-##            the score's three layers are all loaded and playing together.
+## The towns' scores:
+##   quiet  - in a quiet Silencio only the snow (the ground of it) plays, come up
+##            to full; its three layers are all loaded, looping, playing together.
 ##   unease - a gang on edge brings the unease layer in; it lingers after.
 ##   fight  - a man in a fight brings the fight in, and unease with it; once it's
 ##            over the fight lingers a while, then goes, unease after it.
-##   lost   - when the stranger's dead the whole score fades, the snow too.
+##   lost   - when the stranger's dead the whole score fades, the ground too.
+##   fort   - Cruz Verde asleep plays only the tension; the shooting
+##            starts and the tension gives way to the battle, back once it's long over.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_music.gd
 
 var game: Node
@@ -13,15 +15,24 @@ var frame := 0
 var failures := 0
 var step := ""
 var t := 0.0
+var town := "silencio"
 
 
 func _initialize() -> void:
 	Engine.set_meta("fixed_seed", true)
-	Engine.set_meta("level", "silencio")
 	Engine.set_meta("no_civilians", true)
+	Engine.set_meta("no_captive", true)
+	_ride("silencio")
+
+
+func _ride(id: String) -> void:
+	town = id
+	Engine.set_meta("level", id)
 	seed(5)
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
+	frame = 0
+	t = 0.0
 
 
 func check(cond: bool, msg: String) -> void:
@@ -40,19 +51,26 @@ func _process(delta: float) -> bool:
 	if t < 4.0:
 		return false
 	var m: Music = game.music
-	step = "quiet"
-	check(m != null, "Silencio has no score")
+	step = town
+	check(m != null, "%s has no score" % town)
 	if m == null:
 		quit(1)
 		return true
-	check(m.stream.stream_count == 3 and m.player.playing, "not playing all three layers")
-	for i in 3:
+	check(m.stream.stream_count == m.roles.size() and m.player.playing, "not playing all its layers")
+	for i in m.roles.size():
 		var o: AudioStreamOggVorbis = m.stream.get_sync_stream(i)
 		check(o != null and o.loop, "layer %d doesn't loop" % i)
-	check(m.level["snow"] > 0.99 and m.level["unease"] == 0.0 and m.level["fight"] == 0.0,
-		"the quiet town's not snow alone: %s" % m.level)
-	check(m.sense() == [false, false], "trouble in a quiet town: %s" % [m.sense()])
-	_layers(m)
+	if town == "silencio":
+		step = "quiet"
+		check(Array(m.roles) == ["always", "unease", "fight"], "Silencio's layers: %s" % [m.roles])
+		check(m.level["always"] > 0.99 and m.level["unease"] == 0.0 and m.level["fight"] == 0.0,
+			"the quiet town's not snow alone: %s" % m.level)
+		check(m.sense() == [false, false], "trouble in a quiet town: %s" % [m.sense()])
+		_layers(m)
+		game.queue_free()
+		_ride("cruz_verde")
+		return false
+	_fort(m)
 	print("music test: %s" % ("OK" if failures == 0 else "%d FAILURES" % failures))
 	quit(failures)
 	return true
@@ -92,4 +110,19 @@ func _layers(m: Music) -> void:
 	m.fade(10.0)
 	check(m.level.values().all(func(v): return v == 0.0), "it didn't fade: %s" % m.level)
 	m.decide(0.25, false, false, "won")
-	check(m.want["snow"] == 1.0 and m.want["fight"] == 0.0, "a won town isn't snow alone: %s" % m.want)
+	check(m.want["always"] == 1.0 and m.want["fight"] == 0.0, "a won town isn't the ground alone: %s" % m.want)
+
+
+func _fort(m: Music) -> void:
+	step = "fort"
+	check(Array(m.roles) == ["calm", "fight"], "Cruz Verde's layers: %s" % [m.roles])
+	check(m.level["calm"] > 0.99 and m.level["fight"] == 0.0, "the sleeping fort isn't the tension alone: %s" % m.level)
+	game.last_gunfire = game.clock
+	check(m.sense()[1], "a shot fired isn't a fight")
+	game.last_gunfire = game.clock - Music.SHOTS_HEARD - 1.0
+	check(not m.sense()[1], "an old shot's still a fight")
+	m.decide(0.25, false, true, "play")
+	m.fade(Music.FALL["calm"] + 0.1)
+	check(m.level["calm"] == 0.0 and m.level["fight"] == 1.0, "the shooting didn't bring the battle in: %s" % m.level)
+	m.decide(Music.LINGER["fight"] + 0.5, false, false, "play")
+	check(m.want["calm"] == 1.0 and m.want["fight"] == 0.0, "the tension isn't back after the fight: %s" % m.want)

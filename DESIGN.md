@@ -1865,21 +1865,39 @@ carried, which you collect by walking over them.
   is one piece in layers that loop together (`Music`, an `AudioStreamSynchronized`),
   every layer in the same bars and chords so any of them can come up mid-phrase. It
   always plays, quietly, under the wind; it isn't a cue that only comes with trouble.
-  Silencio's (the only score yet, at 66, 32 bars round) has three:
+  Silencio's (at 66, 32 bars, 116 s round) has three:
   - *snow*, always: piano rocking in eighths, then quarters under a hummed voice, then
     the tune on the piano's top like a music box, then nearly nothing; strings under all.
   - *unease*, while a gang's alarm is past uneasy, a man's investigating or searching, or
     the gold's been missed or is in the stranger's hands: plucked low strings walking in
     quarters, a timpani heartbeat, a thin high string and a low guitar note now and then.
     It comes up over 4 s and stays 15 s after the trouble.
-  - *fight*, while a bandit's in combat or shooting at the other gang: timpani driving in
+  - *fight*, while a bandit's in combat or shooting at the other gang, or for 3 s after any
+    shot (so the first one brings it at once): timpani driving in
     eighths, strings sawing under it, a bell at each phrase, the soprano crying the tune
     high (a male choir the other times round). Up in 1.5 s, it stays 10 s after.
   When he dies the whole score fades and only the wind's left; when the job's done it
-  settles back to the snow. `tests/test_music.gd` covers the layers and their rules.
-  The layers are Ogg Vorbis (about 185 kbps, under 3 MB each), imported to loop.
-  Silencio's fight layer suits its hush; the other towns' firefights want something
-  with more drive, more action than lament, when their scores come.
+  settles back to the snow.
+  Each layer has a part (`role` in meta.json's `music`): *always*, *calm* (only while
+  no fight's on), *unease* and *fight*, so a town takes whichever it needs.
+  Cruz Verde's (12/8 at a dotted crotchet of 80, A minor walking down to E, 32 bars,
+  72 s round) is tension till the shooting starts, then all action, in two layers:
+  - *tension*, the calm, while the fort sleeps and he creeps in. It's mostly silence:
+    a sound, then nothing for two to six seconds but the wind and the hall dying away,
+    then another (`CRUZ_QUIET`): a low string plucked once and left to ring, two or
+    three jaw-harp twangs, a few ticks of a clock and stopped, the chapel bell, a
+    whistled fragment, a lone high note on the guitar, low strings swelling for two
+    bars and cut off dead, a timpani roll that swells into no hit at all, a high
+    string trembling and cut. It drops out in 2 s when the shooting starts and comes
+    back once the fight's been over 10 s (the lull before the last waves).
+  - *battle*, the fight: the picked guitar and the low string tolling, the bass
+    galloping in threes with low strings, military
+    drumming on every eighth with flams on the strong beats (no backbeat), timpani on
+    one and three, rasgueados, two trumpets in thirds on the battle tune, the chapel
+    bell clanging, a men's choir on the second and fourth phrase, the gang shouting.
+  `tests/test_music.gd` covers both towns' layers and their rules. The layers are Ogg
+  Vorbis (about 185 kbps, under 3 MB each), imported to loop. Silencio's fight layer
+  suits its hush; the other towns' firefights want more drive, action rather than lament.
 
 ## Bandit types
 

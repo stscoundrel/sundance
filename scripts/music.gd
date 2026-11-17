@@ -2,27 +2,31 @@ class_name Music
 extends Node
 ## The level's score: one piece in layers that play together all the way round,
 ## the game turning each up or down as things go (tools/music.py writes them,
-## Ogg Vorbis, imported to loop).
-## The snow layer is always there, piano and strings under the wind. Unease comes
-## in when a gang's on edge, a man's out searching or the gold's gone missing;
-## the fight comes in while men are shooting, the stranger or each other. Every
-## layer shares the same bars and chords, so a layer coming up mid-phrase still
-## fits. Each one lingers a while after the trouble that brought it: a town
-## doesn't settle the moment the last shot's fired. When he dies it all goes,
-## and only the wind is left.
+## Ogg Vorbis, imported to loop). Every layer shares the same bars and chords, so
+## a layer coming up mid-phrase still fits. Each layer has a part to play:
+##   always - the ground of it, there the whole time (Silencio's snow, Cruz
+##            Verde's picked guitar and tolling string);
+##   calm   - only while there's no fight on: the fort asleep, the stranger
+##            creeping in, the ticking and the whistle from the walls;
+##   unease - when a gang's on edge, a man's out searching or the gold's missing;
+##   fight  - while men are shooting, at the stranger or at each other.
+## Unease and the fight linger a while after the trouble that brought them: a
+## town doesn't settle the moment the last shot's fired. When he dies it all
+## goes, and only the wind is left; when the job's done it's the ground alone.
 
-const LAYERS := ["snow", "unease", "fight"]
-const RISE := {"snow": 3.0, "unease": 4.0, "fight": 1.5}    # s from silent to full
-const FALL := {"snow": 5.0, "unease": 9.0, "fight": 7.0}    # s from full to silent
-const LINGER := {"unease": 15.0, "fight": 10.0}             # game s it stays after the trouble
-const LOUDNESS := -3.0                                       # dB: the whole score under the guns
-const LOOK_EVERY := 0.25                                     # s between looks at the town
+const RISE := {"always": 3.0, "calm": 3.0, "unease": 4.0, "fight": 1.5}   # s from silent to full
+const FALL := {"always": 5.0, "calm": 2.0, "unease": 9.0, "fight": 7.0}   # s from full to silent
+const LINGER := {"unease": 15.0, "fight": 10.0}   # game s it stays after the trouble
+const LOUDNESS := -3.0                             # dB: the whole score under the guns
+const LOOK_EVERY := 0.25                           # s between looks at the town
+const SHOTS_HEARD := 3.0                           # game s a shot anywhere counts as a fight on
 
 var game: Node
 var player: AudioStreamPlayer
 var stream: AudioStreamSynchronized
-var level := {"snow": 0.0, "unease": 0.0, "fight": 0.0}   # where each layer is now, 0..1 of full
-var want := {"snow": 1.0, "unease": 0.0, "fight": 0.0}    # where it's heading
+var roles: Array[String] = []   # each layer's part, in the stream's order
+var level := {"always": 0.0, "calm": 0.0, "unease": 0.0, "fight": 0.0}   # where each part is now, 0..1 of full
+var want := {"always": 1.0, "calm": 1.0, "unease": 0.0, "fight": 0.0}    # where it's heading
 var linger := {"unease": 0.0, "fight": 0.0}
 var _look_t := 0.0
 
@@ -35,13 +39,14 @@ static func make(g: Node, name: String) -> Music:
 	m.game = g
 	m.name = "Music"
 	m.process_mode = Node.PROCESS_MODE_ALWAYS   # (it plays on under the menu)
-	var paths: Dictionary = g.meta["music"][name]["layers"]
+	var layers: Array = g.meta["music"][name]["layers"]
 	m.stream = AudioStreamSynchronized.new()
-	m.stream.stream_count = LAYERS.size()
-	for i in LAYERS.size():
-		var s: AudioStream = load(paths[LAYERS[i]])
+	m.stream.stream_count = layers.size()
+	for i in layers.size():
+		var s: AudioStream = load(layers[i]["path"])
 		m.stream.set_sync_stream(i, s)
 		m.stream.set_sync_stream_volume(i, -80.0)
+		m.roles.append(layers[i]["role"])
 	m.player = AudioStreamPlayer.new()
 	m.player.stream = m.stream
 	m.player.volume_db = LOUDNESS
@@ -67,7 +72,7 @@ func _process(delta: float) -> void:
 ## What's going on in town: [uneasy, fighting].
 func sense() -> Array:
 	var uneasy := false
-	var fighting := false
+	var fighting: bool = game.clock - game.last_gunfire < SHOTS_HEARD   # (the first shot brings it at once)
 	for gs in game.gangs.values():
 		if gs["alarm"] >= game.UNEASY:
 			uneasy = true
@@ -85,7 +90,7 @@ func sense() -> Array:
 	return [uneasy, fighting]
 
 
-## Sets where each layer is heading, from the trouble in town and how the level
+## Sets where each part is heading, from the trouble in town and how the level
 ## stands. dt is game time since the last look.
 func decide(dt: float, uneasy: bool, fighting: bool, state: String) -> void:
 	if fighting:
@@ -95,16 +100,18 @@ func decide(dt: float, uneasy: bool, fighting: bool, state: String) -> void:
 	for k in linger:
 		linger[k] = maxf(0.0, linger[k] - dt)
 	var playing := state == "play"
-	want["snow"] = 0.0 if state == "lost" else 1.0
+	var over := state == "won" or state == "lost"
+	want["always"] = 0.0 if state == "lost" else 1.0
+	want["calm"] = 0.0 if over or linger["fight"] > 0.0 else 1.0
 	want["unease"] = 1.0 if playing and linger["unease"] > 0.0 else 0.0
 	want["fight"] = 1.0 if playing and linger["fight"] > 0.0 else 0.0
 
 
-## Moves each layer toward where it's heading, at its own pace.
+## Moves each part toward where it's heading, at its own pace.
 func fade(dt: float) -> void:
-	for i in LAYERS.size():
-		var k: String = LAYERS[i]
+	for k in level:
 		var rate: float = 1.0 / (RISE[k] if want[k] > level[k] else FALL[k])
 		level[k] = move_toward(level[k], want[k], rate * dt)
-		if stream:
-			stream.set_sync_stream_volume(i, linear_to_db(maxf(level[k], 0.0001)))
+	if stream:
+		for i in roles.size():
+			stream.set_sync_stream_volume(i, linear_to_db(maxf(level[roles[i]], 0.0001)))

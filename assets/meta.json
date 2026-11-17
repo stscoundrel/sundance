@@ -1083871,12 +1083871,37 @@
  },
  "music": {
   "silencio": {
-   "bpm": 66,
-   "layers": {
-    "snow": "res://assets/music/silencio_snow.ogg",
-    "unease": "res://assets/music/silencio_unease.ogg",
-    "fight": "res://assets/music/silencio_fight.ogg"
-   }
+   "layers": [
+    {
+     "name": "snow",
+     "role": "always",
+     "path": "res://assets/music/silencio_snow.ogg"
+    },
+    {
+     "name": "unease",
+     "role": "unease",
+     "path": "res://assets/music/silencio_unease.ogg"
+    },
+    {
+     "name": "fight",
+     "role": "fight",
+     "path": "res://assets/music/silencio_fight.ogg"
+    }
+   ]
+  },
+  "cruz_verde": {
+   "layers": [
+    {
+     "name": "tension",
+     "role": "calm",
+     "path": "res://assets/music/cruz_verde_tension.ogg"
+    },
+    {
+     "name": "battle",
+     "role": "fight",
+     "path": "res://assets/music/cruz_verde_battle.ogg"
+    }
+   ]
   }
  }
 }
