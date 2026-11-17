@@ -516,9 +516,44 @@ def gen_ground(meta, level, key="ground"):
                     if 0 <= yy < H and 0 <= xx < W:
                         out[yy, xx] = col
 
-    path = save(out, f"sprites/{key}.png")
-    meta[key] = {"file": path, "origin": [-ox, -oy]}
+    meta[key] = dict(ground_files(out, key), origin=[-ox, -oy])
     meta["tex_scale"] = 1.0 / K
+
+
+MAX_TEX = 8192   # the widest texture an older card takes (DX10-era); newer ones take 16384
+
+
+def ground_files(out, key):
+    """Save a baked ground: one file, or, wider than MAX_TEX, side-by-side strips of it
+    ("strips": [[file, x], ...], with its whole "size"), which the game lays edge to edge."""
+    H, W = out.shape[:2]
+    n = 1 if W <= MAX_TEX else -(-W // MAX_TEX)
+    keep = {f"{key}.png"} if n == 1 else {f"{key}_{i}.png" for i in range(n)}
+    for old in os.listdir(os.path.join(ASSETS, "sprites")):   # (the whole, or strips, of an earlier bake cut otherwise)
+        png = old.removesuffix(".import")
+        rest = png[len(key):].removesuffix(".png")
+        if png.startswith(key) and png.endswith(".png") and (rest == "" or (rest[:1] == "_" and rest[1:].isdigit())) \
+                and png not in keep:
+            os.remove(os.path.join(ASSETS, "sprites", old))
+    if n == 1:
+        return {"file": _compressed(save(out, f"sprites/{key}.png"))}
+    step = -(-W // n)
+    strips = [[_compressed(save(out[:, x:x + step], f"sprites/{key}_{i}.png")), x] for i, x in enumerate(range(0, W, step))]
+    return {"strips": strips, "size": [W, H]}
+
+
+def _compressed(res_path):
+    """Have Godot import a ground compressed on the card (DXT1 on the desktop: a sixth of
+    plain colour, the grain barely touched at the size it's seen), not lossless like the
+    rest, whose outlines it would smear. Returns the path."""
+    imp = os.path.join(ASSETS, res_path[len("res://assets/"):]) + ".import"
+    if os.path.exists(imp):
+        text = open(imp).read()
+        text = text.replace("compress/mode=0", "compress/mode=2")
+    else:
+        text = '[remap]\n\nimporter="texture"\ntype="CompressedTexture2D"\n\n[params]\n\ncompress/mode=2\nmipmaps/generate=false\n'
+    open(imp, "w").write(text)
+    return res_path
 
 
 def gen_mgun(meta):

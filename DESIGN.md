@@ -69,8 +69,15 @@ A body's sheet keeps each drawing once: frames already came trimmed to the figur
 shelf-packed, but a third of a big sheet was frames drawn exactly alike (a pose held, a
 loop's frame repeated, the same aim in two anims). The bake (`chars.pack`) points those
 at the one on the sheet, each keeping its own offset; the game reads the frames as it
-always did. The stranger's sheet went from 11007 rows to 6766, and a town's sprites to
-about 1.0 GB (Silencio) to 1.9 GB (the funeral), San Miguel 1.6.
+always did. The stranger's sheet went from 11007 rows to 6766.
+
+The grounds alone are compressed on the card (DXT1 on the desktop, a sixth of plain
+colour; their import has `compress/mode=2`, which the bake sets): sand and snow grain
+lose next to nothing at the size they're seen, where a body's outlines and the props'
+would smear, so those stay lossless. A ground wider than an older (DX10-era) card takes,
+8192, is baked in strips (`"strips"` and its whole `"size"` in the meta) laid edge to
+edge (`ground_strips()`): the funeral's, in two. A town's sprites now come to about 0.9 GB
+(Silencio) to 1.7 GB (the funeral), San Miguel 1.5, up in three to four and a half seconds.
 
 **What he's told.** The title card is the whole game's, not a town's: "One stranger.
 Five towns. Whoever pays.", the keys, a line of stealth advice, and "click to choose

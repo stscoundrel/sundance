@@ -7,7 +7,8 @@ extends SceneTree
 ##              riding card is up the moment he picks, and Esc doesn't turn him back.
 ##   kept     - the sprites ride along: the stranger's body is the very same texture in
 ##              the next town (not loaded again), and the last town's ground is let go.
-##   sprites  - a town loads up front its own ground and no other's, the stranger's body
+##   sprites  - a town loads up front its own ground (none wider than an older card's
+##              8192: the funeral's comes in strips) and no other's, the stranger's body
 ##              among its men's, and nothing that isn't a real file; what that comes to in
 ##              video memory is printed for each town, with the bodies (the budget to beat).
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_ride.gd
@@ -63,7 +64,7 @@ func _process(_delta: float) -> bool:
 	step = "kept"
 	var atlas: String = g.meta["chars"]["hero"]["atlas"]
 	check(g.tex(atlas) == his_body, "the stranger's body was loaded again in %s" % ORDER[leg])
-	check(left == g._ground_meta()["file"] or not g._textures.has(left), "%s still holds %s" % [ORDER[leg], left.get_file()])
+	check(left == g.ground_strips()[0][0] or not g._textures.has(left), "%s still holds %s" % [ORDER[leg], left.get_file()])
 	step = "ride"
 	if leg < ORDER.size() - 1:
 		_sprites(g)
@@ -87,7 +88,7 @@ func _pick(id: String) -> void:
 	ev.physical_keycode = KEY_1 + i
 	ev.pressed = true
 	his_body = game.tex(game.meta["chars"]["hero"]["atlas"])
-	left = game._ground_meta()["file"]
+	left = game.ground_strips()[0][0]
 	root.push_input(ev)
 	check(root.is_input_handled(), "the key that rode to %s wasn't taken" % id)
 	check(game.state == "riding" and game.riding_to == id, "no riding card for %s (%s)" % [id, game.state])
@@ -102,16 +103,20 @@ func _pick(id: String) -> void:
 func _sprites(g: Node) -> void:
 	step = "sprites"
 	var paths: Array[String] = g.sprite_paths()
-	var own: String = g._ground_meta()["file"]
+	var own: Array = g.ground_strips().map(func(s): return s[0])
+	var grounds := {}
 	for k in g.meta:
 		if k.begins_with("ground"):
-			var f: String = g.meta[k]["file"]
-			check(paths.has(f) == (f == own), "%s %s %s" % [g.level_entry["id"], "lacks its ground" if f == own else "loads another town's ground,", f])
+			for s in g.meta[k].get("strips", [[g.meta[k].get("file", ""), 0]]):
+				var f: String = s[0]
+				grounds[f] = true
+				check(paths.has(f) == (f in own), "%s %s %s" % [g.level_entry["id"], "lacks its ground" if f in own else "loads another town's ground,", f])
+				check(_size(f).x <= 8192, "%s is %d wide, more than an older card takes" % [f.get_file(), _size(f).x])
 	check("hero" in g.town_templates(), "%s leaves out the stranger's body" % g.level_entry["id"])
 	var bytes := 0
 	for p in paths:
 		check(FileAccess.file_exists(p), "%s loads %s, which isn't there" % [g.level_entry["id"], p])
-		bytes += _gpu_bytes(p)
+		bytes += _size(p).x * _size(p).y / 2 if grounds.has(p) else _gpu_bytes(p)   # (a ground's compressed on the card: half a byte a pixel)
 	print("%-12s %d sprites, %.0f MB in video memory: %s" % [g.level_entry["id"], paths.size(), bytes / 1e6, ", ".join(g.town_templates())])
 	step = "ride"
 
@@ -120,6 +125,15 @@ func _sprites(g: Node) -> void:
 ## pixel of its kind takes there. Colour is 3 and colour with alpha 4; grey is 4 too,
 ## since the Compatibility renderer widens the grey slot sheets on the card (counted
 ## so, San Miguel's 3.9 GB is a shade over the 3.6 GB a window measures: the safe side).
+func _size(path: String) -> Vector2i:
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return Vector2i.ZERO
+	f.big_endian = true
+	f.seek(16)
+	return Vector2i(f.get_32(), f.get_32())
+
+
 func _gpu_bytes(path: String) -> int:
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:

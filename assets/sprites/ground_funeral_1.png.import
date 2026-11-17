@@ -2,20 +2,22 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b8t7365r3bk2b"
-path="res://.godot/imported/ground_funeral.png-bf6ee5b7d1f8a4caff7fe00fb6b60cbd.ctex"
+uid="uid://cmxksdlu1bpjc"
+path.s3tc="res://.godot/imported/ground_funeral_1.png-4dc86710d3033625a39363d32db536e3.s3tc.ctex"
+path.etc2="res://.godot/imported/ground_funeral_1.png-4dc86710d3033625a39363d32db536e3.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
-source_file="res://assets/sprites/ground_funeral.png"
-dest_files=["res://.godot/imported/ground_funeral.png-bf6ee5b7d1f8a4caff7fe00fb6b60cbd.ctex"]
+source_file="res://assets/sprites/ground_funeral_1.png"
+dest_files=["res://.godot/imported/ground_funeral_1.png-4dc86710d3033625a39363d32db536e3.s3tc.ctex", "res://.godot/imported/ground_funeral_1.png-4dc86710d3033625a39363d32db536e3.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -621,6 +621,14 @@ func _ground_meta() -> Dictionary:
 	return meta.get(level.get("ground", "ground"), meta["ground"])
 
 
+## The town's ground as the card takes it, [file, x in texels] each, laid side by side:
+## one, or, for a ground wider than an older card can take (the funeral's, past 8192),
+## strips of it (its "strips", with its whole "size").
+func ground_strips() -> Array:
+	var gm := _ground_meta()
+	return gm.get("strips", [[gm.get("file", ""), 0]])
+
+
 func _sprite_walk(node: Variant, out: Array[String], seen: Dictionary) -> void:
 	if node is Dictionary:
 		for v in node.values():
@@ -1095,14 +1103,15 @@ func _ride_in() -> void:
 # ------------------------------------------------------------------ world
 
 func _build_world() -> void:
-	var ground := Sprite2D.new()
 	var gm := _ground_meta()
-	ground.texture = tex(gm["file"])
-	ground.centered = false
-	ground.position = Vector2(gm["origin"][0], gm["origin"][1])
-	ground.scale = Vector2.ONE * tex_scale
-	ground.z_index = -20
-	add_child(ground)
+	for strip in ground_strips():
+		var ground := Sprite2D.new()
+		ground.texture = tex(strip[0])
+		ground.centered = false
+		ground.position = Vector2(gm["origin"][0] + float(strip[1]) * tex_scale, gm["origin"][1])
+		ground.scale = Vector2.ONE * tex_scale
+		ground.z_index = -20
+		add_child(ground)
 
 	decals = Decals.new()
 	decals.z_index = -15
@@ -1216,7 +1225,7 @@ func _build_world() -> void:
 	camera.make_current()
 	# (the camera kept to the town's own ground: the funeral's is wider than San Miguel's)
 	var origin := Vector2(gm["origin"][0], gm["origin"][1])
-	var gsize: Vector2 = tex(gm["file"]).get_size() * tex_scale
+	var gsize: Vector2 = (Vector2(gm["size"][0], gm["size"][1]) if gm.has("size") else tex(gm["file"]).get_size()) * tex_scale
 	camera.limit_left = int(origin.x)
 	camera.limit_top = int(origin.y)
 	camera.limit_right = int(origin.x + gsize.x)

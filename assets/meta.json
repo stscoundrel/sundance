@@ -1083850,7 +1083850,20 @@
   ]
  },
  "ground_funeral": {
-  "file": "res://assets/sprites/ground_funeral.png",
+  "strips": [
+   [
+    "res://assets/sprites/ground_funeral_0.png",
+    0
+   ],
+   [
+    "res://assets/sprites/ground_funeral_1.png",
+    5568
+   ]
+  ],
+  "size": [
+   11136,
+   5568
+  ],
   "origin": [
    -1856,
    -128
