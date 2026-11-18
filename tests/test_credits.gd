@@ -80,7 +80,7 @@ func _process(_delta: float) -> bool:
 			return done()
 		check(c.ending == "buried" and c.cards[-1]["lines"][0][1] == "FINE", "buried's last card: %s" % [c.cards[-1]])
 		var all := JSON.stringify(c.cards)
-		for who in ["The Stranger", "YOU", "Directed by", "Sergio Leone", "Sergio Corbucci", "Sergio Sollima", "Enzo G. Castellari", "Ennio Morricone", "Godot Engine"]:
+		for who in ["The Stranger", "YOU", "Directed by", "Sergio Leone", "Sergio Corbucci", "Sergio Sollima", "Enzo G. Castellari", "Ennio Morricone", "Godot Engine", "Dependabot", "GitHub Actions"]:
 			check(all.contains(who), "no %s" % who)
 		check(game.hud.message == "", "the end screen's still up")
 		check(Engine.time_scale == 1.0, "still slowed: %.2f" % Engine.time_scale)

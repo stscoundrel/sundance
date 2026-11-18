@@ -8,6 +8,7 @@
     {"lines": [["role", "Photography"], ["name", "Claude"], ["gap", ""], ["role", "Production design"], ["name", "Claude"]], "for": 3.5},
     {"lines": [["role", "Special effects"], ["name", "Claude"], ["gap", ""], ["role", "Music"], ["name", "Claude"]], "for": 3.5},
     {"lines": [["role", "Editing"], ["name", "Claude"], ["gap", ""], ["role", "Produced by"], ["name", "Sampo Silvennoinen"]], "for": 3.5},
+    {"lines": [["role", "Armourer"], ["name", "Dependabot"], ["gap", ""], ["role", "Continuity"], ["name", "GitHub Actions"]], "for": 3.5},
     {"lines": [["role", "Directed by"], ["name", "Sampo Silvennoinen"]], "for": 4.0},
     {"lines": [["line", "Every figure, every gunshot and every note of music"], ["line", "drawn and composed by the tools, none of it by hand"], ["gap", ""], ["role", "Built with"], ["name", "Godot Engine"]], "for": 5.0},
     {"lines": [["line", "With thanks to the men who rode this way first"], ["gap", ""], ["name", "Sergio Leone"], ["film", "A Fistful of Dollars  ·  For a Few Dollars More"], ["film", "The Good, the Bad and the Ugly"], ["film", "A Fistful of Dynamite  ·  Once Upon a Time in the West"]], "for": 5.5},

@@ -1012,12 +1012,14 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   cast, "The Stranger ... YOU"; where it was filmed (the four towns and the burial
   ground); the crew, two credits to a card so it doesn't drag (story, screenplay,
   production and direction the user's, photography, production design, effects,
-  music and editing Claude's), direction alone last; everything being drawn and
+  music and editing Claude's; the armourer Dependabot, who keeps the outfit's tools
+  oiled and up to date, and continuity GitHub Actions, checking every take against the
+  last), direction alone last; everything being drawn and
   composed by the tools, with Godot; the directors who rode this way first, each
   with his films (Leone under the thanks, Corbucci, Sollima with Castellari); and "for the musical inspiration" (not their music: the score is the
   tools' own) Morricone, Bacalov and the De Angelis brothers. The
   last card is the ending's: FINE over the filled grave, *A Good Man Never Dies* if
-  he climbed out. Fourteen cards, about 80 s left alone. Each fades in, stands 3-5.5 s and fades out (real time: it's
+  he climbed out. Fifteen cards, about 85 s left alone. Each fades in, stands 3-5.5 s and fades out (real time: it's
   only to look at); a click or a key moves on a card, the last stays, and once it's
   read Enter (or Esc at any time) goes to the level picker. The funeral's score fades
   away under the first card and the credits have their own piece (`credits` in
