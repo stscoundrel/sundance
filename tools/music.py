@@ -1731,6 +1731,140 @@ def funeral():
     return [(name, x * 0.9 / peak, loops, beats, bpm) for name, x, loops, beats, bpm in out]
 
 
+# --- The end credits -------------------------------------------------------
+#
+# The ride again, fast, as the names go by: every town's tune in the order he came
+# through them, each in its own voice, so the ear knows where it is before the
+# card does. San Miguel's theme whistled over the clock and the jaw harp, the way
+# the first town began; Cruz Verde's battle tune on the trumpets in thirds, the
+# band at a canter rather than a charge; Paso Esperanza's bugles calling across
+# the field, far off and then near; Silencio's tune sung high over the piano in
+# the snow; and San Miguel's theme once more, twanged low on the guitar, with the
+# funeral's organ under it and its bell tolling the last chord out. One key (G
+# minor, the bugles' D the way home), one twelve-eight pulse, 28 bars: about as
+# long as the cards take.
+
+CREDITS_BEAT = 76
+CREDITS_CHORDS = (SM_A                                     # San Miguel
+                  + ["Gm", "F", "Eb", "D"]                 # Cruz Verde, down a tone
+                  + ["D", "D", "G", "D"]                   # Paso Esperanza
+                  + ["Bb", "Gm", "A", "Dm"]                # Silencio
+                  + ["Gm", "Gm", "F", "F", "Eb", "D", "Gm", "Gm"])   # San Miguel again, home
+CREDITS_SECTIONS = "S" * 8 + "C" * 4 + "P" * 4 + "Q" * 4 + "T" * 8
+
+
+def credits_score(c, mix):
+    for bar, ch in enumerate(CREDITS_CHORDS):
+        sec, r = CREDITS_SECTIONS[bar], bass_note(CREDITS_CHORDS[bar])
+        tm = r if r >= 36 else r + 12
+        if sec == "S":   # the clock, the jaw harp, the bell: noon's coming
+            for beat in range(4):
+                mix.put(tick(0.7 if beat == 0 else 0.45), c.at(bar, beat * 3), "mid", 0.5, 0.05)
+            if bar % 2 == 0:
+                for j, e in enumerate((0, 6)):
+                    mix.put(jaw_harp(43, c.dur(1.5), [(350, 1500, 0.08), (1400, 500, 0.1)][j], 0.8), c.at(bar, e), "mid", -0.45, 0.06)
+            if bar in (0, 4):
+                mix.put(bell(67, 7.0, 0.6), c.at(bar), "far", -0.4, 0.13)
+            if bar == 7:
+                timp_roll(mix, c, bar, 6, 6, 43)
+        elif sec == "C":   # the band at a canter: galloping string, light drums, the guitars' rolls
+            for e in range(12):
+                v = (1.0, 0.55, 0.75)[e % 3]
+                t = c.at(bar, e) + rng.normal(0, 0.003)
+                mix.put(pluck(r, c.dur(1) * 0.85, v, pickup=0.22, tau=1.0, bright=0.45, maxf=2500, damp=0.03, click=0.1),
+                        t, "close", 0.0, 0.4)
+                mix.put(snare([.8, .2, .25, .4, .2, .25, .6, .2, .25, .4, .3, .5][e] * 0.6), t, "close", 0.15, 0.2)
+            mix.put(timp(tm, 0.9), c.at(bar), "close", -0.1, 0.45)
+            mix.put(timp(tm, 0.6), c.at(bar, 6), "close", -0.1, 0.4)
+            for e in (0, 6):
+                rasgueado(mix, c, ch, c.at(bar, e), 0.8)
+            for m in tones(ch, 48, 62):
+                cs, csig = choir([(c.at(bar), c.dur(11.5), m, 0.8)], "a_male", voices=3, attack=0.15,
+                                 release=0.3, glide=0, vib_depth=0.15, drift=0.05)
+                mix.put(csig, cs, "far", rng.uniform(-.6, .6), 0.04)
+            if bar == 8:
+                mix.put(whip(), c.at(bar) - 0.14, "mid", 0.5, 0.24)
+                mix.put(bell(67, 6.0, 0.9), c.at(bar), "far", -0.4, 0.26)
+            if bar == 11:
+                snare_roll8(mix, c, bar, 6, 6, 0.2, 0.8, 0.8)
+        elif sec == "P":   # the army's ground: the anvil keeping time, the drum, a held string
+            for e in range(0, 12, 3):
+                mix.put(anvil(0.5 if e else 0.7), c.at(bar, e), "mid", 0.4, 0.05)
+            mix.put(timp(tm, 0.7), c.at(bar), "close", -0.1, 0.45)
+            snare_roll8(mix, c, bar, 0, 12, 0.08, 0.3 if bar < 15 else 0.7, 0.6)
+            for m in tones(ch, 62, 74):
+                mix.put(strings(m, c.dur(12), 0.7, attack=0.6, release=1.2, voices=2), c.at(bar), "far", rng.uniform(-.4, .4), 0.03)
+        elif sec == "Q":   # the snow: strings, the piano rocking, nothing struck
+            for m in voicing(ch):
+                mix.put(strings(m, c.dur(12), 0.9, attack=1.2, release=1.4), c.at(bar), "far", rng.uniform(-.4, .4), 0.06)
+            low = low_root(ch)
+            arp = [low, low + 7, low + 12] + tones(ch, low + 13, low + 30)[:3]
+            for j in range(12):
+                mix.put(piano(arp[[0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3][j]], c.dur(2.4), 0.42 + 0.12 * (j % 3 == 0)),
+                        c.at(bar, j) + rng.normal(0, 0.006), "far", -0.2 + 0.03 * j, 0.2)
+        elif sec == "T":   # home: the funeral's organ under the twang
+            for m in tones(ch, 43, 58)[:3]:
+                mix.put(organ(m, c.dur(11.6), 0.7), c.at(bar), "far", -0.15, 0.035)
+            if bar == 20:
+                mix.put(bell(67, 7.0, 0.6), c.at(bar), "far", -0.4, 0.15)
+    # The guitars under the towns that had them: San Miguel's both times, Cruz Verde's.
+    for lo, hi, lvl in ((0, 8, 0.42), (8, 12, 0.5), (20, 27, 0.35)):
+        chords = CREDITS_CHORDS[lo:hi]
+        sub = Clock8(c.at(lo), CREDITS_BEAT)
+        pedal(mix, sub, chords, lvl)
+        arpeggio(mix, sub, chords, lvl)
+    pedal(mix, Clock8(c.at(12), CREDITS_BEAT), ["D", "D", "G", "D"], 0.35)
+    # San Miguel: the whistle.
+    s0, sig = whistle(notes_of(c, SM_THEME_A))
+    mix.put(sig, s0, "mid", 0.2, 0.17)
+    # Cruz Verde: the trumpets in thirds, its first four bars, down a tone into G minor.
+    cruz = [(b + 8, e, d, m - 2) for b, e, d, m in CRUZ_TUNE if b < 4]
+    second = [(b, e, d, third_below(m, CREDITS_CHORDS[b], sm_scale(CREDITS_CHORDS[b]))) for b, e, d, m in cruz]
+    for part, pan, gain in ((cruz, -0.25, 0.18), (second, 0.25, 0.13)):
+        s0, sig = trumpet(notes_of(c, part, 0, 0.9))
+        mix.put(sig, s0, "mid", pan, gain)
+    # Paso Esperanza: the bugle and its answer, far off, then near.
+    calls = [[(b * 2, d * 2, m + 3) for b, d, m in BUGLE], [(b * 2, d * 2, m + 3) for b, d, m in BUGLE_ANSWER]]
+    for bar, which, pan, near in ((12, 0, 0.55, 0.15), (13, 1, -0.55, 0.3), (14, 0, 0.35, 0.65), (15, 1, -0.3, 0.9)):
+        s0, sig = bugle(c, bar * 12, call=calls[which], near=near)
+        mix.put(sig, s0, "mid", pan, 0.2 + 0.06 * near)
+    # Silencio: the tune sung high, its first half.
+    song = [(b - 1 + 16, bt * 3, d * 3, m) for b, bt, d, m in SILENCIO_TUNE if b <= 4]
+    s0, sig = sing(notes_of(c, song, 0, 0.9), "a_sop", tilt=1.2, attack=0.1, release=0.3, glide=0.07,
+                   vib_rate=5.8, vib_depth=0.35, vib_delay=0.15, drift=0.04, scoop=0.25)
+    mix.put(sig, s0, "far", 0.1, 0.28)
+    n = secs(c.dur(48) + 2.0)
+    w = wind(n) * np.clip(np.sin(np.pi * np.arange(n) / n) * 1.5, 0, 1)
+    mix.put(w, c.at(16) - 1.0, "air", 0.0, 0.05)
+    # Home: San Miguel's theme twanged low, its last note the tonic, rung out.
+    home = [(b + 20, e, d, m - 12) for b, e, d, m in SM_THEME_A[:-1]] + [(27, 0, 12, 67)]
+    for b, e, d, m in home:
+        long = d >= 6
+        mix.put(pluck(m, c.dur(d) * 0.95 if b < 27 else 9.0, 1.0, pickup=0.09, tau=2.8 if long else 1.6, bright=1.3,
+                      maxf=7000, damp=0.04, vib=0.3 if long else 0.0), c.at(b, e), "guitar", -0.15, 0.34)
+    # The last chord: the organ held, the low string, and the funeral's bell three times.
+    end = c.at(27)
+    for m in (43, 50, 55, 58, 62):
+        mix.put(organ(m, 7.0, 0.7, attack=0.3, release=2.0), end, "far", -0.1, 0.045)
+    mix.put(pluck(31, 9.0, 1.0, pickup=0.09, tau=3.0, bright=1.2, maxf=7000, vib=0.2), end, "guitar", -0.3, 0.3)
+    mix.put(timp(43, 0.6, 2.5), end, "close", -0.1, 0.4)
+    for j in range(3):
+        mix.put(bell(55, 9.0, 0.85 - 0.2 * j), end + j * 2.6, "far", 0.35, 0.26)
+
+
+def credits():
+    """The end credits' piece, rung out to silence."""
+    global rng
+    rng = np.random.default_rng(71)
+    c = Clock8(0.0, CREDITS_BEAT)
+    mix = Mix(c.end(len(CREDITS_CHORDS)) + 14.0)
+    credits_score(c, mix)
+    x = render(mix)
+    loud = np.where(np.abs(x).max(axis=0) > 1e-4)[0]
+    x = x[:, :loud[-1] + 1]
+    return x * 0.9 / np.abs(x).max()
+
+
 # How a score in pieces moves on (scripts/music.gd): where it starts; which piece
 # runs into which; for each thing that happens in the game, the piece it brings
 # and the pieces it can interrupt; and how each switch waits (the next beat, the
@@ -1754,6 +1888,7 @@ SCORES = {
     "train": (train, None),   # pieces played in turn, not layers
     "san_miguel": (san_miguel, {"tension": "calm", "battle": "fight"}),
     "funeral": (funeral, None),
+    "credits": (credits, "single"),
 }
 
 
@@ -1764,6 +1899,13 @@ def bake(meta, assets):
     only = [k for k in os.environ.get("SUNDANCE_MUSIC", "").split(",") if k]
     for name, (fn, roles) in SCORES.items():
         if only and name not in only:
+            continue
+        if roles == "single":   # one piece, played through once (the credits)
+            x = fn()
+            rel = "music/%s.ogg" % name
+            write_ogg(os.path.join(assets, rel), x)
+            meta["music"][name] = {"path": "res://assets/" + rel}
+            print("    %s: %.1f s, %.1f dB rms" % (name, x.shape[1] / SR, 20 * np.log10(np.sqrt((x ** 2).mean()))))
             continue
         if roles is None:
             pieces = []
@@ -1817,6 +1959,11 @@ def main():
                pieces["action"], pieces["won"]]
         os.makedirs("build/music", exist_ok=True)
         write_wav("build/music/train_preview.wav", np.clip(np.concatenate(run, axis=1), -1, 1))
+        return
+    if len(sys.argv) > 1 and sys.argv[1] == "credits":
+        x = credits()
+        write_wav("build/music/credits.wav", x)
+        print("credits: %.1f s" % (x.shape[1] / SR))
         return
     if len(sys.argv) > 1 and sys.argv[1] in SCORES:
         name = sys.argv[1]

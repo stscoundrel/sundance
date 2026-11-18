@@ -1,0 +1,22 @@
+{
+  "_doc": "The end credits after the funeral (see Credits). Cards in turn, each a few seconds: 'lines' are [style, text], styles role (the small line over a name), name, film, line, end, and gap (a space between two credits sharing a card); 'title' draws the title card's art; 'for' is how long it stays (seconds, besides the fades). The last card is the ending's: 'ends'.",
+  "cards": [
+    {"title": true, "for": 4.0},
+    {"lines": [["cast", "The Stranger"], ["name", "YOU"]], "for": 4.0},
+    {"lines": [["role", "Filmed on location in"], ["line", "San Miguel  ·  Cruz Verde  ·  Paso Esperanza  ·  Silencio"], ["line", "and the burial ground"]], "for": 4.0},
+    {"lines": [["role", "Story by"], ["name", "Sampo Silvennoinen"], ["gap", ""], ["role", "Screenplay by"], ["name", "Sampo Silvennoinen"]], "for": 3.5},
+    {"lines": [["role", "Photography"], ["name", "Claude"], ["gap", ""], ["role", "Production design"], ["name", "Claude"]], "for": 3.5},
+    {"lines": [["role", "Special effects"], ["name", "Claude"], ["gap", ""], ["role", "Music"], ["name", "Claude"]], "for": 3.5},
+    {"lines": [["role", "Editing"], ["name", "Claude"], ["gap", ""], ["role", "Produced by"], ["name", "Sampo Silvennoinen"]], "for": 3.5},
+    {"lines": [["role", "Directed by"], ["name", "Sampo Silvennoinen"]], "for": 4.0},
+    {"lines": [["line", "Every figure, every gunshot and every note of music"], ["line", "drawn and composed by the tools, none of it by hand"], ["gap", ""], ["role", "Built with"], ["name", "Godot Engine"]], "for": 5.0},
+    {"lines": [["line", "With thanks to the men who rode this way first"], ["gap", ""], ["name", "Sergio Leone"], ["film", "A Fistful of Dollars  ·  For a Few Dollars More"], ["film", "The Good, the Bad and the Ugly"], ["film", "A Fistful of Dynamite  ·  Once Upon a Time in the West"]], "for": 5.5},
+    {"lines": [["name", "Sergio Corbucci"], ["film", "Django  ·  The Great Silence"], ["film", "Il Mercenario  ·  Vamos a matar, compañeros"]], "for": 5.0},
+    {"lines": [["name", "Sergio Sollima"], ["film", "The Big Gundown  ·  Face to Face"], ["gap", ""], ["name", "Enzo G. Castellari"], ["film", "Keoma"]], "for": 5.0},
+    {"lines": [["role", "And for the musical inspiration"], ["name", "Ennio Morricone"], ["name", "Luis Bacalov"], ["name", "Guido & Maurizio De Angelis"]], "for": 5.0}
+  ],
+  "ends": {
+    "buried": {"lines": [["end", "FINE"]]},
+    "out": {"lines": [["end", "A Good Man Never Dies"]]}
+  }
+}

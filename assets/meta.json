@@ -1084111,6 +1084111,9 @@
      "bpm": 60
     }
    ]
+  },
+  "credits": {
+   "path": "res://assets/music/credits.ogg"
   }
  }
 }

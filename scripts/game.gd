@@ -80,6 +80,7 @@ var footprints: Footprints = null   # and the tracks everyone leaves in its snow
 var sight := 1.0                # of a man's sight the weather leaves him (Snowfall: snow, a squall)
 var wind_player: AudioStreamPlayer
 var music: Music = null   # the level's score, if levels.json gives it one (see Music)
+var credits_music: AudioStreamPlayer = null   # the end credits' own piece, once they roll
 var sun_wind: AudioStreamPlayer   # the wind, back as the funeral's rain clears (see Snowfall.clear)
 var hanging: Hanging = null     # a man on the gallows to save, if the level has one
 var captive: Captive = null     # a man tied to a pole, if the level has one
@@ -219,7 +220,8 @@ var shutters: Array[Shutter] = []
 var cover_points := PackedVector2Array()
 var astar := AStarGrid2D.new()
 
-var state := "title"   # title, levels, brief, loadout, play, won, lost; riding (to riding_to) as the scene reloads
+var state := "title"   # title, levels, brief, loadout, play, won, lost, credits (after the funeral); riding (to riding_to) as the scene reloads
+var credits: Credits = null   # the end credits, while they roll
 var riding_to := ""
 var built_from := 0   # wall clock as the town began to build (for the log's line only: see _log_load)
 static var picked: Array[String] = ["colt", "coach"]   # the loadout screen's choice (a gun a slot at most), kept across restarts
@@ -410,7 +412,10 @@ func _ready() -> void:
 	sfx("bell", null, -4.0, 0.0)
 	if _args.has("guns"):
 		start_guns = Array(_args["guns"].split(",")).filter(func(k): return Player.SLOT.has(k))
-	if _args.has("skip-title"):
+	if _args.has("credits") and chosen_level == "":   # debug: straight to the end credits (once: after them, the picker as usual)
+		hud.hide_title()
+		roll_credits("buried" if _args["credits"] == "buried" else "out")
+	elif _args.has("skip-title"):
 		begin()
 	elif _args.has("freeze"):
 		hud.hide_title()   # debug: look around town with everyone standing still
@@ -469,7 +474,7 @@ func _maybe_posse() -> void:
 func _load_level() -> void:
 	var all: Array = _load_json(LEVELS_PATH)["levels"]
 	levels = all.filter(func(l): return not l.get("hidden", false))
-	var want: String = Engine.get_meta("level", chosen_level if chosen_level != "" else _args.get("level", ""))
+	var want: String = Engine.get_meta("level", chosen_level if chosen_level != "" else _args.get("level", "funeral" if _args.has("credits") else ""))
 	level_entry = all[0]
 	for l in all:
 		if l["id"] == want:
@@ -748,8 +753,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			sfx("close", null, -8.0)
 			_to_loadout()
 		vp.set_input_as_handled()
+	elif state == "credits" and event.is_pressed() and not event.is_echo() and (event is InputEventMouseButton or event is InputEventKey):
+		credits_input()
+		vp.set_input_as_handled()
 	elif (state == "won" or state == "lost") and event.is_action_pressed("restart"):
-		if state == "lost":
+		if credits_due():
+			roll_credits()
+		elif state == "lost":
 			ride_to(level_entry["id"], "loadout")   # (straight back to the guns: try it another way)
 		elif not next_level().is_empty():
 			ride_to(next_level()["id"], "brief")
@@ -892,6 +902,8 @@ func _escape() -> void:
 			sfx("close", null, -14.0)
 		"riding":
 			pass   # (too late to turn back: he's on his way)
+		"credits":
+			ride_to(level_entry["id"], "levels")   # (enough of the names: choose where to ride)
 		_:
 			open_menu()
 
@@ -963,11 +975,44 @@ func menu_choose(k: String) -> void:
 
 ## What Enter does at the end of a town, on the end screen's last line.
 func onward() -> String:
+	if credits_due():
+		return "Enter: the credits      Esc: the menu"
 	if state == "lost":
 		return "Enter: ride it again      Esc: the menu"
 	if next_level().is_empty():
 		return "Enter: choose where to ride      Esc: the menu"
 	return "Enter: ride on to %s      Esc: the menu" % next_level()["name"]
+
+
+## The funeral's over, one way or the other: he broke out and every one of them is
+## down, or the earth went in over him. Then the picture's over, and the credits
+## roll (a death in the fight is only a death: he rides it again).
+func credits_due() -> bool:
+	return funeral != null and (state == "won" or state == "lost" and stats.get("buried", false))
+
+
+## The names come up over the burial ground gone dark (see Credits), the last card
+## the ending's own ("out" or "buried"; by default, how the funeral just ended).
+func roll_credits(how := "") -> void:
+	credits = Credits.make(how if how != "" else "out" if state == "won" else "buried")
+	state = "credits"
+	Engine.time_scale = 1.0
+	if music:   # (the town's score gives way to the credits' own)
+		music.fade_away()
+		music = null
+	credits_music = Music.credits(self)
+	menu.clear()
+	hud.show_message("", "")
+	sfx("close", null, -8.0)
+
+
+## A click or a key moves the credits on a card; once the last has been read, on
+## to choosing where to ride.
+func credits_input() -> void:
+	if credits.next():
+		return
+	if credits.read():
+		ride_to(level_entry["id"], "levels")
 
 
 ## A town he's chosen (or ridden on to) is told before he picks his guns: who hired

@@ -42,7 +42,7 @@ count say where it stands.
 | B, G, Q | bandage, throw dynamite, toss a peso |
 | Tab (hold) | arrows to what the town asks of you |
 | Esc | back a step; in town, the menu (paused): resume, the keys, start over, another town, leave |
-| Enter | after a win, on to the next town; after a loss, the same town again |
+| Enter | after a win, on to the next town; after a loss, the same town again; after the funeral (broken out or buried), the end credits, a card at a time |
 
 The Esc menu's THE KEYS shows the same list in the game, with what E does in that town.
 
@@ -95,7 +95,8 @@ minutes or more, so re-bake only the ones you changed. The `music` step writes e
 score (`tools/music.py`, five minutes or so a town; `SUNDANCE_MUSIC=cruz_verde` bakes only
 some) to `assets/music/`; `tools/music.py silencio` (or `cruz_verde`) writes the layers and a
 mix of them all to `build/music/` to listen to (`train` and `funeral` write
-`*_preview.wav`, their pieces in the order they play).
+`*_preview.wav`, their pieces in the order they play; `credits` writes the end credits'
+piece, `build/music/credits.wav`).
 
 ```bash
 python3 -m venv tools/.venv && tools/.venv/bin/pip install -r tools/requirements.txt
@@ -196,6 +197,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_coffin.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_arms.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_sermon.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_buried.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_credits.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_record.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_runners.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_general.gd
@@ -230,7 +232,7 @@ godot --path . -s tests/profile.gd                        # where a big fight's 
 ```
 
 Flags go after `--`: `--skip-title` (no title, briefing or loadout screen; rides in with Colt, coach gun and Winchester, or `--guns=navy,spencer`, one a slot), `--level=ID` (a level from `data/levels.json`, e.g. `san_miguel_35`), `--at=GX,GY` (start tile), `--bot` (autopilot that shoots
-and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--alert` (trigger the close-up), `--rattle` (near-miss every bandit once), `--gasp` (every downed man tries his last gasp), `--throw-at=GX,GY` and `--toss-at=GX,GY` (where a stick or a peso lands, in place of the mouse), `--freeze` (no title, everyone stands still), `--nails=N` (nails in his coffin lid at the funeral before the sermon adds any; `--at` starts him out of it), `--record=good|middling|bad|worst` (a made-up record for the funeral's sermon, in place of the one his wins have kept), `--shot=PATH --shot-time=SECONDS` (save a
+and logs hits and bandit reactions; `--bot=miss` shoots just past them), `--alert` (trigger the close-up), `--rattle` (near-miss every bandit once), `--gasp` (every downed man tries his last gasp), `--throw-at=GX,GY` and `--toss-at=GX,GY` (where a stick or a peso lands, in place of the mouse), `--freeze` (no title, everyone stands still), `--nails=N` (nails in his coffin lid at the funeral before the sermon adds any; `--at` starts him out of it), `--record=good|middling|bad|worst` (a made-up record for the funeral's sermon, in place of the one his wins have kept), `--credits` (straight to the end credits over the burial ground, the breakout's last card; `--credits=buried` for FINE), `--shot=PATH --shot-time=SECONDS` (save a
 screenshot and quit). The window opens maximized; a screenshot at a set size needs a small
 script that calls `DisplayServer.window_set_mode(WINDOW_MODE_WINDOWED)` and
 `window_set_size` before loading the scene (headless runs always play at 1280x720).

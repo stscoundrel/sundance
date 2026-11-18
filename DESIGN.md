@@ -1003,6 +1003,32 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   hole. With 8 nails or more the lid won't give at all ("THE LID WON'T GIVE"). The
   earth in, he's buried: a fresh grave with its cross, and the level's lost, "HE
   LIVED BY THE GUN, and by the gun he died."
+- **The end credits** (`scripts/credits.gd`, the cards in `data/credits.json`;
+  `tests/test_credits.gd`). The funeral is the last picture, so once it's over, either
+  way, the end screen offers the credits instead of riding on: he's broken out and
+  every one of them is down, or he's buried. A death in the fight is only a death,
+  and Enter rides it again. Cards come up one at a time in the middle of the screen,
+  over the burial ground gone nearly black, the way the films closed: the title; the
+  cast, "The Stranger ... YOU"; where it was filmed (the four towns and the burial
+  ground); the crew, two credits to a card so it doesn't drag (story, screenplay,
+  production and direction the user's, photography, production design, effects,
+  music and editing Claude's), direction alone last; everything being drawn and
+  composed by the tools, with Godot; the directors who rode this way first, each
+  with his films (Leone under the thanks, Corbucci, Sollima with Castellari); and "for the musical inspiration" (not their music: the score is the
+  tools' own) Morricone, Bacalov and the De Angelis brothers. The
+  last card is the ending's: FINE over the filled grave, *A Good Man Never Dies* if
+  he climbed out. Fourteen cards, about 80 s left alone. Each fades in, stands 3-5.5 s and fades out (real time: it's
+  only to look at); a click or a key moves on a card, the last stays, and once it's
+  read Enter (or Esc at any time) goes to the level picker. The funeral's score fades
+  away under the first card and the credits have their own piece (`credits` in
+  `tools/music.py`, played once, `Music.credits`): the ride again, fast, every town's
+  tune in the order he came through them and each in its own voice, so the ear knows
+  the place before the card does. San Miguel's theme whistled over the clock and the
+  jaw harp; Cruz Verde's battle tune on the trumpets in thirds, the band at a canter;
+  Paso Esperanza's bugle and its answer, far off and then near; Silencio's tune sung
+  high over the piano; San Miguel's theme again, twanged low on the guitar over the
+  funeral's organ, and its bell tolling the last chord out. G minor, 12/8 at 76, 28
+  bars: about 85 s of music, rung out to 102, as long as the cards take.
 - **His record** (`scripts/record.gd`; `tests/test_record.gd`). What he did in each
   town, kept in `user://record.json` across sittings. Only a win counts: each town
   won writes over what it said before (a loss, or a town left halfway, leaves the
@@ -1073,7 +1099,7 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
 | B | Bind a wound (bandage) |
 | G | Throw dynamite |
 | Q | Toss a peso |
-| Enter | After a win: on to the next town · after a loss: the same town again |
+| Enter | After a win: on to the next town · after a loss: the same town again · after the funeral: the credits (and through them) |
 | Tab (hold) | Arrows to what the town asks of him (the gallows, his partner, the carriers, the gold, his horse) |
 | Esc | Back a step; in town, the menu (paused): resume, the keys, start over, another town, quit |
 

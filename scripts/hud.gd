@@ -98,6 +98,8 @@ func _process(delta: float) -> void:
 	_next_hint(real)
 	banner_t = maxf(0.0, banner_t - real)
 	_keep_stills()
+	if game.state == "credits":
+		game.credits.step(real)
 	queue_redraw()
 
 
@@ -110,6 +112,9 @@ func _text(pos: Vector2, s: String, sz: int, c: Color, f: Font = null, align := 
 func _draw() -> void:
 	var p: Player = game.player
 	if p == null:
+		return
+	if game.state == "credits":
+		_draw_credits(game.credits)
 		return
 	if game.coffin and game.coffin.inside:
 		_draw_coffin()
@@ -1047,6 +1052,49 @@ func _draw_title() -> void:
 	var version: String = ProjectSettings.get_setting("application/config/version", "")
 	if version != "":
 		_text(Vector2(0, 14), "v" + version, 8, Color(0.6, 0.5, 0.4, a * 0.8), null, HORIZONTAL_ALIGNMENT_RIGHT, page.x - 6)
+
+
+# ------------------------------------------------------------------ credits
+
+# How each kind of line on a credits card is set: [size, colour, the title font or
+# the small one, the room it takes].
+const CREDIT_STYLE := {
+	"role": [10, Color(0.8, 0.74, 0.62), true, 18.0],
+	"cast": [12, Color(0.8, 0.74, 0.62), true, 22.0],
+	"name": [20, Color(0.95, 0.75, 0.35), true, 26.0],
+	"film": [10, INK, false, 15.0],
+	"line": [12, INK, true, 18.0],
+	"end": [30, Color(0.95, 0.75, 0.35), true, 34.0],
+	"gap": [0, INK, false, 12.0],   # (nothing: the space between two credits on one card)
+}
+const CREDIT_DARK := 0.86   # of the burial ground blacked out behind the names
+
+
+## A card of the end credits (see Credits), in the middle of the page over the
+## burial ground gone nearly black; the way on under the last once it's read.
+func _draw_credits(c: Credits) -> void:
+	draw_rect(Rect2(Vector2.ZERO, page + Vector2(8, 8)), Color(0.03, 0.02, 0.02, CREDIT_DARK))
+	var a := c.alpha()
+	var card := c.card()
+	if card.get("title", false):
+		var tx: Texture2D = game.tex(game.meta["ui"]["title"])
+		var sz: Vector2 = tx.get_size() * game.tex_scale
+		draw_texture_rect(tx, Rect2((page / 2 - sz / 2).round(), sz), false, Color(1, 1, 1, a))
+	else:
+		var lines: Array = card["lines"]
+		var tall := 0.0
+		for l in lines:
+			tall += CREDIT_STYLE[l[0]][3]
+		var y := floorf(page.y / 2 - tall / 2)
+		for l in lines:
+			var st: Array = CREDIT_STYLE[l[0]]
+			y += st[3]
+			if l[1] == "":
+				continue
+			_text(Vector2(0, y - st[3] * 0.25), l[1], st[0], Color(st[1], a), font if st[2] else null, HORIZONTAL_ALIGNMENT_CENTER, page.x)
+	if c.read():
+		var b := Color(0.95, 0.75, 0.35, 0.6 + 0.4 * sin(Time.get_ticks_msec() / 300.0))
+		_text(Vector2(0, page.y - 24), "Enter: choose where to ride", 10, b, font, HORIZONTAL_ALIGNMENT_CENTER, page.x)
 
 
 # ------------------------------------------------------------------ menu

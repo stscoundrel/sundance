@@ -77,6 +77,30 @@ static func make(g: Node, name: String) -> Music:
 	return m
 
 
+## The end credits' own piece (tools/music.py's credits: every town's tune in
+## the order he rode through them), played through once; null if it isn't baked.
+static func credits(g: Node) -> AudioStreamPlayer:
+	var c: Dictionary = g.meta.get("music", {}).get("credits", {})
+	if c.is_empty():
+		return null
+	var p := AudioStreamPlayer.new()
+	p.name = "CreditsMusic"
+	p.stream = load(c["path"])
+	p.volume_db = LOUDNESS
+	p.process_mode = Node.PROCESS_MODE_ALWAYS
+	g.add_child(p)
+	p.play()
+	return p
+
+
+## The town's score fades away under the first card of the credits, and is gone.
+func fade_away(secs := 2.0) -> void:
+	set_process(false)
+	var tw := create_tween()
+	tw.tween_property(player, "volume_db", -60.0, secs)
+	tw.tween_callback(queue_free)
+
+
 ## The pieces, each told its tempo and length so a switch can wait for a beat,
 ## and the score's own way through them.
 func _make_pieces(score: Dictionary) -> void:
