@@ -94,8 +94,8 @@ in `tools/chars.py` and packed into one atlas per character; baking every body t
 minutes or more, so re-bake only the ones you changed. The `music` step writes each level's
 score (`tools/music.py`, five minutes or so a town; `SUNDANCE_MUSIC=cruz_verde` bakes only
 some) to `assets/music/`; `tools/music.py silencio` (or `cruz_verde`) writes the layers and a
-mix of them all to `build/music/` to listen to (`train` writes `train_preview.wav`, its
-pieces in the order they play).
+mix of them all to `build/music/` to listen to (`train` and `funeral` write
+`*_preview.wav`, their pieces in the order they play).
 
 ```bash
 python3 -m venv tools/.venv && tools/.venv/bin/pip install -r tools/requirements.txt

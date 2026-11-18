@@ -14,12 +14,17 @@ extends Node
 ## town doesn't settle the moment the last shot's fired. When he dies it all
 ## goes, and only the wind is left; when the job's done it's the ground alone.
 ##
-## A score can instead be pieces played in turn ("pieces", Paso Esperanza's),
-## where the game knows when the fight comes: a build from the moment he's in
-## town, then a hold that swells round and round, however long the army takes,
-## till the first of them sets foot on the map; then the call and the action,
-## looping to the end; the win on the next bar line once it's won. Played through
-## an AudioStreamInteractive, each switch waiting for the next beat or bar.
+## A score can instead be pieces played in turn ("pieces"), where the game knows
+## when things come. It says where it starts, which piece runs into which ("next"),
+## which happening in the game brings which piece, and from which ("on"), and how
+## each switch waits: the next beat, the next bar, or now ("moves"). Played through
+## an AudioStreamInteractive. Paso Esperanza's: a build from the moment he's in
+## town, a hold that swells round and round, however long the army takes, till
+## the first of them sets foot on the map (army); then the call and the action,
+## looping to the end; the win on the next bar once it's won. The funeral's: the
+## march under the sermon, till his first blow on a nailed lid (blow) brings the
+## suspense and the brink; the lid flying off (burst) the rise and the fight;
+## the earth in over him (buried) the last tolling; and the win.
 
 const RISE := {"always": 3.0, "calm": 3.0, "unease": 4.0, "fight": 1.5}   # s from silent to full
 const FALL := {"always": 5.0, "calm": 2.0, "unease": 9.0, "fight": 7.0}   # s from full to silent
@@ -37,7 +42,9 @@ var want := {"always": 1.0, "calm": 1.0, "unease": 0.0, "fight": 0.0}    # where
 var linger := {"unease": 0.0, "fight": 0.0}
 var _look_t := 0.0
 var pieces: AudioStreamInteractive = null   # a score played in turn, if it's that kind
-var piece := ""        # where it's got to: "" (not begun), "build" (and the hold), "action", "won", "lost"
+var piece := ""        # where it's got to: "" (not begun), the last piece it switched to (what runs on from it
+                       # included: the train's "build" is the hold too), or "lost"
+var spec := {}         # a score in pieces: its "start", "on" and "keep_on_lost" (see _make_pieces)
 var gain := 1.0        # 0..1: the whole of a score in pieces, faded out over his body
 
 
@@ -70,10 +77,10 @@ static func make(g: Node, name: String) -> Music:
 	return m
 
 
-## The pieces, each told its tempo and length so a switch can wait for a beat:
-## build runs into the hold, the call into the action; the build or the hold
-## gives way to the call on the next beat, anything to the win on the next bar.
+## The pieces, each told its tempo and length so a switch can wait for a beat,
+## and the score's own way through them.
 func _make_pieces(score: Dictionary) -> void:
+	spec = score
 	var list: Array = score["pieces"]
 	pieces = AudioStreamInteractive.new()
 	pieces.clip_count = list.size()
@@ -81,22 +88,24 @@ func _make_pieces(score: Dictionary) -> void:
 	for i in list.size():
 		var p: Dictionary = list[i]
 		var s: AudioStreamOggVorbis = load(p["path"])
-		s.bpm = float(score["bpm"])
+		s.bpm = float(p["bpm"])
 		s.beat_count = int(p["beats"])
 		s.bar_beats = 4
 		s.loop = bool(p["loops"])
 		pieces.set_clip_name(i, p["name"])
 		pieces.set_clip_stream(i, s)
 		at[p["name"]] = i
-	pieces.initial_clip = at["build"]
-	for pair in [["build", "hold"], ["call", "action"]]:
-		pieces.set_clip_auto_advance(at[pair[0]], AudioStreamInteractive.AUTO_ADVANCE_ENABLED)
-		pieces.set_clip_auto_advance_next_clip(at[pair[0]], at[pair[1]])
-	for from in ["build", "hold"]:
-		pieces.add_transition(at[from], at["call"], AudioStreamInteractive.TRANSITION_FROM_TIME_NEXT_BEAT,
-			AudioStreamInteractive.TRANSITION_TO_TIME_START, AudioStreamInteractive.FADE_OUT, 1.0)
-	pieces.add_transition(AudioStreamInteractive.CLIP_ANY, at["won"], AudioStreamInteractive.TRANSITION_FROM_TIME_NEXT_BAR,
-		AudioStreamInteractive.TRANSITION_TO_TIME_START, AudioStreamInteractive.FADE_OUT, 1.0)
+	pieces.initial_clip = at[score["start"]]
+	for from in score["next"]:
+		pieces.set_clip_auto_advance(at[from], AudioStreamInteractive.AUTO_ADVANCE_ENABLED)
+		pieces.set_clip_auto_advance_next_clip(at[from], at[score["next"][from]])
+	var when := {"beat": AudioStreamInteractive.TRANSITION_FROM_TIME_NEXT_BEAT,
+		"bar": AudioStreamInteractive.TRANSITION_FROM_TIME_NEXT_BAR,
+		"now": AudioStreamInteractive.TRANSITION_FROM_TIME_IMMEDIATE}
+	for mv in score["moves"]:
+		var from: int = AudioStreamInteractive.CLIP_ANY if mv[0] == "*" else at[mv[0]]
+		pieces.add_transition(from, at[mv[1]], when[mv[2]], AudioStreamInteractive.TRANSITION_TO_TIME_START,
+			AudioStreamInteractive.FADE_OUT, 1.0 if mv[2] != "now" else 0.5)
 
 
 func _ready() -> void:
@@ -107,7 +116,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var real := delta / maxf(Engine.time_scale, 0.01)   # fades by the ear, not slowed with the game
 	if pieces:
-		step_pieces(game.state, army_in())
+		step_pieces(game.state, happenings())
 		gain = move_toward(gain, 0.0 if piece == "lost" else 1.0, real / FALL["always"])
 		player.volume_db = LOUDNESS + linear_to_db(maxf(gain, 0.0001))
 		return
@@ -172,18 +181,34 @@ func army_in() -> bool:
 	return game.director != null and game.director.arrived > 0
 
 
-## Moves a score in pieces on, by how the level stands.
-func step_pieces(state: String, army: bool) -> void:
+## What's happened that a score in pieces moves on for.
+func happenings() -> Dictionary:
+	var box: Coffin = game.coffin
+	var fun: Funeral = game.funeral
+	return {
+		"army": army_in(),
+		"won": game.state == "won",
+		"blow": box != null and (box.blows > 0 or game.stats.get("blows on a lid that won't give", 0) > 0),
+		"burst": box != null and not box.inside and game.state == "play",
+		"buried": fun != null and fun.phase == "buried",
+	}
+
+
+## Moves a score in pieces on, by how the level stands and what's happened: the
+## first happening in the score's list that's come about, and may interrupt the
+## piece that's playing, brings its own.
+func step_pieces(state: String, now: Dictionary) -> void:
 	if piece == "" and state == "play":
-		piece = "build"
+		piece = spec["start"]
 		player.play()
-	if piece == "build" and army:
-		piece = "action"
-		_switch("call")
-	if state == "won" and piece != "won" and piece != "lost":
-		piece = "won"
-		_switch("won")
-	if state == "lost" and piece != "lost" and piece != "":
+	if piece == "" or piece == "lost":
+		return
+	for rule in spec["on"]:
+		if now.get(rule[0], false) and piece in rule[2]:
+			piece = rule[1]
+			_switch(rule[1])
+			break
+	if state == "lost" and not piece in spec.get("keep_on_lost", []):
 		piece = "lost"
 
 

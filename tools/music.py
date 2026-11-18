@@ -488,7 +488,8 @@ def write_wav(path, x):
 CHORDS = {"Dm": (2, 5, 9), "Gm": (7, 10, 2), "A": (9, 1, 4), "F": (5, 9, 0),
           "C": (0, 4, 7), "Eb": (3, 7, 10), "Bb": (10, 2, 5),
           "Am": (9, 0, 4), "G": (7, 11, 2), "E": (4, 8, 11),
-          "Em": (4, 7, 11), "D": (2, 6, 9), "B": (11, 3, 6), "Cm": (0, 3, 7)}
+          "Em": (4, 7, 11), "D": (2, 6, 9), "B": (11, 3, 6), "Cm": (0, 3, 7),
+          "Bbm": (10, 1, 5), "Gb": (6, 10, 1), "Db": (1, 5, 8), "Ebm": (3, 6, 10)}
 
 
 def tones(ch, lo, hi):
@@ -1438,12 +1439,321 @@ def san_miguel():
                    (("tension", sm_tension, 41), ("battle", sm_battle, 42)))
 
 
+# --- A Good Man Never Dies: his own funeral --------------------------------
+#
+# Pieces in turn, as at Paso Esperanza. The march: Chopin's funeral march (1839,
+# long out of copyright), low and slow on a pump organ, a muffled drum, a low
+# piano and a bell, round and round under the padre for as long as his record
+# takes to read. His first blow on a nailed lid brings the suspense: a heartbeat
+# quickening, a clock gone too fast, a high string trembling higher, the organ's
+# chord sliding out of tune, for as long as the earth takes to fill the grave;
+# then the brink, round and round, if the lid still holds. With no nails he's
+# out at the first blow, no suspense. The lid flying off is the rise, one blow
+# of the whole band, and then the fight: a finale on the music of every town he
+# crossed, since they're all here. San Miguel's theme made heroic (G, with the
+# flat seventh of the westerns), its second half, Cruz Verde's battle tune in G
+# minor, Paso Esperanza's bugles traded across the field, Silencio's tune sung
+# high, and San Miguel's theme again. Won, the trumpets close it on G major.
+# Buried, the organ's last chord and the bell, three times.
+
+FUNERAL_MARCH_BPM = 52
+FUNERAL_FIGHT_BEAT = 84
+# Chopin's march, its first eight bars: (bar, beat, beats, midi), B flat minor.
+CHOPIN = [
+    (0, 0, 1, 70), (0, 1, .75, 70), (0, 1.75, .25, 70), (0, 2, 2, 70),
+    (1, 0, 1, 73), (1, 1, .75, 72), (1, 1.75, .25, 72), (1, 2, .75, 70), (1, 2.75, .25, 69), (1, 3, 1, 70),
+    (2, 0, 1, 70), (2, 1, .75, 70), (2, 1.75, .25, 70), (2, 2, 2, 70),
+    (3, 0, 1, 73), (3, 1, .75, 72), (3, 1.75, .25, 72), (3, 2, .75, 70), (3, 2.75, .25, 69), (3, 3, 1, 70),
+    (4, 0, 1, 77), (4, 1, .75, 77), (4, 1.75, .25, 77), (4, 2, 2, 77),
+    (5, 0, 1, 78), (5, 1, .75, 77), (5, 1.75, .25, 77), (5, 2, .75, 75), (5, 2.75, .25, 73), (5, 3, 1, 75),
+    (6, 0, 1, 73), (6, 1, .75, 73), (6, 1.75, .25, 72), (6, 2, 2, 70),
+    (7, 0, 1, 70), (7, 1, 1, 69), (7, 2, 2, 70),
+]
+# The left hand rocking a beat at a time, per bar: four chords.
+CHOPIN_LH = [["Bbm", "Gb", "Bbm", "Gb"]] * 4 + [["Db", "Bbm", "Db", "Bbm"], ["Ebm", "Gb", "Ebm", "Gb"],
+                                                ["Bbm", "F", "Bbm", "Bbm"], ["Bbm", "F", "Bbm", "Bbm"]]
+LH_VOICE = {"Bbm": [46, 49, 53], "Gb": [42, 49, 54], "Db": [44, 49, 53], "Ebm": [39, 46, 51], "F": [41, 48, 57]}
+
+HERO_CHORDS = (["G", "G", "F", "F", "Em", "D", "G", "D"]          # San Miguel's theme, made heroic
+               + ["C", "G", "C", "D", "Em", "F", "D", "G"]        # its second half
+               + ["Gm", "F", "Eb", "D", "Gm", "F", "Eb", "D"]     # Cruz Verde's tune, in G minor
+               + ["D", "D", "D", "D", "G", "G", "D", "D"]         # Paso Esperanza's bugles
+               + ["Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "D"]    # Silencio's tune
+               + ["G", "G", "F", "F", "Em", "D", "G", "D"])       # and San Miguel's again
+HERO_SECTIONS = "ABCDSA"
+G_MAJOR = (7, 9, 11, 0, 2, 4, 6)
+
+
+def heroic(part):
+    """San Miguel's theme in the major: its B flats and E flats raised."""
+    up = {82: 83, 70: 71, 75: 76, 87: 88}
+    return [(b, e, d, up.get(m, m)) for b, e, d, m in part]
+
+
+def hero_scale(ch):
+    if ch in ("Gm", "Eb"):
+        return sm_scale("D" if ch == "D" else ch)
+    if ch == "F":
+        return (7, 9, 11, 0, 2, 4, 5)
+    return G_MAJOR if ch != "D" else (7, 9, 11, 0, 2, 4, 6)
+
+
+def organ(m, dur, vel=1.0, bend=0.0, attack=0.06, release=0.3):
+    """A pump organ: two reeds a hair apart, steady, a little nasal, breathing with
+    the bellows. bend slides it that many semitones over the note, out of tune."""
+    f = float(hz(m))
+    n = secs(dur + release * 5)
+    t = np.arange(n) / SR
+    ratio = 2 ** (bend * np.clip(t / max(dur, 1e-3), 0, 1) / 12)
+    out = np.zeros(n)
+    tot = 0.0
+    for cents in (-4.0, 4.0):
+        ph = 2 * np.pi * f * 2 ** (cents / 1200) * np.cumsum(ratio) / SR
+        for k in range(1, 60):
+            if k * f > 6000:
+                break
+            a = k ** -1.0 * lp(k * f, 2200, 1.5) * bump(k * f, 1100, 4)
+            out += a * np.sin(k * ph + rng.uniform(0, 6.3))
+            tot += a
+    out /= tot
+    e = np.minimum(1.0, t / attack) * np.where(t > dur, np.exp(-(t - dur) / release), 1.0)
+    return out * e * (1 + 0.04 * np.sin(2 * np.pi * 5.5 * t)) * vel
+
+
+def muffled_drum(vel=1.0):
+    """A drum with a cloth over it: a thud, no snares."""
+    n = secs(0.8)
+    t = np.arange(n) / SR
+    tone = np.sin(2 * np.pi * 62 * t * (1 + 0.05 * np.exp(-t / 0.02))) * np.exp(-t / 0.22)
+    nz = noise(n, lambda f: lp(f, 700, 2) * hp(f, 60)) * np.exp(-t / 0.08)
+    return (0.8 * tone + 0.35 * nz) * vel * np.minimum(1.0, t / 0.002)
+
+
+def funeral_march(c, mix):
+    for rep in range(2):
+        b0 = rep * 8
+        for bar, chords in enumerate(CHOPIN_LH):
+            for beat, ch in enumerate(chords):
+                t = c.at(b0 + bar, beat) + rng.normal(0, 0.006)
+                for m in LH_VOICE[ch]:
+                    mix.put(organ(m, c.dur(0.92), 0.85 if beat % 2 == 0 else 0.7), t, "far", -0.15, 0.05)
+                if beat % 2 == 0:
+                    root = LH_VOICE[ch][0] - 12
+                    mix.put(piano(root, c.dur(1.8), 0.5), t, "far", -0.25, 0.22)
+                    mix.put(muffled_drum(0.75 if beat == 0 else 0.5), t, "close", 0.0, 0.3)
+            if bar == 7:
+                for j in range(12):   # a muffled roll into the next time round
+                    mix.put(muffled_drum(0.15 + 0.35 * j / 11), c.at(b0 + bar, 3 + j / 12), "close", 0.0, 0.25)
+            if bar % 4 == 0:
+                mix.put(bell(58, 9.0, 0.8 if bar == 0 else 0.5), c.at(b0 + bar), "far", 0.35, 0.22)
+        tune = shifted(CHOPIN, b0, 0 if rep == 0 else -12)
+        for b, bt, d, m in tune:
+            if rep == 0:   # the organ carries it the first time; the piano low the second
+                mix.put(organ(m, c.dur(d) * 0.95, 0.9), c.at(b, bt), "far", 0.1, 0.09)
+            else:
+                mix.put(piano(m, c.dur(d) + 0.4, 0.55), c.at(b, bt), "far", 0.1, 0.3)
+                mix.put(organ(m + 12, c.dur(d) * 0.95, 0.5), c.at(b, bt), "far", 0.15, 0.04)
+
+
+def funeral_suspense(mix, length=16.0, brink=False):
+    """The earth's going in and the lid won't give: a heartbeat quickening, a clock
+    gone too fast, a high string climbing, the organ sliding out of tune. The brink
+    is its end held, round and round."""
+    def gap(t):   # s between heartbeats, a second down to a third of one
+        return 0.35 if brink else 1.0 - 0.65 * min(1.0, t / (length - 2))
+    t = 0.0
+    while t < length:
+        mix.put(timp(46, 0.5 + (0.4 if brink else 0.4 * t / length), 1.0), t, "close", -0.1, 0.45)
+        mix.put(timp(46, 0.3 + (0.2 if brink else 0.2 * t / length), 0.8), t + 0.16, "close", -0.1, 0.4)
+        t += gap(t)
+    t = 0.0
+    while t < length:
+        mix.put(tick(0.6), t, "mid", 0.5, 0.06)
+        t += 0.125 if brink else 0.5 - 0.375 * min(1.0, t / (length - 2))
+    steps = [88] if brink else [82, 83, 84, 85, 86, 87, 88]
+    span = length / len(steps)
+    for j, m in enumerate(steps):
+        n = strings(m, span + 0.3, 0.8, attack=0.4 if not brink else 0.01, release=0.3 if not brink else 0.02, voices=3)
+        tt = np.arange(len(n)) / SR
+        mix.put(n * (0.7 + 0.3 * np.sin(2 * np.pi * 12 * tt)), j * span, "far", 0.4, 0.03 + (0.02 if brink else 0.02 * j / len(steps)))
+    for m, bend in ((46, 0.0), (53, -0.7 if not brink else 0.0), (58, 0.0), (61, 0.55 if not brink else 0.0)):
+        mm = m + (0 if not brink else {53: -0.7, 61: 0.55}.get(m, 0))
+        mix.put(organ(mm, length, 0.7, bend=bend, attack=0.3 if not brink else 0.01, release=0.05), 0.0, "far", -0.2, 0.06)
+    mix.put(organ(34, length, 0.8, attack=0.3 if not brink else 0.01, release=0.05), 0.0, "far", 0.0, 0.07)
+    if not brink:
+        for j in range(32):
+            mix.put(snare(0.1 + 0.6 * j / 31), length - 4.0 + j / 8, "close", 0.15, 0.22)
+    else:
+        for j in range(int(length * 8)):
+            mix.put(snare(0.25 + 0.1 * (j % 4 == 0)), j / 8, "close", 0.15, 0.2)
+
+
+def funeral_rise(c, mix):
+    """The lid flies off: one blow of the whole band, and the choir's shout."""
+    mix.put(whip(), c.at(0) - 0.14, "mid", 0.5, 0.3)
+    mix.put(timp(43, 1.0, 2.5), c.at(0), "close", -0.1, 0.7)
+    mix.put(timp(31, 1.0, 2.5), c.at(0), "close", 0.1, 0.6)
+    mix.put(bell(67, 7.0, 1.0), c.at(0), "far", -0.4, 0.4)
+    mix.put(shout(55), c.at(0) - 0.03, "mid", -0.2, 0.5)
+    mix.put(shout(57), c.at(0) - 0.01, "mid", 0.2, 0.5)
+    for m, pan in ((67, -0.3), (71, 0.3), (74, -0.2), (79, 0.2)):
+        s0, sig = trumpet([(c.at(0), c.dur(4), m, 1.0)])
+        mix.put(sig, s0, "mid", pan, 0.12)
+    rasgueado(mix, c, "G", c.at(0), 1.2)
+    for m in (55, 62, 67, 71):
+        mix.put(strings(m + 12, c.dur(10), 0.9, attack=0.02, release=0.4, voices=2), c.at(0), "far", rng.uniform(-.5, .5), 0.04)
+    snare_roll8(mix, c, 0, 6, 6, 0.3, 1.0)
+    for j in range(24):
+        mix.put(timp(38, 0.2 + 0.6 * j / 23, 0.8), c.at(0, 6 + j / 4), "close", -0.1, 0.4)
+
+
+def funeral_fight(c, mix):
+    pedal(mix, c, HERO_CHORDS, 0.55)
+    arpeggio(mix, c, HERO_CHORDS, 0.55)
+    snare_vel = [.8, .2, .25, .4, .2, .25, .6, .2, .25, .4, .3, .5]
+    for bar, ch in enumerate(HERO_CHORDS):
+        sec, inbar = HERO_SECTIONS[bar // 8], bar % 8
+        r = bass_note(ch)
+        tm = r if r >= 36 else r + 12
+        light = sec == "S"
+        for e in range(12):
+            v = (1.0, 0.55, 0.75)[e % 3]
+            t = c.at(bar, e) + rng.normal(0, 0.003)
+            mix.put(pluck(r, c.dur(1) * 0.85, v, pickup=0.22, tau=1.0, bright=0.45, maxf=2500, damp=0.03, click=0.1),
+                    t, "close", 0.0, 0.5)
+            if not light:
+                mix.put(strings(r + 12, 0.12, v, attack=0.01, release=0.07, voices=2), t, "mid", -0.15, 0.07)
+            mix.put(snare(snare_vel[e] * (0.5 if light else 1.0)), t, "close", 0.15, 0.24)
+            if snare_vel[e] >= 0.6 and not light:
+                mix.put(snare(0.2), t - 0.018, "close", 0.15, 0.24)
+        mix.put(timp(tm, 1.0), c.at(bar), "close", -0.1, 0.55)
+        if not light:
+            mix.put(timp(tm, 0.7), c.at(bar, 6), "close", -0.1, 0.5)
+            for e in (0, 6):
+                rasgueado(mix, c, ch, c.at(bar, e), 1.0)
+        if inbar == 0:
+            mix.put(whip(), c.at(bar) - 0.14, "mid", 0.5, 0.28)
+            mix.put(bell(67, 6.0, 0.9), c.at(bar), "far", -0.4, 0.32)
+        if inbar == 7:
+            snare_roll8(mix, c, bar, 6, 6, 0.2, 1.0)
+        if sec in "BDS":
+            for m in tones(ch, 48, 62):
+                cs, csig = choir([(c.at(bar), c.dur(11.5), m, 0.8)], "a_male", voices=3, attack=0.15,
+                                 release=0.3, glide=0, vib_depth=0.15, drift=0.05)
+                mix.put(csig, cs, "far", rng.uniform(-.6, .6), 0.05)
+    for bar, e in ((7, 3), (7, 6), (15, 6), (23, 3), (23, 6), (31, 6), (47, 0), (47, 6)):
+        mix.put(shout(55 + rng.integers(0, 3)), c.at(bar, e) - 0.03, "mid", rng.uniform(-.3, .3), 0.38)
+    cruz = [(b, e, d, m - 2) for b, e, d, m in CRUZ_TUNE]
+    lines = (shifted(heroic(SM_THEME_A), 0) + shifted(heroic(SM_THEME_B), 8) + shifted(cruz, 16)
+             + shifted(heroic(SM_THEME_A), 40))
+    second = [(b, e, d, third_below(m, HERO_CHORDS[b], hero_scale(HERO_CHORDS[b]))) for b, e, d, m in lines]
+    for part, pan, gain in ((lines, -0.25, 0.22), (second, 0.25, 0.16)):
+        s0, sig = trumpet(notes_of(c, part, 0, 0.95))
+        mix.put(sig, s0, "mid", pan, gain)
+    for b, e, d, m in shifted(heroic(SM_THEME_A), 40):   # the last time, the twang under the trumpets
+        mix.put(pluck(m - 12, c.dur(d) * 0.95, 1.0, pickup=0.09, tau=2.4 if d >= 6 else 1.4, bright=1.3,
+                      maxf=7000, damp=0.04, vib=0.3 if d >= 6 else 0.0), c.at(b, e), "guitar", -0.4, 0.3)
+    calls = [[(b * 2, d * 2, m + 3) for b, d, m in BUGLE], [(b * 2, d * 2, m + 3) for b, d, m in BUGLE_ANSWER]]
+    for bar, which, pan in ((24, 0, 0.5), (25, 1, -0.5), (26, 0, 0.45), (27, 1, -0.45), (28, 0, 0.3), (29, 1, -0.3),
+                            (30, 0, 0.2), (30, 1, -0.2)):
+        s0, sig = bugle(c, bar * 12 + (6 if bar == 30 and which == 1 else 0), call=calls[which], near=0.8)
+        mix.put(sig, s0, "mid", pan, 0.24)
+    song = [(b - 1 + 32, bt * 3, d * 3, m) for b, bt, d, m in SILENCIO_TUNE]
+    s0, sig = sing(notes_of(c, song, 0, 0.95), "a_sop", tilt=1.2, attack=0.08, release=0.14, glide=0.07,
+                   vib_rate=5.8, vib_depth=0.35, vib_delay=0.15, drift=0.04, scoop=0.25)
+    mix.put(sig, s0, "far", 0.1, 0.45)
+
+
+def funeral_won(c, mix):
+    close = [(0, 0, 3, 79), (0, 3, 3, 83), (0, 6, 6, 86), (1, 0, 6, 83), (1, 6, 6, 81), (2, 0, 14, 79)]
+    chords = ["C", "D", "G", "G"]
+    second = [(b, e, d, third_below(m, chords[b], G_MAJOR)) for b, e, d, m in close]
+    for part, pan, gain in ((close, -0.25, 0.24), (second, 0.25, 0.18)):
+        s0, sig = trumpet(notes_of(c, part, 0, 0.95))
+        mix.put(sig, s0, "mid", pan, gain)
+    for bar, ch in enumerate(chords[:3]):
+        r = bass_note(ch)
+        mix.put(timp(r if r >= 36 else r + 12, 0.7 if bar < 2 else 1.0, 1.4 if bar < 2 else 3.5), c.at(bar), "close", -0.1, 0.55)
+        mix.put(pluck(r, c.dur(12 if bar < 2 else 30), 0.9, pickup=0.22, tau=2.0, bright=0.45, maxf=2500), c.at(bar), "close", 0.0, 0.45)
+        rasgueado(mix, c, ch, c.at(bar), 1.0)
+        for m in tones(ch, 55, 74):
+            mix.put(strings(m, c.dur(12 if bar < 2 else 24), 0.8, attack=0.15, release=1.8, voices=2), c.at(bar), "far",
+                    rng.uniform(-.5, .5), 0.04)
+        for m in tones(ch, 48, 62):
+            cs, csig = choir([(c.at(bar), c.dur(11.5 if bar < 2 else 22), m, 0.8)], "a_male", voices=3, attack=0.15,
+                             release=1.0, glide=0, vib_depth=0.15, drift=0.05)
+            mix.put(csig, cs, "far", rng.uniform(-.6, .6), 0.05)
+    snare_roll8(mix, c, 1, 6, 6, 0.2, 0.9)
+    mix.put(bell(67, 9.0, 1.0), c.at(2), "far", -0.4, 0.4)
+    mix.put(whip(), c.at(2) - 0.14, "mid", 0.5, 0.25)
+
+
+def funeral_buried(mix):
+    """The earth's in: the march's last chord on the organ, and the bell, three times."""
+    for m in (34, 46, 53, 58, 61):
+        mix.put(organ(m, 7.0, 0.7, attack=0.4, release=2.0), 0.0, "far", -0.1, 0.06)
+    mix.put(muffled_drum(0.8), 0.0, "close", 0.0, 0.35)
+    for j in range(3):
+        mix.put(bell(58, 9.0, 0.9 - 0.2 * j), j * 3.2, "far", 0.35, 0.3)
+
+
+def funeral():
+    """The pieces: (name, audio, loops, beats, bpm)."""
+    global rng
+    march = Clock(0.0, FUNERAL_MARCH_BPM)
+    fight = Clock8(0.0, FUNERAL_FIGHT_BEAT)
+    brink = Clock(0.0, 120)
+    defs = (("march", lambda mx: funeral_march(march, mx), march.end(16), 64, FUNERAL_MARCH_BPM, True, 51),
+            ("suspense", lambda mx: funeral_suspense(mx, 16.0), 16.0, 16, 60, False, 52),
+            ("brink", lambda mx: funeral_suspense(mx, brink.end(2), True), brink.end(2), 8, 120, True, 53),
+            ("rise", lambda mx: funeral_rise(fight, mx), fight.end(1), 4, FUNERAL_FIGHT_BEAT, False, 54),
+            ("fight", lambda mx: funeral_fight(fight, mx), fight.end(48), 192, FUNERAL_FIGHT_BEAT, True, 55),
+            ("won", lambda mx: funeral_won(fight, mx), None, None, FUNERAL_FIGHT_BEAT, False, 56),
+            ("buried", funeral_buried, None, None, 60, False, 57))
+    out = []
+    for name, part, length, beats, bpm, loops, seed in defs:
+        rng = np.random.default_rng(seed)
+        mix = Mix((length or 6.0) + 9.0)
+        part(mix)
+        x = render(mix)
+        if loops:
+            n = secs(length)
+            x[:, :x.shape[1] - n] += x[:, n:]
+            x = x[:, :n]
+        elif length is not None:
+            x = x[:, :secs(length)]   # (it hands over on its bar line)
+        else:   # an ending: let it ring out, then trim the silence
+            loud = np.where(np.abs(x).max(axis=0) > 1e-4)[0]
+            x = x[:, :loud[-1] + 1]
+            beats = int(x.shape[1] / SR * bpm / 60)
+        out.append((name, x, loops, beats, bpm))
+    peak = max(np.abs(x).max() for _, x, _, _, _ in out)
+    return [(name, x * 0.9 / peak, loops, beats, bpm) for name, x, loops, beats, bpm in out]
+
+
+# How a score in pieces moves on (scripts/music.gd): where it starts; which piece
+# runs into which; for each thing that happens in the game, the piece it brings
+# and the pieces it can interrupt; and how each switch waits (the next beat, the
+# next bar, or now).
+PIECE_SPECS = {
+    "train": {"start": "build", "next": {"build": "hold", "call": "action"},
+              "on": [["army", "call", ["build"]], ["won", "won", ["build", "call"]]],
+              "moves": [["build", "call", "beat"], ["hold", "call", "beat"], ["*", "won", "bar"]]},
+    "funeral": {"start": "march", "next": {"suspense": "brink", "rise": "fight"},
+                "on": [["burst", "rise", ["march", "suspense"]], ["blow", "suspense", ["march"]],
+                       ["buried", "buried", ["march", "suspense"]], ["won", "won", ["march", "suspense", "rise"]]],
+                "moves": [["march", "suspense", "beat"], ["*", "rise", "now"], ["*", "buried", "now"], ["*", "won", "bar"]],
+                "keep_on_lost": ["buried"]},
+}
+
+
 # Each level's score: its layers, and the part each plays (see scripts/music.gd).
 SCORES = {
     "silencio": (silencio, {"snow": "always", "unease": "unease", "fight": "fight"}),
     "cruz_verde": (cruz_verde, {"tension": "calm", "battle": "fight"}),
     "train": (train, None),   # pieces played in turn, not layers
     "san_miguel": (san_miguel, {"tension": "calm", "battle": "fight"}),
+    "funeral": (funeral, None),
 }
 
 
@@ -1457,12 +1767,14 @@ def bake(meta, assets):
             continue
         if roles is None:
             pieces = []
-            for k, x, loops, beats in fn():
+            for piece in fn():
+                k, x, loops, beats = piece[:4]
+                bpm = piece[4] if len(piece) > 4 else TRAIN_BPM
                 rel = "music/%s_%s.ogg" % (name, k)
                 write_ogg(os.path.join(assets, rel), x)
-                pieces.append({"name": k, "path": "res://assets/" + rel, "loops": loops, "beats": beats})
+                pieces.append({"name": k, "path": "res://assets/" + rel, "loops": loops, "beats": beats, "bpm": bpm})
                 print("    %s %s: %.1f s, %.1f dB rms" % (name, k, x.shape[1] / SR, 20 * np.log10(np.sqrt((x ** 2).mean()))))
-            meta["music"][name] = {"bpm": TRAIN_BPM, "pieces": pieces}
+            meta["music"][name] = dict(PIECE_SPECS[name], pieces=pieces)
             continue
         layers = fn()
         out = []
@@ -1475,6 +1787,16 @@ def bake(meta, assets):
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "funeral":
+        # a listen through: the march once round, the suspense, the brink twice, the rise, the fight, the win; then the burial
+        p = {k: x for k, x, _, _, _ in funeral()}
+        run = [p["march"], p["suspense"], p["brink"], p["brink"], p["rise"], p["fight"], p["won"]]
+        os.makedirs("build/music", exist_ok=True)
+        write_wav("build/music/funeral_preview.wav", np.clip(np.concatenate(run, axis=1), -1, 1))
+        write_wav("build/music/funeral_buried.wav", np.clip(np.concatenate([p["march"][:, :secs(20)], p["buried"]], axis=1), -1, 1))
+        for k, x in p.items():
+            write_wav("build/music/funeral_%s.wav" % k, x)
+        return
     if len(sys.argv) > 1 and sys.argv[1] == "train":
         # a listen through: the build, the hold twice round, the call, the action, the win
         if len(sys.argv) > 2 and sys.argv[2] == "build":   # the build alone, quick, into the hold and the call

@@ -12,6 +12,9 @@ extends SceneTree
 ##   train  - Paso Esperanza's pieces: nothing till he rides in, then the build; the
 ##            first soldier on the map brings the call and the action; won, the win;
 ##            his death fades it all.
+##   funeral - the march from the moment he's in the box; his first blow on a nailed
+##            lid brings the suspense; the lid off, the rise (straight from the march
+##            with no nails); buried, the tolling, which his death doesn't fade.
 ##   godot --headless --path . --fixed-fps 60 -s tests/test_music.gd
 
 var game: Node
@@ -47,10 +50,10 @@ func check(cond: bool, msg: String) -> void:
 
 func _process(delta: float) -> bool:
 	frame += 1
-	if frame == 2 and town == "train":
-		step = "train"
+	if frame == 2 and (town == "train" or town == "funeral"):
+		step = town
 		check(game.music != null and game.music.piece == "" and not game.music.player.playing,
-			"the train's music plays before he's ridden in")
+			"the %s's music plays before he's ridden in" % town)
 	if frame == 3:
 		game.begin()
 	if frame <= 3:
@@ -66,6 +69,12 @@ func _process(delta: float) -> bool:
 		return true
 	if town == "train":
 		_train(m)
+		game.queue_free()
+		Engine.remove_meta("no_civilians")   # (the padre and the carpenter are townsfolk)
+		_ride("funeral")
+		return false
+	if town == "funeral":
+		_funeral(m)
 		print("music test: %s" % ("OK" if failures == 0 else "%d FAILURES" % failures))
 		quit(failures)
 		return true
@@ -161,10 +170,42 @@ func _train(m: Music) -> void:
 	check(names == ["build", "hold", "call", "action", "won"], "the pieces: %s" % [names])
 	check(m.piece == "build" and m.player.playing, "the build isn't playing: %s" % m.piece)
 	check(not m.army_in(), "the army's in already, %.1f s in" % t)
-	m.step_pieces("play", true)
-	check(m.piece == "action", "the army's in and no action: %s" % m.piece)
-	m.step_pieces("won", true)
+	m.step_pieces("play", {"army": true})
+	check(m.piece == "call", "the army's in and no call: %s" % m.piece)
+	m.step_pieces("won", {"army": true, "won": true})
 	check(m.piece == "won", "won, and no win: %s" % m.piece)
-	m.piece = "action"
-	m.step_pieces("lost", true)
+	m.piece = "call"
+	m.step_pieces("lost", {"army": true})
 	check(m.piece == "lost", "dead, and it plays on: %s" % m.piece)
+
+
+func _funeral(m: Music) -> void:
+	step = "funeral"
+	var names := []
+	for i in m.pieces.clip_count:
+		names.append(String(m.pieces.get_clip_name(i)))
+	check(names == ["march", "suspense", "brink", "rise", "fight", "won", "buried"], "the pieces: %s" % [names])
+	check(m.piece == "march" and m.player.playing, "no march at his funeral: %s" % m.piece)
+	var now := m.happenings()
+	check(game.coffin.inside and not now["blow"] and not now["burst"] and not now["buried"],
+		"something's happened already: %s" % now)
+	m.step_pieces("play", {"blow": true})
+	check(m.piece == "suspense", "his blow on the lid brought no suspense: %s" % m.piece)
+	m.step_pieces("play", {"blow": true})
+	check(m.piece == "suspense", "a second blow moved it on: %s" % m.piece)
+	m.step_pieces("play", {"blow": true, "burst": true})
+	check(m.piece == "rise", "out of the box, and no rise: %s" % m.piece)
+	m.step_pieces("won", {"blow": true, "burst": true, "won": true})
+	check(m.piece == "won", "won, and no win: %s" % m.piece)
+	step = "no nails"
+	m.piece = "march"
+	m.step_pieces("play", {"blow": true, "burst": true})
+	check(m.piece == "rise", "straight out should be straight to the rise: %s" % m.piece)
+	step = "buried"
+	m.piece = "suspense"
+	m.step_pieces("lost", {"blow": true, "buried": true})
+	check(m.piece == "buried", "buried, and no tolling: %s" % m.piece)
+	step = "shot"
+	m.piece = "rise"
+	m.step_pieces("lost", {"blow": true, "burst": true})
+	check(m.piece == "lost", "shot dead in the fight, and it plays on: %s" % m.piece)

@@ -1929,7 +1929,33 @@ carried, which you collect by walking over them.
   - *battle*, the fight: Cruz Verde's band (the galloping bass, flammed snare,
     rasgueados, whips, bell, choir, shouts) with the same theme on two trumpets in
     thirds, the twang doubling them an octave down on the third phrase.
-  `tests/test_music.gd` covers the four towns' scores and their rules. The layers are Ogg
+  The funeral's is pieces in turn, like Paso Esperanza's; a score in pieces says in
+  meta.json where it starts, which piece runs into which, which happening brings
+  which piece and from which, and how each switch waits (`PIECE_SPECS`).
+  - *march*, from the moment he's in the box, round and round (16 bars at 52, 74 s)
+    under the sermon however long his record takes: Chopin's funeral march (1839, out
+    of copyright), low and slow on a pump organ (two reeds a hair apart, the bellows
+    breathing), a muffled drum, a low piano on the bass, the bell each fourth bar; the
+    organ has the tune the first time round, the piano an octave down the second.
+  - *suspense*, on the next beat after his first blow on a nailed lid (a lid that
+    won't give counts): a heartbeat quickening from one a second to three, a clock
+    gone too fast, a high string trembling a semitone higher every couple of seconds,
+    the organ's chord sliding out of tune, a snare swelling; 16 s, as long as the
+    earth takes. Then the *brink*, its end held round and round, while the lid holds.
+    With no nails he's out at the first blow and there's none of it.
+  - *rise*, the instant the lid flies off: one blow of the whole band, the choir's
+    shout, the bell; into the
+  - *fight*, a finale on the music of every town he crossed, since they're all at his
+    funeral (12/8 at 84, 48 bars, 137 s): San Miguel's theme made heroic (G major, the
+    flat seventh of the westerns: its B flats and E flats raised), its second half,
+    Cruz Verde's battle tune in G minor, Paso Esperanza's bugles traded across the
+    field over D, Silencio's tune sung high by the soprano with the band light under
+    her, and San Miguel's theme again with the twang. Cruz Verde's band throughout.
+  - *won*, on the next bar: the trumpets close it on G major, the bell.
+  - *buried*, the moment the earth's in: the march's last chord on the organ and the
+    bell, three times. His death leaves this one playing; shot dead in the fight, the
+    score fades as everywhere.
+  `tests/test_music.gd` covers the five towns' scores and their rules. The layers are Ogg
   Vorbis (about 185 kbps, under 3 MB each), imported to loop. Silencio's fight layer
   suits its hush; the other towns' firefights want more drive, action rather than lament.
 

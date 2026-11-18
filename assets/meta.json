@@ -1083904,37 +1083904,80 @@
    ]
   },
   "train": {
-   "bpm": 132,
+   "start": "build",
+   "next": {
+    "build": "hold",
+    "call": "action"
+   },
+   "on": [
+    [
+     "army",
+     "call",
+     [
+      "build"
+     ]
+    ],
+    [
+     "won",
+     "won",
+     [
+      "build",
+      "call"
+     ]
+    ]
+   ],
+   "moves": [
+    [
+     "build",
+     "call",
+     "beat"
+    ],
+    [
+     "hold",
+     "call",
+     "beat"
+    ],
+    [
+     "*",
+     "won",
+     "bar"
+    ]
+   ],
    "pieces": [
     {
      "name": "build",
      "path": "res://assets/music/train_build.ogg",
      "loops": false,
-     "beats": 48
+     "beats": 48,
+     "bpm": 132
     },
     {
      "name": "hold",
      "path": "res://assets/music/train_hold.ogg",
      "loops": true,
-     "beats": 16
+     "beats": 16,
+     "bpm": 132
     },
     {
      "name": "call",
      "path": "res://assets/music/train_call.ogg",
      "loops": false,
-     "beats": 8
+     "beats": 8,
+     "bpm": 132
     },
     {
      "name": "action",
      "path": "res://assets/music/train_action.ogg",
      "loops": true,
-     "beats": 256
+     "beats": 256,
+     "bpm": 132
     },
     {
      "name": "won",
      "path": "res://assets/music/train_won.ogg",
      "loops": false,
-     "beats": 41
+     "beats": 41,
+     "bpm": 132
     }
    ]
   },
@@ -1083949,6 +1083992,123 @@
      "name": "battle",
      "role": "fight",
      "path": "res://assets/music/san_miguel_battle.ogg"
+    }
+   ]
+  },
+  "funeral": {
+   "start": "march",
+   "next": {
+    "suspense": "brink",
+    "rise": "fight"
+   },
+   "on": [
+    [
+     "burst",
+     "rise",
+     [
+      "march",
+      "suspense"
+     ]
+    ],
+    [
+     "blow",
+     "suspense",
+     [
+      "march"
+     ]
+    ],
+    [
+     "buried",
+     "buried",
+     [
+      "march",
+      "suspense"
+     ]
+    ],
+    [
+     "won",
+     "won",
+     [
+      "march",
+      "suspense",
+      "rise"
+     ]
+    ]
+   ],
+   "moves": [
+    [
+     "march",
+     "suspense",
+     "beat"
+    ],
+    [
+     "*",
+     "rise",
+     "now"
+    ],
+    [
+     "*",
+     "buried",
+     "now"
+    ],
+    [
+     "*",
+     "won",
+     "bar"
+    ]
+   ],
+   "keep_on_lost": [
+    "buried"
+   ],
+   "pieces": [
+    {
+     "name": "march",
+     "path": "res://assets/music/funeral_march.ogg",
+     "loops": true,
+     "beats": 64,
+     "bpm": 52
+    },
+    {
+     "name": "suspense",
+     "path": "res://assets/music/funeral_suspense.ogg",
+     "loops": false,
+     "beats": 16,
+     "bpm": 60
+    },
+    {
+     "name": "brink",
+     "path": "res://assets/music/funeral_brink.ogg",
+     "loops": true,
+     "beats": 8,
+     "bpm": 120
+    },
+    {
+     "name": "rise",
+     "path": "res://assets/music/funeral_rise.ogg",
+     "loops": false,
+     "beats": 4,
+     "bpm": 84
+    },
+    {
+     "name": "fight",
+     "path": "res://assets/music/funeral_fight.ogg",
+     "loops": true,
+     "beats": 192,
+     "bpm": 84
+    },
+    {
+     "name": "won",
+     "path": "res://assets/music/funeral_won.ogg",
+     "loops": false,
+     "beats": 21,
+     "bpm": 84
+    },
+    {
+     "name": "buried",
+     "path": "res://assets/music/funeral_buried.ogg",
+     "loops": false,
+     "beats": 15,
+     "bpm": 60
     }
    ]
   }
