@@ -18,7 +18,12 @@ by hand.
 
 ## Play
 
-The baked assets are committed, so the game runs straight from a clone. Open the folder in
+Each GitHub release has a download for Windows, macOS and Linux. They aren't signed with a
+paid certificate, so Windows and macOS ask once before the first start:
+[.github/release-install.md](.github/release-install.md) says what to click on each, and the
+same steps are added to every release's notes.
+
+The baked assets are committed, so the game also runs straight from a clone. Open the folder in
 Godot 4.7 and press Play, or run:
 
 ```bash
@@ -282,9 +287,13 @@ minutes, the bake 20), so nothing that hangs holds a runner for long. Dependabot
 actions and the tools' Python packages. Godot isn't one of them: raise `GODOT_VERSION` in
 both workflows by hand when the project moves to a new engine.
 
-The builds aren't signed (the Mac app only ad hoc), so worth a line in the release notes:
-on Windows, SmartScreen's "More info > Run anyway"; on macOS, after unzipping,
-`xattr -cr Sundance.app` (or System Settings > Privacy & Security > Open Anyway).
+The builds aren't signed with a certificate (the Mac app is signed only ad hoc, not
+notarized), so Windows' SmartScreen and macOS' Gatekeeper ask before the first start. Both
+fixes cost money (Apple's developer programme, a Windows code-signing certificate), and
+free Windows signing (SignPath Foundation) needs a public open-source repository. Instead,
+the workflow adds the install steps in `.github/release-install.md` to the end of the
+release's notes, once (it looks for their `## Installing` heading), so whatever you write
+in the release stays above them.
 
 To export locally, install the 4.7.2 export templates (Editor > Manage Export Templates),
 then `godot --headless --path . --export-release macOS build/macos/Sundance.zip`

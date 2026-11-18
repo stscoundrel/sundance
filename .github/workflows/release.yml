@@ -86,6 +86,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber
 
+      # The builds aren't signed, so Windows and macOS ask before the first start: the
+      # release's notes end with what to click. Added once, below whatever was written.
+      - name: Add the install steps to the release notes
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release view "$TAG" --json body --jq .body > notes.md
+          if grep -q '^## Installing' notes.md; then
+            echo "The notes already have the install steps."
+          else
+            printf '\n\n' >> notes.md
+            cat .github/release-install.md >> notes.md
+            gh release edit "$TAG" --notes-file notes.md
+          fi
+
       - name: Keep as workflow artifacts
         if: github.event_name != 'release'
         uses: actions/upload-artifact@v4
