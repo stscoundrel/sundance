@@ -23,11 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30   # the whole job, whatever hangs: a full run is about 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cache Godot
         id: godot-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/godot
           key: godot-${{ env.GODOT_VERSION }}-editor
@@ -47,7 +47,7 @@ jobs:
       # The import turns every baked sprite into Godot's own textures; it only needs
       # redoing for what changed, so the last run's is kept, keyed on the assets.
       - name: Cache the import
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .godot/imported
           key: import-${{ env.GODOT_VERSION }}-${{ hashFiles('assets/**', 'project.godot') }}
@@ -68,7 +68,7 @@ jobs:
 
       - name: Keep the logs of a failed run
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-logs
           path: .godot/test_logs/

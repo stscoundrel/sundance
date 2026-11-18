@@ -30,17 +30,17 @@ jobs:
     timeout-minutes: 20   # about 6 minutes when it goes well
     steps:
       - name: Check out the pull request
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: here
 
       - name: Check out its base
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: base
           ref: ${{ github.event.pull_request.base.sha || 'main' }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
