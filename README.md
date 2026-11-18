@@ -110,12 +110,17 @@ tools/check_bake.sh                                    # does a sample bake stil
 ```
 
 The tools' Python packages are pinned in `tools/requirements.txt`, so a bake comes out the
-same on any machine. Dependabot proposes newer ones once a month, in one pull request; a
-new numpy, pillow or soundfile can shift a pixel or a sample, so before merging one,
-install it in the venv and run `tools/check_bake.sh`: it bakes the sounds, the UI, the
-effects and the vest body, and fails if any of them draws or sounds different from what's
-committed (the pull request's CI runs the same check). If it does differ, look at what
-changed before re-baking everything with the new versions.
+same from one run to the next on the same machine. (Not quite across machines: a GitHub
+runner rounds a few pixels differently from the Mac the assets were baked on, enough to
+change which frames the atlas packer finds identical.) Dependabot proposes newer packages
+once a month, in one pull request; a new numpy, pillow or soundfile can shift a pixel or a
+sample, so the pull request's Bake check compares the two versions' bakes on one runner.
+To check one on the Mac before merging, install it in the venv and run
+`tools/check_bake.sh`: it bakes the sounds, the UI, the effects and the vest body, and
+fails if any of them draws or sounds different from what's committed.
+`tools/check_bake.sh --against DIR` compares against the same sample baked in another
+checkout instead (`$BASE_PYTHON` for its packages), which is what CI does. If a bump does
+differ, look at what changed before re-baking everything with the new versions.
 
 ## Tests and debug flags
 
@@ -267,9 +272,12 @@ release, to try the pipeline out. No tests run in it.
 
 Every pull request into main runs `.github/workflows/ci.yml`: the test suite
 (`tools/run_tests.sh`, four at a time on the runner; a failed run keeps its logs as the
-`test-logs` artifact, kept a week) and the bake check (`tools/check_bake.sh`). Beyond
+`test-logs` artifact, kept a week). One that touches `tools/` or `data/` also runs
+`.github/workflows/bake.yml`: the sample bake done twice on one runner, with the base's
+tools and packages and with the pull request's, and compared (`tools/check_bake.sh
+--against`). A pull request that changes the art on purpose fails it, as expected. Beyond
 the per-test limit, each step and job has a time limit of its own (the tests job 30
-minutes, the bake 15), so nothing that hangs holds a runner for long. Dependabot
+minutes, the bake 20), so nothing that hangs holds a runner for long. Dependabot
 (`.github/dependabot.yml`) opens a grouped pull request each month for the workflows'
 actions and the tools' Python packages. Godot isn't one of them: raise `GODOT_VERSION` in
 both workflows by hand when the project moves to a new engine.

@@ -2654,10 +2654,14 @@ seconds. A body dragged away leaves it behind.
   `application/config/version` and shows faintly in the title card's top-right corner, so a
   bug report says which build it came from. The Mac export needs ETC2/ASTC import turned on
   (the sprites are lossless, so it changes none of them).
-- Pull requests into main run the tests and a sample bake on a GitHub runner
-  (`.github/workflows/ci.yml`). The bake is compared by pixels and samples, not bytes
-  (`tools/check_bake.py`), since another machine's encoder may pack the same image
-  differently. The tools' packages are pinned so bakes repeat; Dependabot proposes newer
-  ones monthly, and the bake check is what says whether one changes the game's look.
+- Pull requests into main run the tests on a GitHub runner (`.github/workflows/ci.yml`),
+  and those touching the tools or data a sample bake (`bake.yml`). The bake is done twice
+  on the one runner, with the base's tools and packages and the pull request's, and the
+  two compared by pixels and samples, not bytes (`tools/check_bake.py`). Not against the
+  committed files: a bake isn't identical across machines (floating-point rounding moves a
+  few edge pixels, and the atlas packer then shares different frames), so the runner's
+  bake never matched the Mac's. The tools' packages are pinned so bakes repeat; Dependabot
+  proposes newer ones monthly, and the bake check is what says whether one changes the
+  game's look.
   No test may run on: the runner stops one after five minutes or at its first script
   error, and the CI jobs and steps carry time limits of their own.

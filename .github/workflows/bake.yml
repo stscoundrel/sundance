@@ -1,0 +1,63 @@
+# Checks that a pull request's asset tools still bake the same: a sample (the sounds, the
+# UI, the effects and the vest body) is baked twice on one runner, once with the base's
+# tools and packages and once with the pull request's, and the two compared by pixels and
+# samples. A Dependabot bump of numpy, pillow or soundfile that changes the look fails it;
+# so does a pull request that changes the art on purpose, which is then expected.
+# Comparing against the committed files instead won't do: a runner rounds a few pixels
+# differently from the Mac they were baked on, whatever the versions.
+# Only pull requests that touch the tools or the data they read run it.
+name: Bake
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/**"
+      - "data/**"
+      - ".github/workflows/bake.yml"
+  workflow_dispatch:   # by hand: the branch against main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bake-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20   # about 6 minutes when it goes well
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@v4
+        with:
+          path: here
+
+      - name: Check out its base
+        uses: actions/checkout@v4
+        with:
+          path: base
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            here/tools/requirements.txt
+            base/tools/requirements.txt
+
+      - name: Install each side's packages
+        run: |
+          python -m venv ${{ runner.temp }}/venv-base && ${{ runner.temp }}/venv-base/bin/pip install -q -r base/tools/requirements.txt
+          python -m venv ${{ runner.temp }}/venv-here && ${{ runner.temp }}/venv-here/bin/pip install -q -r here/tools/requirements.txt
+          diff base/tools/requirements.txt here/tools/requirements.txt || true
+
+      - name: Bake the sample both ways and compare
+        timeout-minutes: 15
+        working-directory: here
+        env:
+          BASE_PYTHON: ${{ runner.temp }}/venv-base/bin/python
+          PYTHON: ${{ runner.temp }}/venv-here/bin/python
+        run: tools/check_bake.sh --against ../base

@@ -1,6 +1,6 @@
-# Checks every pull request into main (Dependabot's included): the headless test suite,
-# and a sample bake to see the asset tools still draw and sound the same as what's
-# committed. Run it by hand too (Actions > CI > Run workflow).
+# Checks every pull request into main (Dependabot's included) with the headless test
+# suite. The asset tools have their own check, bake.yml. Run it by hand too (Actions > CI
+# > Run workflow).
 name: CI
 
 on:
@@ -73,24 +73,3 @@ jobs:
           name: test-logs
           path: .godot/test_logs/
           retention-days: 7
-
-  bake:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15   # about 5 minutes when it goes well
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: tools/requirements.txt
-
-      - name: Install the asset tools
-        run: pip install -r tools/requirements.txt
-
-      - name: Bake a sample and compare
-        timeout-minutes: 10
-        env:
-          PYTHON: python
-        run: tools/check_bake.sh
