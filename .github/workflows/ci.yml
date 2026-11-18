@@ -1,0 +1,96 @@
+# Checks every pull request into main (Dependabot's included): the headless test suite,
+# and a sample bake to see the asset tools still draw and sound the same as what's
+# committed. Run it by hand too (Actions > CI > Run workflow).
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2   # keep with release.yml
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30   # the whole job, whatever hangs: a full run is about 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-editor
+
+      - name: Download Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
+          mkdir -p ~/godot && cd ~/godot
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && rm godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+
+      - name: Put Godot on the path
+        run: echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      # The import turns every baked sprite into Godot's own textures; it only needs
+      # redoing for what changed, so the last run's is kept, keyed on the assets.
+      - name: Cache the import
+        uses: actions/cache@v4
+        with:
+          path: .godot/imported
+          key: import-${{ env.GODOT_VERSION }}-${{ hashFiles('assets/**', 'project.godot') }}
+          restore-keys: import-${{ env.GODOT_VERSION }}-
+
+      - name: Import assets
+        timeout-minutes: 10
+        run: godot --headless --path . --import
+
+      # Each test is stopped and failed after 5 minutes, or at its first script error
+      # (tools/run_tests.sh), so one broken test can't sit on the runner.
+      - name: Run the tests
+        timeout-minutes: 20
+        env:
+          SUNDANCE_JOBS: 4   # the runner's cores; the tests keep game time, not wall time
+          SUNDANCE_TEST_LIMIT: 300
+        run: tools/run_tests.sh
+
+      - name: Keep the logs of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: .godot/test_logs/
+          retention-days: 7
+
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15   # about 5 minutes when it goes well
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: tools/requirements.txt
+
+      - name: Install the asset tools
+        run: pip install -r tools/requirements.txt
+
+      - name: Bake a sample and compare
+        timeout-minutes: 10
+        env:
+          PYTHON: python
+        run: tools/check_bake.sh

@@ -1,3 +1,5 @@
-numpy
-pillow
-soundfile
+# Pinned so every bake comes out the same: a new numpy, pillow or soundfile can shift a
+# pixel or a sample. Dependabot proposes bumps monthly; check one with tools/check_bake.sh.
+numpy==2.4.6
+pillow==13.0.0
+soundfile==0.14.0

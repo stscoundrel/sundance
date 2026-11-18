@@ -106,12 +106,23 @@ SUNDANCE_TEMPLATES=veteran tools/.venv/bin/python tools/gen_assets.py chars   # 
 SUNDANCE_OBJECTS=coop,hencrate tools/.venv/bin/python tools/gen_assets.py world   # re-bake some world objects
 SUNDANCE_GROUNDS=train tools/.venv/bin/python tools/gen_assets.py ground   # re-bake some maps' grounds (town, cruz_verde, train...)
 godot --headless --path . --import
+tools/check_bake.sh                                    # does a sample bake still come out as committed?
 ```
+
+The tools' Python packages are pinned in `tools/requirements.txt`, so a bake comes out the
+same on any machine. Dependabot proposes newer ones once a month, in one pull request; a
+new numpy, pillow or soundfile can shift a pixel or a sample, so before merging one,
+install it in the venv and run `tools/check_bake.sh`: it bakes the sounds, the UI, the
+effects and the vest body, and fails if any of them draws or sounds different from what's
+committed (the pull request's CI runs the same check). If it does differ, look at what
+changed before re-baking everything with the new versions.
 
 ## Tests and debug flags
 
-`tools/run_tests.sh` runs them all, eight at a time, longest first (by last run's times,
-kept in `.godot/test_times`), and lists what failed (logs in `.godot/test_logs/`);
+`tools/run_tests.sh` runs them all, eight at a time (`SUNDANCE_JOBS` for another number), longest first (by last run's times,
+kept in `.godot/test_times`), and lists what failed (logs in `.godot/test_logs/`). A test
+still running after five minutes (`SUNDANCE_TEST_LIMIT`, in seconds) is stopped and failed
+as `TIMEOUT`, and one is stopped at its first script error as `STOPPED`;
 `tools/run_tests.sh tests/test_kegs.gd` runs some of them. Each is an `extends SceneTree`
 script that stages one feature and prints `FAIL: ...` lines, ending `... test: OK`.
 test_ride also holds each town's sprites to a video memory budget (`BUDGET_MB`). In a
@@ -253,6 +264,15 @@ The tag, less its `v`, is written into `application/config/version` for the buil
 in the corner of the title card; a build from the editor has no version and shows none.
 Actions > Release > Run workflow makes the same builds as a workflow artifact, without a
 release, to try the pipeline out. No tests run in it.
+
+Every pull request into main runs `.github/workflows/ci.yml`: the test suite
+(`tools/run_tests.sh`, four at a time on the runner; a failed run keeps its logs as the
+`test-logs` artifact, kept a week) and the bake check (`tools/check_bake.sh`). Beyond
+the per-test limit, each step and job has a time limit of its own (the tests job 30
+minutes, the bake 15), so nothing that hangs holds a runner for long. Dependabot
+(`.github/dependabot.yml`) opens a grouped pull request each month for the workflows'
+actions and the tools' Python packages. Godot isn't one of them: raise `GODOT_VERSION` in
+both workflows by hand when the project moves to a new engine.
 
 The builds aren't signed (the Mac app only ad hoc), so worth a line in the release notes:
 on Windows, SmartScreen's "More info > Run anyway"; on macOS, after unzipping,

@@ -12,7 +12,7 @@ permissions:
   contents: write   # to attach the builds to the release
 
 env:
-  GODOT_VERSION: 4.7.2
+  GODOT_VERSION: 4.7.2   # keep with ci.yml
 
 jobs:
   build:
