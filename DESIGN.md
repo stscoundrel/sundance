@@ -1445,6 +1445,9 @@ carried, which you collect by walking over them.
 - **Noise**: gunshots (loud, per weapon) and standing footsteps (very short range).
 - States: **Patrol / Guard** → **Investigate** (noise or a glimpse, look around,
   give up) → **Combat** → **Search** (last known position) → back to a wary patrol.
+  When half the gang goes to look at the same spot, a man the others keep off it
+  (standing within ~40 px, hardly moving, for a second) looks from where he is,
+  rather than shouldering in for ever.
 - In combat bandits shoot with a reaction delay and aim error, keep their
   distance per weapon, and **run to cover to reload** — that is your window.
   An alerted bandit shouts and draws in nearby gang members.
@@ -2481,7 +2484,7 @@ palettes or `palettes_from` a bandit type, `speed`, `nerve`, `snitch`, `wander`,
   - *The saloon keeper* (`keeper`, slicked hair, towel over his arm) keeps to his
     own porch: his tables (fresh bottles and all) and chairs, nobody's orders.
   - *Two sweepers* (`sweeper`, peones with brooms) sweep the nearest mess into the
-    dirt, a broom's reach at a time: blood (drops, pools once the body's gone),
+    dirt, a broom's reach at a time: blood (drops; a bandit's pool only once he's in the ground, wherever he was dragged),
     glass, crockery, scorch marks, spilt water. The stranger's blood trail goes
     with it, so a swept trail can't be followed. They keep apart from each other.
   - *Two hen women* (`henwife`, rebozo and apron, a broom) go after any hen well

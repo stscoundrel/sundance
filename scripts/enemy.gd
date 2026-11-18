@@ -62,6 +62,7 @@ var suspicion := 0.0
 var last_known := Vector2.ZERO
 var lost_t := 0.0
 var look_t := 0.0
+var crowded_t := 0.0   # how long he's stood short of the spot he came to look at, his comrades round it
 var react := 0.0
 var shot_cd := 0.0
 var wary := false
@@ -880,6 +881,7 @@ func start_investigate(pos: Vector2, run: bool) -> void:
 	smoke_t = -1.0
 	st = St.INVESTIGATE
 	look_t = 0.0
+	crowded_t = 0.0
 	running = run
 	_mark("?")
 	path_to(pos)
@@ -1791,7 +1793,16 @@ func _patrol(delta: float) -> void:
 
 func _investigate(delta: float) -> void:
 	if not follow_path(run if running else walk):
-		return
+		# Half the gang came to look at the same spot, and the ones round it keep him
+		# off it: near enough is near enough, he looks from where he stands. (Elbowed
+		# to a standstill he'd stand there for ever, his look never begun.)
+		var short: bool = path.size() > 0 and global_position.distance_to(path[path.size() - 1]) < 40.0
+		crowded_t = crowded_t + delta if short and get_real_velocity().length() < 5.0 else 0.0
+		if crowded_t < 1.0:
+			return
+		path = PackedVector2Array()
+		velocity = Vector2.ZERO
+	crowded_t = 0.0
 	look_t += delta
 	if int(look_t * 0.9) != int((look_t - delta) * 0.9):
 		desired = Vector2.from_angle(randf() * TAU)

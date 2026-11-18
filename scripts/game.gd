@@ -4459,7 +4459,8 @@ func dirt_job(by: Civilian) -> Vector2:
 	var best_d := INF
 	var spots: Array = decals.splats.map(func(s): return s[0])
 	for c in decals.get_children():
-		spots.append(c.position)
+		if not _pool_waits(c):
+			spots.append(c.position)
 	for p in spots:
 		var d: float = by.global_position.distance_to(p)
 		if d >= best_d:
@@ -4473,12 +4474,22 @@ func dirt_job(by: Civilian) -> Vector2:
 	return best
 
 
+## A bandit's blood pool, its man not yet in the ground: lying by it still, or being
+## hauled off. The sweepers leave it till the undertaker's done with him.
+func _pool_waits(c: Node) -> bool:
+	for pl in blood_pools:
+		if pl["sprite"] == c:
+			var body: Enemy = pl["body"]
+			return is_instance_valid(body) and not body.alive and not body.has_meta("buried") and body.visible
+	return false
+
+
 ## Swept into the dirt: every mark within a broom's reach, and the blood trail too.
 func sweep_at(at: Vector2, by: Civilian) -> void:
 	var n: int = decals.splats.size()
 	decals.splats = decals.splats.filter(func(s): return s[0].distance_to(at) > SWEEP_R)
 	for c in decals.get_children():
-		if c.position.distance_to(at) < SWEEP_R:
+		if c.position.distance_to(at) < SWEEP_R and not _pool_waits(c):
 			c.queue_free()
 			n += 1
 	trails = trails.filter(func(d): return d["at"].distance_to(at) > SWEEP_R)
