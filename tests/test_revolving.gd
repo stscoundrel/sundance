@@ -7,7 +7,7 @@ extends SceneTree
 ##   carriers  - some revolucionarios have one slung beside the sidearm, and some
 ##               sargentos have one for the coach gun; nobody else, and never a man
 ##               out of a door.
-##   stranger  - it rides in his shotgun slot at 4 points, off the powder on his belt,
+##   stranger  - it rides in his shotgun slot at 5 points, off the powder on his belt,
 ##               and has its poses baked. Burnt, he's a point down, nobody's to blame;
 ##               on his last bar it puts him in the last stand; a burn that kills him
 ##               says so on the end screen.
@@ -64,7 +64,7 @@ func _time(w: Weapon, until: Callable, limit := 40.0) -> float:
 func _gun() -> void:
 	step = "gun"
 	var d: Dictionary = Weapon.DATA["colt55"]
-	check(d["points"] == 4, "costs %d" % d["points"])
+	check(d["points"] == 5, "costs %d" % d["points"])
 	check(d["cycle"] <= Weapon.DATA["navy"]["cycle"] * 1.2, "fires slower than the Navy is cocked")
 	var g := MockGame.new()
 	var a := Hand.new()

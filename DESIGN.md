@@ -1209,8 +1209,8 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
-listing what goes in it, dearest first (`Player.choices`: pair of Colts, Colt, Schofield, Walker, Navy, howdah, derringer, horse pistol; Spencer pump, coach gun,
-sawn-off, Champion, escopeta; Winchester, Henry, Sharps, Spencer, Remington, Springfield, cut-down Rolling Block) with a line on
+listing what goes in it, dearest first (`Player.choices`: pair of Colts, Colt, Schofield, Walker, Navy, howdah, derringer, horse pistol; Spencer pump, revolving shotgun, coach gun,
+Champion, sawn-off, escopeta; Winchester, Henry, Spencer, Sharps, Remington, Springfield, cut-down Rolling Block) with a line on
 what the chosen one is like, and its picture. The pictures aren't the guns of play blown up: each gun has a finer model
 of its own for the card (`tools/card_guns.py`), at its true proportions where the game's are oversized to read in a
 man's hands, with the fluted cylinder, the lever, the bands and the grain of the stock, baked at the very pixels the
@@ -1227,23 +1227,29 @@ he picked up. `tests/test_loadout.gd` covers the screen, the switching, and pick
 guns up.
 
 **Points.** Each choice costs points, out of the level's `budget` in
-`data/levels.json` (12 where none is named: a good gun in each slot and a bandage,
-the Walker, the coach gun and the Winchester; or the Colt for the Walker, and no bandage). Each
+`data/levels.json` (12 where none is named: a good gun in each slot, the Colt, the coach
+gun and the Spencer carbine; or the Walker for the Colt, and a bandage. The Winchester
+there means a cheap gun in another slot). Each
 town gives what it asks of him: Silencio 8 (two gangs to be played off against each
 other, not outgunned: tricks before firepower), San Miguel 12, Cruz Verde 14 (the
 waves), Paso Esperanza 18 (an open fight to hold the train: nearly everything but a
 stick). A gun's
 price is its `points` in `Weapon.DATA`, by how good it is, not by its slot: junk is
 free (horse pistol, the derringer's two little shots, escopeta), the poor or one-job guns 1
-(the howdah, two big shots and then a reload; Champion), the middling ones 2 (the Navy, six
-weak shots and an age to load; sawn-off), the old Walker 3 (the hardest hitter of them, but
+(the howdah, two big shots and then a reload; the sawn-off, two barrels with no reach), the
+middling ones 2 (the Navy, six weak shots and an age to load; the Champion, one shell but
+it carries), the old Walker 3 (the hardest hitter of them, but
 loud and slow: the cap-and-ball guns come cheaper than the cartridge ones), the six-guns 4
 (Colt and Schofield alike: as strong, each with its own faults; the revolver is the gun he
-uses most, as dear as the Henry or the Sharps), the coach gun 3. Rifles cost a point more than their like
-elsewhere, for the reach: the cut-down Rolling Block 1 (the cheapest, none free), the
-Springfield 2, the Spencer and the Remington 3, the Henry and the Sharps 4 (a point over the
-other single shots, for going through a wall), and the Winchester, the best gun
-in the game, 5, as dear as the Spencer pump gun, rare and new. Dearest of all, 7, is the
+uses most, as dear as the Sharps). A long gun that puts lead out fast costs a point more
+than its like in the holster: the coach gun 4 (two barrels that clear a room), the
+revolving shotgun 5, the Spencer carbine 4, the Henry 5, and the Winchester, the best
+gun in the game, 6, as dear as the Spencer pump gun, rare and new. The single-shot
+rifles stay cheap, paid for in time at the breech: the cut-down Rolling Block 1 (the
+cheapest, none free), the Springfield 2, the Remington 3, the Sharps 4 (a point over the
+other single shots, for going through a wall). The budgets were left as they were when
+the long guns went up (2026-11-20), to see whether the tighter loadouts make for odder
+ones. Dearest of all, 7, is the
 pair of Colts: twelve shots right and left, at a price in the reload (below). Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
 or the box left of "ride in") and a stick of dynamite for 2 (G, the right box), in
 every level. What he doesn't buy he hasn't: no free bandage. Each
@@ -1400,7 +1406,7 @@ Soldados and cabos carry it; the stranger takes one up off the dead (slot 3,
 
 ### Spencer 1882 slide-action shotgun, 12 ga — 6 shells
 The first pump gun, new and rare, and for its six shells (five in the tube, one up)
-the strongest shotgun there is: 5 points, as dear as the Winchester and dearer than anything else. A 12
+the strongest shotgun there is: 6 points, as dear as the Winchester, and only the pair of Colts dearer. A 12
 bore on the coach gun's shells, its pattern a little tighter and longer (8 pellets,
 spread 7.5, range 195; the coach gun 9, 9, 175), but no barrels to loose together.
 - **A stiff slide**: 0.85 s between shots, slower than any lever.
@@ -1418,7 +1424,7 @@ or takes it off a dead Jefe. `tests/test_pump.gd`.
 
 ### Colt Model 1855 revolving shotgun — five chambers, cap-and-ball
 The Navy's idea made a long gun, off the war's surplus into the revolution's
-hands: five shots of shot, more than any scattergun but the Spencer pump, for 4
+hands: five shots of shot, more than any scattergun but the Spencer pump, for 5
 points on the stranger's shotgun card.
 - **Quick to fire**: the side hammer thumbed back between shots, 0.42 s (the Navy
   0.38). A 12 bore's pattern a little looser than the Champion's (8 pellets, spread
@@ -1445,8 +1451,8 @@ points on the stranger's shotgun card.
 
 ### Henry 1860, .44 Henry rimfire — 15 rounds
 The Winchester's forerunner, much the same gun and the same rounds, but worse to
-live with in three ways, so it stays the lesser choice (4 points to the Winchester's
-5) for all its fifteen (14 in the tube, one up; `"tube"` lets it hold more than
+live with in three ways, so it stays the lesser choice (5 points to the Winchester's
+6) for all its fifteen (14 in the tube, one up; `"tube"` lets it hold more than
 `Weapon.TUBE_CAP`):
 - **Loaded from the front.** No gate in the side: he turns the sleeve at the
   muzzle, pushes the follower up and drops them in (open 1.1 s, 0.35 s a round,

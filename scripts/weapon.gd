@@ -26,7 +26,9 @@ const TUBE_CAP := 12   # plus one in the chamber (a lever gun's "tube" may hold 
 # hammer is thumbed back after each shot; "volley" lets the right trigger fire every
 # loaded barrel at once. "points": what the stranger's gun costs on the loadout
 # screen, out of the level's budget (0 for junk, 4 for a good cartridge revolver, 3
-# for the old Walker, 5 for the Winchester and the Spencer pump).
+# for the old Walker; a long gun that puts lead out fast costs a point more than its
+# like in the holster, 6 for the Winchester and the Spencer pump; the single shots
+# stay cheap, they make him pay in time instead).
 const DATA := {
 	"colt": {"name": "COLT SINGLE ACTION ARMY", "points": 4, "action": "revolver", "damage": 2, "speed": 650.0,
 		"range": 380.0, "spread": 2.2, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.32,
@@ -51,7 +53,7 @@ const DATA := {
 		"shake": 2.0, "smoke": 9, "ammo": "colt", "open": [0.6, "break_open"], "eject": [0.4, "eject"],
 		"insert": [0.33, "shell_in"], "close": [0.45, "close"],
 		"status": {"cycle": "COCKING", "open": "BROKEN OPEN", "close": "LATCHED, COCKING"}},
-	"rifle": {"name": "WINCHESTER 1866", "points": 5, "action": "lever", "damage": 2, "pierce": 1, "speed": 900.0, "range": 620.0,
+	"rifle": {"name": "WINCHESTER 1866", "points": 6, "action": "lever", "damage": 2, "pierce": 1, "speed": 900.0, "range": 620.0,
 		"spread": 0.6, "pellets": 1, "noise": 480.0, "sfx": "rifle", "cycle": 0.45, "shake": 2.5, "smoke": 11,
 		"status": {"cycle": "LEVER", "open": "LOADING GATE", "close": ""}},
 	# Henry 1860, the Winchester's forerunner: the same rounds and near enough the same
@@ -61,12 +63,12 @@ const DATA := {
 	# two in a hurry costs nearly as much as the lot. A cruder lever, slower to work.
 	# And nothing to hold it by but the barrel: fire it fast and the heat in his
 	# fingers ("hot", a shot's worth) throws his aim off until it cools.
-	"henry": {"name": "HENRY 1860", "points": 4, "action": "lever", "tube": 14, "damage": 2, "pierce": 1, "speed": 880.0,
+	"henry": {"name": "HENRY 1860", "points": 5, "action": "lever", "tube": 14, "damage": 2, "pierce": 1, "speed": 880.0,
 		"range": 600.0, "spread": 0.7, "pellets": 1, "noise": 480.0, "sfx": "rifle", "cycle": 0.55, "shake": 2.5,
 		"smoke": 11, "ammo": "rifle", "hot": 0.3, "open": [1.1, "gate"], "insert": [0.35, "shell_in"],
 		"close": [0.9, "close"],
 		"status": {"cycle": "LEVER", "open": "SLEEVE TURNED", "close": "SLEEVE CLOSED"}},
-	"coach": {"name": "COACH GUN  10 GA", "points": 3, "action": "breech", "barrels": 2, "volley": true,
+	"coach": {"name": "COACH GUN  10 GA", "points": 4, "action": "breech", "barrels": 2, "volley": true,
 		"damage": 1, "speed": 520.0, "range": 175.0, "spread": 9.0, "pellets": 9, "noise": 460.0,
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 20, "smoke_push": 1.5,
 		"open": [0.4, "break_open"], "eject": [0.35, "eject"], "insert": [0.42, "shell_in"], "close": [0.35, "close"],
@@ -77,14 +79,14 @@ const DATA := {
 	# has dropped: the first stroke only lifts it, the second chambers. The empties
 	# go straight up out of the top of the frame. A 12 bore, a little tighter than
 	# the coach gun and with no barrels to loose together. Takes the coach gun's shells.
-	"spencer82": {"name": "SPENCER 1882 PUMP", "points": 5, "action": "lever", "pump": true, "tube": 5,
+	"spencer82": {"name": "SPENCER 1882 PUMP", "points": 6, "action": "lever", "pump": true, "tube": 5,
 		"damage": 1, "speed": 520.0, "range": 195.0, "spread": 7.5, "pellets": 8, "noise": 460.0,
 		"sfx": "coach", "cycle": 0.85, "shake": 4.0, "smoke": 20, "smoke_push": 1.5, "ammo": "coach",
 		"insert": [0.45, "shell_in"],
 		"status": {"cycle": "PUMP", "open": "LOADING PORT", "close": ""}},
 	# A double gun with the barrels and the stock cut down: easy to carry under a coat,
 	# useless past a few paces and murder inside them. Takes the coach gun's shells.
-	"sawnoff": {"name": "SAWN-OFF 12 GA", "points": 2, "action": "breech", "barrels": 2, "volley": true,
+	"sawnoff": {"name": "SAWN-OFF 12 GA", "points": 1, "action": "breech", "barrels": 2, "volley": true,
 		"damage": 1, "speed": 480.0, "range": 115.0, "spread": 15.0, "pellets": 9, "noise": 470.0,
 		"sfx": "coach", "cycle": 0.2, "shake": 4.0, "smoke": 22, "smoke_push": 1.7, "ammo": "coach",
 		"open": [0.32, "break_open"], "eject": [0.3, "eject"], "insert": [0.38, "shell_in"], "close": [0.3, "close"],
@@ -98,7 +100,7 @@ const DATA := {
 	# chance a shot), every loaded chamber goes off together in a wild blast, and the
 	# hand out on the fore-end in front of the cylinder is burnt. The revolution's
 	# surplus. Takes the Navy's powder.
-	"colt55": {"name": "COLT REVOLVING SHOTGUN", "points": 4, "action": "revolver", "chambers": 5,
+	"colt55": {"name": "COLT REVOLVING SHOTGUN", "points": 5, "action": "revolver", "chambers": 5,
 		"chainfire": 0.025, "damage": 1, "speed": 520.0, "range": 200.0, "spread": 7.0, "pellets": 8,
 		"noise": 460.0, "sfx": "coach", "cycle": 0.42, "shake": 3.8, "smoke": 22, "smoke_push": 1.5,
 		"ammo": "powder", "open": [0.5, "gate"], "eject": [0.3, "gate"], "insert": [1.8, "ram"], "close": [0.6, "cock"],
@@ -107,7 +109,7 @@ const DATA := {
 	# hardware store sold. One long choked barrel throws the shot tighter and further
 	# than the coach gun, and the side lever snaps it open quick for the next shell;
 	# but it's one shot, and the hammer to thumb back. Takes the coach gun's shells.
-	"champion": {"name": "CHAMPION 12 GA", "points": 1, "action": "breech", "barrels": 1, "hammer": true,
+	"champion": {"name": "CHAMPION 12 GA", "points": 2, "action": "breech", "barrels": 1, "hammer": true,
 		"damage": 1, "speed": 560.0, "range": 240.0, "spread": 5.5, "pellets": 9, "noise": 450.0,
 		"sfx": "coach", "cycle": 0.3, "shake": 3.5, "smoke": 18, "smoke_push": 1.5, "ammo": "coach",
 		"open": [0.3, "break_open"], "eject": [0.3, "eject"], "insert": [0.4, "shell_in"], "close": [0.3, "cock"],
@@ -147,7 +149,7 @@ const DATA := {
 	# Spencer 1860 carbine, the revolution's cast-off repeater: seven rounds in a tube
 	# through the butt, and between shots both the lever and the hammer to work.
 	# Slower than the Winchester and fewer rounds, with a heavier, slower bullet.
-	"spencer": {"name": "SPENCER CARBINE", "points": 3, "action": "lever", "tube": 7, "damage": 2, "pierce": 1, "speed": 820.0,
+	"spencer": {"name": "SPENCER CARBINE", "points": 4, "action": "lever", "tube": 7, "damage": 2, "pierce": 1, "speed": 820.0,
 		"range": 540.0, "spread": 0.9, "pellets": 1, "noise": 480.0, "sfx": "spencer", "cycle": 0.85, "shake": 2.8,
 		"smoke": 14, "smoke_push": 1.1, "insert": [0.5, "shell_in"],
 		"status": {"cycle": "LEVER, HAMMER", "open": "MAGAZINE OUT", "close": ""}},

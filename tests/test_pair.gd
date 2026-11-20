@@ -57,7 +57,7 @@ func _card() -> void:
 	check(Player.cost(["colts"]) == 7, "the pair costs %d" % Player.cost(["colts"]))
 	for k in Weapon.DATA:
 		if k != "colts" and Weapon.DATA[k].has("points"):
-			check(Weapon.DATA[k]["points"] < 6, "the %s is as dear" % k)
+			check(Weapon.DATA[k]["points"] < 7, "the %s is as dear" % k)
 	check(Player.choices("colt")[0] == "colts", "the pair doesn't head the sidearm card (%s)" % [Player.choices("colt")])
 	check(Weapon.DATA["colts"]["ammo"] == "colt", "not on the Colt's rounds")
 	check(Hud.BLURB.has("colts"), "no line for the card")
