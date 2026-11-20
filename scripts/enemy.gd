@@ -237,7 +237,7 @@ const GASP_SPREAD := 2.0    # x his usual spread: on his back and bleeding
 const GASP_LOST := 3.0      # s the stranger can be out of sight before he gives it up
 const GASP_PERISH := 0.5    # chance the effort is the end of him
 const GASP_COST := 12.0     # s off his clock if it isn't
-const PISTOLS := ["colt", "colts", "schofield", "buntline", "navy", "derringer", "howdah", "pistola"]
+const PISTOLS := ["colt", "colts", "schofield", "buntline", "walker", "navy", "derringer", "howdah", "pistola"]
 # Now and then a man's Colt is a Schofield instead (data "schofield": the chance,
 # for his type). Its own dice, so the fights the tests replay stay as they were.
 const SCHOFIELD := 0.3

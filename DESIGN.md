@@ -1209,7 +1209,7 @@ without a word. The undertaker won't claim a body the stranger has hold of.
 
 **Loadout and loot.** After the title card the stranger chooses his irons: one gun
 a slot, or none, at least one in all. Three cards, sidearm, shotgun and rifle, each
-listing what goes in it, dearest first (`Player.choices`: pair of Colts, Colt, Schofield, Navy, howdah, derringer, horse pistol; Spencer pump, coach gun,
+listing what goes in it, dearest first (`Player.choices`: pair of Colts, Colt, Schofield, Walker, Navy, howdah, derringer, horse pistol; Spencer pump, coach gun,
 sawn-off, Champion, escopeta; Winchester, Henry, Sharps, Spencer, Remington, Springfield, cut-down Rolling Block) with a line on
 what the chosen one is like, and its picture. The pictures aren't the guns of play blown up: each gun has a finer model
 of its own for the card (`tools/card_guns.py`), at its true proportions where the game's are oversized to read in a
@@ -1228,7 +1228,7 @@ guns up.
 
 **Points.** Each choice costs points, out of the level's `budget` in
 `data/levels.json` (12 where none is named: a good gun in each slot and a bandage,
-the Colt, the coach gun and the Winchester, with no points left for a stick). Each
+the Walker, the coach gun and the Winchester; or the Colt for the Walker, and no bandage). Each
 town gives what it asks of him: Silencio 8 (two gangs to be played off against each
 other, not outgunned: tricks before firepower), San Miguel 12, Cruz Verde 14 (the
 waves), Paso Esperanza 18 (an open fight to hold the train: nearly everything but a
@@ -1236,12 +1236,14 @@ stick). A gun's
 price is its `points` in `Weapon.DATA`, by how good it is, not by its slot: junk is
 free (horse pistol, the derringer's two little shots, escopeta), the poor or one-job guns 1
 (the howdah, two big shots and then a reload; Champion), the middling ones 2 (the Navy, six
-weak shots and an age to load; sawn-off), the six-guns 3 (Colt and Schofield alike: as
-strong, each with its own faults), the coach gun 3. Rifles cost a point more than their like
+weak shots and an age to load; sawn-off), the old Walker 3 (the hardest hitter of them, but
+loud and slow: the cap-and-ball guns come cheaper than the cartridge ones), the six-guns 4
+(Colt and Schofield alike: as strong, each with its own faults; the revolver is the gun he
+uses most, as dear as the Henry or the Sharps), the coach gun 3. Rifles cost a point more than their like
 elsewhere, for the reach: the cut-down Rolling Block 1 (the cheapest, none free), the
 Springfield 2, the Spencer and the Remington 3, the Henry and the Sharps 4 (a point over the
 other single shots, for going through a wall), and the Winchester, the best gun
-in the game, 5, as dear as the Spencer pump gun, rare and new. Dearest of all, 6, is the
+in the game, 5, as dear as the Spencer pump gun, rare and new. Dearest of all, 7, is the
 pair of Colts: twelve shots right and left, at a price in the reload (below). Kit is bought on the same screen (`Player.KIT`): a bandage for 1 (B,
 or the box left of "ride in") and a stick of dynamite for 2 (G, the right box), in
 every level. What he doesn't buy he hasn't: no free bandage. Each
@@ -1252,7 +1254,7 @@ until it fits. Guns taken off the dead are free. The tests that skip the screen
 keep the level's own kit (a bandage, the level's sticks). `tests/test_budget.gd`.
 
 **Taking up the dead's guns.** Three slots, one gun in each, by role, so the keys
-never change meaning: **1** a revolver or pistol (pair of Colts, Colt, Schofield, Navy, howdah, derringer, horse pistol), **2** a
+never change meaning: **1** a revolver or pistol (pair of Colts, Colt, Schofield, Walker, Navy, howdah, derringer, horse pistol), **2** a
 shotgun (coach gun, Spencer pump, sawn-off, Champion, escopeta), **3** a rifle (Winchester, Henry, Spencer, Remington, Sharps, Springfield, cut-down Rolling Block).
 `Player.SLOT` lists what he can carry. The gamblers' and saloon girls'
 derringers and the old timers' howdahs he can take up, but no dead man drops their
@@ -1295,6 +1297,30 @@ The revolution's guns are worse than his own; they earn a slot when his are dry.
 - The Colt's rounds, loaded the Colt's way, by the gate.
 - The bounty hunters' Buntline man carries it. The stranger can't ride in with it
   (it's not on the loadout screen: `Player.TROPHIES`), only take it off the dead.
+
+### Colt Walker 1847, .44 cap-and-ball — 6 rounds
+The Navy's big grandfather, from the war with Mexico: the hardest-hitting revolver
+there is, and a cannon to carry. The stranger's alone for now (no bandit carries it);
+3 points on the sidearm card, cheaper than a cartridge Colt, 18 charges to ride in with.
+- **Damage 3**: a three-hit man (old-timer, hillbilly, mountain man, coronel, teniente,
+  the Buntline man) goes down to one ball, a boss (4) to two. The Colt needs two for
+  either.
+- **Loud** (noise 470, near a rifle's 480 against the Colt's 380): in a quiet town every
+  shot calls in far more of the street. That's what holds it to 3 points on the
+  stealth levels, where he'd seldom reload.
+- **Slow**: held up in two hands, the left under the right; cocked slowly (0.55 s), it
+  kicks high, and it's never fanned. Each chamber charged and rammed at 1.8 s (the
+  Navy's 1.5), off the Navy's belt of powder and ball: a full six in well over ten
+  seconds. In the waves and at the train, that reload is what it costs.
+- **Smoke**: 26 puffs, more than a coach gun's 20 and pushed out harder.
+- **The rammer** (`"rammer"`: 0.15): the loading lever under the barrel was never latched
+  well, and now and then the kick drops it and it jams the cylinder. The cocking then
+  waits on him knocking it back up under the barrel (0.8 s more, `Weapon.RAMMER_T`;
+  "RAMMER DOWN" on the gun's line, its own animation, and a loose iron clank). Its own
+  dice, `Weapon.rammer_rng`.
+- It looks the part: longer and thicker in the hand than any Colt, a fat cylinder, the
+  brass guard, the lever hanging when it drops. Its own heavy roar (`walker`).
+  `tests/test_walker.gd`.
 
 ### Smith & Wesson Schofield, .45 — 6 rounds
 The Colt's rival, a top-break: an alternative for the sidearm slot, and in about a
@@ -2083,7 +2109,7 @@ short pause between; he reloads one gun at a time, the right first while the lef
 sits holstered, then the right put away and the left drawn (`"swap"`, 1.6 s, only if
 both want loading), and each round goes in slower than a Colt's (0.6 s to 0.5) with a
 second gun to mind, so the twelve take about 2.4 times one Colt's six (`tests/test_gunslinger.gd` pits one against a pistolero under fire). The stranger
-can ride in with a pair too, for 6 points (the hero wears a second holster for it, in every
+can ride in with a pair too, for 7 points (the hero wears a second holster for it, in every
 level): it can't be fanned, it reloads the same slow way, and given up for another gun
 it lies in the dirt as a pair, loaded as it was, for him to take back; a dead
 gunslinger's still come apart into two single Colts. His gun panel shows both cylinders,

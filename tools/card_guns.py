@@ -227,6 +227,31 @@ def navy(g):
     _plow_grip(g, 0.062, -0.006, 0.066, -0.046, g.wood(WALNUT), BRASS)
 
 
+def walker(g):
+    """Colt Walker 1847: the Navy's shape grown heavy. A long, deep cylinder, a
+    nine-inch barrel octagon at the breech and round beyond, the heavy loading lever
+    folded along under it, a case-hardened frame, the square-backed brass trigger
+    guard and a big walnut grip."""
+    g.octagon(0.16, 0.205, 0, 0.0108, BLUED)
+    g.rod((0.205, 0), (0.395, 0), 0.0098, BLUED, 0.0094)                      # round from there to the muzzle
+    g.sight(0.39, 0.009, 0.0075, BRASS)                                        # brass blade
+    g.bore(0.395, 0, 0.0056)
+    g.box(0.155, -0.038, -0.011, 0.205, -0.005, 0.011, BLUED)                  # the barrel lug, deep
+    g.box(0.165, -0.026, -0.012, 0.173, -0.014, 0.012, STEEL)                  # the wedge through it
+    g.line([(0.18, -0.042), (0.215, -0.022), (0.33, -0.018)], 0.0052, case_hardened)   # the loading lever
+    g.ball((0.33, -0.018, 0), 0.005, STEEL)                                    # its poor catch
+    _cylinder(g, 0.1, 0.16, -0.014, 0.0232, (78, 84, 104), flutes=False)
+    g.rod((0.104, -0.014 + 0.0233), (0.156, -0.014 + 0.0233), 0.0013, (110, 118, 140))   # the Ranger fight, roll-engraved
+    g.box(0.06, -0.046, -0.0185, 0.1, -0.002, 0.0185, case_hardened)           # the frame, open above
+    g.box(0.1, -0.046, -0.013, 0.162, -0.036, 0.013, case_hardened)
+    for x, y in ((0.072, -0.015), (0.088, -0.035)):
+        g.screw(x, y, -0.019)
+    g.hammer(0.064, 0.0, 0.034, 0.024, case_hardened, r=0.0048)
+    g.line([(0.06, -0.046), (0.06, -0.076), (0.08, -0.076), (0.1, -0.064), (0.1, -0.046)], 0.0034, BRASS)   # square-backed guard
+    g.trigger(0.082, -0.046, 0.016)
+    _plow_grip(g, 0.058, -0.008, 0.062, -0.05, g.wood(WALNUT), BRASS)
+
+
 def pistola(g):
     """A percussion horse pistol: the bird's-head grip with its brass cap, the stock run
     up a round barrel to a brass band, the hammer on the lock, the swivel ramrod."""
@@ -600,7 +625,7 @@ def rollingblock(g):
 
 
 DETAILED = {k: f for k, f in globals().items() if k in (
-    "colt", "buntline", "schofield", "navy", "howdah", "derringer", "pistola", "coach", "sawnoff", "champion", "spencer82", "escopeta", "colt55",
+    "colt", "buntline", "schofield", "walker", "navy", "howdah", "derringer", "pistola", "coach", "sawnoff", "champion", "spencer82", "escopeta", "colt55",
     "rifle", "henry", "spencer", "springfield", "remington", "sharps", "rollingblock")}
 
 

@@ -8,10 +8,10 @@ extends Actor
 ## Cartridges go in his belt whether he has the gun for them yet or not.
 
 const ORDER := ["colt", "coach", "rifle"]
-const SLOT := {"colts": "colt", "colt": "colt", "schofield": "colt", "buntline": "colt", "navy": "colt", "howdah": "colt", "derringer": "colt", "pistola": "colt",
+const SLOT := {"colts": "colt", "colt": "colt", "schofield": "colt", "buntline": "colt", "walker": "colt", "navy": "colt", "howdah": "colt", "derringer": "colt", "pistola": "colt",
 	"coach": "coach", "spencer82": "coach", "sawnoff": "coach", "champion": "coach", "escopeta": "coach", "colt55": "coach",
 	"rifle": "rifle", "henry": "rifle", "spencer": "rifle", "springfield": "rifle", "rollingblock": "rifle", "remington": "rifle", "sharps": "rifle"}   # the guns he can take up, by slot
-const RESERVE := {"colts": 36, "colt": 30, "schofield": 30, "buntline": 30, "navy": 24, "howdah": 10, "derringer": 12, "pistola": 12,
+const RESERVE := {"colts": 36, "colt": 30, "schofield": 30, "buntline": 30, "walker": 18, "navy": 24, "howdah": 10, "derringer": 12, "pistola": 12,
 	"coach": 10, "spencer82": 10, "sawnoff": 10, "champion": 10, "escopeta": 8, "colt55": 15,
 	"rifle": 26, "henry": 26, "spencer": 21, "springfield": 12, "rollingblock": 10, "remington": 12, "sharps": 12}   # what he rides in with, per gun (to his belt)
 const TROPHIES := ["buntline"]   # his only off the dead: not on the loadout screen

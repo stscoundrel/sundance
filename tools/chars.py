@@ -38,7 +38,7 @@ def template_guns():
     """Which guns each body template must be baked holding (every gun its types carry).
     Townsfolk, and bandits passing as townsfolk, need it "unarmed" as well."""
     # the stranger: his own three, and what he can take off the revolution's dead
-    out = {"hero": ["colts", "colt", "buntline", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "howdah", "derringer", "pistola", "sawnoff", "champion", "escopeta", "colt55", "spencer",
+    out = {"hero": ["colts", "colt", "buntline", "walker", "coach", "spencer82", "rifle", "henry", "schofield", "navy", "howdah", "derringer", "pistola", "sawnoff", "champion", "escopeta", "colt55", "spencer",
                     "springfield", "rollingblock", "remington", "sharps", "mgun", "strongbox"]}
 
     def need(template, g, t=None):
@@ -123,11 +123,12 @@ def template_guns():
     return out
 
 
-PISTOLS = ("colt", "colts", "schofield", "buntline", "navy", "derringer", "howdah", "pistola")   # (Enemy.PISTOLS)
+PISTOLS = ("colt", "colts", "schofield", "buntline", "walker", "navy", "derringer", "howdah", "pistola")   # (Enemy.PISTOLS)
 
 
 CARRY_SET = {"mg": "mgcarry"}   # a carrier's load, by the pose set he carries it in
 GUN_LEN = {"colts": 0.31, "m1895": 1.0, "remington": 1.3, "colt": 0.31, "buntline": 0.52, "schofield": 0.33, "coach": 0.97, "spencer82": 1.02, "rifle": 1.1, "henry": 1.12, "derringer": 0.21, "sharps": 1.32, "rollingblock": 0.72, "howdah": 0.44, "sawnoff": 0.6, "champion": 1.15, "colt55": 1.05, "navy": 0.36,
+           "walker": 0.5,
            "spencer": 1.0, "springfield": 1.45, "escopeta": 1.3, "pistola": 0.46}
 MUZZLE_LOADERS = ("springfield", "escopeta")   # loaded standing, the butt on the ground, with the ramrod
 # Loadouts drawn with another gun's model: a pair of Colts is two Colts, the second
@@ -409,6 +410,21 @@ def weapon_model(kind, butt, direction, lever=0.0, broken=0.0, detail=False):
         out += beam(at(0.38, (0, 0.012)), at(1.0, (0, 0.012)), 0.019, GUNMETAL)         # octagon barrel
         out += beam(at(0.4, (0, -0.02)), at(0.74, (0, -0.02)), 0.01, STEEL)             # loading lever
         out += beam(at(0.12, (0, 0.03)), at(0.19, (0, 0.06)), 0.01, STEEL)              # hammer
+    elif kind == "walker":
+        # Colt Walker 1847: big enough to tell from any Colt across the street. A heavy
+        # walnut grip, the brass guard, a long fat cylinder, a thick barrel, and the
+        # loading lever under it, swinging down when the kick drops it (lever 0..1)
+        out += beam(at(0.0, (0, -0.085)), at(0.17, (0, 0.0)), 0.032, (122, 78, 46))      # walnut grip
+        out += beam(at(0.13, (0, -0.05)), at(0.2, (0, -0.05)), 0.013, BRASS)            # square brass guard
+        out += box(tuple(at(0.13) - 0.036), tuple(at(0.2) + 0.036), (128, 120, 112))   # case-hardened frame
+        out += frustum(at(0.19), at(0.4), 0.05, 0.05, GUNMETAL)                        # the long cylinder
+        out += beam(at(0.4, (0, 0.014)), at(1.0, (0, 0.014)), 0.025, GUNMETAL)          # heavy barrel
+        out += beam(at(0.97, (0, 0.04)), at(0.99, (0, 0.044)), 0.007, BRASS)           # front sight
+        hinge = at(0.42, (0, -0.026))
+        ang = 0.9 * lever
+        lv = a * math.cos(ang) - up * math.sin(ang)
+        out += beam(hinge, hinge + lv * (L * 0.38), 0.012, STEEL)                       # loading lever
+        out += beam(at(0.1, (0, 0.036)), at(0.18, (0, 0.07)), 0.012, STEEL)             # hammer spur
     elif kind == "pistola":
         # a percussion horse pistol: a curved walnut grip with a brass cap, the stock run
         # most of the way up a round barrel, a brass band, the ramrod swivelled beneath
@@ -1547,6 +1563,21 @@ def _key_poses(w):
         return k
     if w in ("navy", "pistola", "buntline"):
         return _key_poses("colt")   # held and loaded like any Colt
+    if w == "walker":
+        # loaded like a Colt, but too heavy to hold out in one hand: the left comes up
+        # under the right to bear it, it kicks high, and when the rammer drops, the left
+        # goes forward under the barrel to knock it back up
+        k = _key_poses("colt")
+        two = dict(eL=V(0.24, 0.1, 0.36), hL=V(0.46, -0.05, 0.4))
+        k["aim"] = P(k["aim"], **two, gun=G((0.47, -0.07, 0.38), (0.3, 0, 0.05)))
+        k["kick"] = P(k["aim"], eR=V(0.2, -0.15, 0.58), hR=V(0.36, -0.07, 0.68), eL=V(0.2, 0.08, 0.5),
+                      hL=V(0.34, -0.05, 0.64), gun=G((0.34, -0.07, 0.62), (0.12, 0, 0.32)), lean=-0.16)
+        k["cock"] = P(k["aim"], eR=V(0.22, -0.15, 0.44), hR=V(0.42, -0.08, 0.45), eL=V(0.22, 0.08, 0.38),
+                      hL=V(0.4, -0.04, 0.42), gun=G((0.4, -0.08, 0.39), (0.27, 0, 0.12)))
+        down = P(k["aim"], gun=G((0.44, -0.07, 0.36), (0.3, 0, -0.02)))
+        k["rammer"] = P(down, eL=V(0.3, 0.06, 0.3), hL=V(0.62, -0.06, 0.3), lever=1.0)
+        k["rammer_up"] = P(down, eL=V(0.32, 0.06, 0.32), hL=V(0.66, -0.06, 0.38), lever=0.2)
+        return k
     if w in ("derringer", "schofield"):   # held like a Colt; broken open to load
         k = _key_poses("colt")
         for name in ("load", "eject_a", "eject_b", "insert_a", "insert_b"):
@@ -1859,6 +1890,15 @@ def upper_anims(w):
         add("reload_eject", [k["eject_a"], k["eject_b"]], 8)
         add("reload_insert", [k["insert_a"], k["insert_b"], k["eject_b"], k["insert_b"]], 2.4, True)
         add("reload_close", _frames([k["load"], k["aim"]], 2), 5)
+    elif w == "walker":
+        # the Navy's loading, slower: the long chambers take their powder, and the
+        # lever is a long haul. A heavy cock; and the rammer, dropped, seen to
+        add("cock", [k["cock"], k["cock"], k["aim"]], 5)
+        add("rammer", [k["rammer"], k["rammer"], k["rammer"], k["rammer_up"], k["cock"], k["aim"]], 5)
+        add("reload_open", _frames([k["aim"], k["load"]], 2), 4)
+        add("reload_eject", [k["eject_a"], k["eject_b"]], 8)
+        add("reload_insert", [k["insert_a"], k["insert_b"], k["eject_b"], k["eject_b"], k["insert_b"]], 2.7, True)
+        add("reload_close", _frames([k["load"], k["aim"]], 2), 5)
     elif w in ("navy", "banner"):
         # no brass to shake out: a spent cap picked off, then each chamber charged and rammed
         add("cock", [k["cock"], k["aim"]], 6)
@@ -2017,7 +2057,7 @@ DEATH_FPS = {"death_back": 9, "death_knees": 6, "death_spin": 8, "death_slump": 
 
 # A downed man with a pistol to hand may prop himself up on an elbow, feet towards
 # the stranger, and get a round or two off before he sinks back. One-handed guns only.
-PISTOLS = ("colt", "colts", "buntline", "schofield", "navy", "derringer", "howdah", "pistola")
+PISTOLS = ("colt", "colts", "buntline", "schofield", "walker", "navy", "derringer", "howdah", "pistola")
 LYING = {"H": 0.13, "sway": 0.0, "crouch": True,
          "legs": [((0, 0.1, 0.13), (0.42, 0.13, 0.12), (0.82, 0.15, 0.08)),
                   ((0, -0.1, 0.13), (0.38, -0.12, 0.2), (0.76, -0.17, 0.08))]}   # one knee half up

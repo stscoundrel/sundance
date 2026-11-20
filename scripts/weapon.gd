@@ -25,10 +25,10 @@ const TUBE_CAP := 12   # plus one in the chamber (a lever gun's "tube" may hold 
 # For breech guns, open/eject/insert/close are [seconds, sound]; "hammer" means the
 # hammer is thumbed back after each shot; "volley" lets the right trigger fire every
 # loaded barrel at once. "points": what the stranger's gun costs on the loadout
-# screen, out of the level's budget (0 for junk, 3 for a good revolver, 5 for the
-# Winchester and the Spencer pump).
+# screen, out of the level's budget (0 for junk, 4 for a good cartridge revolver, 3
+# for the old Walker, 5 for the Winchester and the Spencer pump).
 const DATA := {
-	"colt": {"name": "COLT SINGLE ACTION ARMY", "points": 3, "action": "revolver", "damage": 2, "speed": 650.0,
+	"colt": {"name": "COLT SINGLE ACTION ARMY", "points": 4, "action": "revolver", "damage": 2, "speed": 650.0,
 		"range": 380.0, "spread": 2.2, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.32,
 		"shake": 2.0, "smoke": 9, "eject": [0.36, "eject"], "insert": [0.5, "shell_in"],
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
@@ -37,7 +37,7 @@ const DATA := {
 	# barrel giving the round its speed, but it comes up slow and cocks slow, and it
 	# can't be fanned. The same .45 rounds, loaded the same way, by the gate. The
 	# bounty hunters' Buntline man carries it; the stranger can take it off him.
-	"buntline": {"name": "COLT BUNTLINE", "points": 3, "action": "revolver", "damage": 2, "speed": 760.0,
+	"buntline": {"name": "COLT BUNTLINE", "points": 4, "action": "revolver", "damage": 2, "speed": 760.0,
 		"range": 480.0, "spread": 1.1, "pellets": 1, "noise": 390.0, "sfx": "colt", "cycle": 0.5,
 		"shake": 2.2, "smoke": 10, "ammo": "colt", "eject": [0.36, "eject"], "insert": [0.5, "shell_in"],
 		"status": {"cycle": "COCKING", "open": "HALF-COCK, GATE OPEN", "close": "GATE CLOSED, COCKING"}},
@@ -46,7 +46,7 @@ const DATA := {
 	# lost in the dirt); then six go in quick, no turning the cylinder to each. No
 	# topping up a round or two, then. The hump-backed grip sits oddly in the hand:
 	# a little wilder than the Colt. Takes the same .45 rounds.
-	"schofield": {"name": "SCHOFIELD", "points": 3, "action": "revolver", "topbreak": true, "damage": 2, "speed": 640.0,
+	"schofield": {"name": "SCHOFIELD", "points": 4, "action": "revolver", "topbreak": true, "damage": 2, "speed": 640.0,
 		"range": 370.0, "spread": 3.0, "pellets": 1, "noise": 380.0, "sfx": "colt", "cycle": 0.34,
 		"shake": 2.0, "smoke": 9, "ammo": "colt", "open": [0.6, "break_open"], "eject": [0.4, "eject"],
 		"insert": [0.33, "shell_in"], "close": [0.45, "close"],
@@ -118,7 +118,7 @@ const DATA := {
 	# drawn ("swap"), and a round goes in slower than a Colt's with a second gun at
 	# his hip to mind, so the twelve take well over twice as long as one Colt's six. The dearest gun
 	# on the stranger's card; a dead gunslinger leaves his as two Colts ("drops").
-	"colts": {"name": "PAIR OF COLTS", "points": 6, "action": "revolver", "twin": true, "chambers": 12, "damage": 2,
+	"colts": {"name": "PAIR OF COLTS", "points": 7, "action": "revolver", "twin": true, "chambers": 12, "damage": 2,
 		"speed": 650.0, "range": 340.0, "spread": 3.0, "pellets": 1, "noise": 380.0, "sfx": "colt",
 		"cycle": 0.16, "shake": 2.0, "smoke": 9, "ammo": "colt", "drops": ["colt", "colt"],
 		"eject": [0.36, "eject"], "insert": [0.6, "shell_in"], "swap": [1.6, "gate"],
@@ -130,6 +130,20 @@ const DATA := {
 		"spread": 3.2, "pellets": 1, "noise": 360.0, "sfx": "colt", "cycle": 0.38, "shake": 2.0, "smoke": 15,
 		"smoke_push": 1.2, "eject": [0.2, "gate"], "insert": [1.5, "shell_in"], "ammo": "powder",
 		"status": {"cycle": "COCKING", "open": "POWDER AND BALL", "close": "CAPPED"}},
+	# Colt Walker 1847: the Navy's big grandfather, made for the Texas Rangers and the
+	# war with Mexico, four and a half pounds of iron and sixty grains of powder behind
+	# every ball. The hardest-hitting revolver there is: a heavy man down with one, El
+	# Jefe with two. But it's a cannon to carry: two hands to hold it up, slow to cock,
+	# loud as a rifle, a cloud of smoke like a shotgun's, and each chamber charged and
+	# rammed slower even than the Navy's. Old enough now to come cheaper than a good
+	# cartridge Colt. And the loading lever under the barrel was never latched well:
+	# now and then the kick drops it ("rammer"), the rammer jams the cylinder, and he
+	# must knock it back up before he can cock for the next.
+	"walker": {"name": "COLT WALKER 1847", "points": 3, "action": "revolver", "damage": 3, "speed": 700.0,
+		"range": 360.0, "spread": 2.6, "pellets": 1, "noise": 470.0, "sfx": "walker", "cycle": 0.55,
+		"shake": 3.6, "smoke": 26, "smoke_push": 1.6, "ammo": "powder", "rammer": 0.15,
+		"eject": [0.22, "gate"], "insert": [1.8, "ram"],
+		"status": {"cycle": "COCKING", "open": "POWDER AND BALL", "close": "CAPPED", "rammer": "RAMMER DOWN"}},
 	# Spencer 1860 carbine, the revolution's cast-off repeater: seven rounds in a tube
 	# through the butt, and between shots both the lever and the hammer to work.
 	# Slower than the Winchester and fewer rounds, with a heavier, slower bullet.
@@ -256,6 +270,11 @@ const HOT_SPREAD := 1.0   # as much again on the spread, at its hottest
 var heat := 0.0
 # Chainfire's dice (the revolving shotgun's), apart from the rest of the fight.
 static var chain_rng := RandomNumberGenerator.new()
+# The Walker's loading lever dropped by the kick ("rammer"): this shot's cocking
+# waits on him knocking it back up under the barrel. Its own dice.
+var rammer_down := false
+static var rammer_rng := RandomNumberGenerator.new()
+const RAMMER_T := 0.8   # s more than a cocking, to see to it
 const CHAIN_SPREAD := 14.0   # degrees more, every chamber at once out of a jumping gun
 
 
@@ -356,7 +375,7 @@ func status() -> String:
 	var st: Dictionary = d["status"]
 	match state:
 		S.CYCLE:
-			return st["cycle"]
+			return st["rammer"] if rammer_down else st["cycle"]
 		S.OPEN:
 			return st["open"]
 		S.EJECT:
@@ -511,6 +530,7 @@ func _advance() -> void:
 			if action == "revolver":
 				cur = (cur + 1) % chambers.size()
 				cocked = true
+				rammer_down = false
 				if not fanning:
 					_snd("cock", -2.0)
 			elif action == "breech" and d.get("hammer", false) and barrels.has(1):
@@ -675,10 +695,13 @@ func _colt_fire(fan: bool) -> void:
 	elif chambers[cur] == 1:
 		chambers[cur] = 2
 		_shoot(1, 11.0 if fan else 0.0)
+		rammer_down = d.has("rammer") and rammer_rng.randf() < float(d["rammer"])
 	else:
 		_snd("dry", 2.0)
 	cocked = false
-	_cycle(0.12 if fan else d["cycle"])
+	_cycle(0.12 if fan else d["cycle"] + (RAMMER_T if rammer_down else 0.0))
+	if rammer_down:
+		_snd("rammer")
 
 
 ## The flash of one chamber jumping to the rest: every loaded one goes off at once,

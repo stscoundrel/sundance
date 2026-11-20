@@ -1,7 +1,7 @@
 extends SceneTree
 ## The loadout's points. Each gun costs by how good it is (the horse pistol and the
-## escopeta and the derringer nothing, the howdah 1, the Navy 2, the Colt and the
-## Schofield 3, the Winchester 5) and kit too (a bandage 1, a stick 2), out of
+## escopeta and the derringer nothing, the howdah 1, the Navy 2, the Walker 3, the
+## Colt and the Schofield 4, the Winchester 5) and kit too (a bandage 1, a stick 2), out of
 ## the level's budget. A gun he can't afford stays where it is: a click on it, or
 ## going on through the slot with 1 2 3, passes it by. A choice kept from a richer
 ## level gives back its dearest first. He rides in with the kit he bought, and none
@@ -47,9 +47,9 @@ func _process(_delta: float) -> bool:
 	var p: Player = game.player
 	if frame == 3:
 		check(Player.cost(["colt"]) == Player.cost(["schofield"]), "the Colt and the Schofield should cost the same")
-		check(Player.cost(["colt"]) == 3 and Player.cost(["navy"]) == 2, "the Colt 3, the Navy 2")
+		check(Player.cost(["colt"]) == 4 and Player.cost(["walker"]) == 3 and Player.cost(["navy"]) == 2, "the Colt 4, the Walker 3, the Navy 2")
 		check(Player.cost(["howdah"]) == 1 and Player.cost(["derringer"]) == 0, "the howdah 1, the derringer free")
-		check(Player.choices("colt") == ["colts", "colt", "schofield", "navy", "howdah", "derringer", "pistola"],
+		check(Player.choices("colt") == ["colts", "colt", "schofield", "walker", "navy", "howdah", "derringer", "pistola"],
 			"the sidearms, dearest first (%s)" % [Player.choices("colt")])
 		check(Player.cost(["pistola"]) == 0 and Player.cost(["escopeta"]) == 0, "junk should be free")
 		check(Player.cost(["rifle"]) == 5 and Player.cost(["coach"]) == 3 and Player.cost(["sawnoff"]) == 2,
@@ -61,8 +61,8 @@ func _process(_delta: float) -> bool:
 		game.level_entry.erase("budget")
 		check(game.budget() == 12, "with no budget named, 12 (%d)" % game.budget())
 		game.level_entry["budget"] = cv
-		check(Player.cost(["colt", "coach", "rifle"], ["bandage"]) <= game.budget(),
-			"the default budget should buy the Colt, the coach gun, the Winchester and a bandage")
+		check(Player.cost(["walker", "coach", "rifle"], ["bandage"]) <= game.budget(),
+			"the default budget should buy the Walker, the coach gun, the Winchester and a bandage")
 		check(game.kit_offered() == ["bandage", "dynamite"], "Cruz Verde sells both (%s)" % [game.kit_offered()])
 
 		# a poorer level: 7 points

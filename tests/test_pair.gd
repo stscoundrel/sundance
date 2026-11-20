@@ -1,6 +1,6 @@
 extends SceneTree
 ## The stranger's pair of Colts (the test yard, its gang parked out of the way):
-##   card    - the dearest gun on the loadout, 6 points, at the head of the sidearm
+##   card    - the dearest gun on the loadout, 7 points, at the head of the sidearm
 ##             card, on the Colt's .45s.
 ##   fire    - right hand, left hand, in turn.
 ##   reload  - one gun at a time, the right first, the left put away meanwhile and then
@@ -54,7 +54,7 @@ func _time(w: Weapon, until: Callable, limit := 60.0) -> float:
 
 func _card() -> void:
 	step = "card"
-	check(Player.cost(["colts"]) == 6, "the pair costs %d" % Player.cost(["colts"]))
+	check(Player.cost(["colts"]) == 7, "the pair costs %d" % Player.cost(["colts"]))
 	for k in Weapon.DATA:
 		if k != "colts" and Weapon.DATA[k].has("points"):
 			check(Weapon.DATA[k]["points"] < 6, "the %s is as dear" % k)

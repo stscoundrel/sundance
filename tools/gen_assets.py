@@ -708,7 +708,7 @@ def gen_ui(meta):
             meta["ui"]["portraits"][lv["id"]] = save(paint_portrait(lv["stranger"]), "sprites/ui/portrait_%s.png" % lv["id"])
     # the guns the stranger can carry, side-on, for the loadout screen (Player.SLOT)
     meta["ui"]["guns"] = {}
-    for kind in ("colts", "colt", "buntline", "schofield", "navy", "howdah", "derringer", "pistola", "coach", "spencer82", "sawnoff", "champion", "escopeta", "colt55", "rifle", "henry", "spencer",
+    for kind in ("colts", "colt", "buntline", "schofield", "walker", "navy", "howdah", "derringer", "pistola", "coach", "spencer82", "sawnoff", "champion", "escopeta", "colt55", "rifle", "henry", "spencer",
                  "springfield", "rollingblock", "remington", "sharps"):
         L = chars.GUN_LEN[kind]
         d = np.array([1.0, -1.0, 0.0]) / math.sqrt(2)   # along the screen, muzzle to the right
@@ -1302,6 +1302,16 @@ def gen_sfx(meta):
     parts = [(0.0, scrape(0.3, 1800, 6500) * 0.5), (0.3, knock(arng, 700, 0.02, 0.1) * 1.4 + metal(arng, 1300, 1.2, 0.1) * 0.4),
              (0.52, knock(arng, 700, 0.02, 0.1) * 1.2), (0.62, scrape(0.25, 2200, 7000) * 0.4)]
     write("ram", room(place(0.95, parts), arng, 0.05, 0.25), meta, 0.65, 1.3)
+    # The Colt Walker: sixty grains behind a .44 ball, a deep, long roar between the
+    # Colt's crack and the Sharps' boom. And its loading lever, dropped by the kick: a
+    # loose iron clank, then the knock of it shoved back up into its catch.
+    wrng = np.random.default_rng(1847)
+    for i in range(3):
+        write("walker" + ("" if i == 0 else "_%d" % (i + 1)),
+              gunshot(wrng, 0.0028, 1950, 0.06, 175, 0.2, 47, 3.5, 1.4, wrng.uniform(0.95, 1.05)), meta, 0.98, 1.8)
+    parts = [(0.0, metal(wrng, 1100, 2.2, 0.1) * 1.1 + knock(wrng, 500, 0.02, 0.1) * 0.6),
+             (0.05, metal(wrng, 1700, 1.4) * 0.5)]
+    write("rammer", room(place(0.3, parts), wrng, 0.05, 0.25), meta, 0.75, 1.4)
     # A heartbeat, for the stranger bleeding in the dirt: lub-dub, low and muffled.
     hrng3 = np.random.default_rng(98)
 

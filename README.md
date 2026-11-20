@@ -170,6 +170,7 @@ godot --headless --path . --fixed-fps 60 -s tests/test_loadout.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_budget.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_cards.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_sidearms.gd
+godot --headless --path . --fixed-fps 60 -s tests/test_walker.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_pair.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_sharps.gd
 godot --headless --path . --fixed-fps 60 -s tests/test_reinforcements.gd

@@ -294,6 +294,7 @@ func _ready() -> void:
 		Enemy.rollingblock_rng.randomize()
 		Enemy.revolving_rng.randomize()
 		Weapon.chain_rng.randomize()
+		Weapon.rammer_rng.randomize()
 		Wounds.rng.randomize()
 		Civilian.rng.randomize()
 		Civilian.flirt_rng.randomize()
@@ -329,6 +330,7 @@ func _ready() -> void:
 		Enemy.rollingblock_rng.seed = 41
 		Enemy.revolving_rng.seed = 179
 		Weapon.chain_rng.seed = 173
+		Weapon.rammer_rng.seed = 181
 		Wounds.rng.seed = 41
 		Civilian.rng.seed = 43
 		Civilian.flirt_rng.seed = 127

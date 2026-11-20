@@ -905,6 +905,7 @@ const KIT_NAME := {"bandage": "A BANDAGE  [B]", "dynamite": "A STICK OF DYNAMITE
 const SLOT_NAME := {"colt": "SIDEARM", "coach": "SHOTGUN", "rifle": "RIFLE"}
 const BLURB := {"colts": "twelve, right and left, slow to load", "colt": "six, quick to load, fanned", "buntline": "six, long reach, slow to come up",
 	"schofield": "six, all out and in at once",
+	"walker": "six heavy balls, loud, an age to load",
 	"navy": "six, weak, slow to load",
 	"howdah": "two big rounds, or both at once",
 	"derringer": "two shots, close enough to touch",
