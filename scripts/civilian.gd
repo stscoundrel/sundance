@@ -240,6 +240,7 @@ var bound := false           # noosed and tied: going nowhere, whatever happens
 var last_words := false      # shot in the middle of a line: what he got out stays over him a moment
 var guest := false           # one of the townsfolk come to see the stranger buried (role "guest")
 static var guest_rng := RandomNumberGenerator.new()   # (the guests' own dice)
+var at_grave := Vector2.RIGHT   # (a guest's) the way he faces to see the stranger put in the ground
 var still := false           # hanged: he's done moving
 var refuge := Vector2.INF    # where he runs once he's loose, if not just the nearest door
 var woodcutter := false
@@ -348,6 +349,7 @@ func setup(g: Node, k: String, pos: Vector2, facing_deg: float, overrides := {})
 		global_position = home
 	facing = Vector2.from_angle(deg_to_rad(facing_deg))
 	desired = facing
+	at_grave = facing
 	wait = _rr(1.0, 6.0)
 	t = _rf() * 10.0
 	if tdata.get("indoors", false):
@@ -632,6 +634,9 @@ func _perceive(delta: float) -> void:
 	if not p.alive or st in [St.FLEE, St.COWER, St.SNITCH] or st in WORK:
 		return
 	sidle = Vector2.ZERO
+	if guest:
+		_solemn(p)
+		return
 	if shy and st in [St.IDLE, St.WALK] and _shy(delta):
 		return
 	if sees(p.global_position):
@@ -665,9 +670,27 @@ func _perceive(delta: float) -> void:
 			looked_away = false
 
 
+## A guest at the graveside. While the padre speaks over the coffin his eyes stay on
+## the grave, the dead man in it and all: no glancing at the stranger and looking
+## away, as the townsfolk do in the street, for the man is laid out in front of him
+## and that's what he came to see. Once the lid's off and the dead man's on his feet,
+## a guest who sees him can't look anywhere else; he stares where he stands until
+## the first shot sends him running.
+func _solemn(p: Player) -> void:
+	var out: bool = game.funeral != null and game.funeral.phase == "out"
+	if out and sees(p.global_position):
+		watching = true
+		desired = (p.global_position - global_position).normalized()
+	else:
+		desired = at_grave
+
+
 func _idle(delta: float) -> void:
 	velocity = sidle * walk * 0.6
 	wait -= delta
+	if guest:
+		velocity = Vector2.ZERO   # (he stands where he stood to see it done)
+		return
 	if sister:
 		_sister_idle()
 		return

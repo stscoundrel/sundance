@@ -879,7 +879,11 @@ coffin, phase 3, the burial, and phase 4, his record, are done.
   girls, and peons for Paso Esperanza (its cargadores dress as the revolution's
   fighters: too easily taken for one). They stand in a looser ring 7.6-8.4 tiles out,
   well behind the gunmen at 3.6 (so those stay clear targets), in their own clothes (the black marks the armed guests),
-  facing the grave, never wandering, snitching or flirting. At the first gunfire
+  facing the grave, never wandering, snitching or flirting. They're solemn about it
+  (`Civilian._solemn`): while he lies in the coffin their eyes stay on the grave,
+  none of the street's glance at the stranger and look away, nor stepping about
+  their spot; once he's broken out, a guest who sees him stares at him where he
+  stands. At the first gunfire
   anywhere about the burial ground they run at once, none stopping to gape, down
   whichever road off the map takes them furthest from the shooting for the least
   running (`Civilian._road_away`), and they're gone for good. Their dice are their

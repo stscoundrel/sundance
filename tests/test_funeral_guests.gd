@@ -2,7 +2,8 @@ extends SceneTree
 ## The townsfolk at the stranger's funeral (Civilian, role "guest"):
 ##   ring   - twenty of them from the four towns, in their own clothes, round the
 ##            grave in a looser ring behind the gunmen, every one further out than
-##            any of them; they stand there, not wandering off.
+##            any of them; they stand there, not wandering off, their eyes on the
+##            grave the whole while (none glancing at the dead man and turning away).
 ##   shot   - one shot anywhere about the burial ground and they're away (none
 ##            not one of them stopping to gape), each down a road off the map, the furthest
 ##            from the shooting for the least running; gone, and not back.
@@ -18,6 +19,7 @@ var t0 := 0.0
 var phase := 0
 var guests: Array = []
 var at0 := {}
+var most_off := 0.0   # (degrees) the furthest any guest's eyes have strayed from the grave
 
 
 func _initialize() -> void:
@@ -70,10 +72,13 @@ func _process(delta: float) -> bool:
 				check(d > gun_far + 1.5, "%s at %s nearer the grave (%.1f tiles) than behind the gunmen (%.1f)" % [c.kind, Iso.to_grid(c.global_position), d, gun_far])
 			phase = 1
 			t0 = t
-		1:   # a few seconds: they stand
+		1:   # a few seconds: they stand, solemn
+			for c in guests:
+				most_off = maxf(most_off, absf(rad_to_deg(c.at_grave.angle_to(c.facing))))
 			if t - t0 < 4.0:
 				return false
 			check(guests.all(func(c): return c.global_position.distance_to(at0[c]) < 6.0), "a townsman wandered off")
+			check(most_off < 10.0, "a guest turned %.0f degrees from the grave" % most_off)
 			step = "shot"
 			game.make_noise(grave + Vector2(-40, 10), 900.0, "shot", game.player)   # (a shot by the grave)
 			phase = 2
